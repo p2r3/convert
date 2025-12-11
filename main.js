@@ -4,6 +4,7 @@ import handler_canvg from "./handlers/canvg.js";
 import handler_pdftoimg from "./handlers/pdftoimg.js";
 import handler_rename from "./handlers/rename.js";
 import handler_canvasToBlob from "./handlers/canvasToBlob.js";
+import handler_html2canvas from "./handlers/html2canvas.js";
 
 const handlers = [
   handler_ImageMagick,
@@ -11,7 +12,8 @@ const handlers = [
   handler_canvg,
   handler_pdftoimg,
   handler_rename,
-  handler_canvasToBlob
+  handler_canvasToBlob,
+  handler_html2canvas
 ];
 
 let selectedFile;
