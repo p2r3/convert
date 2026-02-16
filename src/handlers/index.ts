@@ -6,25 +6,24 @@ import FFmpegHandler from "./FFmpeg.ts";
 import pdftoimgHandler from "./pdftoimg.ts";
 import ImageMagickHandler from "./ImageMagick.ts";
 import renameHandler from "./rename.ts";
-import envelopeHandler from "./envelope.ts";
+// import envelopeHandler from "./envelope.ts"; // Disabled - missing dependencies
 import svgForeignObjectHandler from "./svgForeignObject.ts";
-import qoiFuHandler from "./qoi-fu.ts";
-import sppdHandler from "./sppd.ts";
+// import qoiFuHandler from "./qoi-fu.ts"; // Disabled - missing package
+// import sppdHandler from "./sppd.ts"; // Disabled - missing files
 import threejsHandler from "./threejs.ts";
 import markdownHandler from "./markdown.ts";
 
 const handlers: FormatHandler[] = [];
-try { handlers.push(new canvasToBlobHandler()) } catch (_) { };
 try { handlers.push(new canvasToBlobHandler()) } catch (_) { };
 try { handlers.push(new meydaHandler()) } catch (_) { };
 try { handlers.push(new FFmpegHandler()) } catch (_) { };
 try { handlers.push(new pdftoimgHandler()) } catch (_) { };
 try { handlers.push(new ImageMagickHandler()) } catch (_) { };
 try { handlers.push(new renameHandler()) } catch (_) { };
-try { handlers.push(new envelopeHandler()) } catch (_) { };
+// try { handlers.push(new envelopeHandler()) } catch (_) { }; // Disabled
 try { handlers.push(new svgForeignObjectHandler()) } catch (_) { };
-try { handlers.push(new qoiFuHandler()) } catch (_) { };
-try { handlers.push(new sppdHandler()) } catch (_) { };
+// try { handlers.push(new qoiFuHandler()) } catch (_) { }; // Disabled
+// try { handlers.push(new sppdHandler()) } catch (_) { }; // Disabled
 try { handlers.push(new threejsHandler()) } catch (_) { };
 try { handlers.push(new markdownHandler()) } catch (_) { };
 export default handlers;

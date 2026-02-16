@@ -43,6 +43,9 @@
   ],
   "exclude": [
     "src/handlers/qoi-fu/**/*",
-    "src/handlers/sppd/**/*"
+    "src/handlers/sppd/**/*",
+    "src/handlers/envelope.ts",
+    "src/handlers/qoi-fu.ts",
+    "src/handlers/sppd.ts"
   ]
 }
