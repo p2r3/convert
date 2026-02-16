@@ -1,7 +1,15 @@
+:root {
+  --highlight-color: #1c77ff;
+  --bg-light: #f4f4f4;
+  --bg-medium: #e0e0e0;
+  --transition: all 0.2s ease-in-out;
+}
+
 body {
   margin: 0;
-  font-family: sans-serif;
-  --highlight-color: #1C77FF;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: var(--bg-light);
+  color: #333;
 }
 
 #file-input {
@@ -12,12 +20,18 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: center;
   width: 100%;
   height: 30vh;
   background-color: var(--highlight-color);
   color: white;
   text-align: center;
   cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+#file-area:hover {
+  background-color: #1666dd; /* Subtle darken on hover */
 }
 
 #file-area h2,
@@ -31,90 +45,107 @@ body {
   right: 0;
   width: 20em;
   height: 30vh;
-  padding: 2em;
+  padding: 1.5em;
   box-sizing: border-box;
   pointer-events: none;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
 }
 
 #side-panel button {
-  font-size: 1rem;
-  width: 100%;
+  font-size: 0.9rem;
+  width: auto; /* Changed to auto so it doesn't look bulky */
   padding: 10px 20px;
   border: 0;
-  border-radius: 10px;
+  border-radius: 8px;
   background-color: white;
   color: var(--highlight-color);
   font-weight: bold;
   cursor: pointer;
-  box-shadow: 0 5px 0 0 rgba(169, 169, 169, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   pointer-events: all;
+  transition: var(--transition);
 }
+
+#side-panel button:hover {
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
 #side-panel button:active {
-  transform: translateY(5px);
-  box-shadow: 0 0 0 0;
+  transform: translateY(2px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 #format-containers {
   display: flex;
+  min-height: 70vh;
 }
 
 .format-container {
   display: flex;
   flex-flow: column nowrap;
   align-items: center;
-  width: 50vw;
-  min-height: 70vh;
-  padding: 0.8em 7em;
-}
-.format-container h2 {
-  text-align: center;
-  margin-bottom: 20px;
+  flex: 1; /* More reliable than 50vw */
+  padding: 2em;
+  box-sizing: border-box;
 }
 
-#from-container {
-  background-color: lightgray;
-}
-#to-container {
-  background-color: rgb(184, 184, 184);
-}
+#from-container { background-color: #eeeeee; }
+#to-container { background-color: #e5e5e5; }
 
 .search {
+  width: 100%;
+  max-width: 300px;
   text-align: center;
-  margin-bottom: 30px;
-  padding: 10px 20px;
-  border: 0;
-  border-radius: 5px;
+  margin-bottom: 25px;
+  padding: 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
   outline: none;
-  box-shadow: 0 5px 0 0 darkgrey;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  transition: var(--transition);
+}
+
+.search:focus {
+  border-color: var(--highlight-color);
+  box-shadow: 0 0 0 3px rgba(28, 119, 255, 0.2);
 }
 
 .format-list {
   display: flex;
   flex-flow: column nowrap;
   width: 100%;
+  max-width: 400px;
   align-items: center;
   background-color: white;
-  border-radius: 10px;
-  padding: 30px;
-  margin-bottom: 5vw;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+  margin-bottom: 50px;
 }
 
 .format-list button {
-  width: 80%;
-  margin: 5px 0;
-  padding: 10px;
-  color: black;
-  background-color: lightgray;
+  width: 100%;
+  margin: 4px 0;
+  padding: 12px;
+  color: #444;
+  background-color: #f0f0f0;
   border: 0;
-  border-radius: 10px;
-  font-family: monospace;
-  word-break: break-word;
+  border-radius: 8px;
+  font-family: 'Monaco', 'Consolas', monospace;
   cursor: pointer;
+  transition: var(--transition);
+}
+
+.format-list button:hover {
+  background-color: #e2e2e2;
 }
 
 button.selected {
-  background-color: var(--highlight-color);
-  color: white;
+  background-color: var(--highlight-color) !important;
+  color: white !important;
   font-weight: bold;
 }
 
@@ -123,75 +154,65 @@ button.selected {
   left: 50%;
   bottom: 5%;
   transform: translateX(-50%);
-  font-size: 1.5rem;
-  padding: 10px 20px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  padding: 15px 40px;
   border: 0;
-  border-radius: 10px;
+  border-radius: 50px; /* Pill shape looks more modern */
   background-color: var(--highlight-color);
   color: white;
   cursor: pointer;
+  box-shadow: 0 10px 20px rgba(28, 119, 255, 0.3);
+  transition: var(--transition);
+}
+
+#convert-button:not(.disabled):hover {
+  transform: translateX(-50%) translateY(-3px);
+  box-shadow: 0 12px 25px rgba(28, 119, 255, 0.4);
 }
 
 .disabled {
   filter: grayscale(1);
+  opacity: 0.6;
   pointer-events: none;
 }
 
 #popup-bg {
   position: fixed;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  inset: 0; /* Modern shortcut for top/left/bottom/right: 0 */
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px); /* Modern blur effect */
+  z-index: 100;
 }
+
 #popup {
   position: fixed;
   left: 50%;
   top: 50%;
-  width: 20vw;
+  width: 90%;
+  max-width: 350px;
   transform: translate(-50%, -50%);
   background-color: white;
-  padding: 15px;
-  border-radius: 10px;
+  padding: 25px;
+  border-radius: 16px;
   text-align: center;
-}
-
-#popup button {
-  font-size: 1rem;
-  padding: 7px 20px;
-  border: 0;
-  border-radius: 10px;
-  background-color: lightgray;
-  color: black;
-  cursor: pointer;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+  z-index: 101;
 }
 
 @media only screen and (max-width: 800px) {
-  #drop-hint-text {
-    display: none;
-  }
+  #drop-hint-text { display: none; }
+  
+  #format-containers { flex-direction: column; }
+  
   .format-container {
     width: 100%;
-    box-sizing: border-box;
-    padding: 0.8em 4em;
+    padding: 2em 1em;
+    min-height: auto;
   }
-  .format-list button {
-    width: 100%;
-  }
-  #format-containers {
-    flex-flow: column nowrap;
-  }
-  #popup {
-    width: 80vw;
-  }
+
   #side-panel {
-    width: 50%;
-    padding: 0.8em;
-    text-align: right;
-  }
-  #side-panel button {
-    font-size: 0.8rem;
-    padding: 10px;
+    width: 100%;
+    height: auto;
   }
 }
