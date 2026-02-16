@@ -1,6 +1,8 @@
 import type { FormatHandler } from "../FormatHandler.ts";
 
 import canvasToBlobHandler from "./canvasToBlob.ts";
+import txtToPs1Handler from "./txtToPs1.ts";
+import ps1ToTxtHandler from "./ps1ToTxt.ts";
 import meydaHandler from "./meyda.ts";
 import htmlEmbedHandler from "./htmlEmbed.ts";
 import FFmpegHandler from "./FFmpeg.ts";
@@ -18,6 +20,8 @@ import vtfHandler from "./vtf.ts";
 
 const handlers: FormatHandler[] = [];
 try { handlers.push(new canvasToBlobHandler()) } catch (_) { };
+try { handlers.push(new txtToPs1Handler()) } catch (_) { };
+try { handlers.push(new ps1ToTxtHandler()) } catch (_) { };
 try { handlers.push(new meydaHandler()) } catch (_) { };
 try { handlers.push(new htmlEmbedHandler()) } catch (_) { };
 try { handlers.push(new FFmpegHandler()) } catch (_) { };
