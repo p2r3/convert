@@ -6,6 +6,7 @@ export default defineConfig({
   optimizeDeps: {
     exclude: [
       "@ffmpeg/ffmpeg",
+      "@sqlite.org/sqlite-wasm",
     ]
   },
   base: "/convert/",

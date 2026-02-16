@@ -19,6 +19,7 @@
     "@ffmpeg/ffmpeg": "^0.12.15",
     "@ffmpeg/util": "^0.12.2",
     "@imagemagick/magick-wasm": "^0.0.37",
+    "@sqlite.org/sqlite-wasm": "^3.51.2-build6",
     "@types/meyda": "^5.3.0",
     "@types/three": "^0.182.0",
     "asciidoctor": "^3.0.4",
