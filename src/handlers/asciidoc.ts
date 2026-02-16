@@ -35,7 +35,7 @@ class asciidocHandler implements FormatHandler {
       format: "html",
       extension: "html",
       mime: "text/html",
-      from: true,
+      from: false,
       to: true,
       internal: "html"
     }
