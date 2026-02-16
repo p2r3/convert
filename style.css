@@ -2,6 +2,37 @@ body {
   margin: 0;
   font-family: sans-serif;
   --highlight-color: #1C77FF;
+  --bg-primary: #ffffff;
+  --bg-secondary: lightgray;
+  --bg-tertiary: rgb(184, 184, 184);
+  --text-primary: #000000;
+  --text-secondary: #333333;
+  --border-color: darkgrey;
+  --shadow-color: rgba(169, 169, 169, 0.4);
+  --popup-bg: rgba(0, 0, 0, 0.5);
+  --button-bg: white;
+  --button-text: var(--highlight-color);
+  --format-list-bg: white;
+  --search-shadow: darkgrey;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body.dark-mode {
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2a2a2a;
+  --bg-tertiary: #3a3a3a;
+  --text-primary: #ffffff;
+  --text-secondary: #cccccc;
+  --border-color: #555555;
+  --shadow-color: rgba(0, 0, 0, 0.6);
+  --popup-bg: rgba(0, 0, 0, 0.7);
+  --button-bg: #2a2a2a;
+  --button-text: #ffffff;
+  --format-list-bg: #2a2a2a;
+  --search-shadow: #555555;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
 }
 
 #file-input {
@@ -42,12 +73,18 @@ body {
   padding: 10px 20px;
   border: 0;
   border-radius: 10px;
-  background-color: white;
-  color: var(--highlight-color);
+  background-color: var(--button-bg);
+  color: var(--button-text);
   font-weight: bold;
   cursor: pointer;
-  box-shadow: 0 5px 0 0 rgba(169, 169, 169, 0.4);
+  box-shadow: 0 5px 0 0 var(--shadow-color);
   pointer-events: all;
+  margin-bottom: 10px;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+#side-panel button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 7px 0 0 var(--shadow-color);
 }
 #side-panel button:active {
   transform: translateY(5px);
@@ -72,10 +109,10 @@ body {
 }
 
 #from-container {
-  background-color: lightgray;
+  background-color: var(--bg-secondary);
 }
 #to-container {
-  background-color: rgb(184, 184, 184);
+  background-color: var(--bg-tertiary);
 }
 
 .search {
@@ -85,7 +122,9 @@ body {
   border: 0;
   border-radius: 5px;
   outline: none;
-  box-shadow: 0 5px 0 0 darkgrey;
+  box-shadow: 0 5px 0 0 var(--search-shadow);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 .format-list {
@@ -93,7 +132,7 @@ body {
   flex-flow: column nowrap;
   width: 100%;
   align-items: center;
-  background-color: white;
+  background-color: var(--format-list-bg);
   border-radius: 10px;
   padding: 30px;
   margin-bottom: 5vw;
@@ -103,13 +142,18 @@ body {
   width: 80%;
   margin: 5px 0;
   padding: 10px;
-  color: black;
-  background-color: lightgray;
+  color: var(--text-primary);
+  background-color: var(--bg-secondary);
   border: 0;
   border-radius: 10px;
   font-family: monospace;
   word-break: break-word;
   cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+.format-list button:hover {
+  background-color: var(--bg-tertiary);
+  transform: scale(1.02);
 }
 
 button.selected {
@@ -143,7 +187,7 @@ button.selected {
   top: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--popup-bg);
 }
 #popup {
   position: fixed;
@@ -151,7 +195,8 @@ button.selected {
   top: 50%;
   width: 20vw;
   transform: translate(-50%, -50%);
-  background-color: white;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   padding: 15px;
   border-radius: 10px;
   text-align: center;
@@ -162,8 +207,8 @@ button.selected {
   padding: 7px 20px;
   border: 0;
   border-radius: 10px;
-  background-color: lightgray;
-  color: black;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
   cursor: pointer;
 }
 

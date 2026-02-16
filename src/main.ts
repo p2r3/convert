@@ -11,12 +11,14 @@ let selectedFiles: File[] = [];
  *   requires the user to manually select the tool that processes the output.
  */
 let simpleMode: boolean = true;
+let darkMode: boolean = false;
 
 const ui = {
   fileInput: document.querySelector("#file-input") as HTMLInputElement,
   fileSelectArea: document.querySelector("#file-area") as HTMLDivElement,
   convertButton: document.querySelector("#convert-button") as HTMLButtonElement,
   modeToggleButton: document.querySelector("#mode-button") as HTMLButtonElement,
+  themeToggleButton: document.querySelector("#theme-button") as HTMLButtonElement,
   inputList: document.querySelector("#from-list") as HTMLDivElement,
   outputList: document.querySelector("#to-list") as HTMLDivElement,
   inputSearch: document.querySelector("#search-from") as HTMLInputElement,
@@ -24,6 +26,26 @@ const ui = {
   popupBox: document.querySelector("#popup") as HTMLDivElement,
   popupBackground: document.querySelector("#popup-bg") as HTMLDivElement
 };
+
+// Load theme from localStorage
+const savedTheme = localStorage.getItem("theme");
+if (savedTheme === "dark") {
+  darkMode = true;
+  document.body.classList.add("dark-mode");
+  ui.themeToggleButton.textContent = "Light mode";
+}
+
+const updateHighlightColor = () => {
+  let color = "#1C77FF"; // default light simple
+  if (darkMode) {
+    color = simpleMode ? "#4A90E2" : "#FF8C42"; // lighter blue for dark simple, orange for dark advanced
+  } else {
+    color = simpleMode ? "#1C77FF" : "#FF6F1C";
+  }
+  document.body.style.setProperty("--highlight-color", color);
+};
+
+updateHighlightColor();
 
 /**
  * Filters a list of butttons to exclude those not matching a substring.
@@ -294,12 +316,25 @@ ui.modeToggleButton.addEventListener("click", () => {
   simpleMode = !simpleMode;
   if (simpleMode) {
     ui.modeToggleButton.textContent = "Advanced mode";
-    document.body.style.setProperty("--highlight-color", "#1C77FF");
   } else {
     ui.modeToggleButton.textContent = "Simple mode";
-    document.body.style.setProperty("--highlight-color", "#FF6F1C");
   }
+  updateHighlightColor();
   buildOptionList();
+});
+
+ui.themeToggleButton.addEventListener("click", () => {
+  darkMode = !darkMode;
+  if (darkMode) {
+    document.body.classList.add("dark-mode");
+    ui.themeToggleButton.textContent = "Light mode";
+    localStorage.setItem("theme", "dark");
+  } else {
+    document.body.classList.remove("dark-mode");
+    ui.themeToggleButton.textContent = "Dark mode";
+    localStorage.setItem("theme", "light");
+  }
+  updateHighlightColor();
 });
 
 const convertPathCache: Array<{
