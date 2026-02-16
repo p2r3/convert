@@ -6,6 +6,8 @@ function normalizeMimeType (mime: string) {
     case "image/qoi": return "image/x-qoi";
     case "video/bink": return "video/vnd.radgamettools.bink";
     case "video/binka": return "audio/vnd.radgamettools.bink";
+    case "text/x-asciidoc": return "text/asciidoc";
+    case "application/asciidoc": return "text/asciidoc";
   }
   return mime;
 }
