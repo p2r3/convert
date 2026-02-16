@@ -5,39 +5,63 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <link rel="stylesheet" href="style.css">
   <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400..800&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Outfit:wght@100..900&display=swap" rel="stylesheet">
   <title>Convert to it!</title>
 </head>
 <body>
 
   <input id="file-input" type="file">
 
-  <div id="file-area">
-    <h2>Click to add your file</h2>
-    <p id="drop-hint-text">or drag and drop it here</p>
-  </div>
-  <div id="side-panel">
-    <button id="mode-button">Advanced mode</button>
-  </div>
+  <header class="site-header">
+    <div class="brand">
+      <span class="brand-mark">C</span>
+      <span class="brand-text">onvert.to.it</span>
+    </div>
+    <div id="side-panel">
+      <button id="mode-button">Advanced mode</button>
+    </div>
+  </header>
 
-  <div id="format-containers">
+  <main class="app-main">
 
-    <div id="from-container" class="format-container">
-      <h2>Convert from:</h2>
-      <input type="text" id="search-from" class="search" placeholder="Search">
-      <div id="from-list" class="format-list">
-
-      </div>
+    <div id="file-area">
+      <svg class="drop-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+      <h2>Drop your file here</h2>
+      <p id="drop-hint-text">or click to browse</p>
     </div>
 
-    <div id="to-container" class="format-container">
-      <h2>Convert to:</h2>
-      <input type="text" id="search-to" class="search" placeholder="Search">
-      <div id="to-list" class="format-list">
+    <section class="converter-section">
+      <div id="format-containers">
+
+        <div id="from-container" class="format-container">
+          <h2><span class="format-label">From</span> Input Format</h2>
+          <input type="text" id="search-from" class="search" placeholder="Search formats...">
+          <div id="from-list" class="format-list"></div>
+        </div>
+
+        <div class="converter-arrow" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </div>
+
+        <div id="to-container" class="format-container">
+          <h2><span class="format-label">To</span> Output Format</h2>
+          <input type="text" id="search-to" class="search" placeholder="Search formats...">
+          <div id="to-list" class="format-list"></div>
+        </div>
 
       </div>
-    </div>
+    </section>
 
-  </div>
+  </main>
 
   <button id="convert-button" class="disabled">Convert</button>
 
