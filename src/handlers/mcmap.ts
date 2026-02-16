@@ -112,25 +112,27 @@ class mcMapHandler implements FormatHandler {
         console.log(inputFiles[0].bytes, inputFormat, outputFormat)
 
         if (inputFormat.internal == "mcmap" && outputFormat.internal == "rgb") {
-            try {
-                const result = pako.ungzip(inputFiles[0].bytes);
-                const nbt = await NBT.read(result);
-                if (NBT.isTag<NBT.CompoundTag>(nbt.data)) {
-                    const data: NBT.CompoundTag = nbt.data;
-                    const mapdata = data["data"];
-                    if (NBT.isTag<NBT.CompoundTag>(mapdata)) {
-                        const width = NBT.isTag<NBT.IntTag>(mapdata["width"]) ? mapdata["width"].valueOf() : DEFAULT_WIDTH;
-                        const height = NBT.isTag<NBT.IntTag>(mapdata["height"]) ? mapdata["height"].valueOf() : DEFAULT_HEIGHT;
-                        const colors = NBT.isTag<NBT.ByteArrayTag>(mapdata["colors"]) ? new Uint8Array(mapdata["colors"]) : new Uint8Array([]);
-                        const bytes = map2rgb(colors, width, height);
-                        outputFiles.push({
-                            name: inputFiles[0].name,
-                            bytes: new Uint8Array(bytes)
-                        })
+            for (const file of inputFiles) {
+                try {
+                    const result = pako.ungzip(file.bytes);
+                    const nbt = await NBT.read(result);
+                    if (NBT.isTag<NBT.CompoundTag>(nbt.data)) {
+                        const data: NBT.CompoundTag = nbt.data;
+                        const mapdata = data["data"];
+                        if (NBT.isTag<NBT.CompoundTag>(mapdata)) {
+                            const width = NBT.isTag<NBT.IntTag>(mapdata["width"]) ? mapdata["width"].valueOf() : DEFAULT_WIDTH;
+                            const height = NBT.isTag<NBT.IntTag>(mapdata["height"]) ? mapdata["height"].valueOf() : DEFAULT_HEIGHT;
+                            const colors = NBT.isTag<NBT.ByteArrayTag>(mapdata["colors"]) ? new Uint8Array(mapdata["colors"]) : new Uint8Array([]);
+                            const bytes = map2rgb(colors, width, height);
+                            outputFiles.push({
+                                name: file.name,
+                                bytes: new Uint8Array(bytes)
+                            })
+                        }
                     }
+                } catch (e) {
+                    console.error(e);
                 }
-            } catch (e) {
-                console.error(e);
             }
         }
         if (inputFormat.internal == "rgb" && outputFormat.internal == "mcmap") {
