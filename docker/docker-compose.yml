@@ -1,0 +1,6 @@
+services:
+  convert:
+    image: ghcr.io/${GITHUB_REPOSITORY:-p2r3/convert}:${CONVERT_IMAGE_TAG:-latest}
+    ports:
+      - "8080:80"
+    restart: unless-stopped

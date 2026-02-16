@@ -108,7 +108,11 @@ class canvasToBlobHandler implements FormatHandler {
       } else {
 
         const blob = new Blob([inputFile.bytes as BlobPart], { type: inputFormat.mime });
-        const url = URL.createObjectURL(blob);
+        // For SVG, convert to data URL to avoid "Tainted canvases may not be exported" error
+        const url =
+          inputFormat.mime === "image/svg+xml"
+            ? `data:${inputFormat.mime};base64,${btoa(String.fromCharCode(...inputFile.bytes))}`
+            : URL.createObjectURL(blob);
 
         const image = new Image();
         await new Promise((resolve, reject) => {

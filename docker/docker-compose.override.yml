@@ -1,0 +1,6 @@
+services:
+  convert:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: convert:dev

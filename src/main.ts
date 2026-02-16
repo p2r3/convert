@@ -12,6 +12,13 @@ let selectedFiles: File[] = [];
  */
 let simpleMode: boolean = true;
 
+/** Handlers that support conversion from any formats. */
+const conversionsFromAnyInput: ConvertPathNode[] = handlers
+.filter(h => h.supportAnyInput && h.supportedFormats)
+.flatMap(h => h.supportedFormats!
+  .filter(f => f.to)
+  .map(f => ({ handler: h, format: f})))
+
 const ui = {
   fileInput: document.querySelector("#file-input") as HTMLInputElement,
   fileSelectArea: document.querySelector("#file-area") as HTMLDivElement,
@@ -353,6 +360,8 @@ async function buildConvertPath (
 
   convertPathCache.length = 0;
 
+  let isNestedConversion: boolean = false;
+
   while (queue.length > 0) {
     const path = queue.shift();
     if (!path) continue;
@@ -391,6 +400,19 @@ async function buildConvertPath (
         const attempt = await attemptConvertPath(files, path.concat(target));
         if (attempt) return attempt;
       }
+    }
+
+    // Look for conversions from any input format.
+    // Checked only if there is no direct conversion between the requested formats.
+    if (!isNestedConversion) {
+      const anyConversions = conversionsFromAnyInput.filter(c => c.format.mime == target.format.mime);
+
+      for (const conversion of anyConversions) {
+        const attempt = await attemptConvertPath(files, path.concat(conversion));
+        if (attempt) return attempt; 
+      }
+
+      isNestedConversion = true;
     }
 
     // Look for untested mime types among valid handlers and add to queue
