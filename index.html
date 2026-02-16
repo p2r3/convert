@@ -11,33 +11,67 @@
 
   <input id="file-input" type="file">
 
-  <div id="file-area">
-    <h2>Click to add your file</h2>
-    <p id="drop-hint-text">or drag and drop it here</p>
-  </div>
-  <div id="side-panel">
-    <button id="mode-button">Advanced mode</button>
-  </div>
-
-  <div id="format-containers">
-
-    <div id="from-container" class="format-container">
-      <h2>Convert from:</h2>
-      <input type="text" id="search-from" class="search" placeholder="Search">
-      <div id="from-list" class="format-list">
-
-      </div>
+  <nav>
+    <span class="nav-title">Convert</span>
+    <div class="mode-switch">
+      <span class="mode-label active" id="mode-label-simple">Simple</span>
+      <button id="mode-button" class="toggle-switch" role="switch" aria-checked="false">
+        <span class="toggle-thumb"></span>
+      </button>
+      <span class="mode-label" id="mode-label-advanced">Advanced</span>
     </div>
+  </nav>
 
-    <div id="to-container" class="format-container">
-      <h2>Convert to:</h2>
-      <input type="text" id="search-to" class="search" placeholder="Search">
-      <div id="to-list" class="format-list">
+  <main>
 
+    <section id="file-area">
+      <div class="upload-icon">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
       </div>
-    </div>
+      <h2>Drop your file here</h2>
+      <p id="drop-hint-text">or click to browse</p>
+    </section>
 
-  </div>
+    <section id="format-containers">
+
+      <div id="from-container" class="format-container">
+        <label class="format-label">From</label>
+        <div class="search-wrapper">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" id="search-from" class="search" placeholder="Search formats...">
+        </div>
+        <div id="from-list" class="format-list"></div>
+      </div>
+
+      <div class="format-divider" aria-hidden="true">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="5" y1="12" x2="19" y2="12"/>
+          <polyline points="12 5 19 12 12 19"/>
+        </svg>
+      </div>
+
+      <div id="to-container" class="format-container">
+        <label class="format-label">To</label>
+        <div class="search-wrapper">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" id="search-to" class="search" placeholder="Search formats...">
+        </div>
+        <div id="to-list" class="format-list"></div>
+      </div>
+
+    </section>
+
+  </main>
 
   <button id="convert-button" class="disabled">Convert</button>
 

@@ -56,7 +56,7 @@ const searchHandler = (event: Event) => {
   const target = event.target;
   if (!(target instanceof HTMLInputElement)) return;
 
-  const targetParentList = target.parentElement?.querySelector(".format-list");
+  const targetParentList = target.closest(".format-container")?.querySelector(".format-list");
   if (!(targetParentList instanceof HTMLDivElement)) return;
 
   const string = target.value.toLowerCase();
@@ -103,10 +103,15 @@ const fileSelectHandler = (event: Event) => {
   files.sort((a, b) => a.name === b.name ? 0 : (a.name < b.name ? -1 : 1));
   selectedFiles = files;
 
-  ui.fileSelectArea.innerHTML = `<h2>
-    ${files[0].name}
-    ${files.length > 1 ? `<br>... and ${files.length - 1} more` : ""}
-  </h2>`;
+  ui.fileSelectArea.innerHTML = `
+    <div class="upload-icon">
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+      </svg>
+    </div>
+    <h2>${files[0].name}</h2>
+    ${files.length > 1 ? `<p class="file-count">and ${files.length - 1} more</p>` : ""}`;
 
   // Common MIME type adjustments (to match "mime" library)
   let mimeType = normalizeMimeType(files[0].type);
@@ -292,13 +297,10 @@ async function buildOptionList () {
 
 ui.modeToggleButton.addEventListener("click", () => {
   simpleMode = !simpleMode;
-  if (simpleMode) {
-    ui.modeToggleButton.textContent = "Advanced mode";
-    document.body.style.setProperty("--highlight-color", "#1C77FF");
-  } else {
-    ui.modeToggleButton.textContent = "Simple mode";
-    document.body.style.setProperty("--highlight-color", "#FF6F1C");
-  }
+  ui.modeToggleButton.classList.toggle("active", !simpleMode);
+  ui.modeToggleButton.setAttribute("aria-checked", (!simpleMode).toString());
+  document.getElementById("mode-label-simple")?.classList.toggle("active", simpleMode);
+  document.getElementById("mode-label-advanced")?.classList.toggle("active", !simpleMode);
   buildOptionList();
 });
 
