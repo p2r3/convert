@@ -2,6 +2,7 @@ import type { FormatHandler } from "../FormatHandler.ts";
 
 import canvasToBlobHandler from "./canvasToBlob.ts";
 import meydaHandler from "./meyda.ts";
+import htmlEmbedHandler from "./htmlEmbed.ts";
 import FFmpegHandler from "./FFmpeg.ts";
 import pdftoimgHandler from "./pdftoimg.ts";
 import ImageMagickHandler from "./ImageMagick.ts";
@@ -16,8 +17,8 @@ import vtfHandler from "./vtf.ts";
 
 const handlers: FormatHandler[] = [];
 try { handlers.push(new canvasToBlobHandler()) } catch (_) { };
-try { handlers.push(new canvasToBlobHandler()) } catch (_) { };
 try { handlers.push(new meydaHandler()) } catch (_) { };
+try { handlers.push(new htmlEmbedHandler()) } catch (_) { };
 try { handlers.push(new FFmpegHandler()) } catch (_) { };
 try { handlers.push(new pdftoimgHandler()) } catch (_) { };
 try { handlers.push(new ImageMagickHandler()) } catch (_) { };
