@@ -20,7 +20,7 @@ For a semi-technical overview of this tool, check out the video: https://youtu.b
 
 ## Deployment
 
-Here's how to deploy this project locally:
+### Local development (Bun + Vite)
 
 1. Clone this repository ***WITH SUBMODULES***. You can use `git clone --recursive https://github.com/p2r3/convert` for that. Omitting submodules will leave you missing a few dependencies.
 2. Install [Bun](https://bun.sh/).
@@ -32,6 +32,28 @@ _The following steps are optional, but recommended for performance:_
 When you first open the page, it'll take a while to generate the list of supported formats for each tool. If you open the console, you'll see it complaining a bunch about missing caches.
 
 After this is done (indicated by a `Built initial format list` message in the console), use `printSupportedFormatCache()` to get a JSON string with the cache data. You can then save this string to `cache.json` to skip that loading screen on startup.
+
+### Docker (prebuilt image)
+
+Docker compose files live in the `docker/` directory, so run compose with `-f` from the repository root:
+
+```bash
+docker compose -f docker/docker-compose.yml up -d
+```
+
+Alternatively download the `docker-compose.yml` separately and start it by executing `docker compose up -d` in the same directory.
+
+This runs the container on `http://localhost:8080/convert/`.
+
+### Docker (local build for development)
+
+Use the override file to build the image locally:
+
+```bash
+docker compose -f docker/docker-compose.yml -f docker/docker-compose.override.yml up --build -d
+```
+
+The first Docker build is expected to be slow because Chromium and related system packages are installed in the build stage (needed for puppeteer in `buildCache.js`). Later builds are usually much faster due to Docker layer caching.
 
 ## Contributing
 
