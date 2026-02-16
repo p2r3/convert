@@ -2,51 +2,48 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="A simple and fast file converter.">
   <link rel="stylesheet" href="style.css">
-  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
-  <title>Convert to it!</title>
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <title>Convert to it! | File Converter</title>
 </head>
 <body>
 
-  <input id="file-input" type="file">
+  <input id="file-input" type="file" hidden aria-hidden="true">
 
-  <div id="file-area">
-    <h2>Click to add your file</h2>
-    <p id="drop-hint-text">or drag and drop it here</p>
-  </div>
-  <div id="side-panel">
-    <button id="mode-button">Advanced mode</button>
-  </div>
+  <main>
+    <section id="file-area" role="button" tabindex="0" aria-label="Upload file">
+      <h2>Click to add your file</h2>
+      <p id="drop-hint-text">or drag and drop it here</p>
+    </section>
 
-  <div id="format-containers">
+    <aside id="side-panel">
+      <button id="mode-button" type="button">Advanced mode</button>
+    </aside>
 
-    <div id="from-container" class="format-container">
-      <h2>Convert from:</h2>
-      <input type="text" id="search-from" class="search" placeholder="Search">
-      <div id="from-list" class="format-list">
-
+    <section id="format-containers">
+      <div id="from-container" class="format-container">
+        <label for="search-from"><h2>Convert from:</h2></label>
+        <input type="search" id="search-from" class="search" placeholder="Search formats...">
+        <div id="from-list" class="format-list" role="listbox"></div>
       </div>
-    </div>
 
-    <div id="to-container" class="format-container">
-      <h2>Convert to:</h2>
-      <input type="text" id="search-to" class="search" placeholder="Search">
-      <div id="to-list" class="format-list">
-
+      <div id="to-container" class="format-container">
+        <label for="search-to"><h2>Convert to:</h2></label>
+        <input type="search" id="search-to" class="search" placeholder="Search formats...">
+        <div id="to-list" class="format-list" role="listbox"></div>
       </div>
-    </div>
+    </section>
 
-  </div>
+    <button id="convert-button" class="disabled" type="button">Convert</button>
+  </main>
 
-  <button id="convert-button" class="disabled">Convert</button>
-
-  <div id="popup-bg"></div>
-  <div id="popup">
-    <h2>Loading tools...</h2>
+  <div id="popup-bg" aria-hidden="true"></div>
+  <div id="popup" role="dialog" aria-labelledby="popup-title">
+    <h2 id="popup-title">Loading tools...</h2>
   </div>
 
   <script type="module" src="src/main.ts"></script>
-
 </body>
 </html>
