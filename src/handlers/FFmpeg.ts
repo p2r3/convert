@@ -228,7 +228,17 @@ class FFmpegHandler implements FormatHandler {
 
     let bytes: Uint8Array;
 
-    const fileData = await this.#ffmpeg.readFile("output");
+    // Validate that output file exists before attempting to read
+    let fileData;
+    try {
+      fileData = await this.#ffmpeg.readFile("output");
+    } catch (e) {
+      throw `Output file not created: ${e}`;
+    }
+
+    if (!fileData || (fileData instanceof Uint8Array && fileData.length === 0)) {
+      throw "FFmpeg failed to produce output file";
+    }
     if (!(fileData instanceof Uint8Array)) {
       const encoder = new TextEncoder();
       bytes = encoder.encode(fileData);
