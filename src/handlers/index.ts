@@ -18,6 +18,9 @@ import vtfHandler from "./vtf.ts";
 import mcMapHandler from "./mcmap.ts";
 import jszipHandler from "./jszip.ts";
 import nbtHandler from "./nbt.ts";
+import peToZipHandler from "./petozip.ts";
+import flptojsonHandler from "./flptojson.ts";
+import floHandler from "./flo.ts";
 
 const handlers: FormatHandler[] = [];
 try { handlers.push(new canvasToBlobHandler()) } catch (_) { };
@@ -38,5 +41,8 @@ try { handlers.push(new vtfHandler()) } catch (_) { };
 try { handlers.push(new mcMapHandler()) } catch (_) { };
 try { handlers.push(new jszipHandler()) } catch (_) { };
 try { handlers.push(new nbtHandler()) } catch (_) { };
+try { handlers.push(new peToZipHandler()) } catch (_) { };
+try { handlers.push(new flptojsonHandler()) } catch (_) { };
+try { handlers.push(new floHandler()) } catch (_) { };
 
 export default handlers;
