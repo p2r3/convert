@@ -337,14 +337,8 @@ async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
     } catch (e) {
       console.log(path.map(c => c.format.format));
       console.error(handler.name, `${path[i].format.format} → ${path[i + 1].format.format}`, e);
-      // Continue exploring other paths instead of returning null
+      return null;
     }
-  }
-
-  // PURPOSE: Validate that the full path was completed successfully
-  // Moved path completion validation after the for loop
-  if (convertPathCache.length !== path.length - 1) {
-    return null; // Path not completed - didn't reach target format
   }
 
   return { files, path };
