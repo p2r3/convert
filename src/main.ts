@@ -358,6 +358,9 @@ async function buildConvertPath (
 ) {
 
   convertPathCache.length = 0;
+  
+  // Track visited paths to prevent infinite loops
+  const visitedPaths = new Set<string>();
 
   while (queue.length > 0) {
     const path = queue.shift();
@@ -407,7 +410,15 @@ async function buildConvertPath (
         if (!format.to) continue;
         if (!format.mime) continue;
         if (path.some(c => c.format === format)) continue;
-        queue.push(path.concat({ format, handler }));
+        
+        const newPath = path.concat({ format, handler });
+        const pathSignature = newPath.map(c => c.format.format).join("→");
+        
+        // Skip if we've already explored this path
+        if (visitedPaths.has(pathSignature)) continue;
+        
+        visitedPaths.add(pathSignature);
+        queue.push(newPath);
       }
     }
   }
