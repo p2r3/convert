@@ -337,7 +337,7 @@ async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
     } catch (e) {
       console.log(path.map(c => c.format.format));
       console.error(handler.name, `${path[i].format.format} → ${path[i + 1].format.format}`, e);
-      return null;
+      // Continue exploring other paths instead of returning null
     }
   }
 
