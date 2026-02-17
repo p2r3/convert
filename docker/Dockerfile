@@ -17,7 +17,7 @@ COPY . .
 RUN bun run build
 RUN bun run buildCache.js dist/cache.json
 
-FROM nginx:1.27-alpine AS runtime
+FROM nginx:stable-alpine AS runtime
 
 COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html/convert
