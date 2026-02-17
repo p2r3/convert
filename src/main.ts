@@ -422,7 +422,7 @@ async function buildConvertPath (
         if (path.some(c => c.format === format)) continue;
         
         const newPath = path.concat({ format, handler });
-        const pathSignature = newPath.map(c => c.format.format).join("→");
+        const pathSignature = newPath.map(c => c.format.format).join("•");
         
         console.log(`Exploring path: ${pathSignature}`);
         
