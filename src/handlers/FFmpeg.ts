@@ -164,6 +164,17 @@ class FFmpegHandler implements FormatHandler {
     // AV1 doesn't seem to be included in WASM FFmpeg
     this.supportedFormats.splice(this.supportedFormats.findIndex(c => c.mime === "image/avif"), 1);
 
+    // Add .qta (QuickTime Audio) support - uses same mov demuxer
+    this.supportedFormats.push({
+      name: "QuickTime Audio",
+      format: "qta",
+      extension: "qta",
+      mime: "video/quicktime",
+      from: true,
+      to: true,
+      internal: "mov"
+    });
+
     this.#ffmpeg.terminate();
 
     this.ready = true;
@@ -215,12 +226,19 @@ class FFmpegHandler implements FormatHandler {
 
     if (stdout.includes("Conversion failed!\n")) {
 
-      if (!args) {
-        if (stdout.includes("Valid sizes are")) {
-          const newSize = stdout.split("Valid sizes are ")[1].split(".")[0].split(" ").pop();
-          if (typeof newSize !== "string") throw stdout;
-          return this.doConvert(inputFiles, inputFormat, outputFormat, ["-s", newSize]);
-        }
+      const oldArgs = args ? args : []
+      if (stdout.includes(" not divisible by") && !oldArgs.includes("-vf")) {
+        const division = stdout.split(" not divisible by ")[1].split(" ")[0];
+        return this.doConvert(inputFiles, inputFormat, outputFormat, [...oldArgs, "-vf", `pad=ceil(iw/${division})*${division}:ceil(ih/${division})*${division}`]);
+      }
+      if (stdout.includes("width and height must be a multiple of") && !oldArgs.includes("-vf")) {
+        const division = stdout.split("width and height must be a multiple of ")[1].split(" ")[0].split("")[0];
+        return this.doConvert(inputFiles, inputFormat, outputFormat, [...oldArgs, "-vf", `pad=ceil(iw/${division})*${division}:ceil(ih/${division})*${division}`]);
+      }
+      if (stdout.includes("Valid sizes are") && !oldArgs.includes("-s")) {
+        const newSize = stdout.split("Valid sizes are ")[1].split(".")[0].split(" ").pop();
+        if (typeof newSize !== "string") throw stdout;
+        return this.doConvert(inputFiles, inputFormat, outputFormat, [...oldArgs, "-s", newSize]);
       }
 
       throw stdout;
@@ -228,7 +246,17 @@ class FFmpegHandler implements FormatHandler {
 
     let bytes: Uint8Array;
 
-    const fileData = await this.#ffmpeg.readFile("output");
+    // Validate that output file exists before attempting to read
+    let fileData;
+    try {
+      fileData = await this.#ffmpeg.readFile("output");
+    } catch (e) {
+      throw `Output file not created: ${e}`;
+    }
+
+    if (!fileData || (fileData instanceof Uint8Array && fileData.length === 0)) {
+      throw "FFmpeg failed to produce output file";
+    }
     if (!(fileData instanceof Uint8Array)) {
       const encoder = new TextEncoder();
       bytes = encoder.encode(fileData);
