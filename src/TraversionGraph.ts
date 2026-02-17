@@ -33,6 +33,7 @@ export class TraversionGraph {
 
     public init() {
         console.log("Initializing traversion graph...");
+        const startTime = performance.now();
         window.supportedFormatCache.forEach((formats, handler) => {
             let fromIndices: Array<{format: FileFormat, index: number}> = [];
             let toIndices: Array<{format: FileFormat, index: number}> = [];
@@ -83,7 +84,8 @@ export class TraversionGraph {
                 });
             });
         });
-        console.log("Traversion graph initialized with " + this.nodes.length + " nodes and " + this.edges.length + " edges.");
+        const endTime = performance.now();
+        console.log(`Traversion graph initialized in ${(endTime - startTime).toFixed(2)} ms with ${this.nodes.length} nodes and ${this.edges.length} edges.`);
     }
     public getData() : {nodes: Node[], edges: Edge[]} {
         return {nodes: this.nodes, edges: this.edges};
@@ -91,11 +93,11 @@ export class TraversionGraph {
     public print() {
         let output = "Nodes:\n";
         this.nodes.forEach((node, index) => {
-            output += index + ": " + node.mime + "\n";
+            output += `${index}: ${node.mime}\n`;
         });
         output += "Edges:\n";
         this.edges.forEach((edge, index) => {
-            output += index + ": " + edge.from.format.mime + " -> " + edge.to.format.mime + " (handler: " + edge.handler + ", cost: " + edge.cost + ")\n";
+            output += `${index}: ${edge.from.format.mime} -> ${edge.to.format.mime} (handler: ${edge.handler}, cost: ${edge.cost})\n`;
         });
         console.log(output);
     }
@@ -109,7 +111,7 @@ export class TraversionGraph {
         let toIndex = this.nodes.findIndex(node => node.mime === to.format.mime);
         if (fromIndex === -1 || toIndex === -1) return []; // If either format is not in the graph, return empty array
         queue.push({index: fromIndex, cost: 0, path: [from] });
-        console.log("Starting path search from " + from.format.mime + "(" + from.handler?.name + ") to " + to.format.mime + "(" + to.handler?.name + ") (simple mode: " + simpleMode + ")");
+        console.log(`Starting path search from ${from.format.mime}(${from.handler?.name}) to ${to.format.mime}(${to.handler?.name}) (simple mode: ${simpleMode})`);
         let iterations = 0;
         let pathsFound = 0;
         while (queue.length > 0) {
@@ -120,9 +122,9 @@ export class TraversionGraph {
             if (visited.has(current.index)) continue;
             if (current.index === toIndex) {
                 // Return the path of handlers and formats to get from the input format to the output format
-                console.log("Found path at iteration " + iterations + " with cost " + current.cost + ": " + current.path.map(p => p.handler.name + "(" + p.format.mime + ")").join(" -> "));
+                console.log(`Found path at iteration ${iterations} with cost ${current.cost}: ${current.path.map(p => p.handler.name + "(" + p.format.mime + ")").join(" -> ")}`);
                 if (simpleMode || !to.handler || to.handler.name === current.path.at(-1)?.handler.name) {
-                    console.log("Path valid! Yielding path: " + current.path.map(p => p.format.mime).join(" → "));
+                    console.log(`Path valid! Yielding path: ${current.path.map(p => p.format.mime).join(" → ")}`);
                     yield current.path; 
                     pathsFound++;
                 }
@@ -141,9 +143,9 @@ export class TraversionGraph {
                 });
             });
             if (iterations % 100 === 0) {
-                console.log("Still searching... Iterations: " + iterations + ", Paths found: " + pathsFound + ", Queue length: " + queue.length);
+                console.log(`Still searching... Iterations: ${iterations}, Paths found: ${pathsFound}, Queue length: ${queue.length}`);
             }
         }
-        console.log("Path search completed. Total iterations: " + iterations + ", Total paths found: " + pathsFound);
+        console.log(`Path search completed. Total iterations: ${iterations}, Total paths found: ${pathsFound}`);
     }
 }
