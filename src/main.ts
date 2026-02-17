@@ -13,6 +13,13 @@ let selectedFiles: File[] = [];
  */
 let simpleMode: boolean = true;
 
+/** Handlers that support conversion from any formats. */
+const conversionsFromAnyInput: ConvertPathNode[] = handlers
+.filter(h => h.supportAnyInput && h.supportedFormats)
+.flatMap(h => h.supportedFormats!
+  .filter(f => f.to)
+  .map(f => ({ handler: h, format: f})))
+
 const ui = {
   fileInput: document.querySelector("#file-input") as HTMLInputElement,
   fileSelectArea: document.querySelector("#file-area") as HTMLDivElement,
@@ -370,6 +377,14 @@ async function buildConvertPath (
   queue: ConvertPathNode[][]
 ) {
   convertPathCache.length = 0;
+  
+  // Track visited paths to prevent infinite loops
+  const visitedPaths = new Set<string>();
+  
+  // Track dead end formats for backtracking
+  const deadEndFormats = new Set<string>();
+
+  let isNestedConversion: boolean = false;
 
   while (queue.length > 0) {
     const path = queue.shift();
@@ -392,6 +407,19 @@ async function buildConvertPath (
         format.from
       ))
     ));
+    
+    // If no handlers can proceed from this format, mark as dead end
+    if (validHandlers.length === 0) {
+      console.log(`Dead end detected: ${previous.format.format} (no handlers can take this format as input)`);
+      deadEndFormats.add(previous.format.format);
+      continue;
+    }
+
+    // Check if current format is a known dead end
+    if (deadEndFormats.has(previous.format.format)) {
+      console.log(`Skipping known dead end format: ${previous.format.format}`);
+      continue;
+    }
 
     if (simpleMode) {
       // Try *all* supported handlers that output the target format
@@ -427,6 +455,18 @@ async function buildConvertPath (
       }
       return result;
     });
+    // Look for conversions from any input format.
+    // Checked only if there is no direct conversion between the requested formats.
+    if (!isNestedConversion) {
+      const anyConversions = conversionsFromAnyInput.filter(c => c.format.mime == target.format.mime);
+
+      for (const conversion of anyConversions) {
+        const attempt = await attemptConvertPath(files, path.concat(conversion));
+        if (attempt) return attempt; 
+      }
+
+      isNestedConversion = true;
+    }
 
     // Look for untested mime types among valid handlers and add to queue
     for (const handler of validHandlers) {
@@ -436,7 +476,20 @@ async function buildConvertPath (
         if (!format.to) continue;
         if (!format.mime) continue;
         if (path.some(c => c.format === format)) continue;
-        queue.push(path.concat({ format, handler }));
+        
+        const newPath = path.concat({ format, handler });
+        const pathSignature = newPath.map(c => c.format.format).join("•");
+        
+        console.log(`Exploring path: ${pathSignature}`);
+        
+        // Skip if we've already explored this path
+        if (visitedPaths.has(pathSignature)) {
+          console.log(`Skipping already visited path: ${pathSignature}`);
+          continue;
+        }
+        
+        visitedPaths.add(pathSignature);
+        queue.push(newPath);
       }
     }
   }

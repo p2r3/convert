@@ -130,9 +130,7 @@ class meydaHandler implements FormatHandler {
     const bufferSize = 2048;
     const hopSize = bufferSize / 2;
 
-    if (inputIsImage === outputIsImage) {
-      throw "Invalid input/output format.";
-    }
+
 
     if (inputIsImage) {
       for (const inputFile of inputFiles) {
@@ -162,12 +160,6 @@ class meydaHandler implements FormatHandler {
         const sampleRate = this.#audioContext.sampleRate;
 
         const audioData = new Float32Array(imageWidth * hopSize + bufferSize);
-        const window = new Float32Array(bufferSize);
-
-        // Generate Hanning window
-        for (let i = 0; i < bufferSize; i++) {
-          window[i] = 0.5 * (1 - Math.cos(2 * Math.PI * i / bufferSize));
-        }
 
         // Precompute sine and cosine waves for each frequency
         const sineWaves = new Float32Array(imageHeight * bufferSize);
@@ -202,10 +194,10 @@ class meydaHandler implements FormatHandler {
             }
           }
 
-          // Apply window and overlap-add
+          // overlap-add
           const outputOffset = x * hopSize;
           for (let s = 0; s < bufferSize; s ++) {
-            audioData[outputOffset + s] += frameData[s] * window[s];
+            audioData[outputOffset + s] += frameData[s];
           }
         }
 
@@ -258,7 +250,8 @@ class meydaHandler implements FormatHandler {
 
           const pixels = new Uint8ClampedArray(imageHeight * 4);
           for (let j = 0; j < imageHeight; j ++) {
-            const magnitude = Math.sqrt(real[j] * real[j] + imaginary[j] * imaginary[j]);
+            // Calculate amplitude, amplitude is halved when only half of the FFT is used, so double it
+            const magnitude = Math.sqrt(real[j] * real[j] + imaginary[j] * imaginary[j]) / bufferSize * 2;
             const phase = Math.atan2(imaginary[j], real[j]);
             const pixelIndex = (imageHeight - j - 1) * 4;
             // Encode magnitude in R, G channels

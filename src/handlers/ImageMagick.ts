@@ -75,9 +75,15 @@ class ImageMagickHandler implements FormatHandler {
     const inputSettings = new MagickReadSettings();
     inputSettings.format = inputMagickFormat;
 
+
     const bytes: Uint8Array = await new Promise(resolve => {
       MagickImageCollection.use(outputCollection => {
         for (const inputFile of inputFiles) {
+           if (inputFormat.format == "rgb") {
+             // Guess how big the Image should be
+             inputSettings.width = Math.sqrt(inputFile.bytes.length / 3);
+             inputSettings.height = inputSettings.width;
+           }
           MagickImageCollection.use(fileCollection => {
             fileCollection.read(inputFile.bytes, inputSettings);
             while (fileCollection.length > 0) {

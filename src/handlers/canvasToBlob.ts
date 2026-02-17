@@ -1,4 +1,5 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
+import { imageToText, rgbaToGrayscale } from "./image-to-txt/src/convert.ts";
 
 class canvasToBlobHandler implements FormatHandler {
 
@@ -64,7 +65,7 @@ class canvasToBlobHandler implements FormatHandler {
       extension: "txt",
       mime: "text/plain",
       from: true,
-      to: false,
+      to: true,
       internal: "text",
       category: "text"
     }
@@ -136,12 +137,27 @@ class canvasToBlobHandler implements FormatHandler {
 
       }
 
-      const bytes: Uint8Array = await new Promise((resolve, reject) => {
-        this.#canvas!.toBlob((blob) => {
-          if (!blob) return reject("Canvas output failed");
-          blob.arrayBuffer().then(buf => resolve(new Uint8Array(buf)));
-        }, outputFormat.mime);
-      });
+      let bytes: Uint8Array;
+      if(outputFormat.mime == "text/plain") {
+        const pixels = this.#ctx.getImageData(0, 0, this.#canvas.width, this.#canvas.height);
+        bytes = new TextEncoder().encode(imageToText({
+          width() { return pixels.width; },
+          height() { return pixels.height; },
+          getPixel(x: number, y: number) {
+            const index = (y*pixels.width + x)*4;
+            return rgbaToGrayscale(pixels.data[index]/255, pixels.data[index+1]/255, pixels.data[index+2]/255, pixels.data[index+3]/255);
+          }
+        }));
+      }
+      else {
+        bytes = await new Promise((resolve, reject) => {
+          this.#canvas!.toBlob((blob) => {
+            if (!blob) return reject("Canvas output failed");
+            blob.arrayBuffer().then(buf => resolve(new Uint8Array(buf)));
+          }, outputFormat.mime);
+        });
+      }
+
       const name = inputFile.name.split(".")[0] + "." + outputFormat.extension;
 
       outputFiles.push({ bytes, name });

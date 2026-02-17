@@ -13,16 +13,35 @@ For a semi-technical overview of this tool, check out the video: https://youtu.b
 
 1. Go to [convert.to.it](https://convert.to.it/)
 2. Click the big blue box to add your file (or just drag it on to the window).
-3. An input format should have been automatically selected. If it wasn't, yikes! Try searching for it, or [open an issue](https://github.com/p2r3/convert/issues/new) if it's really not there.
+3. An input format should have been automatically selected. If it wasn't, yikes! Try searching for it, or if it's really not there, see the "Issues" section below.
 4. Select an output format from the second list. If you're on desktop, that's the one on the right side. If you're on mobile, it'll be somewhere lower down.
 5. Click **Convert**!
-6. Hopefully, after a bit (or a lot) of thinking, the program will spit out the file you wanted. If not, [open an issue](https://github.com/p2r3/convert/issues/new) or cope and seethe.
+6. Hopefully, after a bit (or a lot) of thinking, the program will spit out the file you wanted. If not, see the "Issues" section below.
+
+## Issues
+
+Ever since the YouTube video released, we've been getting spammed with issues suggesting the addition of all kinds of niche file formats. To keep things organized, I've decided to specify what counts as a valid issue and what doesn't.
+
+**SIMPLY ASKING FOR A FILE FORMAT TO BE ADDED IS NOT A MEANINGFUL ISSUE!**
+
+There are thousands of file formats out there. It can take hours to add support for just one. The math is simple - we can't possibly support every single file. As such, simply listing your favorite file formats is not helpful. We already know that there are formats we don't support, we don't need tickets to tell us that.
+
+When suggesting a file format, you must _at minimum_:
+- Make sure that there isn't already an issue about the same thing, and that we don't already support the format.
+- Explain what you expect the conversion to be like (what medium is it converting to/from).
+- Provide links to existing browser-based solutions if possible, or at the very least a reference for implementing the format, and make sure the license is compatible with GPL-2.0.
+
+If this seems like a lot, please remember - a developer will have to do 100x more work to actually implement the format. Doing a bit of research not only saves them precious time, it also weeds out "unserious" proposals that would only bloat our to-do list.
+
+**If you're submitting a bug report,** you only need to do step 1 - check if the problem isn't already reported by someone else. Bug reports are generally quite important otherwise.
+
+Though please note, "converting X to Y doesn't work" is **not** a bug report.  However, "converting X to Y works but not how I expected" likely **is** a bug report.
 
 ## Deployment
 
-Here's how to deploy this project locally:
+### Local development (Bun + Vite)
 
-1. Clone this repository.
+1. Clone this repository ***WITH SUBMODULES***. You can use `git clone --recursive https://github.com/p2r3/convert` for that. Omitting submodules will leave you missing a few dependencies.
 2. Install [Bun](https://bun.sh/).
 3. Run `bun install` to install dependencies.
 4. Run `bunx vite` to start the development server.
@@ -32,6 +51,28 @@ _The following steps are optional, but recommended for performance:_
 When you first open the page, it'll take a while to generate the list of supported formats for each tool. If you open the console, you'll see it complaining a bunch about missing caches.
 
 After this is done (indicated by a `Built initial format list` message in the console), use `printSupportedFormatCache()` to get a JSON string with the cache data. You can then save this string to `cache.json` to skip that loading screen on startup.
+
+### Docker (prebuilt image)
+
+Docker compose files live in the `docker/` directory, so run compose with `-f` from the repository root:
+
+```bash
+docker compose -f docker/docker-compose.yml up -d
+```
+
+Alternatively download the `docker-compose.yml` separately and start it by executing `docker compose up -d` in the same directory.
+
+This runs the container on `http://localhost:8080/convert/`.
+
+### Docker (local build for development)
+
+Use the override file to build the image locally:
+
+```bash
+docker compose -f docker/docker-compose.yml -f docker/docker-compose.override.yml up --build -d
+```
+
+The first Docker build is expected to be slow because Chromium and related system packages are installed in the build stage (needed for puppeteer in `buildCache.js`). Later builds are usually much faster due to Docker layer caching.
 
 ## Contributing
 
