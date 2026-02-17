@@ -314,6 +314,43 @@ const convertPathCache: Array<{
   node: ConvertPathNode
 }> = [];
 
+const videoContainerFormats = new Set([
+  "swf", "flv", "mp4", "m4v", "mov", "webm", "mkv", "avi", "wmv", "asf", "mpeg", "mpg", "vob", "3gp"
+]);
+
+function getMimeFamily (mime: string): string {
+  return mime.split("/")[0];
+}
+
+function isVideoLikeFormat (format: FileFormat): boolean {
+  if (format.mime.startsWith("video/")) return true;
+  return (
+    videoContainerFormats.has(format.format.toLowerCase())
+    || videoContainerFormats.has(format.extension.toLowerCase())
+  );
+}
+
+function getIntermediatePenalty (
+  sourceFormat: FileFormat,
+  targetFormat: FileFormat,
+  candidateFormat: FileFormat
+): number {
+
+  // Prefer intermediates that can keep both video and audio streams around.
+  if (getMimeFamily(sourceFormat.mime) !== "video") return 0;
+
+  const targetFamily = getMimeFamily(targetFormat.mime);
+  if (targetFamily === "audio" || targetFamily === "image") return 0;
+
+  if (isVideoLikeFormat(candidateFormat)) return 0;
+
+  const candidateFamily = getMimeFamily(candidateFormat.mime);
+  const candidateName = candidateFormat.format.toLowerCase();
+  if (candidateName === "gif" || candidateName === "mp3") return 200;
+  if (candidateFamily === "audio" || candidateFamily === "image") return 100;
+  return 10;
+}
+
 async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
 
   ui.popupBox.innerHTML = `<h2>Finding conversion route...</h2>
@@ -416,6 +453,7 @@ async function buildConvertPath (
     }
 
     // Look for untested mime types among valid handlers and add to queue
+    const nextCandidates: ConvertPathNode[] = [];
     for (const handler of validHandlers) {
       const supportedFormats = window.supportedFormatCache.get(handler.name);
       if (!supportedFormats) continue;
@@ -423,8 +461,17 @@ async function buildConvertPath (
         if (!format.to) continue;
         if (!format.mime) continue;
         if (path.some(c => c.format === format)) continue;
-        queue.push(path.concat({ format, handler }));
+        nextCandidates.push({ format, handler });
       }
+    }
+
+    nextCandidates.sort((a, b) => {
+      return getIntermediatePenalty(path[0].format, target.format, a.format)
+        - getIntermediatePenalty(path[0].format, target.format, b.format);
+    });
+
+    for (const candidate of nextCandidates) {
+      queue.push(path.concat(candidate));
     }
   }
 
