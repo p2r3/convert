@@ -8,7 +8,12 @@ class batToExeHandler implements FormatHandler {
   ];
   public ready = false;
 
+  private header: Uint8Array|null = null;
+  private footer: Uint8Array|null = null;
+
   async init() {
+    this.header = await fetch("/src/handlers/batToExe/exe65824head.bin").then(res => res.arrayBuffer()).then(buf => new Uint8Array(buf));
+    this.footer = await fetch("/src/handlers/batToExe/exe65824foot.bin").then(res => res.arrayBuffer()).then(buf => new Uint8Array(buf));;
     this.ready = true;
   }
 
@@ -17,14 +22,10 @@ class batToExeHandler implements FormatHandler {
     inputFormat: FileFormat,
     outputFormat: FileFormat,
   ): Promise<FileData[]> {
-    // 0x0 -> 0x22CDF
-    const header = await (
-      await fetch("/src/handlers/batToExe/exe65824head.bin")
-    ).bytes();
-    // 0x32E00 -> 0x339EA
-    const footer = await (
-      await fetch("/src/handlers/batToExe/exe65824foot.bin")
-    ).bytes();
+
+    const header = this.header;
+    const footer = this.footer;
+    if (!this.ready || !header || !footer) throw "Handler not initialized!";
 
     const CONTENT_SIZE = 65824;
     const EXIT_BYTES = new Uint8Array([0x0d, 0x0a, 0x65, 0x78, 0x69, 0x74]); // \r\nexit
