@@ -226,12 +226,19 @@ class FFmpegHandler implements FormatHandler {
 
     if (stdout.includes("Conversion failed!\n")) {
 
-      if (!args) {
-        if (stdout.includes("Valid sizes are")) {
-          const newSize = stdout.split("Valid sizes are ")[1].split(".")[0].split(" ").pop();
-          if (typeof newSize !== "string") throw stdout;
-          return this.doConvert(inputFiles, inputFormat, outputFormat, ["-s", newSize]);
-        }
+      const oldArgs = args ? args : []
+      if (stdout.includes(" not divisible by") && !oldArgs.includes("-vf")) {
+        const division = stdout.split(" not divisible by ")[1].split(" ")[0];
+        return this.doConvert(inputFiles, inputFormat, outputFormat, [...oldArgs, "-vf", `pad=ceil(iw/${division})*${division}:ceil(ih/${division})*${division}`]);
+      }
+      if (stdout.includes("width and height must be a multiple of") && !oldArgs.includes("-vf")) {
+        const division = stdout.split("width and height must be a multiple of ")[1].split(" ")[0].split("")[0];
+        return this.doConvert(inputFiles, inputFormat, outputFormat, [...oldArgs, "-vf", `pad=ceil(iw/${division})*${division}:ceil(ih/${division})*${division}`]);
+      }
+      if (stdout.includes("Valid sizes are") && !oldArgs.includes("-s")) {
+        const newSize = stdout.split("Valid sizes are ")[1].split(".")[0].split(" ").pop();
+        if (typeof newSize !== "string") throw stdout;
+        return this.doConvert(inputFiles, inputFormat, outputFormat, [...oldArgs, "-s", newSize]);
       }
 
       throw stdout;
