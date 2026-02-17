@@ -102,8 +102,9 @@ class nbtHandler implements FormatHandler {
         // snbt <-> json
         if (inputFormat.internal == "snbt" && outputFormat.internal == "json") {
             for (const file of inputFiles) {
-                const nbt = await NBT.read(file.bytes)
-                const text = JSON.stringify(nbt.data, null, this.indent)
+                const snbt = decoder.decode(file.bytes)
+                const nbt = NBT.parse(snbt)
+                const text = JSON.stringify(nbt, null, this.indent)
                 outputFiles.push({
                     name: file.name.split(".")[0] + ".json",
                     bytes: encoder.encode(text)
@@ -118,7 +119,7 @@ class nbtHandler implements FormatHandler {
                     space: this.indent
                 })
                 outputFiles.push({
-                    name: file.name.split(".")[0] + ".json",
+                    name: file.name.split(".")[0] + ".snbt",
                     bytes: encoder.encode(snbt)
                 })
             }
