@@ -341,6 +341,12 @@ async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
     }
   }
 
+  // PURPOSE: Validate that the full path was completed successfully
+  // Moved path completion validation after the for loop
+  if (convertPathCache.length !== path.length) {
+    return null; // Path not completed - didn't reach target format
+  }
+
   return { files, path };
 
 }
