@@ -1,6 +1,7 @@
 import type { FileFormat, FileData, FormatHandler, ConvertPathNode } from "./FormatHandler.js";
 import normalizeMimeType from "./normalizeMimeType.js";
 import handlers from "./handlers";
+import "./pluginRegistry.ts";
 
 /** Files currently selected for conversion */
 let selectedFiles: File[] = [];
@@ -14,10 +15,10 @@ let simpleMode: boolean = true;
 
 /** Handlers that support conversion from any formats. */
 const conversionsFromAnyInput: ConvertPathNode[] = handlers
-.filter(h => h.supportAnyInput && h.supportedFormats)
-.flatMap(h => h.supportedFormats!
-  .filter(f => f.to)
-  .map(f => ({ handler: h, format: f})))
+  .filter(h => h.supportAnyInput && h.supportedFormats)
+  .flatMap(h => h.supportedFormats!
+    .filter(f => f.to)
+    .map(f => ({ handler: h, format: f })))
 
 const ui = {
   fileInput: document.querySelector("#file-input") as HTMLInputElement,
@@ -188,7 +189,7 @@ window.printSupportedFormatCache = () => {
   return JSON.stringify(entries, null, 2);
 }
 
-async function buildOptionList () {
+async function buildOptionList() {
 
   allOptions.length = 0;
   ui.inputList.innerHTML = "";
@@ -314,7 +315,7 @@ const convertPathCache: Array<{
   node: ConvertPathNode
 }> = [];
 
-async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
+async function attemptConvertPath(files: FileData[], path: ConvertPathNode[]) {
 
   ui.popupBox.innerHTML = `<h2>Finding conversion route...</h2>
     <p>Trying <b>${path.map(c => c.format.format).join(" → ")}</b>...</p>`;
@@ -323,7 +324,7 @@ async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
   if (cacheLast) files = cacheLast.files;
 
   const start = cacheLast ? convertPathCache.length : 0;
-  for (let i = start; i < path.length - 1; i ++) {
+  for (let i = start; i < path.length - 1; i++) {
     const handler = path[i + 1].handler;
     try {
       let supportedFormats = window.supportedFormatCache.get(handler.name);
@@ -352,7 +353,7 @@ async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
 
 }
 
-async function buildConvertPath (
+async function buildConvertPath(
   files: FileData[],
   target: ConvertPathNode,
   queue: ConvertPathNode[][]
@@ -367,7 +368,7 @@ async function buildConvertPath (
     if (!path) continue;
     if (path.length > 5) continue;
 
-    for (let i = 1; i < path.length; i ++) {
+    for (let i = 1; i < path.length; i++) {
       if (path[i] !== convertPathCache[i]?.node) {
         convertPathCache.length = i - 1;
         break;
@@ -409,7 +410,7 @@ async function buildConvertPath (
 
       for (const conversion of anyConversions) {
         const attempt = await attemptConvertPath(files, path.concat(conversion));
-        if (attempt) return attempt; 
+        if (attempt) return attempt;
       }
 
       isNestedConversion = true;
@@ -432,7 +433,7 @@ async function buildConvertPath (
 
 }
 
-function downloadFile (bytes: Uint8Array, name: string, mime: string) {
+function downloadFile(bytes: Uint8Array, name: string, mime: string) {
   const blob = new Blob([bytes as BlobPart], { type: mime });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);

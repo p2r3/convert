@@ -80,7 +80,9 @@ The best way to contribute is by adding support for new file formats (duh). Here
 
 ### Creating a handler
 
-Each "tool" used for conversion has to be normalized to a standard form - effectively a "wrapper" that abstracts away the internal processes. These wrappers are available in [src/handlers](src/handlers/).
+Each "tool" used for conversion has to be normalized to a standard form - effectively a "wrapper" that abstracts away the internal processes. 
+
+The recommended way to add a handler is by creating a file in [src/plugins/](src/plugins/). Any file in this directory that uses `export default` for its handler class will be automatically discovered and registered at build time. This allows you to add new formats without modifying any core files. Core handlers are located in [src/handlers](src/handlers/).
 
 Below is a super barebones handler that does absolutely nothing. You can use this as a starting point for adding a new format:
 
@@ -138,7 +140,7 @@ There are a few additional things that I want to point out in particular:
 If your tool requires an external dependency (which it likely does), there are currently two well-established ways of going about this:
 
 - If it's an `npm` package, just install it to the project like you normally would.
-- If it's a Git repository, add it as a submodule to [src/handlers](src/handlers).
+- If it's a Git repository, add it as a submodule to [src/plugins](src/plugins) or [src/handlers](src/handlers).
 
 **Please try to avoid CDNs (Content Delivery Networks).** They're really cool on paper, but they don't work well with TypeScript, and each one introduces a tiny bit of instability. For a project that leans heavily on external dependencies, those bits of instability can add up fast.
 

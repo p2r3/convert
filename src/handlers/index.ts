@@ -48,4 +48,18 @@ try { handlers.push(new peToZipHandler()) } catch (_) { };
 try { handlers.push(new flptojsonHandler()) } catch (_) { };
 try { handlers.push(new floHandler()) } catch (_) { };
 
+// Load plugins from ../plugins directory
+const plugins = import.meta.glob('../plugins/*.ts', { eager: true });
+
+for (const path in plugins) {
+    try {
+        const module = plugins[path] as { default: new () => FormatHandler };
+        if (module.default) {
+            handlers.push(new module.default());
+        }
+    } catch (e) {
+        console.error(`Failed to load plugin at ${path}:`, e);
+    }
+}
+
 export default handlers;
