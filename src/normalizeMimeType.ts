@@ -8,6 +8,7 @@ function normalizeMimeType (mime: string) {
     case "video/bink": return "video/vnd.radgamettools.bink";
     case "video/binka": return "audio/vnd.radgamettools.bink";
     case "video/brstm": return "audio/brstm";
+    case "audio/x-quicktime": return "video/quicktime";
   }
   return mime;
 }
