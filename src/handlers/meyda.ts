@@ -116,8 +116,12 @@ class meydaHandler implements FormatHandler {
     const bufferSize = 2048;
     const hopSize = bufferSize / 2;
 
-    if (inputIsImage === outputIsImage) {
-      throw "Invalid input/output format.";
+    if (inputFormat.format === outputFormat.format && inputFormat.mime === outputFormat.mime) {
+      // Pass-through for identical formats
+      return inputFiles.map(file => ({
+        name: file.name.split(".")[0] + "." + outputFormat.extension,
+        bytes: file.bytes
+      }));
     }
 
     if (inputIsImage) {
