@@ -37,6 +37,12 @@ export interface FormatHandler {
   name: string;
   /** List of supported input/output {@link FileFormat}s. */
   supportedFormats?: FileFormat[];
+
+  /** Whether the handler supports input of any type.
+   * Conversion using this handler will be performed only if no other direct conversion is found.
+   */
+  supportAnyInput?: boolean;
+
   /**
    * Whether the handler is ready for use. Should be set in {@link init}.
    * If true, {@link doConvert} is expected to work.
@@ -67,7 +73,7 @@ export interface FormatHandler {
 export class ConvertPathNode {
   public handler: FormatHandler;
   public format: FileFormat;
-  constructor (handler: FormatHandler, format: FileFormat) {
+  constructor(handler: FormatHandler, format: FileFormat) {
     this.handler = handler;
     this.format = format;
   }

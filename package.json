@@ -23,6 +23,7 @@
     "@types/meyda": "^5.3.0",
     "@types/three": "^0.182.0",
     "asciidoctor": "^3.0.4",
+    "jszip": "^3.10.1",
     "meyda": "^5.6.3",
     "mime": "^4.1.0",
     "pdftoimg-js": "^0.2.5",

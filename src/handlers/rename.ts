@@ -144,14 +144,10 @@ class renameHandler implements FormatHandler {
     inputFormat: FileFormat,
     outputFormat: FileFormat
   ): Promise<FileData[]> {
-
-    if (inputFormat.internal !== "zip") throw "Invalid input format.";
-
     return inputFiles.map(file => {
       file.name = file.name.split(".")[0] + "." + outputFormat.extension;
       return file;
     });
-
   }
 
 }
