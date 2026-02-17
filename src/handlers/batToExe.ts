@@ -1,5 +1,8 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 
+import headUrl from "./batToExe/exe65824head.bin?url";
+import footUrl from "./batToExe/exe65824foot.bin?url";
+
 class batToExeHandler implements FormatHandler {
   public name = "batToExe";
   public supportedFormats = [
@@ -12,8 +15,8 @@ class batToExeHandler implements FormatHandler {
   private footer: Uint8Array|null = null;
 
   async init() {
-    this.header = await fetch("/src/handlers/batToExe/exe65824head.bin").then(res => res.arrayBuffer()).then(buf => new Uint8Array(buf));
-    this.footer = await fetch("/src/handlers/batToExe/exe65824foot.bin").then(res => res.arrayBuffer()).then(buf => new Uint8Array(buf));;
+    this.header = await fetch(headUrl).then(res => res.arrayBuffer()).then(buf => new Uint8Array(buf));
+    this.footer = await fetch(footUrl).then(res => res.arrayBuffer()).then(buf => new Uint8Array(buf));;
     this.ready = true;
   }
 
