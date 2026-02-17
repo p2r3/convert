@@ -170,7 +170,7 @@ function color_id_to_rgb(id: number): number[] | null {
     else if (shade_id == 2) shade_mul = 255
     else if (shade_id == 3) shade_mul = 135
 
-    return [Math.floor((r * shade_mul) / 255), Math.floor((r * shade_mul) / 255), Math.floor((r * shade_mul) / 255)];
+    return [Math.floor((r * shade_mul) / 255), Math.floor((g * shade_mul) / 255), Math.floor((b * shade_mul) / 255)];
 }
 
 export default mcMapHandler;
