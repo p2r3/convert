@@ -164,6 +164,17 @@ class FFmpegHandler implements FormatHandler {
     // AV1 doesn't seem to be included in WASM FFmpeg
     this.supportedFormats.splice(this.supportedFormats.findIndex(c => c.mime === "image/avif"), 1);
 
+    // Add .qta (QuickTime Audio) support - uses same mov demuxer
+    this.supportedFormats.push({
+      name: "QuickTime Audio",
+      format: "qta",
+      extension: "qta",
+      mime: "video/quicktime",
+      from: true,
+      to: true,
+      internal: "mov"
+    });
+
     this.#ffmpeg.terminate();
 
     this.ready = true;
