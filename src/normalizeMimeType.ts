@@ -10,6 +10,9 @@ function normalizeMimeType (mime: string) {
     case "text/x-asciidoc": return "text/asciidoc";
     case "application/asciidoc": return "text/asciidoc";
     case "video/brstm": return "audio/brstm";
+    case "audio/x-quicktime": return "video/quicktime";
+    case "audio/x-flo": return "audio/flo";
+    case "application/x-flo": return "audio/flo";
   }
   return mime;
 }

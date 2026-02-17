@@ -7,3 +7,6 @@
 [submodule "src/handlers/sppd"]
 	path = src/handlers/sppd
 	url = https://github.com/p2r3/sppd
+[submodule "src/handlers/image-to-txt"]
+	path = src/handlers/image-to-txt
+	url = https://git.sr.ht/~thezipcreator/image-to-txt

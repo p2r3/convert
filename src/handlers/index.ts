@@ -16,7 +16,11 @@ import sqlite3Handler from "./sqlite.ts";
 import markdownHandler from "./markdown.ts";
 import asciidocHandler from "./asciidoc.ts";
 import vtfHandler from "./vtf.ts";
+import mcMapHandler from "./mcmap.ts";
 import jszipHandler from "./jszip.ts";
+import peToZipHandler from "./petozip.ts";
+import flptojsonHandler from "./flptojson.ts";
+import floHandler from "./flo.ts";
 
 const handlers: FormatHandler[] = [];
 try { handlers.push(new canvasToBlobHandler()) } catch (_) { };
@@ -35,6 +39,10 @@ try { handlers.push(new sqlite3Handler()) } catch (_) { };
 try { handlers.push(new markdownHandler()) } catch (_) { };
 try { handlers.push(new asciidocHandler()) } catch (_) { };
 try { handlers.push(new vtfHandler()) } catch (_) { };
+try { handlers.push(new mcMapHandler()) } catch (_) { };
 try { handlers.push(new jszipHandler()) } catch (_) { };
+try { handlers.push(new peToZipHandler()) } catch (_) { };
+try { handlers.push(new flptojsonHandler()) } catch (_) { };
+try { handlers.push(new floHandler()) } catch (_) { };
 
 export default handlers;
