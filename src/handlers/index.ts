@@ -26,6 +26,7 @@ import flptojsonHandler from "./flptojson.ts";
 import floHandler from "./flo.ts";
 import batToExeHandler from "./batToExe.ts";
 import sb3ToPngHandler from "./sb3topng.ts";
+import textEncodingHandler from "./textEncoding.ts";
 
 const handlers: FormatHandler[] = [];
 try { handlers.push(new svgTraceHandler()) } catch (_) { };
@@ -56,5 +57,6 @@ try { handlers.push(new flptojsonHandler()) } catch (_) { };
 try { handlers.push(new floHandler()) } catch (_) { };
 try { handlers.push(new batToExeHandler()) } catch (_) { };
 try { handlers.push(new sb3ToPngHandler()) } catch (_) { };
+try { handlers.push(new textEncodingHandler()) } catch (_) { };
 
 export default handlers;
