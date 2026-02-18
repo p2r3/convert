@@ -112,10 +112,7 @@ export class LZHEncoder {
     this.output.push(compressedData);
   }
 
-  private writeByte(buffer: Uint8Array, offset: number, value: number): void {
-    buffer[offset] = value & 0xFF;
-  }
-
+  // Write methods using bitwise operations for efficiency
   private writeWord(buffer: Uint8Array, offset: number, value: number): void {
     buffer[offset] = value & 0xFF;
     buffer[offset + 1] = (value >> 8) & 0xFF;
