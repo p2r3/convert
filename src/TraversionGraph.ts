@@ -64,9 +64,11 @@ export class TraversionGraph {
                 toIndices.forEach(to => {
                     if (from.index === to.index) return; // No self-loops
                     let cost = DEPTH_COST; // Base cost for each conversion step
-                    if (from.format.category && to.format.category) {
-                        const fromCategories = Array.isArray(from.format.category) ? from.format.category : [from.format.category];
-                        const toCategories = Array.isArray(to.format.category) ? to.format.category : [to.format.category];
+                    const fromCategory = from.format.category || from.format.mime.split("/")[0];
+                    const toCategory = to.format.category || to.format.mime.split("/")[0];
+                    if (fromCategory && toCategory) {
+                        const fromCategories = Array.isArray(fromCategory) ? fromCategory : [fromCategory];
+                        const toCategories = Array.isArray(toCategory) ? toCategory : [toCategory];
                         if (CATEGORY_HARD_SEARCH) {
                             cost += CATEGORY_CHANGE_COSTS.reduce((totalCost, c) => {
                                 // If the category change defined in CATEGORY_CHANGE_COSTS matches the categories of the formats, add the specified cost. Otherwise, if the categories are the same, add no cost. If the categories differ but no specific cost is defined for that change, add a default cost.
@@ -83,8 +85,10 @@ export class TraversionGraph {
                             else cost += Math.min(...costs.map(c => c.cost)); // If multiple category changes are involved, use the lowest cost defined for those changes. This allows for more nuanced cost calculations when formats belong to multiple categories.
                         }
                     }
-                    else if (from.format.category || to.format.category) {
-                        cost += DEFAULT_CATEGORY_CHANGE_COST; // If one format has a category and the other doesn't, consider it a category change
+                    else if (fromCategory || toCategory) {
+                        // If one format has a category and the other doesn't, consider it a category change
+                        // Should theoretically never be encountered, unless the MIME type is misspecified
+                        cost += DEFAULT_CATEGORY_CHANGE_COST;
                     }
                     cost += PRIORITY_COST * formats.indexOf(from.format); // Add cost based on handler priority (lower index means higher priority)
                     if (!to.format.lossless) cost *= LOSSY_COST_MULTIPLIER; // If the output format is lossy or unspecified, apply the lossy cost multiplier
