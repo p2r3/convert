@@ -1,3 +1,4 @@
+import CommonFormats from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import sqlite3InitModule from "@sqlite.org/sqlite-wasm";
 
@@ -19,17 +20,8 @@ class sqlite3Handler implements FormatHandler {
         internal: "sqlite3",
         category: "database"
       },
-      {
-        name: "Comma Seperated Values",
-        format: "csv",
-        extension: "csv",
-        mime: "text/csv",
-        from: false,
-        to: true,
-        internal: "csv",
-        category: "data",
-        lossless: false // Lossy because extracts only tables  
-      },
+      // Lossy because extracts only tables  
+      CommonFormats.CSV.builder("csv").allowTo()
     ];
     this.ready = true;
   }

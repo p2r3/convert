@@ -18,6 +18,7 @@ import sqlite3Handler from "./sqlite.ts";
 import vtfHandler from "./vtf.ts";
 import mcMapHandler from "./mcmap.ts";
 import jszipHandler from "./jszip.ts";
+import qoaFuHandler from "./qoa-fu.ts";
 import pyTurtleHandler from "./pyTurtle.ts";
 import { fromJsonHandler, toJsonHandler } from "./json.ts";
 import nbtHandler from "./nbt.ts";
@@ -39,7 +40,6 @@ try { handlers.push(new ImageMagickHandler()) } catch (_) { };
 try { handlers.push(renameZipHandler) } catch (_) { };
 try { handlers.push(renameTxtHandler) } catch (_) { };
 try { handlers.push(new envelopeHandler()) } catch (_) { };
-try { handlers.push(new pandocHandler()) } catch (_) { };
 try { handlers.push(new svgForeignObjectHandler()) } catch (_) { };
 try { handlers.push(new qoiFuHandler()) } catch (_) { };
 try { handlers.push(new sppdHandler()) } catch (_) { };
@@ -48,6 +48,7 @@ try { handlers.push(new sqlite3Handler()) } catch (_) { };
 try { handlers.push(new vtfHandler()) } catch (_) { };
 try { handlers.push(new mcMapHandler()) } catch (_) { };
 try { handlers.push(new jszipHandler()) } catch (_) { };
+try { handlers.push(new qoaFuHandler()) } catch (_) { };
 try { handlers.push(new pyTurtleHandler()) } catch (_) { };
 try { handlers.push(new fromJsonHandler()) } catch (_) { };
 try { handlers.push(new toJsonHandler()) } catch (_) { };
@@ -57,6 +58,10 @@ try { handlers.push(new flptojsonHandler()) } catch (_) { };
 try { handlers.push(new floHandler()) } catch (_) { };
 try { handlers.push(new batToExeHandler()) } catch (_) { };
 try { handlers.push(new textEncodingHandler()) } catch (_) { };
+<<<<<<< master
 try { handlers.push(new lzhHandler()) } catch (_) { };
+=======
+try { handlers.push(new pandocHandler()) } catch (_) { };
+>>>>>>> master
 
 export default handlers;

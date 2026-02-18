@@ -12,16 +12,7 @@ class htmlEmbedHandler implements FormatHandler {
     CommonFormats.GIF.supported("gif", true, false),
     CommonFormats.SVG.supported("svg", true, false),
     CommonFormats.TEXT.supported("text", true, false),
-    {
-      name: "MPEG-4 Part 14",
-      format: "mp4",
-      extension: "mp4",
-      mime: "video/mp4",
-      from: true,
-      to: false,
-      internal: "mp4",
-      category: "video"
-    },
+    CommonFormats.MP4.builder("mp4").allowFrom(),
     CommonFormats.MP3.supported("mp3", true, false)
   ];
   public ready: boolean = false;

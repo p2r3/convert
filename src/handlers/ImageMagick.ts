@@ -29,6 +29,7 @@ class ImageMagickHandler implements FormatHandler {
     Magick.supportedFormats.forEach(format => {
       const formatName = format.format.toLowerCase();
       if (formatName === "apng") return;
+      if (formatName === "svg") return;
       const mimeType = format.mimeType || mime.getType(formatName);
       if (
         !mimeType

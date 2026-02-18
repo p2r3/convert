@@ -17,16 +17,7 @@ class pdftoimgHandler implements FormatHandler {
   public name: string = "pdftoimg";
 
   public supportedFormats: FileFormat[] = [
-    {
-      name: "Portable Document Format",
-      format: "pdf",
-      extension: "pdf",
-      mime: "application/pdf",
-      from: true,
-      to: false,
-      internal: "pdf",
-      category: "document"
-    },
+    CommonFormats.PDF.builder("pdf").allowFrom(),
     CommonFormats.PNG.supported("png", false, true),
     CommonFormats.JPEG.supported("jpeg", false, true),
   ];
