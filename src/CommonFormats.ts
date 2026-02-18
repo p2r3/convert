@@ -8,7 +8,8 @@ const Category = {
     DOCUMENT: "document",
     TEXT: "text",
     AUDIO: "audio",
-    ARCHIVE: "archive"
+    ARCHIVE: "archive",
+    SPREADSHEET: "spreadsheet"
 }
 
 /**
@@ -161,6 +162,13 @@ const CommonFormats = {
         "docx",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         Category.DOCUMENT
+    ),
+    XLSX: new FormatDefinition(
+        "Microsoft Office 365 Workbook",
+        "xlsx",
+        "xlsx",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        [Category.SPREADSHEET, Category.DOCUMENT]
     )
 }
 

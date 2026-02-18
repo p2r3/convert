@@ -26,16 +26,7 @@ function renameHandler(name: string, formats: FileFormat[]): FormatHandler {
 export const renameZipHandler = renameHandler("renamezip", [
   CommonFormats.ZIP.builder("zip").allowTo(),
   CommonFormats.DOCX.builder("docx").allowFrom(),
-  {
-    name: "Microsoft Office 365 Workbook",
-    format: "xlsx",
-    extension: "xlsx",
-    mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    from: true,
-    to: false,
-    internal: "xlsx",
-    category: "document"
-  },
+  CommonFormats.XLSX.builder("xlsx").allowFrom(),
   {
     name: "Microsoft Office 365 Presentation",
     format: "pptx",

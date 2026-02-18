@@ -22,16 +22,7 @@ class envelopeHandler implements FormatHandler {
       internal: "pptx",
       category: "presentation"
     },
-    {
-      name: "Microsoft Office 365 Workbook",
-      format: "xlsx",
-      extension: "xlsx",
-      mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      from: true,
-      to: false,
-      internal: "xlsx",
-      category: "spreadsheet"
-    },
+    CommonFormats.XLSX.builder("xlsx").allowFrom(),
     {
       name: "OpenDocument Text",
       format: "odt",
