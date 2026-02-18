@@ -1,8 +1,0 @@
-bun.lock
-package-lock.json
-node_modules
-start.sh
-dist
-cache.json
-.idea
-.gitignore
