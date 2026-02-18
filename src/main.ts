@@ -2,6 +2,8 @@ import type { FileFormat, FileData, FormatHandler, ConvertPathNode } from "./For
 import normalizeMimeType from "./normalizeMimeType.js";
 import handlers from "./handlers";
 import { TraversionGraph } from "./TraversionGraph.js";
+import { validateFileContent } from "./magicBytes.js";
+import { logger } from "./logger.js";
 
 /** Files currently selected for conversion */
 let selectedFiles: File[] = [];
@@ -14,16 +16,22 @@ let selectedFiles: File[] = [];
 let simpleMode: boolean = true;
 
 /** Handlers that support conversion from any formats. */
-const conversionsFromAnyInput: ConvertPathNode[] = handlers
+// Note: This variable is kept for potential future use in advanced mode
+// It could be used to show all handlers that can accept any input format
+const _conversionsFromAnyInput: ConvertPathNode[] = handlers
 .filter(h => h.supportAnyInput && h.supportedFormats)
 .flatMap(h => h.supportedFormats!
   .filter(f => f.to)
-  .map(f => ({ handler: h, format: f})))
+  .map(f => ({ handler: h, format: f})));
+
+// Mark as intentionally unused for TypeScript
+void _conversionsFromAnyInput;
 
 const ui = {
   fileInput: document.querySelector("#file-input") as HTMLInputElement,
   fileSelectArea: document.querySelector("#file-area") as HTMLDivElement,
   convertButton: document.querySelector("#convert-button") as HTMLButtonElement,
+  cancelButton: document.querySelector("#cancel-button") as HTMLButtonElement,
   modeToggleButton: document.querySelector("#mode-button") as HTMLButtonElement,
   inputList: document.querySelector("#from-list") as HTMLDivElement,
   outputList: document.querySelector("#to-list") as HTMLDivElement,
@@ -32,6 +40,9 @@ const ui = {
   popupBox: document.querySelector("#popup") as HTMLDivElement,
   popupBackground: document.querySelector("#popup-bg") as HTMLDivElement
 };
+
+/** Current conversion abort controller */
+let currentAbortController: AbortController | null = null;
 
 /**
  * Filters a list of butttons to exclude those not matching a substring.
@@ -199,18 +210,18 @@ async function buildOptionList () {
 
   for (const handler of handlers) {
     if (!window.supportedFormatCache.has(handler.name)) {
-      console.warn(`Cache miss for formats of handler "${handler.name}".`);
+      logger.warn(`Cache miss for formats of handler "${handler.name}".`);
       try {
         await handler.init();
       } catch (_) { continue; }
       if (handler.supportedFormats) {
         window.supportedFormatCache.set(handler.name, handler.supportedFormats);
-        console.info(`Updated supported format cache for "${handler.name}".`);
+        logger.info(`Updated supported format cache for "${handler.name}".`);
       }
     }
     const supportedFormats = window.supportedFormatCache.get(handler.name);
     if (!supportedFormats) {
-      console.warn(`Handler "${handler.name}" doesn't support any formats.`);
+      logger.warn(`Handler "${handler.name}" doesn't support any formats.`);
       continue;
     }
     for (const format of supportedFormats) {
@@ -290,13 +301,13 @@ async function buildOptionList () {
     const cacheJSON = await fetch("cache.json").then(r => r.json());
     window.supportedFormatCache = new Map(cacheJSON);
   } catch {
-    console.warn(
+    logger.warn(
       "Missing supported format precache.\n\n" +
       "Consider saving the output of printSupportedFormatCache() to cache.json."
     );
   } finally {
     await buildOptionList();
-    console.log("Built initial format list.");
+    logger.info("Built initial format list.");
   }
 })();
 
@@ -312,12 +323,22 @@ ui.modeToggleButton.addEventListener("click", () => {
   buildOptionList();
 });
 
-async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
+async function attemptConvertPath (
+  files: FileData[],
+  path: ConvertPathNode[],
+  signal?: AbortSignal,
+  onProgress?: (progress: number) => void
+) {
 
   ui.popupBox.innerHTML = `<h2>Finding conversion route...</h2>
     <p>Trying <b>${path.map(c => c.format.format).join(" → ")}</b>...</p>`;
 
   for (let i = 0; i < path.length - 1; i ++) {
+    // Check for cancellation
+    if (signal?.aborted) {
+      return null;
+    }
+    
     const handler = path[i + 1].handler;
     try {
       let supportedFormats = window.supportedFormatCache.get(handler.name);
@@ -333,14 +354,14 @@ async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
       if (!supportedFormats) throw `Handler "${handler.name}" doesn't support any formats.`;
       const inputFormat = supportedFormats.find(c => c.mime === path[i].format.mime && c.from)!;
       files = (await Promise.all([
-        handler.doConvert(files, inputFormat, path[i + 1].format),
+        handler.doConvert(files, inputFormat, path[i + 1].format, [], signal, onProgress),
         // Ensure that we wait long enough for the UI to update
         new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
       ]))[0];
       if (files.some(c => !c.bytes.length)) throw "Output is empty.";
     } catch (e) {
-      console.log(path.map(c => c.format.format));
-      console.error(handler.name, `${path[i].format.format} → ${path[i + 1].format.format}`, e);
+      logger.debug(path.map(c => c.format.format));
+      logger.error(handler.name, `${path[i].format.format} → ${path[i + 1].format.format}`, e);
       ui.popupBox.innerHTML = `<h2>Finding conversion route...</h2>
         <p>Looking for a valid path...</p>`;
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
@@ -355,14 +376,16 @@ async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
 async function tryConvertByTraversing (
   files: FileData[],
   from: ConvertPathNode,
-  to: ConvertPathNode
+  to: ConvertPathNode,
+  signal?: AbortSignal,
+  onProgress?: (progress: number) => void
 ) {
   for await (const path of window.traversionGraph.searchPath(from, to, simpleMode)) {
     // Use exact output format if the target handler supports it
     if (path.at(-1)?.handler === to.handler) {
       path[path.length - 1] = to;
     }
-    const attempt = await attemptConvertPath(files, path);
+    const attempt = await attemptConvertPath(files, path, signal, onProgress);
     if (attempt) return attempt;
   }
   return null;
@@ -375,6 +398,44 @@ function downloadFile (bytes: Uint8Array, name: string, mime: string) {
   link.download = name;
   link.click();
 }
+
+/**
+ * Clear file data buffers to free memory after conversion.
+ * @param fileData Array of FileData to clear
+ */
+function clearFileData(fileData: FileData[]): void {
+  for (const file of fileData) {
+    // Clear the bytes array to help garbage collection
+    file.bytes.fill(0);
+  }
+  fileData.length = 0;
+}
+
+/**
+ * Cancel the currently running conversion.
+ */
+function cancelConversion(): void {
+  if (currentAbortController) {
+    currentAbortController.abort();
+    currentAbortController = null;
+    logger.info("Conversion cancelled.");
+  }
+}
+
+/** Expose cancel function globally for the UI */
+window.cancelConversion = cancelConversion;
+
+// Add cancel button click handler
+ui.cancelButton.onclick = () => {
+  cancelConversion();
+  ui.cancelButton.classList.add("hidden");
+  window.hidePopup();
+  window.showPopup(
+    `<h2>Conversion Cancelled</h2>` +
+    `<p>The conversion was cancelled by the user.</p>\n` +
+    `<button onclick="window.hidePopup()">OK</button>`
+  );
+};
 
 ui.convertButton.onclick = async function () {
 
@@ -396,12 +457,30 @@ ui.convertButton.onclick = async function () {
   const inputFormat = inputOption.format;
   const outputFormat = outputOption.format;
 
+  let inputFileData: FileData[] = [];
+
+  // Create new abort controller for this conversion
+  currentAbortController = new AbortController();
+  
+  // Show cancel button during conversion
+  ui.cancelButton.classList.remove("hidden");
+
   try {
 
-    const inputFileData = [];
     for (const inputFile of inputFiles) {
       const inputBuffer = await inputFile.arrayBuffer();
       const inputBytes = new Uint8Array(inputBuffer);
+      
+      // Validate file content against declared MIME type
+      const validation = validateFileContent(inputBytes, inputFormat.mime);
+      if (!validation.isValid) {
+        clearFileData(inputFileData);
+        currentAbortController = null;
+        ui.cancelButton.classList.add("hidden");
+        window.hidePopup();
+        return alert(`File validation failed: ${validation.message}\n\nThe file "${inputFile.name}" may be corrupted or have the wrong extension.`);
+      }
+      
       if (inputFormat.mime === outputFormat.mime) {
         downloadFile(inputBytes, inputFile.name, inputFormat.mime);
         continue;
@@ -409,12 +488,34 @@ ui.convertButton.onclick = async function () {
       inputFileData.push({ name: inputFile.name, bytes: inputBytes });
     }
 
-    window.showPopup("<h2>Finding conversion route...</h2>");
+    window.showPopup("<h2>Converting...</h2>\n<div id='progress-bar-container' style='width:100%;background-color:#ddd;border-radius:5px;margin:20px 0;'>\n<div id='progress-bar' style='width:0%;height:20px;background-color:var(--highlight-color);border-radius:5px;transition:width 0.3s;'></div>\n</div>\n<p id='progress-text'>Starting conversion...</p>");
+    
+    // Progress callback
+    const onProgress = (progress: number) => {
+      const progressBar = document.getElementById("progress-bar");
+      const progressText = document.getElementById("progress-text");
+      if (progressBar) {
+        progressBar.style.width = progress + "%";
+      }
+      if (progressText) {
+        progressText.textContent = `Progress: ${Math.round(progress)}%`;
+      }
+    };
+    
     // Delay for a bit to give the browser time to render
     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
-    const output = await tryConvertByTraversing(inputFileData, inputOption, outputOption);
+    const output = await tryConvertByTraversing(
+      inputFileData,
+      inputOption,
+      outputOption,
+      currentAbortController?.signal,
+      onProgress
+    );
     if (!output) {
+      clearFileData(inputFileData);
+      currentAbortController = null;
+      ui.cancelButton.classList.add("hidden");
       window.hidePopup();
       alert("Failed to find conversion route.");
       return;
@@ -424,6 +525,11 @@ ui.convertButton.onclick = async function () {
       downloadFile(file.bytes, file.name, outputFormat.mime);
     }
 
+    // Clear input file data after successful conversion
+    clearFileData(inputFileData);
+    currentAbortController = null;
+    ui.cancelButton.classList.add("hidden");
+
     window.showPopup(
       `<h2>Converted ${inputOption.format.format} to ${outputOption.format.format}!</h2>` +
       `<p>Path used: <b>${output.path.map(c => c.format.format).join(" → ")}</b>.</p>\n` +
@@ -431,10 +537,14 @@ ui.convertButton.onclick = async function () {
     );
 
   } catch (e) {
+    // Ensure cleanup happens even on error
+    clearFileData(inputFileData);
+    currentAbortController = null;
+    ui.cancelButton.classList.add("hidden");
 
     window.hidePopup();
     alert("Unexpected error while routing:\n" + e);
-    console.error(e);
+    logger.error(e);
 
   }
 
