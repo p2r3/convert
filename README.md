@@ -105,7 +105,7 @@ class dummyHandler implements FormatHandler {
         // .allowFrom()
         // .allowTo()
 
-      // Same thing as above, but defined customly, useful for more obscure formats.
+      //  Same as above, but defined manually. Useful for more obscure formats.
         {
             name: "Portable Network Graphics",
             format: "png",
