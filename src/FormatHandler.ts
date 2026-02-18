@@ -183,6 +183,7 @@ export interface FormatHandler {
    * @param args Optional arguments as a string array.
    * Can be used to perform recursion with different settings.
    * @param signal Optional AbortSignal for cancellation.
+   * @param onProgress Optional callback for progress updates (0-100).
    * @returns Array of {@link FileData} entries, one per generated output file.
    */
   doConvert: (
@@ -190,7 +191,8 @@ export interface FormatHandler {
     inputFormat: FileFormat,
     outputFormat: FileFormat,
     args?: string[],
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    onProgress?: (progress: number) => void
   ) => Promise<FileData[]>;
 }
 

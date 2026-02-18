@@ -323,12 +323,22 @@ ui.modeToggleButton.addEventListener("click", () => {
   buildOptionList();
 });
 
-async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
+async function attemptConvertPath (
+  files: FileData[],
+  path: ConvertPathNode[],
+  signal?: AbortSignal,
+  onProgress?: (progress: number) => void
+) {
 
   ui.popupBox.innerHTML = `<h2>Finding conversion route...</h2>
     <p>Trying <b>${path.map(c => c.format.format).join(" → ")}</b>...</p>`;
 
   for (let i = 0; i < path.length - 1; i ++) {
+    // Check for cancellation
+    if (signal?.aborted) {
+      return null;
+    }
+    
     const handler = path[i + 1].handler;
     try {
       let supportedFormats = window.supportedFormatCache.get(handler.name);
@@ -344,7 +354,7 @@ async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
       if (!supportedFormats) throw `Handler "${handler.name}" doesn't support any formats.`;
       const inputFormat = supportedFormats.find(c => c.mime === path[i].format.mime && c.from)!;
       files = (await Promise.all([
-        handler.doConvert(files, inputFormat, path[i + 1].format),
+        handler.doConvert(files, inputFormat, path[i + 1].format, [], signal, onProgress),
         // Ensure that we wait long enough for the UI to update
         new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
       ]))[0];
@@ -366,14 +376,16 @@ async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
 async function tryConvertByTraversing (
   files: FileData[],
   from: ConvertPathNode,
-  to: ConvertPathNode
+  to: ConvertPathNode,
+  signal?: AbortSignal,
+  onProgress?: (progress: number) => void
 ) {
   for await (const path of window.traversionGraph.searchPath(from, to, simpleMode)) {
     // Use exact output format if the target handler supports it
     if (path.at(-1)?.handler === to.handler) {
       path[path.length - 1] = to;
     }
-    const attempt = await attemptConvertPath(files, path);
+    const attempt = await attemptConvertPath(files, path, signal, onProgress);
     if (attempt) return attempt;
   }
   return null;
@@ -476,11 +488,30 @@ ui.convertButton.onclick = async function () {
       inputFileData.push({ name: inputFile.name, bytes: inputBytes });
     }
 
-    window.showPopup("<h2>Finding conversion route...</h2>");
+    window.showPopup("<h2>Converting...</h2>\n<div id='progress-bar-container' style='width:100%;background-color:#ddd;border-radius:5px;margin:20px 0;'>\n<div id='progress-bar' style='width:0%;height:20px;background-color:var(--highlight-color);border-radius:5px;transition:width 0.3s;'></div>\n</div>\n<p id='progress-text'>Starting conversion...</p>");
+    
+    // Progress callback
+    const onProgress = (progress: number) => {
+      const progressBar = document.getElementById("progress-bar");
+      const progressText = document.getElementById("progress-text");
+      if (progressBar) {
+        progressBar.style.width = progress + "%";
+      }
+      if (progressText) {
+        progressText.textContent = `Progress: ${Math.round(progress)}%`;
+      }
+    };
+    
     // Delay for a bit to give the browser time to render
     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
-    const output = await tryConvertByTraversing(inputFileData, inputOption, outputOption);
+    const output = await tryConvertByTraversing(
+      inputFileData,
+      inputOption,
+      outputOption,
+      currentAbortController?.signal,
+      onProgress
+    );
     if (!output) {
       clearFileData(inputFileData);
       currentAbortController = null;
