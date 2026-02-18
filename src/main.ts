@@ -381,6 +381,18 @@ function downloadFile (bytes: Uint8Array, name: string, mime: string) {
   link.click();
 }
 
+/**
+ * Clear file data buffers to free memory after conversion.
+ * @param fileData Array of FileData to clear
+ */
+function clearFileData(fileData: FileData[]): void {
+  for (const file of fileData) {
+    // Clear the bytes array to help garbage collection
+    file.bytes.fill(0);
+  }
+  fileData.length = 0;
+}
+
 ui.convertButton.onclick = async function () {
 
   const inputFiles = selectedFiles;
@@ -401,9 +413,10 @@ ui.convertButton.onclick = async function () {
   const inputFormat = inputOption.format;
   const outputFormat = outputOption.format;
 
+  let inputFileData: FileData[] = [];
+
   try {
 
-    const inputFileData = [];
     for (const inputFile of inputFiles) {
       const inputBuffer = await inputFile.arrayBuffer();
       const inputBytes = new Uint8Array(inputBuffer);
@@ -420,6 +433,7 @@ ui.convertButton.onclick = async function () {
 
     const output = await tryConvertByTraversing(inputFileData, inputOption, outputOption);
     if (!output) {
+      clearFileData(inputFileData);
       window.hidePopup();
       alert("Failed to find conversion route.");
       return;
@@ -429,6 +443,9 @@ ui.convertButton.onclick = async function () {
       downloadFile(file.bytes, file.name, outputFormat.mime);
     }
 
+    // Clear input file data after successful conversion
+    clearFileData(inputFileData);
+
     window.showPopup(
       `<h2>Converted ${inputOption.format.format} to ${outputOption.format.format}!</h2>` +
       `<p>Path used: <b>${output.path.map(c => c.format.format).join(" → ")}</b>.</p>\n` +
@@ -436,6 +453,8 @@ ui.convertButton.onclick = async function () {
     );
 
   } catch (e) {
+    // Ensure cleanup happens even on error
+    clearFileData(inputFileData);
 
     window.hidePopup();
     alert("Unexpected error while routing:\n" + e);
