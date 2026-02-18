@@ -1,5 +1,6 @@
 import pako from "pako";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
+import CommonFormats from "src/CommonFormats.ts";
 
 async function revertCgBIBuffer(input: Uint8Array | ArrayBuffer): Promise<Uint8Array> {
   const buffer = input instanceof Uint8Array ? input : new Uint8Array(input);
@@ -142,29 +143,22 @@ async function revertCgBIBuffer(input: Uint8Array | ArrayBuffer): Promise<Uint8A
   return concat(parts);
 }
 
-class CgbiToPngHandler implements FormatHandler {
+class cgbiToPngHandler implements FormatHandler {
   public name = "CgBI to PNG converter";
   public ready = true;
 
   public supportedFormats: FileFormat[] = [
     {
-      name: "CgBI PNG (iPhone optimized)",
+      name: "iPhone optimized CgBI PNG",
       format: "cgbi-png",
       extension: "png",
       mime: "image/png-cgbi", // Should include "image/png" in the name to appear in suggested formats 
       from: true,
       to: false,
-      internal: "cgbi-png"
+      internal: "cgbi-png", 
+      category: "image"
     },
-    {
-      name: "Portable Network Graphics",
-      format: "png",
-      extension: "png",
-      mime: "image/png",
-      from: false,
-      to: true,
-      internal: "png"
-    }
+    CommonFormats.PNG.supported("png", false, true, true),
   ];
 
   async init(): Promise<void> {
@@ -186,8 +180,9 @@ class CgbiToPngHandler implements FormatHandler {
     for (const inputFile of inputFiles) {
       try {
         const standardPng = await revertCgBIBuffer(inputFile.bytes);
-
-        const baseName = inputFile.name.replace(/\.[^/.]+$/, "");
+        
+        const dotIndex = inputFile.name.lastIndexOf('.');
+        const baseName = dotIndex !== -1 ? inputFile.name.substring(0, dotIndex) : inputFile.name;
         const outputName = `${baseName}.${outputFormat.extension}`;
 
         outputFiles.push({
@@ -203,4 +198,4 @@ class CgbiToPngHandler implements FormatHandler {
   }
 }
 
-export default CgbiToPngHandler;
+export default cgbiToPngHandler;

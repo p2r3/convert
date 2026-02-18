@@ -24,7 +24,7 @@ import nbtHandler from "./nbt.ts";
 import peToZipHandler from "./petozip.ts";
 import flptojsonHandler from "./flptojson.ts";
 import floHandler from "./flo.ts";
-import CgbiToPngHandler from "./cgbi-to-png.ts";
+import cgbiToPngHandler from "./cgbi-to-png.ts";
 import batToExeHandler from "./batToExe.ts";
 import textEncodingHandler from "./textEncoding.ts";
 
@@ -55,7 +55,7 @@ try { handlers.push(new nbtHandler()) } catch (_) { };
 try { handlers.push(new peToZipHandler()) } catch (_) { };
 try { handlers.push(new flptojsonHandler()) } catch (_) { };
 try { handlers.push(new floHandler()) } catch (_) { };
-try { handlers.push(new CgbiToPngHandler()) } catch (_) { };
+try { handlers.push(new cgbiToPngHandler()) } catch (_) { };
 try { handlers.push(new batToExeHandler()) } catch (_) { };
 try { handlers.push(new textEncodingHandler()) } catch (_) { };
 
