@@ -358,6 +358,10 @@ async function tryConvertByTraversing (
   to: ConvertPathNode
 ) {
   for await (const path of window.traversionGraph.searchPath(from, to, simpleMode)) {
+    // Use exact output format if the target handler supports it
+    if (path.at(-1)?.handler === to.handler) {
+      path[path.length - 1] = to;
+    }
     const attempt = await attemptConvertPath(files, path);
     if (attempt) return attempt;
   }
