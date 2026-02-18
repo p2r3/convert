@@ -119,6 +119,13 @@ export class FormatDefinition implements IFormatDefinition {
         this.mime = mimetype;
         return this;
       },
+      /**
+       * Replaces format category
+       */
+      withCategory(category: string[] | string | undefined) {
+        this.category = category
+        return this
+      },
       override(values: Partial<IFormatDefinition>) {
         Object.assign(this, values);
         return this;
