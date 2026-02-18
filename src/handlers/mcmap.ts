@@ -343,19 +343,17 @@ class mcMapHandler implements FormatHandler {
                         const width = NBT.isTag<NBT.IntTag>(mapdata["width"]) ? mapdata["width"].valueOf() : DEFAULT_WIDTH;
                         const height = NBT.isTag<NBT.IntTag>(mapdata["height"]) ? mapdata["height"].valueOf() : DEFAULT_HEIGHT;
                         const colors = NBT.isTag<NBT.ByteArrayTag>(mapdata["colors"]) ? new Uint8Array(mapdata["colors"]) : new Uint8Array([]);
-                        const bytes = new Uint8Array(map2rgb(colors, width, height));
+                        const bytes = new Uint8Array(map2rgba(colors, width, height));
 
-                        const bitmap = Jimp.fromBitmap({
+                        const buffer = await Jimp.fromBitmap({
                             data: bytes,
                             width: 128,
                             height: 128
-                        });
-
-                        const buffer = await bitmap.getBuffer("image/png");
+                        }).getBuffer("image/png");
 
                         outputFiles.push({
                             name: file.name,
-                            bytes: new Uint8Array(buffer)
+                            bytes: buffer
                         });
                     }
                 }
@@ -406,6 +404,24 @@ function map2rgb(colors: Uint8Array, width: number, height: number): number[] {
         }
 
         out.push(...color);
+    }
+
+    return out;
+}
+
+function map2rgba(colors: Uint8Array, width: number, height: number): number[] {
+    const out: number[] = []
+
+    for (let i = 0; i < width * height; i++) {
+        const color_id = colors[i]
+        let color = color_id_to_rgb(color_id)
+
+        if (color === null) {
+            console.error(`Unknown color ID: ${color_id}.`)
+            color = ERROR_COLOR;
+        }
+
+        out.push(...color, 255);
     }
 
     return out;
