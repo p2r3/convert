@@ -3,6 +3,7 @@ import normalizeMimeType from "./normalizeMimeType.js";
 import handlers from "./handlers";
 import { TraversionGraph } from "./TraversionGraph.js";
 import { validateFileContent } from "./magicBytes.js";
+import { logger } from "./logger.js";
 
 /** Files currently selected for conversion */
 let selectedFiles: File[] = [];
@@ -209,18 +210,18 @@ async function buildOptionList () {
 
   for (const handler of handlers) {
     if (!window.supportedFormatCache.has(handler.name)) {
-      console.warn(`Cache miss for formats of handler "${handler.name}".`);
+      logger.warn(`Cache miss for formats of handler "${handler.name}".`);
       try {
         await handler.init();
       } catch (_) { continue; }
       if (handler.supportedFormats) {
         window.supportedFormatCache.set(handler.name, handler.supportedFormats);
-        console.info(`Updated supported format cache for "${handler.name}".`);
+        logger.info(`Updated supported format cache for "${handler.name}".`);
       }
     }
     const supportedFormats = window.supportedFormatCache.get(handler.name);
     if (!supportedFormats) {
-      console.warn(`Handler "${handler.name}" doesn't support any formats.`);
+      logger.warn(`Handler "${handler.name}" doesn't support any formats.`);
       continue;
     }
     for (const format of supportedFormats) {
@@ -300,13 +301,13 @@ async function buildOptionList () {
     const cacheJSON = await fetch("cache.json").then(r => r.json());
     window.supportedFormatCache = new Map(cacheJSON);
   } catch {
-    console.warn(
+    logger.warn(
       "Missing supported format precache.\n\n" +
       "Consider saving the output of printSupportedFormatCache() to cache.json."
     );
   } finally {
     await buildOptionList();
-    console.log("Built initial format list.");
+    logger.info("Built initial format list.");
   }
 })();
 
@@ -349,8 +350,8 @@ async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
       ]))[0];
       if (files.some(c => !c.bytes.length)) throw "Output is empty.";
     } catch (e) {
-      console.log(path.map(c => c.format.format));
-      console.error(handler.name, `${path[i].format.format} → ${path[i + 1].format.format}`, e);
+      logger.debug(path.map(c => c.format.format));
+      logger.error(handler.name, `${path[i].format.format} → ${path[i + 1].format.format}`, e);
       ui.popupBox.innerHTML = `<h2>Finding conversion route...</h2>
         <p>Looking for a valid path...</p>`;
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
@@ -405,7 +406,7 @@ function cancelConversion(): void {
   if (currentAbortController) {
     currentAbortController.abort();
     currentAbortController = null;
-    console.log("Conversion cancelled.");
+    logger.info("Conversion cancelled.");
   }
 }
 
@@ -512,7 +513,7 @@ ui.convertButton.onclick = async function () {
 
     window.hidePopup();
     alert("Unexpected error while routing:\n" + e);
-    console.error(e);
+    logger.error(e);
 
   }
 
