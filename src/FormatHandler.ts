@@ -71,6 +71,42 @@ export class FormatDefinition implements IFormatDefinition {
       lossless: lossless
     }
   }
+
+  /**
+   * Returns a builder to fluently create FileFormat
+   */
+  builder() {
+    // Initialize flags
+    const def = this
+    const flags: { from: boolean; to: boolean; lossless?: boolean; override: Partial<IFormatDefinition> } = {
+      from: false,
+      to: false,
+      override: {}
+    }
+
+    // Return the builder object with chainable methods
+    return {
+      allowFrom() {
+        flags.from = true
+        return this
+      },
+      allowTo() {
+        flags.to = true
+        return this
+      },
+      markLossless() {
+        flags.lossless = true
+        return this
+      },
+      override(values: Partial<IFormatDefinition>) {
+        flags.override = { ...flags.override, ...values }
+        return this
+      },
+      supported(ref: string) {
+        return def.supported(ref, flags.from, flags.to, flags.lossless, flags.override)
+      }
+    }
+  }
 }
 
 
