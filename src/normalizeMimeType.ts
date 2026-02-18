@@ -11,6 +11,7 @@ function normalizeMimeType (mime: string) {
     case "audio/x-quicktime": return "video/quicktime";
     case "audio/x-flo": return "audio/flo";
     case "application/x-flo": return "audio/flo";
+	case "image/x-win-cursor": return "image/x-win-cursor";
   }
   return mime;
 }
