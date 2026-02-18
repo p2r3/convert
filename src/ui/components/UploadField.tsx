@@ -1,6 +1,7 @@
 import { useRef, useState } from 'preact/hooks'
 
-import uploadImage from '../img/fa-upload-solid-full.svg'
+import uploadImage from '../img/fa-upload-solid-full.svg';
+import logoImage from '../../../favicon.ico';
 
 import './UploadField.css'
 
@@ -48,7 +49,7 @@ export default function UploadField({ disabled = false }: UploadFieldComponentPr
 
 				<div class="upload-card-header">
 					<h1>
-						<img src="../img/logo.svg" alt="Logo" />
+						<img class="upload-card-logo" src={ logoImage } alt="Logo" />
 						<span class="upload-card-title">Convert to it!</span>
 					</h1>
 					<div class="upload-card-theme-toggle"></div>
@@ -69,7 +70,7 @@ export default function UploadField({ disabled = false }: UploadFieldComponentPr
 						id="uploadFile"
 						// prevent synthetic click from retriggering
 						// the dropzone's onclick handler
-						onClick={(ev) => ev.stopPropagation()}
+						onClick={ (ev) => ev.stopPropagation() }
 						tabIndex={ 0 }
 					/>
 					<div className="upload-card-dropzone-icon-container">

@@ -24,7 +24,14 @@
 			padding: 2em;
 
 			h1 {
+				display: flex;
 				font-weight: 900;
+				align-items: center;
+				gap: .5em;
+
+				.upload-card-logo {
+					width: 60px;
+				}
 			}
 		}
 
