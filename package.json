@@ -27,6 +27,7 @@
     "@types/pako": "^2.0.4",
     "@types/three": "^0.182.0",
     "buffer": "^6.0.3",
+    "fzstd": "^0.1.1",
     "imagetracer": "^0.2.2",
     "jszip": "^3.10.1",
     "meyda": "^5.6.3",

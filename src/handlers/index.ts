@@ -17,6 +17,7 @@ import threejsHandler from "./threejs.ts";
 import sqlite3Handler from "./sqlite.ts";
 import vtfHandler from "./vtf.ts";
 import mcMapHandler from "./mcmap.ts";
+import zstdHandler from "./zstdHandler.ts";
 import jszipHandler from "./jszip.ts";
 import pyTurtleHandler from "./pyTurtle.ts";
 import { fromJsonHandler, toJsonHandler } from "./json.ts";
