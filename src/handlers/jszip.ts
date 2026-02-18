@@ -20,8 +20,8 @@ class jszipHandler implements FormatHandler {
 
   async doConvert(
     inputFiles: FileData[],
-    inputFormat: FileFormat,
-    outputFormat: FileFormat
+    _inputFormat: FileFormat,
+    _outputFormat: FileFormat
   ): Promise<FileData[]> {
 
     const outputFiles: FileData[] = [];
