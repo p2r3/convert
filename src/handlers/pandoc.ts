@@ -178,7 +178,9 @@ class pandocHandler implements FormatHandler {
         mime: normalizeMimeType(mime.getType(extension) || `text/${format}`),
         from: inputFormats.includes(format),
         to: outputFormats.includes(format),
-        internal: format
+        internal: format,
+        category: "document",
+        lossless: true // Unsure about this, it might be lossy, i don't know enough about pandoc to say for sure
       });
     }
 

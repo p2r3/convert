@@ -22,7 +22,8 @@ For a semi-technical overview of this tool, check out the video: https://youtu.b
 
 Ever since the YouTube video released, we've been getting spammed with issues suggesting the addition of all kinds of niche file formats. To keep things organized, I've decided to specify what counts as a valid issue and what doesn't.
 
-**SIMPLY ASKING FOR A FILE FORMAT TO BE ADDED IS NOT A MEANINGFUL ISSUE!**
+> [!IMPORTANT]
+> **SIMPLY ASKING FOR A FILE FORMAT TO BE ADDED IS NOT A MEANINGFUL ISSUE!**
 
 There are thousands of file formats out there. It can take hours to add support for just one. The math is simple - we can't possibly support every single file. As such, simply listing your favorite file formats is not helpful. We already know that there are formats we don't support, we don't need tickets to tell us that.
 
@@ -88,6 +89,7 @@ Below is a super barebones handler that does absolutely nothing. You can use thi
 // file: dummy.ts
 
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
+import CommonFormats from "src/CommonFormats.ts";
 
 class dummyHandler implements FormatHandler {
 
@@ -97,15 +99,11 @@ class dummyHandler implements FormatHandler {
 
   async init () {
     this.supportedFormats = [
-      {
-        name: "Portable Network Graphics",
-        format: "png",
-        extension: "png",
-        mime: "image/png",
-        from: false,
-        to: false,
-        internal: "png"
-      },
+      // Create a FileFormat based on the common PNG definition.
+      // "png" is this handler's internal format identifier.
+      // Both `from` and `to` are set to false, meaning this handler
+      // does not support conversion from or to PNG.
+      CommonFormats.PNG.supported("png", false, false)
     ];
     this.ready = true;
   }

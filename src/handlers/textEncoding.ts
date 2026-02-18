@@ -93,13 +93,13 @@ function decodeUsingTextDecoder(bytes: Uint8Array, label: string) {
 }
 
 const formats: FileFormat[] = [
-  { name: "Plain Text",             format: "text",                 extension: "txt", mime: "text/plain",                   from: true,  to: true, internal: "text/utf8"    }, // May or may not have BOM depending on browser
-  { name: "Plain Text (UTF-8)",     format: "txt-utf8 without BOM", extension: "txt", mime: "text/plain; charset=utf-8",    from: false, to: true, internal: "text/utf8NB"  }, // In case the broeser defaults to with BOM, we can choose to force BOMless UTF-8.
-  { name: "Plain Text (UTF-8 BOM)", format: "txt-utf8 with BOM",    extension: "txt", mime: "text/plain; charset=utf-8",    from: false, to: true, internal: "text/utf8WB"  }, // UTF8 with forced BOM.
-  { name: "Plain Text (UTF-16 LE)", format: "txt-utf16le",          extension: "txt", mime: "text/plain; charset=utf-16le", from: true,  to: true, internal: "text/utf16le" },
-  { name: "Plain Text (UTF-16 BE)", format: "txt-utf16be",          extension: "txt", mime: "text/plain; charset=utf-16be", from: true,  to: true, internal: "text/utf16be" },
-  { name: "Plain Text (UTF-32 LE)", format: "txt-utf32le",          extension: "txt", mime: "text/plain; charset=utf-32le", from: true,  to: true, internal: "text/utf32le" },
-  { name: "Plain Text (UTF-32 BE)", format: "txt-utf32be",          extension: "txt", mime: "text/plain; charset=utf-32be", from: true,  to: true, internal: "text/utf32be" },
+  { name: "Plain Text",             format: "text",                 extension: "txt", mime: "text/plain",                   from: true,  to: true, internal: "text/utf8", category: "text", lossless: true    }, // May or may not have BOM depending on browser
+  { name: "Plain Text (UTF-8)",     format: "txt-utf8 without BOM", extension: "txt", mime: "text/plain; charset=utf-8",    from: false, to: true, internal: "text/utf8NB", category: "text", lossless: true   }, // In case the broeser defaults to with BOM, we can choose to force BOMless UTF-8.
+  { name: "Plain Text (UTF-8 BOM)", format: "txt-utf8 with BOM",    extension: "txt", mime: "text/plain; charset=utf-8",    from: false, to: true, internal: "text/utf8WB", category: "text", lossless: true  }, // UTF8 with forced BOM.
+  { name: "Plain Text (UTF-16 LE)", format: "txt-utf16le",          extension: "txt", mime: "text/plain; charset=utf-16le", from: true,  to: true, internal: "text/utf16le", category:"text", lossless: true },
+  { name: "Plain Text (UTF-16 BE)", format: "txt-utf16be",          extension: "txt", mime: "text/plain; charset=utf-16be", from: true,  to: true, internal: "text/utf16be", category:"text", lossless: true },
+  { name: "Plain Text (UTF-32 LE)", format: "txt-utf32le",          extension: "txt", mime: "text/plain; charset=utf-32le", from: true,  to: true, internal: "text/utf32le", category:"text", lossless: true },
+  { name: "Plain Text (UTF-32 BE)", format: "txt-utf32be",          extension: "txt", mime: "text/plain; charset=utf-32be", from: true,  to: true, internal: "text/utf32be", category:"text", lossless: true },
 ];
 
 export default class TextEncodingHandler implements FormatHandler {

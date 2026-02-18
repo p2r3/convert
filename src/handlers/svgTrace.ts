@@ -17,7 +17,8 @@ class svgTraceHandler implements FormatHandler {
         mime: "image/png",
         from: true,
         to: false,
-        internal: "png"
+        internal: "png",
+        category: "image"
       },
       {
         name: "Joint Photographic Experts Group JFIF",
@@ -26,7 +27,8 @@ class svgTraceHandler implements FormatHandler {
         mime: "image/jpeg",
         from: true,
         to: false,
-        internal: "jpeg"
+        internal: "jpeg",
+        category: "image",
       },
       {
         name: "WebP",
@@ -35,7 +37,8 @@ class svgTraceHandler implements FormatHandler {
         mime: "image/webp",
         from: true,
         to: false,
-        internal: "webp" // note there is both animated svgs, and animted webPs, although this converter does not support either
+        internal: "webp", // note there is both animated svgs, and animted webPs, although this converter does not support either
+        category: "image"
       },
       {
         name: "Scalable Vector Graphics",
@@ -44,7 +47,9 @@ class svgTraceHandler implements FormatHandler {
         mime: "image/svg+xml",
         from: false,
         to: true,
-        internal: "svg"
+        internal: "svg",
+        category: ["image", "vector", "document"],
+        lossless: false
       },
     ];
     this.ready = true;

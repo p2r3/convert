@@ -143,7 +143,9 @@ class FFmpegHandler implements FormatHandler {
           mime: mimeType,
           from: flags.includes("D"),
           to: flags.includes("E"),
-          internal: format
+          internal: format,
+          category: mimeType.split("/")[0],
+          lossless: ["png", "bmp", "tiff"].includes(format)
         });
 
       }

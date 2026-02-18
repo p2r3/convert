@@ -16,7 +16,8 @@ class sqlite3Handler implements FormatHandler {
         mime: "application/vnd.sqlite3",
         from: true,
         to: false,
-        internal: "sqlite3"
+        internal: "sqlite3",
+        category: "database"
       },
       {
         name: "Comma Seperated Values",
@@ -25,7 +26,9 @@ class sqlite3Handler implements FormatHandler {
         mime: "text/csv",
         from: false,
         to: true,
-        internal: "csv"
+        internal: "csv",
+        category: "data",
+        lossless: false // Lossy because extracts only tables  
       },
     ];
     this.ready = true;

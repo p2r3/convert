@@ -4,6 +4,7 @@ import { parseODT, parseODP, parseODS } from "./envelope/parseODF.js";
 import parseDOCX from "./envelope/parseDOCX.js";
 import parsePPTX from "./envelope/parsePPTX.js";
 import parseXLSX from "./envelope/parseXLSX.js";
+import CommonFormats from "src/CommonFormats.ts";
 
 class envelopeHandler implements FormatHandler {
 
@@ -17,7 +18,8 @@ class envelopeHandler implements FormatHandler {
       mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       from: true,
       to: false,
-      internal: "docx"
+      internal: "docx",
+      category: "document"
     },
     {
       name: "Microsoft Office 365 Presentation",
@@ -26,7 +28,8 @@ class envelopeHandler implements FormatHandler {
       mime: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
       from: true,
       to: false,
-      internal: "pptx"
+      internal: "pptx",
+      category: "presentation"
     },
     {
       name: "Microsoft Office 365 Workbook",
@@ -35,7 +38,8 @@ class envelopeHandler implements FormatHandler {
       mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       from: true,
       to: false,
-      internal: "xlsx"
+      internal: "xlsx",
+      category: "spreadsheet"
     },
     {
       name: "OpenDocument Text",
@@ -44,7 +48,8 @@ class envelopeHandler implements FormatHandler {
       mime: "application/vnd.oasis.opendocument.text",
       from: true,
       to: false,
-      internal: "odt"
+      internal: "odt",
+      category: "document"
     },
     {
       name: "OpenDocument Presentation",
@@ -53,7 +58,8 @@ class envelopeHandler implements FormatHandler {
       mime: "application/vnd.oasis.opendocument.presentation",
       from: true,
       to: false,
-      internal: "odp"
+      internal: "odp",
+      category: "presentation"
     },
     {
       name: "OpenDocument Spreadsheet",
@@ -62,17 +68,10 @@ class envelopeHandler implements FormatHandler {
       mime: "application/vnd.oasis.opendocument.spreadsheet",
       from: true,
       to: false,
-      internal: "ods"
+      internal: "ods",
+      category: "spreadsheet"
     },
-    {
-      name: "Hypertext Markup Language",
-      format: "html",
-      extension: "html",
-      mime: "text/html",
-      from: false,
-      to: true,
-      internal: "html"
-    }
+    CommonFormats.HTML.supported("html", false, true, true)
   ];
 
   public ready: boolean = true;

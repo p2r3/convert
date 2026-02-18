@@ -13,7 +13,9 @@ class jszipHandler implements FormatHandler {
       mime: "application/zip",
       from: false,
       to: true,
-      internal: "zip"
+      internal: "zip",
+      category: "archive",
+      lossless: true
     }
   ];
 
