@@ -1,4 +1,4 @@
-import CommonFormats, { Category } from "src/CommonFormats.ts";
+import CommonFormats from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 
 // base class for handling renames
@@ -12,7 +12,7 @@ function renameHandler(name: string, formats: FileFormat[]): FormatHandler {
     },
     async doConvert (
       inputFiles: FileData[],
-      inputFormat: FileFormat,
+      _inputFormat: FileFormat,
       outputFormat: FileFormat
     ): Promise<FileData[]> {
       return inputFiles.map(file => {

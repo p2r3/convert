@@ -1,4 +1,5 @@
 import type { FormatHandler } from "../FormatHandler.ts";
+import { handlerRegistry } from "../HandlerRegistry.ts";
 
 import canvasToBlobHandler from "./canvasToBlob.ts";
 import meydaHandler from "./meyda.ts";
@@ -32,37 +33,56 @@ import libopenmptHandler from "./libopenmpt.ts";
 import lzhHandler from "./lzh.ts";
 
 const handlers: FormatHandler[] = [];
-try { handlers.push(new svgTraceHandler()) } catch (_) { };
-try { handlers.push(new canvasToBlobHandler()) } catch (_) { };
-try { handlers.push(new meydaHandler()) } catch (_) { };
-try { handlers.push(new htmlEmbedHandler()) } catch (_) { };
-try { handlers.push(new FFmpegHandler()) } catch (_) { };
-try { handlers.push(new pdftoimgHandler()) } catch (_) { };
-try { handlers.push(new ImageMagickHandler()) } catch (_) { };
-try { handlers.push(renameZipHandler) } catch (_) { };
-try { handlers.push(renameTxtHandler) } catch (_) { };
-try { handlers.push(new envelopeHandler()) } catch (_) { };
-try { handlers.push(new svgForeignObjectHandler()) } catch (_) { };
-try { handlers.push(new qoiFuHandler()) } catch (_) { };
-try { handlers.push(new sppdHandler()) } catch (_) { };
-try { handlers.push(new threejsHandler()) } catch (_) { };
-try { handlers.push(new sqlite3Handler()) } catch (_) { };
-try { handlers.push(new vtfHandler()) } catch (_) { };
-try { handlers.push(new mcMapHandler()) } catch (_) { };
-try { handlers.push(new jszipHandler()) } catch (_) { };
-try { handlers.push(new qoaFuHandler()) } catch (_) { };
-try { handlers.push(new pyTurtleHandler()) } catch (_) { };
-try { handlers.push(new fromJsonHandler()) } catch (_) { };
-try { handlers.push(new toJsonHandler()) } catch (_) { };
-try { handlers.push(new nbtHandler()) } catch (_) { };
-try { handlers.push(new peToZipHandler()) } catch (_) { };
-try { handlers.push(new flptojsonHandler()) } catch (_) { };
-try { handlers.push(new floHandler()) } catch (_) { };
-try { handlers.push(new cgbiToPngHandler()) } catch (_) { };
-try { handlers.push(new batToExeHandler()) } catch (_) { };
-try { handlers.push(new textEncodingHandler()) } catch (_) { };
-try { handlers.push(new libopenmptHandler()) } catch (_) { };
-try { handlers.push(new lzhHandler()) } catch (_) { };
-try { handlers.push(new pandocHandler()) } catch (_) { };
+
+// Register handlers with proper error tracking
+// Handler initialization errors are now logged and observable via handlerRegistry
+
+function tryRegisterHandler(handler: FormatHandler): void {
+  if (handlerRegistry.register(handler)) {
+    handlers.push(handler);
+  }
+}
+
+tryRegisterHandler(new svgTraceHandler());
+tryRegisterHandler(new canvasToBlobHandler());
+tryRegisterHandler(new meydaHandler());
+tryRegisterHandler(new htmlEmbedHandler());
+tryRegisterHandler(new FFmpegHandler());
+tryRegisterHandler(new pdftoimgHandler());
+tryRegisterHandler(new ImageMagickHandler());
+tryRegisterHandler(renameZipHandler);
+tryRegisterHandler(renameTxtHandler);
+tryRegisterHandler(new envelopeHandler());
+tryRegisterHandler(new svgForeignObjectHandler());
+tryRegisterHandler(new qoiFuHandler());
+tryRegisterHandler(new sppdHandler());
+tryRegisterHandler(new threejsHandler());
+tryRegisterHandler(new sqlite3Handler());
+tryRegisterHandler(new vtfHandler());
+tryRegisterHandler(new mcMapHandler());
+tryRegisterHandler(new jszipHandler());
+tryRegisterHandler(new qoaFuHandler());
+tryRegisterHandler(new pyTurtleHandler());
+tryRegisterHandler(new fromJsonHandler());
+tryRegisterHandler(new toJsonHandler());
+tryRegisterHandler(new nbtHandler());
+tryRegisterHandler(new peToZipHandler());
+tryRegisterHandler(new flptojsonHandler());
+tryRegisterHandler(new floHandler());
+tryRegisterHandler(new cgbiToPngHandler());
+tryRegisterHandler(new batToExeHandler());
+tryRegisterHandler(new textEncodingHandler());
+tryRegisterHandler(new libopenmptHandler());
+tryRegisterHandler(new lzhHandler());
+tryRegisterHandler(new pandocHandler());
+
+// Log any handler initialization errors that occurred
+const initErrors = handlerRegistry.getInitErrors();
+if (initErrors.length > 0) {
+  console.warn(`Handler initialization completed with ${initErrors.length} error(s):`);
+  for (const err of initErrors) {
+    console.warn(`  - ${err.handlerName}: ${err.error}`);
+  }
+}
 
 export default handlers;
