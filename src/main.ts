@@ -2,6 +2,7 @@ import type { FileFormat, FileData, FormatHandler, ConvertPathNode } from "./For
 import normalizeMimeType from "./normalizeMimeType.js";
 import handlers from "./handlers";
 import { TraversionGraph } from "./TraversionGraph.js";
+import { validateFileContent } from "./magicBytes.js";
 
 /** Files currently selected for conversion */
 let selectedFiles: File[] = [];
@@ -456,6 +457,17 @@ ui.convertButton.onclick = async function () {
     for (const inputFile of inputFiles) {
       const inputBuffer = await inputFile.arrayBuffer();
       const inputBytes = new Uint8Array(inputBuffer);
+      
+      // Validate file content against declared MIME type
+      const validation = validateFileContent(inputBytes, inputFormat.mime);
+      if (!validation.isValid) {
+        clearFileData(inputFileData);
+        currentAbortController = null;
+        ui.cancelButton.classList.add("hidden");
+        window.hidePopup();
+        return alert(`File validation failed: ${validation.message}\n\nThe file "${inputFile.name}" may be corrupted or have the wrong extension.`);
+      }
+      
       if (inputFormat.mime === outputFormat.mime) {
         downloadFile(inputBytes, inputFile.name, inputFormat.mime);
         continue;
