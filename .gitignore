@@ -4,3 +4,5 @@ node_modules
 start.sh
 dist
 cache.json
+.idea
+.gitignore
