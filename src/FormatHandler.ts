@@ -11,6 +11,8 @@ export interface IFormatDefinition {
   extension: string;
   /** MIME type. */
   mime: string;
+  /** Category for grouping formats. */
+  category?: Array<string> | string
 }
 
 export interface FileFormat extends IFormatDefinition {
@@ -20,9 +22,7 @@ export interface FileFormat extends IFormatDefinition {
   to: boolean;
   /** Format identifier for the handler's internal reference. */
   internal: string;
-  /** Category for grouping formats. */
-  category?: Array<string> | string
-  /** Whether the format is lossless (if applicable). */
+  /** (Optional) Whether the format is lossless in this context. Defaults to `false`. */
   lossless?: boolean;
 }
 
@@ -37,11 +37,11 @@ export class FormatDefinition implements IFormatDefinition {
   public readonly mime: string;
   public readonly category?: string[] | string;
 
-  constructor (
-    name: string,
-    format: string,
-    extension: string,
-    mime: string,
+  constructor(
+    name: string, 
+    format: string, 
+    extension: string, 
+    mime: string, 
     category?: string[] | string
   ) {
     this.name = name
@@ -58,16 +58,81 @@ export class FormatDefinition implements IFormatDefinition {
    * @param from Whether conversion **from** this format is supported.
    * @param to Whether conversion **to** this format is supported.
    * @param lossless (Optional) Whether the format is lossless in this context. Defaults to `false`.
-   * @returns
+   * @param override Format definition values to override
+   * @returns 
    */
-  supported(ref: string, from: boolean, to: boolean, lossless?: boolean): FileFormat {
+  supported(ref: string, from: boolean, to: boolean, lossless?: boolean, override: Partial<IFormatDefinition> = {}): FileFormat {
     return {
       ...this,
+      ...override,
       internal: ref,
       from: from,
       to: to,
-      lossless: lossless
+      lossless: lossless ?? false
     }
+  }
+
+  /**
+   * Returns a builder to fluently create FileFormat.  
+   * Builder can be used to create FileFormat based on this format definition
+   */
+  builder(ref: string) {
+    const def = this;
+
+    const builder = {
+      // FileFormat fields
+      name: def.name,
+      format: def.format,
+      extension: def.extension,
+      mime: def.mime,
+      category: def.category,
+      internal: ref,
+      from: false,
+      to: false,
+      lossless: false,
+
+      allowFrom(value: boolean = true) {
+        this.from = value;
+        return this;
+      },
+      allowTo(value: boolean = true) {
+        this.to = value;
+        return this;
+      },
+      markLossless(value: boolean = true) {
+        this.lossless = value;
+        return this;
+      },
+      named(name: string) {
+        this.name = name;
+        return this;
+      },
+      withFormat(format: string) {
+        this.format = format;
+        return this;
+      },
+      withExt(ext: string) {
+        this.extension = ext;
+        return this;
+      },
+      withMime(mimetype: string) {
+        this.mime = mimetype;
+        return this;
+      },
+      /**
+       * Replaces format category
+       */
+      withCategory(category: string[] | string | undefined) {
+        this.category = category
+        return this
+      },
+      override(values: Partial<IFormatDefinition>) {
+        Object.assign(this, values);
+        return this;
+      },
+    };
+
+    return builder as FileFormat & typeof builder;
   }
 }
 

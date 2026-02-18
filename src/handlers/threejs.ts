@@ -52,8 +52,10 @@ class threejsHandler implements FormatHandler {
       });
 
       const bbox = new THREE.Box3().setFromObject(gltf.scene);
+      bbox.getCenter(this.camera.position);
       this.camera.position.z = bbox.max.z * 2;
 
+      this.scene.background = new THREE.Color(0x424242);
       this.scene.add(gltf.scene);
       this.renderer.render(this.scene, this.camera);
       this.scene.remove(gltf.scene);
