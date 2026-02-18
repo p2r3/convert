@@ -35,7 +35,7 @@ class meydaHandler implements FormatHandler {
     });
     if (dummy.canPlayType("audio/mpeg")) this.supportedFormats.push(
       // lossless=false, lossy reconstruction 
-      CommonFormats.MP3.supported("audio", true, false, false)
+      CommonFormats.MP3.supported("audio", true, false)
     );
     if (dummy.canPlayType("audio/ogg")) this.supportedFormats.push({
       name: "Ogg Audio",
