@@ -113,7 +113,7 @@ class dummyHandler implements FormatHandler {
             mime: "image/png",
             from: false,
             to: false,
-            lossless: false,
+            lossless: true,
             internal: "png",
             category: "image"
         },
