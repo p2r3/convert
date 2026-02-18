@@ -277,7 +277,7 @@ async function buildOptionList () {
 
     }
   }
-  window.traversionGraph.init();
+  window.traversionGraph.init(window.supportedFormatCache, handlers);
   filterButtonList(ui.inputList, ui.inputSearch.value);
   filterButtonList(ui.outputList, ui.outputSearch.value);
 

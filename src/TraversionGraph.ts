@@ -1,6 +1,4 @@
-import { int } from "three/tsl";
-import { ConvertPathNode, type FileFormat } from "./FormatHandler.ts";
-import handlers from "./handlers";
+import { ConvertPathNode, type FileFormat, type FormatHandler } from "./FormatHandler.ts";
 import { PriorityQueue } from './PriorityQueue.ts';
 
 interface QueueNode {
@@ -44,6 +42,11 @@ export interface Edge {
 };
 
 export class TraversionGraph {
+    constructor(disableSafeChecks: boolean = false) {
+        this.disableSafeChecks = disableSafeChecks;
+    }
+    private disableSafeChecks: boolean;
+    private handlers: FormatHandler[] = [];
     private nodes: Node[] = [];
     private edges: Edge[] = [];
     private categoryChangeCosts: CategoryChangeCost[] = [
@@ -65,11 +68,21 @@ export class TraversionGraph {
         { categories: ["audio", "video", "image"], cost: 10000 }, // Converting from audio to image through video is especially lossy
     ];
 
-    public addCategoryChangeCost(from: string, to: string, cost: number, handler?: string) {
+    public addCategoryChangeCost(from: string, to: string, cost: number, handler?: string, updateIfExists: boolean = true) : boolean {
+        if (this.hasCategoryChangeCost(from, to, handler)) {
+            if (updateIfExists) {
+                this.updateCategoryChangeCost(from, to, cost, handler)
+                return true;
+            }
+            return false;
+        }
         this.categoryChangeCosts.push({from, to, cost, handler: handler?.toLowerCase()});
+        return true;
     }
-    public removeCategoryChangeCost(from: string, to: string, handler?: string) {
+    public removeCategoryChangeCost(from: string, to: string, handler?: string) : boolean {
+        const initialLength = this.categoryChangeCosts.length;
         this.categoryChangeCosts = this.categoryChangeCosts.filter(c => !(c.from === from && c.to === to && c.handler === handler?.toLowerCase()));
+        return this.categoryChangeCosts.length < initialLength;
     }
     public updateCategoryChangeCost(from: string, to: string, cost: number, handler?: string) {
         const costEntry = this.categoryChangeCosts.find(c => c.from === from && c.to === to && c.handler === handler?.toLowerCase());
@@ -81,11 +94,21 @@ export class TraversionGraph {
     }
 
 
-    public addCategoryAdaptiveCost(categories: string[], cost: number) {
+    public addCategoryAdaptiveCost(categories: string[], cost: number, updateIfExists: boolean = true) : boolean {
+        if (this.hasCategoryAdaptiveCost(categories)) {
+            if (updateIfExists) {
+                this.updateCategoryAdaptiveCost(categories, cost);
+                return true;
+            }
+            return false;
+        }
         this.categoryAdaptiveCosts.push({categories, cost});
+        return true;
     }
-    public removeCategoryAdaptiveCost(categories: string[]) {
+    public removeCategoryAdaptiveCost(categories: string[]) : boolean {
+        const initialLength = this.categoryAdaptiveCosts.length;
         this.categoryAdaptiveCosts = this.categoryAdaptiveCosts.filter(c => !(c.categories.length === categories.length && c.categories.every((cat, index) => cat === categories[index])));
+        return this.categoryAdaptiveCosts.length < initialLength;
     }
     public updateCategoryAdaptiveCost(categories: string[], cost: number) {
         const costEntry = this.categoryAdaptiveCosts.find(c => c.categories.length === categories.length && c.categories.every((cat, index) => cat === categories[index]));
@@ -100,11 +123,15 @@ export class TraversionGraph {
      * Initializes the traversion graph based on the supported formats and handlers. This should be called after all handlers have been registered and their supported formats have been cached in window.supportedFormatCache. The graph is built by creating nodes for each unique file format and edges for each possible conversion between formats based on the handlers' capabilities. 
      * @param strictCategories If true, the algorithm will apply category change costs more strictly, even when formats share categories. This can lead to more accurate pathfinding at the cost of potentially longer paths and increased search time. If false, category change costs will only be applied when formats do not share any categories, allowing for more flexible pathfinding that may yield shorter paths but with less nuanced cost calculations.
      */
-    public init(strictCategories: boolean = false) {
+    public init(supportedFormatCache: Map<string, FileFormat[]>, handlers: FormatHandler[], strictCategories: boolean = false) {
+        this.handlers = handlers;
+        this.nodes.length = 0;
+        this.edges.length = 0;
+
         console.log("Initializing traversion graph...");
         const startTime = performance.now();
         let handlerIndex = 0;
-        window.supportedFormatCache.forEach((formats, handler) => {
+        supportedFormatCache.forEach((formats, handler) => {
             let fromIndices: Array<{format: FileFormat, index: number}> = [];
             let toIndices: Array<{format: FileFormat, index: number}> = [];
             formats.forEach(format => {
@@ -193,7 +220,7 @@ export class TraversionGraph {
         cost += HANDLER_PRIORITY_COST * handlerIndex;
 
         // Add cost based on format priority
-        const handlerObj = handlers.find(h => h.name === handler)
+        const handlerObj = this.handlers.find(h => h.name === handler)
         cost += FORMAT_PRIORITY_COST * (handlerObj?.supportedFormats?.findIndex(f => f.mime === to.format.mime) ?? 0);
 
         // Add cost multiplier for lossy conversions
@@ -202,9 +229,25 @@ export class TraversionGraph {
         return cost;
     }
 
-    public getData() : {nodes: Node[], edges: Edge[]} {
-        return {nodes: this.nodes, edges: this.edges};
+    /**
+     * Returns a copy of the graph data, including nodes, edges, category change costs, and category adaptive costs. This can be used for debugging, visualization, or analysis purposes. The returned data is a deep copy to prevent external modifications from affecting the internal state of the graph.
+     */
+    public getData() : {nodes: Node[], edges: Edge[], categoryChangeCosts: CategoryChangeCost[], categoryAdaptiveCosts: CategoryAdaptiveCost[]} {
+        return {
+            nodes: this.nodes.map(node => ({mime: node.mime, edges: [...node.edges]})),
+            edges: this.edges.map(edge => ({
+                from: {format: {...edge.from.format}, index: edge.from.index},
+                to: {format: {...edge.to.format}, index: edge.to.index},
+                handler: edge.handler,
+                cost: edge.cost
+            })),
+            categoryChangeCosts: this.categoryChangeCosts.map(c => ({from: c.from, to: c.to, handler: c.handler, cost: c.cost})),
+            categoryAdaptiveCosts: this.categoryAdaptiveCosts.map(c => ({categories: [...c.categories], cost: c.cost}))
+        }; 
     }
+    /**
+     * @coverageIgnore
+     */
     public print() {
         let output = "Nodes:\n";
         this.nodes.forEach((node, index) => {
@@ -253,29 +296,31 @@ export class TraversionGraph {
             if (current.index === toIndex) {
                 // Return the path of handlers and formats to get from the input format to the output format
                 console.log(`Found path at iteration ${iterations} with cost ${current.cost}: ${current.path.map(p => p.handler.name + "(" + p.format.mime + ")").join(" -> ")}`);
-                // HACK HACK HACK!!
-                //   Converting image -> video -> audio loses all meaningful media.
-                //   For now, we explicitly check for this case to avoid blocking Meyda.
-                let found = false;
-                for (let i = 0; i < current.path.length; i ++) {
-                    const curr = current.path[i];
-                    const next = current.path[i + 1];
-                    const last = current.path[i + 2];
-                    if (!curr || !next || !last) break;
-                    if (
-                        [curr.format.category].flat().includes("image")
-                        && [next.format.category].flat().includes("video")
-                        && [last.format.category].flat().includes("audio")
-                    ) {
-                        found = true;
-                        break;
+                if (!this.disableSafeChecks) {
+                    // HACK HACK HACK!!
+                    //   Converting image -> video -> audio loses all meaningful media.
+                    //   For now, we explicitly check for this case to avoid blocking Meyda.
+                    let found = false;
+                    for (let i = 0; i < current.path.length; i ++) {
+                        const curr = current.path[i];
+                        const next = current.path[i + 1];
+                        const last = current.path[i + 2];
+                        if (!curr || !next || !last) break;
+                        if (
+                            [curr.format.category].flat().includes("image")
+                            && [next.format.category].flat().includes("video")
+                            && [last.format.category].flat().includes("audio")
+                        ) {
+                            found = true;
+                            break;
+                        }
                     }
+                    if (found) {
+                        console.log(`Skipping path ${current.path.map(p => p.format.mime).join(" → ")} due to complete loss of media.`);
+                        continue;
+                    }
+                    // END OF HACK HACK HACK!!
                 }
-                if (found) {
-                    console.log(`Skipping path ${current.path.map(p => p.format.mime).join(" → ")} due to complete loss of media.`);
-                    continue;
-                }
-                // END OF HACK HACK HACK!!
                 if (simpleMode || !to.handler || to.handler.name === current.path.at(-1)?.handler.name) {
                     console.log(`Found path at iteration ${iterations} with cost ${current.cost}: ${current.path.map(p => p.handler.name + "(" + p.format.mime + ")").join(" -> ")}`);
                     this.dispatchEvent("found", current.path);
@@ -294,7 +339,7 @@ export class TraversionGraph {
                 let edge = this.edges[edgeIndex];
                 const indexInVisited = visited.indexOf(edge.to.index);
                 if (indexInVisited >= 0 && indexInVisited < current.visitedBorder) return;
-                const handler = handlers.find(h => h.name === edge.handler);
+                const handler = this.handlers.find(h => h.name === edge.handler);
                 if (!handler) return; // If the handler for this edge is not found, skip it
                 
                 let path = current.path.concat({handler: handler, format: edge.to.format});
