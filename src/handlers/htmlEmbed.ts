@@ -63,7 +63,7 @@ class htmlEmbedHandler implements FormatHandler {
       from: true,
       to: false,
       internal: "svg",
-      category: ["image", "vector"],
+      category: ["image", "vector", "document"],
     },
     {
       name: "Plain Text",

@@ -57,7 +57,7 @@ class qoiFuHandler implements FormatHandler {
       from: true,
       to: false,
       internal: "svg",
-      category: ["image", "vector"]
+      category: ["image", "vector", "document"]
     },
     {
       name: "Quite OK Image",

@@ -23,7 +23,7 @@ class svgForeignObjectHandler implements FormatHandler {
       from: false,
       to: true,
       internal: "svg",
-      category: ["image", "vector"],
+      category: ["image", "vector", "document"],
       lossless: true // Identical to the input HTML, just wrapped in an SVG foreignObject, so it's lossless
     }
   ];

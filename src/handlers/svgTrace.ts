@@ -48,7 +48,7 @@ class svgTraceHandler implements FormatHandler {
         from: false,
         to: true,
         internal: "svg",
-        category: ["image", "vector"],
+        category: ["image", "vector", "document"],
         lossless: false
       },
     ];
