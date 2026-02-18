@@ -14,11 +14,16 @@ let selectedFiles: File[] = [];
 let simpleMode: boolean = true;
 
 /** Handlers that support conversion from any formats. */
-const conversionsFromAnyInput: ConvertPathNode[] = handlers
+// Note: This variable is kept for potential future use in advanced mode
+// It could be used to show all handlers that can accept any input format
+const _conversionsFromAnyInput: ConvertPathNode[] = handlers
 .filter(h => h.supportAnyInput && h.supportedFormats)
 .flatMap(h => h.supportedFormats!
   .filter(f => f.to)
-  .map(f => ({ handler: h, format: f})))
+  .map(f => ({ handler: h, format: f})));
+
+// Mark as intentionally unused for TypeScript
+void _conversionsFromAnyInput;
 
 const ui = {
   fileInput: document.querySelector("#file-input") as HTMLInputElement,
