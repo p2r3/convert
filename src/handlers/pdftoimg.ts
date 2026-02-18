@@ -1,3 +1,4 @@
+import CommonFormats from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 
 import { pdfToImg } from "pdftoimg-js/browser";
@@ -23,26 +24,11 @@ class pdftoimgHandler implements FormatHandler {
       mime: "application/pdf",
       from: true,
       to: false,
-      internal: "pdf"
+      internal: "pdf",
+      category: "document"
     },
-    {
-      name: "Portable Network Graphics",
-      format: "png",
-      extension: "png",
-      mime: "image/png",
-      from: false,
-      to: true,
-      internal: "png"
-    },
-    {
-      name: "Joint Photographic Experts Group JFIF",
-      format: "jpeg",
-      extension: "jpg",
-      mime: "image/jpeg",
-      from: false,
-      to: true,
-      internal: "jpeg"
-    }
+    CommonFormats.PNG.supported("png", false, true),
+    CommonFormats.JPEG.supported("jpeg", false, true),
   ];
 
   public ready: boolean = true;

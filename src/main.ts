@@ -1,6 +1,7 @@
 import type { FileFormat, FileData, FormatHandler, ConvertPathNode } from "./FormatHandler.js";
 import normalizeMimeType from "./normalizeMimeType.js";
 import handlers from "./handlers";
+import { TraversionGraph } from "./TraversionGraph.js";
 
 /** Files currently selected for conversion */
 let selectedFiles: File[] = [];
@@ -179,6 +180,7 @@ window.hidePopup = function () {
 const allOptions: Array<{ format: FileFormat, handler: FormatHandler }> = [];
 
 window.supportedFormatCache = new Map();
+window.traversionGraph = new TraversionGraph();
 
 window.printSupportedFormatCache = () => {
   const entries = [];
@@ -187,6 +189,7 @@ window.printSupportedFormatCache = () => {
   }
   return JSON.stringify(entries, null, 2);
 }
+
 
 async function buildOptionList () {
 
@@ -274,7 +277,7 @@ async function buildOptionList () {
 
     }
   }
-
+  window.traversionGraph.init();
   filterButtonList(ui.inputList, ui.inputSearch.value);
   filterButtonList(ui.outputList, ui.outputSearch.value);
 
@@ -309,21 +312,12 @@ ui.modeToggleButton.addEventListener("click", () => {
   buildOptionList();
 });
 
-const convertPathCache: Array<{
-  files: FileData[],
-  node: ConvertPathNode
-}> = [];
-
 async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
 
   ui.popupBox.innerHTML = `<h2>Finding conversion route...</h2>
     <p>Trying <b>${path.map(c => c.format.format).join(" → ")}</b>...</p>`;
 
-  const cacheLast = convertPathCache.at(-1);
-  if (cacheLast) files = cacheLast.files;
-
-  const start = cacheLast ? convertPathCache.length : 0;
-  for (let i = start; i < path.length - 1; i ++) {
+  for (let i = 0; i < path.length - 1; i ++) {
     const handler = path[i + 1].handler;
     try {
       let supportedFormats = window.supportedFormatCache.get(handler.name);
@@ -340,7 +334,6 @@ async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
       const inputFormat = supportedFormats.find(c => c.mime === path[i].format.mime && c.from)!;
       files = await handler.doConvert(files, inputFormat, path[i + 1].format);
       if (files.some(c => !c.bytes.length)) throw "Output is empty.";
-      convertPathCache.push({ files, node: path[i + 1] });
     } catch (e) {
       console.log(path.map(c => c.format.format));
       console.error(handler.name, `${path[i].format.format} → ${path[i + 1].format.format}`, e);
@@ -352,84 +345,16 @@ async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
 
 }
 
-async function buildConvertPath (
+async function tryConvertByTraversing (
   files: FileData[],
-  target: ConvertPathNode,
-  queue: ConvertPathNode[][]
+  from: ConvertPathNode,
+  to: ConvertPathNode
 ) {
-
-  convertPathCache.length = 0;
-
-  let isNestedConversion: boolean = false;
-
-  while (queue.length > 0) {
-    const path = queue.shift();
-    if (!path) continue;
-    if (path.length > 5) continue;
-
-    for (let i = 1; i < path.length; i ++) {
-      if (path[i] !== convertPathCache[i]?.node) {
-        convertPathCache.length = i - 1;
-        break;
-      }
-    }
-
-    const previous = path[path.length - 1];
-
-    // Get handlers that support *taking in* the previous node's format
-    const validHandlers = handlers.filter(handler => (
-      window.supportedFormatCache.get(handler.name)?.some(format => (
-        format.mime === previous.format.mime &&
-        format.from
-      ))
-    ));
-
-    if (simpleMode) {
-      // Try *all* supported handlers that output the target format
-      const candidates = allOptions.filter(opt =>
-        validHandlers.includes(opt.handler) &&
-        opt.format.mime === target.format.mime && opt.format.to
-      );
-      for (const candidate of candidates) {
-        const attempt = await attemptConvertPath(files, path.concat(candidate));
-        if (attempt) return attempt;
-      }
-    } else {
-      // Check if the target handler is supported by the previous node
-      if (validHandlers.includes(target.handler)) {
-        const attempt = await attemptConvertPath(files, path.concat(target));
-        if (attempt) return attempt;
-      }
-    }
-
-    // Look for conversions from any input format.
-    // Checked only if there is no direct conversion between the requested formats.
-    if (!isNestedConversion) {
-      const anyConversions = conversionsFromAnyInput.filter(c => c.format.mime == target.format.mime);
-
-      for (const conversion of anyConversions) {
-        const attempt = await attemptConvertPath(files, path.concat(conversion));
-        if (attempt) return attempt; 
-      }
-
-      isNestedConversion = true;
-    }
-
-    // Look for untested mime types among valid handlers and add to queue
-    for (const handler of validHandlers) {
-      const supportedFormats = window.supportedFormatCache.get(handler.name);
-      if (!supportedFormats) continue;
-      for (const format of supportedFormats) {
-        if (!format.to) continue;
-        if (!format.mime) continue;
-        if (path.some(c => c.format === format)) continue;
-        queue.push(path.concat({ format, handler }));
-      }
-    }
+  for await (const path of window.traversionGraph.searchPath(from, to, simpleMode)) {
+    const attempt = await attemptConvertPath(files, path);
+    if (attempt) return attempt;
   }
-
   return null;
-
 }
 
 function downloadFile (bytes: Uint8Array, name: string, mime: string) {
@@ -475,7 +400,7 @@ ui.convertButton.onclick = async function () {
 
     window.showPopup("<h2>Finding conversion route...</h2>");
 
-    const output = await buildConvertPath(inputFileData, outputOption, [[inputOption]]);
+    const output = await tryConvertByTraversing(inputFileData, inputOption, outputOption);
     if (!output) {
       window.hidePopup();
       alert("Failed to find conversion route.");

@@ -1,39 +1,16 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 
 import Meyda from "meyda";
+import CommonFormats from "src/CommonFormats.ts";
 import { WaveFile } from "wavefile";
 
 class meydaHandler implements FormatHandler {
 
   public name: string = "meyda";
   public supportedFormats: FileFormat[] = [
-    {
-      name: "Portable Network Graphics",
-      format: "png",
-      extension: "png",
-      mime: "image/png",
-      from: true,
-      to: true,
-      internal: "image"
-    },
-    {
-      name: "Joint Photographic Experts Group JFIF",
-      format: "jpeg",
-      extension: "jpg",
-      mime: "image/jpeg",
-      from: true,
-      to: true,
-      internal: "image"
-    },
-    {
-      name: "WebP",
-      format: "webp",
-      extension: "webp",
-      mime: "image/webp",
-      from: true,
-      to: true,
-      internal: "image"
-    }
+    CommonFormats.PNG.supported("image", true, true),
+    CommonFormats.JPEG.supported("image", true, true),
+    CommonFormats.WEBP.supported("image", true, true),
   ];
   public ready: boolean = false;
 
@@ -51,17 +28,13 @@ class meydaHandler implements FormatHandler {
       mime: "audio/wav",
       from: dummy.canPlayType("audio/wav") !== "",
       to: true,
-      internal: "audio"
+      internal: "audio",
+      category: "audio",
+      lossless: false // Lossy reconstruction
     });
-    if (dummy.canPlayType("audio/mpeg")) this.supportedFormats.push({
-      name: "MP3 Audio",
-      format: "mp3",
-      extension: "mp3",
-      mime: "audio/mpeg",
-      from: true,
-      to: false,
-      internal: "audio"
-    });
+    if (dummy.canPlayType("audio/mpeg")) this.supportedFormats.push(
+      CommonFormats.MP3.supported("audio", true, false)
+    );
     if (dummy.canPlayType("audio/ogg")) this.supportedFormats.push({
       name: "Ogg Audio",
       format: "ogg",
@@ -69,7 +42,9 @@ class meydaHandler implements FormatHandler {
       mime: "audio/ogg",
       from: true,
       to: false,
-      internal: "audio"
+      internal: "audio",
+      category: "audio",
+      lossless: false // Lossy reconstruction
     });
     if (dummy.canPlayType("audio/flac")) this.supportedFormats.push({
       name: "Free Lossless Audio Codec",
@@ -78,7 +53,9 @@ class meydaHandler implements FormatHandler {
       mime: "audio/flac",
       from: true,
       to: false,
-      internal: "audio"
+      internal: "audio",
+      category: "audio",
+      lossless: false // Lossy reconstruction
     });
     dummy.remove();
 

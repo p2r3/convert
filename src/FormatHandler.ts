@@ -1,4 +1,8 @@
-export interface FileFormat {
+
+/**
+ * Definition of file format. Contains format defined constants like mime type and names
+ */
+export interface IFormatDefinition {
   /** Format description (long name) for displaying to the user. */
   name: string;
   /** Short, "formal" name for displaying to the user. */
@@ -7,13 +11,66 @@ export interface FileFormat {
   extension: string;
   /** MIME type. */
   mime: string;
+}
+
+export interface FileFormat extends IFormatDefinition {
   /** Whether conversion **from** this format is supported. */
   from: boolean;
   /** Whether conversion **to** this format is supported. */
   to: boolean;
   /** Format identifier for the handler's internal reference. */
   internal: string;
+  /** Category for grouping formats. */
+  category?: Array<string> | string
+  /** Whether the format is lossless (if applicable). */
+  lossless?: boolean;
 }
+
+/**
+ * Class containing format definition and method used to produce FileFormat
+ * that can be supported by handlers.
+ */
+export class FormatDefinition implements IFormatDefinition {
+  public readonly name: string;
+  public readonly format: string;
+  public readonly extension: string;
+  public readonly mime: string;
+  public readonly category?: string[] | string;
+
+  constructor (
+    name: string,
+    format: string,
+    extension: string,
+    mime: string,
+    category?: string[] | string
+  ) {
+    this.name = name
+    this.format = format
+    this.extension = extension
+    this.mime = mime
+    this.category = category
+  }
+
+  /**
+   * Returns `FileFormat` object that uses this format definition
+   * and specified options
+   * @param ref Format identifier for the handler's internal reference.
+   * @param from Whether conversion **from** this format is supported.
+   * @param to Whether conversion **to** this format is supported.
+   * @param lossless (Optional) Whether the format is lossless in this context. Defaults to `false`.
+   * @returns
+   */
+  supported(ref: string, from: boolean, to: boolean, lossless?: boolean): FileFormat {
+    return {
+      ...this,
+      internal: ref,
+      from: from,
+      to: to,
+      lossless: lossless
+    }
+  }
+}
+
 
 export interface FileData {
   /** File name with extension. */
