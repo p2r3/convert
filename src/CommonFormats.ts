@@ -72,6 +72,13 @@ const CommonFormats = {
         "application/yaml",
         Category.DATA
     ),
+    CSV: new FormatDefinition(
+        "Comma Seperated Values",
+        "csv",
+        "csv",
+        "text/csv",
+        Category.DATA
+    ),
     TEXT: new FormatDefinition(
         "Plain Text",
         "text",

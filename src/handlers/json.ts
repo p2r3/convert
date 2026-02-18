@@ -9,16 +9,7 @@ export class toJsonHandler implements FormatHandler {
   public ready: boolean = true;
 
   public supportedFormats: FileFormat[] = [
-    {
-      name: "Comma Separated Values",
-      format: "csv",
-      extension: "csv",
-      mime: "text/csv",
-      from: true,
-      to: false,
-      internal: "csv",
-      category: "data"
-    },
+    CommonFormats.CSV.builder("csv").allowFrom(),
     CommonFormats.XML.builder("xml").allowFrom(),
     CommonFormats.YML.builder("yaml").allowFrom(),
     CommonFormats.JSON.supported("json", false, true, true)
@@ -85,15 +76,7 @@ export class fromJsonHandler {
   public ready: boolean = true;
 
   public supportedFormats: FileFormat[] = [
-    {
-      name: "Comma Separated Values",
-      format: "csv",
-      extension: "csv",
-      mime: "text/csv",
-      from: false,
-      to: true,
-      internal: "csv"
-    },
+    CommonFormats.CSV.builder("csv").allowTo(),
     CommonFormats.XML.builder("xml").allowTo(),
     CommonFormats.YML.builder("yaml").allowTo(),
     CommonFormats.JSON.supported("json", true, false)
