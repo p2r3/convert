@@ -160,24 +160,8 @@ export const renameZipHandler = renameHandler("renamezip", [
 ]);
 /// handler for renaming text-based formats
 export const renameTxtHandler = renameHandler("renametxt", [
-  {
-    name: "Plain Text",
-    format: "text",
-    extension: "txt",
-    mime: "text/plain",
-    from: false,
-    to: true,
-    internal: "text"
-  },
-  {
-    name: "JavaScript Object Notation",
-    format: "json",
-    extension: "json",
-    mime: "application/json",
-    from: true,
-    to: false,
-    internal: "json"
-  },
+  CommonFormats.TEXT.builder("text").allowTo(),
+  CommonFormats.JSON.builder("json").allowFrom(),
   CommonFormats.XML.builder("xml").allowFrom(),
   CommonFormats.YML.builder("yaml").allowFrom()
 ])
