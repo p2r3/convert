@@ -73,7 +73,8 @@ export class FormatDefinition implements IFormatDefinition {
   }
 
   /**
-   * Returns a builder to fluently create FileFormat
+   * Returns a builder to fluently create FileFormat.  
+   * Builder can be used to create FileFormat based on this format definition
    */
   builder() {
     const def = this
