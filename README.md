@@ -100,10 +100,23 @@ class dummyHandler implements FormatHandler {
   async init () {
     this.supportedFormats = [
       // Example PNG format, with both input and output disabled
-      CommonFormats.PNG.builder("png")
-        .markLossless()
+        CommonFormats.PNG.builder("png")
+            .markLossless(),
         // .allowFrom()
         // .allowTo()
+
+      // Same thing as above, but defined customly, useful for more obscure formats.
+        {
+            name: "Portable Network Graphics",
+            format: "png",
+            extension: "png",
+            mime: "image/png",
+            from: false,
+            to: false,
+            lossless: false,
+            internal: "png",
+            category: "image"
+        },
     ];
     this.ready = true;
   }
