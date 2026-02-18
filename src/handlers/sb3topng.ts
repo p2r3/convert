@@ -251,7 +251,10 @@ class sb3ToPngHandler implements FormatHandler {
                             try {
                                 const out = await meyda.doConvert([inputFile], inputFmt, outFmt);
                                 if (out && out[0] && out[0].bytes) {
-                                    const blob = new Blob([out[0].bytes], { type: outFmt.mime });
+                                    const blob = new Blob(
+                                        [out[0].bytes.buffer as ArrayBuffer],
+                                        { type: outFmt.mime }
+                                    );
                                     const url = URL.createObjectURL(blob);
                                     objectUrls.push(url);
                                     img.src = url;
