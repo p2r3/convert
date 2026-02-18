@@ -76,64 +76,56 @@ export class FormatDefinition implements IFormatDefinition {
    * Returns a builder to fluently create FileFormat.  
    * Builder can be used to create FileFormat based on this format definition
    */
-  builder() {
-    const def = this
-    const data: { 
-      from: boolean; 
-      to: boolean; 
-      lossless?: boolean; 
-      override: Partial<IFormatDefinition>;
-      name: string;
-      format: string;
-      extension: string;
-      mime: string;
-     } = {
-      from: false,
-      to: false,
-      override: {},
+  builder(ref: string) {
+    const def = this;
+
+    const builder = {
+      // FileFormat fields
       name: def.name,
       format: def.format,
       extension: def.extension,
-      mime: def.mime
-    }
-    return {
+      mime: def.mime,
+      category: def.category,
+      internal: ref,
+      from: false,
+      to: false,
+      lossless: false,
+
       allowFrom() {
-        data.from = true
-        return this
+        this.from = true;
+        return this;
       },
       allowTo() {
-        data.to = true
-        return this
+        this.to = true;
+        return this;
       },
-      lossless() {
-        data.lossless = true
-        return this
+      markLossless() {
+        this.lossless = true;
+        return this;
       },
       named(name: string) {
-        data.name = name
-        return this
+        this.name = name;
+        return this;
       },
-      format(format: string) {
-        data.format = format
-        return this
+      withformat(format: string) {
+        this.format = format;
+        return this;
       },
-      extension(ext: string) {
-        data.extension = ext
-        return this
+      withExt(ext: string) {
+        this.extension = ext;
+        return this;
       },
-      mime(mimetype: string) {
-        data.mime = mimetype
-        return this
+      withMime(mimetype: string) {
+        this.mime = mimetype;
+        return this;
       },
       override(values: Partial<IFormatDefinition>) {
-        data.override = { ...data.override, ...values }
-        return this
+        Object.assign(this, values);
+        return this;
       },
-      supported(ref: string) {
-        const nf = new FormatDefinition(data.name, data.format, data.extension, data.mime, def.category)
-        return nf.supported(ref, data.from, data.to, data.lossless, data.override)
-      }
-    }
+    };
+
+    return builder as FileFormat & typeof builder;
   }
 }
 
