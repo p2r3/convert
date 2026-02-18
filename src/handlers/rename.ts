@@ -26,7 +26,7 @@ function renameHandler(name: string, formats: FileFormat[]): FormatHandler {
 export const renameZipHandler = renameHandler("renamezip", [
   CommonFormats.ZIP.builder("zip").allowTo(),
   CommonFormats.DOCX.builder("docx").allowFrom(),
-  CommonFormats.XLSX.builder("xlsx").allowFrom().withCategory(Category.DOCUMENT),
+  CommonFormats.XLSX.builder("xlsx").allowFrom(),
   CommonFormats.PPTX.builder("pptx").allowFrom(),
   {
     name: "OpenDocument Text",
