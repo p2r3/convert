@@ -1,4 +1,5 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
+import CommonFormats from "src/CommonFormats.ts";
 import JSZip from "jszip";
 import * as mime from "mime";
 import normalizeMimeType from "../normalizeMimeType.ts";
@@ -33,23 +34,14 @@ class sb3ToHtmlHandler implements FormatHandler {
                 to: false,
                 internal: "sb3",
             },
-            {
-                name: "Hypertext Markup Language",
-                format: "html",
-                extension: "html",
-                mime: "text/html",
-                from: false,
-                to: true,
-                internal: "html",
-            },
+            CommonFormats.HTML.builder("html")
+                .allowTo()
         ];
         this.ready = true;
     }
 
     async doConvert(
-        inputFiles: FileData[],
-        inputFormat: FileFormat,
-        outputFormat: FileFormat
+        inputFiles: FileData[]
     ): Promise<FileData[]> {
         const inputFile = inputFiles[0];
         const zip = await JSZip.loadAsync(inputFile.bytes);
@@ -65,15 +57,6 @@ class sb3ToHtmlHandler implements FormatHandler {
                 binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
             }
             return btoa(binary);
-        }
-
-        async function fileToDataUrl(filePath: string, fmtGuess?: string): Promise<string | null> {
-            const f = zip.file(filePath);
-            if (!f) return null;
-            const ab = await f.async("arraybuffer");
-            const mime = resolveMime(fmtGuess ?? filePath);
-            const b64 = arrayBufferToBase64(ab);
-            return `data:${mime};base64,${b64}`;
         }
 
         const parts: string[] = [];
