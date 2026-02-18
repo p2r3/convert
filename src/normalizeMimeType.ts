@@ -11,6 +11,7 @@ function normalizeMimeType (mime: string) {
     case "audio/x-quicktime": return "video/quicktime";
     case "audio/x-flo": return "audio/flo";
     case "application/x-flo": return "audio/flo";
+    case "application/x-terraria-world": return "application/x-terraria-world";
   }
   return mime;
 }
