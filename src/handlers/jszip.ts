@@ -1,3 +1,4 @@
+import CommonFormats from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import JSZip from "jszip";
 
@@ -6,15 +7,7 @@ class jszipHandler implements FormatHandler {
   public name: string = "jszip";
 
   public supportedFormats: FileFormat[] = [
-    {
-      name: "ZIP Archive",
-      format: "zip",
-      extension: "zip",
-      mime: "application/zip",
-      from: false,
-      to: true,
-      internal: "zip"
-    }
+    CommonFormats.ZIP.builder("zip").allowTo()
   ];
 
   public supportAnyInput: boolean = true;

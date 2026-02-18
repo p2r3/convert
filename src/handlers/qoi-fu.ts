@@ -1,3 +1,4 @@
+import CommonFormats from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 
 import { QOIDecoder, QOIEncoder } from "qoi-fu";
@@ -6,51 +7,11 @@ class qoiFuHandler implements FormatHandler {
 
   public name: string = "qoi-fu";
   public supportedFormats: FileFormat[] = [
-    {
-      name: "Portable Network Graphics",
-      format: "png",
-      extension: "png",
-      mime: "image/png",
-      from: true,
-      to: true,
-      internal: "png"
-    },
-    {
-      name: "Joint Photographic Experts Group JFIF",
-      format: "jpeg",
-      extension: "jpg",
-      mime: "image/jpeg",
-      from: true,
-      to: true,
-      internal: "jpeg"
-    },
-    {
-      name: "WebP",
-      format: "webp",
-      extension: "webp",
-      mime: "image/webp",
-      from: true,
-      to: true,
-      internal: "webp"
-    },
-    {
-      name: "CompuServe Graphics Interchange Format (GIF)",
-      format: "gif",
-      extension: "gif",
-      mime: "image/gif",
-      from: true,
-      to: false,
-      internal: "gif"
-    },
-    {
-      name: "Scalable Vector Graphics",
-      format: "svg",
-      extension: "svg",
-      mime: "image/svg+xml",
-      from: true,
-      to: false,
-      internal: "svg"
-    },
+    CommonFormats.PNG.supported("png", true, true, true),
+    CommonFormats.JPEG.supported("jpeg", true, true),
+    CommonFormats.WEBP.supported("webp", true, true),
+    CommonFormats.GIF.supported("gif", true, false),
+    CommonFormats.SVG.supported("svg", true, false),
     {
       name: "Quite OK Image",
       format: "qoi",
@@ -58,7 +19,9 @@ class qoiFuHandler implements FormatHandler {
       mime: "image/x-qoi",
       from: true,
       to: true,
-      internal: "qoi"
+      internal: "qoi",
+      category: "image",
+      lossless: true
     }
   ];
   public ready: boolean = false;

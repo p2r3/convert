@@ -1,3 +1,4 @@
+import CommonFormats from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 
 // hardcoded limits to prevent big SVG crash
@@ -40,17 +41,11 @@ class pyTurtleHandler implements FormatHandler {
         mime: "text/x-python",
         from: false,
         to: true,
-        internal: "pyTurtle"
+        internal: "pyTurtle",
+        category: "code",
+        lossless: false // this is a lossy conversion, as not all svg features are supported, and some details are lost in the conversion to turtle commands
       },
-      {
-      name: "Scalable Vector Graphics",
-      format: "svg",
-      extension: "svg",
-      mime: "image/svg+xml",
-      from: true,
-      to: false,
-      internal: "svg"
-    }
+      CommonFormats.SVG.builder("svg").allowFrom()
     ];
     this.ready = true;
   }

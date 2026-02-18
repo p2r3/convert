@@ -1,3 +1,4 @@
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 
 // base class for handling renames
@@ -23,42 +24,10 @@ function renameHandler(name: string, formats: FileFormat[]): FormatHandler {
 }
 /// handler for renaming various aliased zip files
 export const renameZipHandler = renameHandler("renamezip", [
-  {
-    name: "ZIP Archive",
-    format: "zip",
-    extension: "zip",
-    mime: "application/zip",
-    from: false,
-    to: true,
-    internal: "zip"
-  },
-  {
-    name: "Microsoft Office 365 Word Document",
-    format: "docx",
-    extension: "docx",
-    mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    from: true,
-    to: false,
-    internal: "docx"
-  },
-  {
-    name: "Microsoft Office 365 Workbook",
-    format: "xlsx",
-    extension: "xlsx",
-    mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    from: true,
-    to: false,
-    internal: "xlsx"
-  },
-  {
-    name: "Microsoft Office 365 Presentation",
-    format: "pptx",
-    extension: "pptx",
-    mime: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-    from: true,
-    to: false,
-    internal: "pptx"
-  },
+  CommonFormats.ZIP.builder("zip").allowTo(),
+  CommonFormats.DOCX.builder("docx").allowFrom(),
+  CommonFormats.XLSX.builder("xlsx").allowFrom(),
+  CommonFormats.PPTX.builder("pptx").allowFrom(),
   {
     name: "OpenDocument Text",
     format: "odt",
@@ -66,7 +35,8 @@ export const renameZipHandler = renameHandler("renamezip", [
     mime: "application/vnd.oasis.opendocument.text",
     from: true,
     to: false,
-    internal: "odt"
+    internal: "odt",
+    category: "document"
   },
   {
     name: "OpenDocument Presentation",
@@ -75,7 +45,8 @@ export const renameZipHandler = renameHandler("renamezip", [
     mime: "application/vnd.oasis.opendocument.presentation",
     from: true,
     to: false,
-    internal: "odp"
+    internal: "odp",
+    category: "presentation"
   },
   {
     name: "OpenDocument Spreadsheet",
@@ -84,7 +55,8 @@ export const renameZipHandler = renameHandler("renamezip", [
     mime: "application/vnd.oasis.opendocument.spreadsheet",
     from: true,
     to: false,
-    internal: "ods"
+    internal: "ods",
+    category: "spreadsheet"
   },
   {
     name: "Firefox Plugin",
@@ -95,42 +67,12 @@ export const renameZipHandler = renameHandler("renamezip", [
     to: false,
     internal: "xpi"
   },
-  {
-    name: "LÖVE Game Package",
-    format: "love",
-    extension: "love",
-    mime: "application/zip",
-    from: true,
-    to: false,
-    internal: "love"
-  },
-  {
-    name: "LÖVE Game Package",
-    format: "love",
-    extension: "love",
-    mime: "application/zip",
-    from: true,
-    to: false,
-    internal: "love"
-  },
-  {
-    name: "osu! Beatmap",
-    format: "osz",
-    extension: "osz",
-    mime: "application/zip",
-    from: true,
-    to: false,
-    internal: "osz"
-  },
-  {
-    name: "osu! Skin",
-    format: "osk",
-    extension: "osk",
-    mime: "application/zip",
-    from: true,
-    to: false,
-    internal: "osk"
-  },
+  CommonFormats.ZIP.builder("love").allowFrom()
+    .withFormat("love").withExt("love").named("LÖVE Game Package"),
+  CommonFormats.ZIP.builder("osz").allowFrom()
+    .withFormat("osz").withExt("osz").named("osu! Beatmap"),
+  CommonFormats.ZIP.builder("osk").allowFrom()
+    .withFormat("osk").withExt("osk").named("osu! Skin"),
   {
     name: "Java Archive",
     format: "jar",
@@ -152,40 +94,8 @@ export const renameZipHandler = renameHandler("renamezip", [
 ]);
 /// handler for renaming text-based formats
 export const renameTxtHandler = renameHandler("renametxt", [
-  {
-    name: "Plain Text",
-    format: "text",
-    extension: "txt",
-    mime: "text/plain",
-    from: false,
-    to: true,
-    internal: "text"
-  },
-  {
-    name: "JavaScript Object Notation",
-    format: "json",
-    extension: "json",
-    mime: "application/json",
-    from: true,
-    to: false,
-    internal: "json"
-  },
-  {
-    name: "Extensible Markup Language",
-    format: "xml",
-    extension: "xml",
-    mime: "application/xml",
-    from: true,
-    to: false,
-    internal: "xml"
-  },
-  {
-    name: "YAML Ain't Markup Language",
-    format: "yaml",
-    extension: "yml",
-    mime: "application/yaml",
-    from: true,
-    to: false,
-    internal: "yaml"
-  },
+  CommonFormats.TEXT.builder("text").allowTo(),
+  CommonFormats.JSON.builder("json").allowFrom(),
+  CommonFormats.XML.builder("xml").allowFrom(),
+  CommonFormats.YML.builder("yaml").allowFrom()
 ])

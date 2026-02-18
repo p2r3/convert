@@ -1,3 +1,4 @@
+import CommonFormats from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 
 import * as THREE from "three";
@@ -15,35 +16,12 @@ class threejsHandler implements FormatHandler {
       mime: "model/gltf-binary",
       from: true,
       to: false,
-      internal: "glb"
+      internal: "glb",
+      category: "model"
     },
-    {
-      name: "Portable Network Graphics",
-      format: "png",
-      extension: "png",
-      mime: "image/png",
-      from: false,
-      to: true,
-      internal: "png"
-    },
-    {
-      name: "Joint Photographic Experts Group JFIF",
-      format: "jpeg",
-      extension: "jpg",
-      mime: "image/jpeg",
-      from: false,
-      to: true,
-      internal: "jpeg"
-    },
-    {
-      name: "WebP",
-      format: "webp",
-      extension: "webp",
-      mime: "image/webp",
-      from: false,
-      to: true,
-      internal: "webp"
-    },
+    CommonFormats.PNG.supported("png", false, true),
+    CommonFormats.JPEG.supported("jpeg", false, true),
+    CommonFormats.WEBP.supported("webp", false, true)
   ];
   public ready: boolean = false;
 
@@ -74,8 +52,10 @@ class threejsHandler implements FormatHandler {
       });
 
       const bbox = new THREE.Box3().setFromObject(gltf.scene);
+      bbox.getCenter(this.camera.position);
       this.camera.position.z = bbox.max.z * 2;
 
+      this.scene.background = new THREE.Color(0x424242);
       this.scene.add(gltf.scene);
       this.renderer.render(this.scene, this.camera);
       this.scene.remove(gltf.scene);
