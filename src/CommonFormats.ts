@@ -69,6 +69,13 @@ const CommonFormats = {
         "text/markdown",
         ["document", "text"]
     ),
+    BATCH: new FormatDefinition(
+        "Windows Batch file",
+        "batch",
+        "bat",
+        "text/windows-batch",
+        ["text"]
+    ),
     // audio
     MP3: new FormatDefinition(
         "MP3 Audio",
