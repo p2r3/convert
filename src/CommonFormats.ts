@@ -110,6 +110,13 @@ const CommonFormats = {
         "text/windows-batch",
         ["text"]
     ),
+    SH: new FormatDefinition(
+        "Shell Script",
+        "sh",
+        "sh",
+        "application/x-sh",
+        Category.TEXT
+    ),
     // audio
     MP3: new FormatDefinition(
         "MP3 Audio",
