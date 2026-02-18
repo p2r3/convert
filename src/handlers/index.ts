@@ -22,6 +22,7 @@ import nbtHandler from "./nbt.ts";
 import peToZipHandler from "./petozip.ts";
 import flptojsonHandler from "./flptojson.ts";
 import floHandler from "./flo.ts";
+import CgbiToPngHandler from "./cgbi-to-png.ts";
 
 const handlers: FormatHandler[] = [];
 try { handlers.push(new canvasToBlobHandler()) } catch (_) { };
@@ -48,5 +49,6 @@ try { handlers.push(new nbtHandler()) } catch (_) { };
 try { handlers.push(new peToZipHandler()) } catch (_) { };
 try { handlers.push(new flptojsonHandler()) } catch (_) { };
 try { handlers.push(new floHandler()) } catch (_) { };
+try { handlers.push(new CgbiToPngHandler()) } catch (_) { };
 
 export default handlers;
