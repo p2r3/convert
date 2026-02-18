@@ -1,7 +1,10 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
+import CommonFormats from "src/CommonFormats.ts";
 
 import pako from "pako";
 import * as NBT from "nbtify";
+import { Jimp, type JimpInstance } from "jimp";
+import JSZip from "jszip";
 
 const DEFAULT_WIDTH = 128
 const DEFAULT_HEIGHT = 128
@@ -79,7 +82,10 @@ class mcMapHandler implements FormatHandler {
     public ready: boolean = false;
 
     async init() {
+
         this.supportedFormats = [
+            CommonFormats.PNG.supported("png", true, false, true),
+            CommonFormats.PNG.supported("png", false, true, false),
             {
                 name: "RGB",
                 format: "rgb",
@@ -97,11 +103,48 @@ class mcMapHandler implements FormatHandler {
                 extension: "dat",
                 mime: "application/x-minecraft-map", // I am required to put something here
                 from: true,
-                to: false,
-                internal: "mcmap"
+                to: true,
+                internal: "mcmap",
             },
+            {
+                name: "Minecraft Map File (Grid)",
+                format: "mcmap_grid",
+                extension: "dat",
+                mime: "application/x-minecraft-map",
+                from: false,
+                to: true,
+                internal: "mcmap_grid",
+                lossless: false
+            }
         ];
         this.ready = true;
+    }
+
+    getShades(shadeArray: any, mappedColours: any) {
+        for (const colour of mappedColours) {
+            const shade1 = { R: Math.floor(colour.R * 180 / 255), G: Math.floor(colour.G * 180 / 255), B: Math.floor(colour.B * 180 / 255) };
+            const shade2 = { R: Math.floor(colour.R * 220 / 255), G: Math.floor(colour.G * 220 / 255), B: Math.floor(colour.B * 220 / 255) };
+            const shade3 = { R: colour.R, G: colour.G, B: colour.B };
+            const shade4 = { R: Math.floor(colour.R * 135 / 255), G: Math.floor(colour.G * 135 / 255), B: Math.floor(colour.B * 135 / 255) };
+
+            shadeArray.push(shade1, shade2, shade3, shade4);
+        }
+    }
+
+    getClosestColor(to_check: any, available_colours: any) {
+        return available_colours.reduce((previous: any, current: any) => {
+            const previousDistance = Math.sqrt(
+                (previous.R - to_check.R) ** 2 +
+                (previous.G - to_check.G) ** 2 +
+                (previous.B - to_check.B) ** 2
+            );
+            const currentDistance = Math.sqrt(
+                (current.R - to_check.R) ** 2 +
+                (current.G - to_check.G) ** 2 +
+                (current.B - to_check.B) ** 2
+            );
+            return (currentDistance < previousDistance) ? current : previous;
+        });
     }
 
     async doConvert(
@@ -110,6 +153,214 @@ class mcMapHandler implements FormatHandler {
         outputFormat: FileFormat
     ): Promise<FileData[]> {
         const outputFiles: FileData[] = [];
+
+        if (inputFormat.mime == CommonFormats.PNG.mime) {
+
+            if (outputFormat.internal == 'mcmap_grid') {
+                for (const file of inputFiles) {
+
+                    const zip = new JSZip();
+
+                    const fileName = file.name.split('.')[0]
+
+                    let startDigit = 0
+
+                    // Check to see if user already renamed the file to correct format
+                    if (fileName.startsWith("map_")) {
+                        const after = fileName.split('_')[1]
+                        if (Number.isInteger(Number(after))) {
+                            startDigit = parseInt(after)
+                        }
+                    }
+                    else if (!Number.isNaN(Number(fileName))) {
+                        console.log(Number(fileName))
+
+                        startDigit = parseInt(fileName)
+
+                    }
+
+                    const image = await Jimp.read(new Uint8Array(file.bytes).buffer)
+
+                    image.resize({ w: Math.ceil(image.width / 128) * 128, h: Math.ceil(image.height / 128) * 128 });
+
+                    let shades: any = [];
+
+                    const mappedColours = base_colours.map(([R, G, B]) => ({
+                        R, G, B
+                    }));
+
+                    this.getShades(shades, mappedColours);
+
+                    const columns = Math.ceil(image.width / 128);
+                    const rows = Math.ceil(image.height / 128);
+
+                    let colours = new Uint8Array(image.bitmap.data.length / 4);
+
+
+                    for (let cursor = 0; cursor < colours.length; cursor++) {
+
+                        const closest_colour_match = this.getClosestColor({ R: image.bitmap.data[cursor * 4], G: image.bitmap.data[cursor * 4 + 1], B: image.bitmap.data[cursor * 4 + 2] }, shades)
+
+                        colours[cursor] = shades.indexOf(closest_colour_match)
+                    }
+
+
+                    for (let column = 0; column < columns; column++) {
+
+                        for (let row = 0; row < rows; row++) {
+
+                            const square = new Uint8Array(128 * 128);
+
+                            let offset = 0;
+
+                            for (let t = 0; t < 128; t++) {
+                                const pixelX = column * 128;
+                                const pixelY = row * 128 + t;
+
+                                const start = (pixelY * image.width + pixelX);
+                                const end = start + 128;
+
+                                const rowChunk = colours.subarray(start, end);
+                                square.set(rowChunk, offset);
+
+                                offset += rowChunk.length;
+                            }
+
+                            let d = {
+                                data: {
+                                    scale: new NBT.Int32(0),
+                                    dimension: "minecraft:overworld",
+                                    trackingPosition: new NBT.Int32(0),
+                                    unlimitedTracking: new NBT.Int32(0),
+                                    locked: new NBT.Int32(1),
+                                    xCenter: new NBT.Int32(0),
+                                    width: new NBT.Int32(128),
+                                    height: new NBT.Int32(128),
+                                    zCenter: new NBT.Int32(0),
+                                    colors: square
+                                },
+                                DataVersion: new NBT.Int32(4671)
+                            }
+
+                            const data = await NBT.write(d)
+
+                            zip.file(`map_${startDigit}.dat`, pako.gzip(data));
+
+                            startDigit++;
+
+                        }
+
+
+                    }
+
+                    const output = await zip.generateAsync({ type: "uint8array" });
+
+                    outputFiles.push({ bytes: output, name: "output.zip" });
+
+
+                }
+            }
+            else if (outputFormat.internal == 'mcmap') {
+
+                for (const file of inputFiles) {
+
+                    let fileName = file.name.split('.')[0]
+
+                    // Check to see if user already renamed file to correct format
+                    if (fileName.startsWith("map_")) {
+                        fileName = fileName.concat(".dat")
+                    }
+                    else if (Number.isInteger(Number(fileName))) {
+                        fileName = `map_${fileName}.dat`
+
+                    }
+                    else {
+                        fileName = "map_0.dat"
+                    }
+
+                    let colours = new Uint8Array(128 * 128);
+
+                    let image = await Jimp.read(new Uint8Array(file.bytes).buffer);
+
+                    image.resize({ w: 128, h: 128 });
+
+                    let shades: any = [];
+
+                    const mappedColours = base_colours.map(([R, G, B]) => ({
+                        R, G, B
+                    }));
+
+                    this.getShades(shades, mappedColours);
+
+                    for (let cursor = 0; cursor < colours.length; cursor++) {
+
+                        const closestColourMatch = this.getClosestColor({ R: image.bitmap.data[cursor * 4], G: image.bitmap.data[cursor * 4 + 1], B: image.bitmap.data[cursor * 4 + 2] }, shades)
+
+                        colours[cursor] = shades.indexOf(closestColourMatch)
+                    }
+
+                    let d = {
+                        data: {
+                            scale: new NBT.Int32(0),
+                            dimension: "minecraft:overworld",
+                            trackingPosition: new NBT.Int32(0),
+                            unlimitedTracking: new NBT.Int32(0),
+                            locked: new NBT.Int32(1),
+                            xCenter: new NBT.Int32(0),
+                            width: new NBT.Int32(128),
+                            height: new NBT.Int32(128),
+                            zCenter: new NBT.Int32(0),
+                            colors: colours
+                        },
+                        DataVersion: new NBT.Int32(4671)
+                    }
+
+                    const data = await NBT.write(d)
+
+                    outputFiles.push({
+                        name: fileName,
+                        bytes: pako.gzip(data)
+                    })
+
+
+                }
+
+
+            }
+        }
+
+
+        if (inputFormat.internal == 'mcmap' && outputFormat.mime == CommonFormats.PNG.mime) {
+
+            for (const file of inputFiles) {
+
+                const result = pako.ungzip(file.bytes);
+                const nbt = await NBT.read(result);
+                if (NBT.isTag<NBT.CompoundTag>(nbt.data)) {
+                    const data: NBT.CompoundTag = nbt.data;
+                    const mapdata = data["data"];
+                    if (NBT.isTag<NBT.CompoundTag>(mapdata)) {
+                        const width = NBT.isTag<NBT.IntTag>(mapdata["width"]) ? mapdata["width"].valueOf() : DEFAULT_WIDTH;
+                        const height = NBT.isTag<NBT.IntTag>(mapdata["height"]) ? mapdata["height"].valueOf() : DEFAULT_HEIGHT;
+                        const colors = NBT.isTag<NBT.ByteArrayTag>(mapdata["colors"]) ? new Uint8Array(mapdata["colors"]) : new Uint8Array([]);
+                        const bytes = new Uint8Array(map2rgb(colors, width, height));
+
+                        const bitmap = Jimp.fromBitmap({
+                            data: bytes,
+                            width: 128,
+                            height: 128
+                        });
+
+                        const buffer = await bitmap.getBuffer("image/png");
+
+                        outputFiles.push({
+                            name: file.name,
+                            bytes: new Uint8Array(buffer)
+                        });
+                    }
+                }
+            }
+        }
 
         if (inputFormat.internal == "mcmap" && outputFormat.internal == "rgb") {
             for (const file of inputFiles) {
