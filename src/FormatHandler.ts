@@ -45,11 +45,13 @@ export class FormatDefinition implements IFormatDefinition {
    * @param ref Format identifier for the handler's internal reference.
    * @param from Whether conversion **from** this format is supported.
    * @param to Whether conversion **to** this format is supported.
+   * @param override Format definition values to override
    * @returns 
    */
-  supported(ref: string, from: boolean, to: boolean): FileFormat {
+  supported(ref: string, from: boolean, to: boolean, override: Partial<IFormatDefinition> = {}): FileFormat {
     return {
       ...this,
+      ...override,
       internal: ref,
       from: from,
       to: to
