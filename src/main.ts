@@ -29,6 +29,7 @@ const ui = {
   fileInput: document.querySelector("#file-input") as HTMLInputElement,
   fileSelectArea: document.querySelector("#file-area") as HTMLDivElement,
   convertButton: document.querySelector("#convert-button") as HTMLButtonElement,
+  cancelButton: document.querySelector("#cancel-button") as HTMLButtonElement,
   modeToggleButton: document.querySelector("#mode-button") as HTMLButtonElement,
   inputList: document.querySelector("#from-list") as HTMLDivElement,
   outputList: document.querySelector("#to-list") as HTMLDivElement,
@@ -410,6 +411,18 @@ function cancelConversion(): void {
 /** Expose cancel function globally for the UI */
 window.cancelConversion = cancelConversion;
 
+// Add cancel button click handler
+ui.cancelButton.onclick = () => {
+  cancelConversion();
+  ui.cancelButton.classList.add("hidden");
+  window.hidePopup();
+  window.showPopup(
+    `<h2>Conversion Cancelled</h2>` +
+    `<p>The conversion was cancelled by the user.</p>\n` +
+    `<button onclick="window.hidePopup()">OK</button>`
+  );
+};
+
 ui.convertButton.onclick = async function () {
 
   const inputFiles = selectedFiles;
@@ -434,6 +447,9 @@ ui.convertButton.onclick = async function () {
 
   // Create new abort controller for this conversion
   currentAbortController = new AbortController();
+  
+  // Show cancel button during conversion
+  ui.cancelButton.classList.remove("hidden");
 
   try {
 
@@ -455,6 +471,7 @@ ui.convertButton.onclick = async function () {
     if (!output) {
       clearFileData(inputFileData);
       currentAbortController = null;
+      ui.cancelButton.classList.add("hidden");
       window.hidePopup();
       alert("Failed to find conversion route.");
       return;
@@ -467,6 +484,7 @@ ui.convertButton.onclick = async function () {
     // Clear input file data after successful conversion
     clearFileData(inputFileData);
     currentAbortController = null;
+    ui.cancelButton.classList.add("hidden");
 
     window.showPopup(
       `<h2>Converted ${inputOption.format.format} to ${outputOption.format.format}!</h2>` +
@@ -478,6 +496,7 @@ ui.convertButton.onclick = async function () {
     // Ensure cleanup happens even on error
     clearFileData(inputFileData);
     currentAbortController = null;
+    ui.cancelButton.classList.add("hidden");
 
     window.hidePopup();
     alert("Unexpected error while routing:\n" + e);

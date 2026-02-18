@@ -137,6 +137,24 @@ button.selected {
   pointer-events: none;
 }
 
+.hidden {
+  display: none;
+}
+
+#cancel-button {
+  position: fixed;
+  left: 50%;
+  bottom: 12%;
+  transform: translateX(-50%);
+  font-size: 1.2rem;
+  padding: 10px 20px;
+  border: 0;
+  border-radius: 10px;
+  background-color: #dc3545;
+  color: white;
+  cursor: pointer;
+}
+
 #popup-bg {
   position: fixed;
   left: 0;
