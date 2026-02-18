@@ -30,6 +30,7 @@ import batToExeHandler from "./batToExe.ts";
 import textEncodingHandler from "./textEncoding.ts";
 import libopenmptHandler from "./libopenmpt.ts";
 import lzhHandler from "./lzh.ts";
+import bsorHandler from "./bsor.ts";
 
 const handlers: FormatHandler[] = [];
 try { handlers.push(new svgTraceHandler()) } catch (_) { };
@@ -64,5 +65,6 @@ try { handlers.push(new textEncodingHandler()) } catch (_) { };
 try { handlers.push(new libopenmptHandler()) } catch (_) { };
 try { handlers.push(new lzhHandler()) } catch (_) { };
 try { handlers.push(new pandocHandler()) } catch (_) { };
+try { handlers.push(new bsorHandler()) } catch (_) { };
 
 export default handlers;
