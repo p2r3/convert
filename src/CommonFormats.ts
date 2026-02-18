@@ -1,6 +1,6 @@
 import { FormatDefinition } from "src/FormatHandler"
 
-const Category = {
+export const Category = {
     DATA: "data",
     IMAGE: "image",
     VIDEO: "video",

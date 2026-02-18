@@ -1,4 +1,4 @@
-import CommonFormats from "src/CommonFormats.ts";
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 
 // base class for handling renames
@@ -26,7 +26,7 @@ function renameHandler(name: string, formats: FileFormat[]): FormatHandler {
 export const renameZipHandler = renameHandler("renamezip", [
   CommonFormats.ZIP.builder("zip").allowTo(),
   CommonFormats.DOCX.builder("docx").allowFrom(),
-  CommonFormats.XLSX.builder("xlsx").allowFrom(),
+  CommonFormats.XLSX.builder("xlsx").allowFrom().withCategory(Category.DOCUMENT),
   CommonFormats.PPTX.builder("pptx").allowFrom(),
   {
     name: "OpenDocument Text",
