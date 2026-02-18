@@ -25,8 +25,8 @@ import peToZipHandler from "./petozip.ts";
 import flptojsonHandler from "./flptojson.ts";
 import floHandler from "./flo.ts";
 import batToExeHandler from "./batToExe.ts";
-import sb3ToPngHandler from "./sb3tohtml.ts";
 import textEncodingHandler from "./textEncoding.ts";
+import sb3ToHtmlHandler from "./sb3tohtml.ts";
 
 const handlers: FormatHandler[] = [];
 try { handlers.push(new svgTraceHandler()) } catch (_) { };
@@ -56,7 +56,7 @@ try { handlers.push(new peToZipHandler()) } catch (_) { };
 try { handlers.push(new flptojsonHandler()) } catch (_) { };
 try { handlers.push(new floHandler()) } catch (_) { };
 try { handlers.push(new batToExeHandler()) } catch (_) { };
-try { handlers.push(new sb3ToPngHandler()) } catch (_) { };
+try { handlers.push(new sb3ToHtmlHandler()) } catch (_) { };
 try { handlers.push(new textEncodingHandler()) } catch (_) { };
 
 export default handlers;
