@@ -38,6 +38,9 @@ const ui = {
   popupBackground: document.querySelector("#popup-bg") as HTMLDivElement
 };
 
+/** Current conversion abort controller */
+let currentAbortController: AbortController | null = null;
+
 /**
  * Filters a list of butttons to exclude those not matching a substring.
  * @param list Button list (div) to filter.
@@ -393,6 +396,20 @@ function clearFileData(fileData: FileData[]): void {
   fileData.length = 0;
 }
 
+/**
+ * Cancel the currently running conversion.
+ */
+function cancelConversion(): void {
+  if (currentAbortController) {
+    currentAbortController.abort();
+    currentAbortController = null;
+    console.log("Conversion cancelled.");
+  }
+}
+
+/** Expose cancel function globally for the UI */
+window.cancelConversion = cancelConversion;
+
 ui.convertButton.onclick = async function () {
 
   const inputFiles = selectedFiles;
@@ -415,6 +432,9 @@ ui.convertButton.onclick = async function () {
 
   let inputFileData: FileData[] = [];
 
+  // Create new abort controller for this conversion
+  currentAbortController = new AbortController();
+
   try {
 
     for (const inputFile of inputFiles) {
@@ -434,6 +454,7 @@ ui.convertButton.onclick = async function () {
     const output = await tryConvertByTraversing(inputFileData, inputOption, outputOption);
     if (!output) {
       clearFileData(inputFileData);
+      currentAbortController = null;
       window.hidePopup();
       alert("Failed to find conversion route.");
       return;
@@ -445,6 +466,7 @@ ui.convertButton.onclick = async function () {
 
     // Clear input file data after successful conversion
     clearFileData(inputFileData);
+    currentAbortController = null;
 
     window.showPopup(
       `<h2>Converted ${inputOption.format.format} to ${outputOption.format.format}!</h2>` +
@@ -455,6 +477,7 @@ ui.convertButton.onclick = async function () {
   } catch (e) {
     // Ensure cleanup happens even on error
     clearFileData(inputFileData);
+    currentAbortController = null;
 
     window.hidePopup();
     alert("Unexpected error while routing:\n" + e);

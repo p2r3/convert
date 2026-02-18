@@ -182,13 +182,15 @@ export interface FormatHandler {
    * @param outputFormat Output {@link FileFormat}, the same for all outputs.
    * @param args Optional arguments as a string array.
    * Can be used to perform recursion with different settings.
+   * @param signal Optional AbortSignal for cancellation.
    * @returns Array of {@link FileData} entries, one per generated output file.
    */
   doConvert: (
     inputFiles: FileData[],
     inputFormat: FileFormat,
     outputFormat: FileFormat,
-    args?: string[]
+    args?: string[],
+    signal?: AbortSignal
   ) => Promise<FileData[]>;
 }
 

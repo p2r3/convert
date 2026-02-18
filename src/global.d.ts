@@ -8,6 +8,7 @@ declare global {
     printSupportedFormatCache: () => string;
     showPopup: (html: string) => void;
     hidePopup: () => void;
+    cancelConversion: () => void;
   }
 }
 
