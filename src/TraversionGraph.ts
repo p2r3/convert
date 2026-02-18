@@ -225,6 +225,30 @@ export class TraversionGraph {
             }
             if (current.index === toIndex) {
                 // Return the path of handlers and formats to get from the input format to the output format
+                console.log(`Found path at iteration ${iterations} with cost ${current.cost}: ${current.path.map(p => p.handler.name + "(" + p.format.mime + ")").join(" -> ")}`);
+                // HACK HACK HACK!!
+                //   Converting image -> video -> audio loses all meaningful media.
+                //   For now, we explicitly check for this case to avoid blocking Meyda.
+                let found = false;
+                for (let i = 0; i < current.path.length; i ++) {
+                    const curr = current.path[i];
+                    const next = current.path[i + 1];
+                    const last = current.path[i + 2];
+                    if (!curr || !next || !last) break;
+                    if (
+                        [curr.format.category].flat().includes("image")
+                        && [next.format.category].flat().includes("video")
+                        && [last.format.category].flat().includes("audio")
+                    ) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (found) {
+                    console.log(`Skipping path ${current.path.map(p => p.format.mime).join(" → ")} due to complete loss of media.`);
+                    continue;
+                }
+                // END OF HACK HACK HACK!!
                 if (simpleMode || !to.handler || to.handler.name === current.path.at(-1)?.handler.name) {
                     console.log(`Found path at iteration ${iterations} with cost ${current.cost}: ${current.path.map(p => p.handler.name + "(" + p.format.mime + ")").join(" -> ")}`);
                     this.dispatchEvent("found", current.path);

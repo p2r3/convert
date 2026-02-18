@@ -25,6 +25,7 @@ class meydaHandler implements FormatHandler {
     this.supportedFormats.push(
       CommonFormats.WAV.builder("audio")
         .allowFrom(dummy.canPlayType("audio/wav") !== "")
+        .allowTo()
     );
     
     if (dummy.canPlayType("audio/mpeg")) this.supportedFormats.push(

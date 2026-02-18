@@ -136,6 +136,12 @@ class FFmpegHandler implements FormatHandler {
         }
         mimeType = normalizeMimeType(mimeType);
 
+        if (
+          !mimeType.startsWith("video/")
+          && !mimeType.startsWith("audio/")
+          && !mimeType.startsWith("image/")
+        ) continue;
+
         this.supportedFormats.push({
           name: description + (formats.length > 1 ? (" / " + format) : ""),
           format,
@@ -165,6 +171,8 @@ class FFmpegHandler implements FormatHandler {
 
     // AV1 doesn't seem to be included in WASM FFmpeg
     this.supportedFormats.splice(this.supportedFormats.findIndex(c => c.mime === "image/avif"), 1);
+    // HEVC stalls when attempted
+    this.supportedFormats.splice(this.supportedFormats.findIndex(c => c.mime === "video/hevc"), 1);
 
     // Add .qta (QuickTime Audio) support - uses same mov demuxer
     this.supportedFormats.push({
