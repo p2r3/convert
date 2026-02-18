@@ -48,6 +48,7 @@ body {
   cursor: pointer;
   box-shadow: 0 5px 0 0 rgba(169, 169, 169, 0.4);
   pointer-events: all;
+  margin-bottom: 10px;
 }
 #side-panel button:active {
   transform: translateY(5px);

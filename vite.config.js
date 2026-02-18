@@ -14,6 +14,22 @@ export default defineConfig({
     viteStaticCopy({
       targets: [
         {
+          src: "manifest.json",
+          dest: "."
+        },
+        {
+          src: "sw.js",
+          dest: "."
+        },
+        {
+          src: "favicon.png",
+          dest: "."
+        },
+        {
+          src: "favicon.ico",
+          dest: "."
+        },
+        {
           src: "node_modules/@flo-audio/reflo/reflo_bg.wasm",
           dest: "wasm"
         },

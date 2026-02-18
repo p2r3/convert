@@ -1,0 +1,18 @@
+{
+    "short_name": "Convert",
+    "name": "ConvertToIt",
+    "description": "Convert between different file formats easily",
+    "icons": [
+        {
+            "src": "favicon.png",
+            "sizes": "128x128",
+            "type": "image/png"
+        }
+    ],
+    "start_url": "/convert/",
+    "scope": "/convert/",
+    "display": "standalone",
+    "orientation": "portrait-primary",
+    "theme_color": "#313537",
+    "background_color": "#004bbb"
+}
