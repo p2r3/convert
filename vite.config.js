@@ -7,9 +7,6 @@ export default defineConfig({
     exclude: [
       "@ffmpeg/ffmpeg",
       "@sqlite.org/sqlite-wasm",
-    ],
-    include: [
-      "parse-sb3-blocks" // pre-bundle parse-sb3-blocks so it works in browser
     ]
   },
   resolve: {
