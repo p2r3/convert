@@ -9,9 +9,9 @@ class meydaHandler implements FormatHandler {
   public name: string = "meyda";
   public supportedFormats: FileFormat[] = [
     // Lossy reconstruction due to 2 channel encoding
-    CommonFormats.PNG.supported("image", true, true, false),
-    CommonFormats.JPEG.supported("image", true, true, false),
-    CommonFormats.WEBP.supported("image", true, true, false),
+    CommonFormats.PNG.supported("image", true, true),
+    CommonFormats.JPEG.supported("image", true, true),
+    CommonFormats.WEBP.supported("image", true, true),
   ];
   public ready: boolean = false;
 

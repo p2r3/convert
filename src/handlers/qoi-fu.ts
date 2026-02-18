@@ -8,8 +8,8 @@ class qoiFuHandler implements FormatHandler {
   public name: string = "qoi-fu";
   public supportedFormats: FileFormat[] = [
     CommonFormats.PNG.supported("png", true, true, true),
-    CommonFormats.JPEG.supported("jpeg", true, true, false),
-    CommonFormats.WEBP.supported("webp", true, true, false),
+    CommonFormats.JPEG.supported("jpeg", true, true),
+    CommonFormats.WEBP.supported("webp", true, true),
     CommonFormats.GIF.supported("gif", true, false),
     CommonFormats.SVG.supported("svg", true, false),
     {

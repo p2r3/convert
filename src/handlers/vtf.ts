@@ -812,8 +812,8 @@ class vtfHandler implements FormatHandler {
       category: "image"
     },
     CommonFormats.PNG.supported("png", false, true, true),
-    CommonFormats.JPEG.supported("jpeg", false, true, false),
-    CommonFormats.WEBP.supported("webp", false, true, false)
+    CommonFormats.JPEG.supported("jpeg", false, true),
+    CommonFormats.WEBP.supported("webp", false, true)
   ];
 
   #canvas?: HTMLCanvasElement;

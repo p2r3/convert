@@ -27,8 +27,8 @@ class pdftoimgHandler implements FormatHandler {
       internal: "pdf",
       category: "document"
     },
-    CommonFormats.PNG.supported("png", false, true, false),
-    CommonFormats.JPEG.supported("jpeg", false, true, false),
+    CommonFormats.PNG.supported("png", false, true),
+    CommonFormats.JPEG.supported("jpeg", false, true),
   ];
 
   public ready: boolean = true;

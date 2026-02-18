@@ -187,10 +187,10 @@ class sppdHandler implements FormatHandler {
       to: false,
       internal: "dem"
     },
-    CommonFormats.PNG.supported("png", false, true, false),
-    CommonFormats.JPEG.supported("jpeg", false, true, false),
+    CommonFormats.PNG.supported("png", false, true),
+    CommonFormats.JPEG.supported("jpeg", false, true),
     // Unsure about lossless=false, but assuming demo state destructuring and reconstruction is lossy in some way
-    CommonFormats.JSON.supported("json", false, true, false)
+    CommonFormats.JSON.supported("json", false, true)
   ];
 
   public ready: boolean = false;

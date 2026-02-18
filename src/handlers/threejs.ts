@@ -19,9 +19,9 @@ class threejsHandler implements FormatHandler {
       internal: "glb",
       category: "model"
     },
-    CommonFormats.PNG.supported("png", false, true, false),
-    CommonFormats.JPEG.supported("jpeg", false, true, false),
-    CommonFormats.WEBP.supported("webp", false, true, false)
+    CommonFormats.PNG.supported("png", false, true),
+    CommonFormats.JPEG.supported("jpeg", false, true),
+    CommonFormats.WEBP.supported("webp", false, true)
   ];
   public ready: boolean = false;
 
