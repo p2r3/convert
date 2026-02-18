@@ -1,39 +1,17 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 
 import Meyda from "meyda";
+import CommonFormats from "src/CommonFormats.ts";
 import { WaveFile } from "wavefile";
 
 class meydaHandler implements FormatHandler {
 
   public name: string = "meyda";
   public supportedFormats: FileFormat[] = [
-    {
-      name: "Portable Network Graphics",
-      format: "png",
-      extension: "png",
-      mime: "image/png",
-      from: true,
-      to: true,
-      internal: "image"
-    },
-    {
-      name: "Joint Photographic Experts Group JFIF",
-      format: "jpeg",
-      extension: "jpg",
-      mime: "image/jpeg",
-      from: true,
-      to: true,
-      internal: "image"
-    },
-    {
-      name: "WebP",
-      format: "webp",
-      extension: "webp",
-      mime: "image/webp",
-      from: true,
-      to: true,
-      internal: "image"
-    }
+    // Lossy reconstruction due to 2 channel encoding
+    CommonFormats.PNG.supported("image", true, true),
+    CommonFormats.JPEG.supported("image", true, true),
+    CommonFormats.WEBP.supported("image", true, true),
   ];
   public ready: boolean = false;
 
@@ -44,42 +22,22 @@ class meydaHandler implements FormatHandler {
   async init () {
 
     const dummy = document.createElement("audio");
-    this.supportedFormats.push({
-      name: "Waveform Audio File Format",
-      format: "wav",
-      extension: "wav",
-      mime: "audio/wav",
-      from: dummy.canPlayType("audio/wav") !== "",
-      to: true,
-      internal: "audio"
-    });
-    if (dummy.canPlayType("audio/mpeg")) this.supportedFormats.push({
-      name: "MP3 Audio",
-      format: "mp3",
-      extension: "mp3",
-      mime: "audio/mpeg",
-      from: true,
-      to: false,
-      internal: "audio"
-    });
-    if (dummy.canPlayType("audio/ogg")) this.supportedFormats.push({
-      name: "Ogg Audio",
-      format: "ogg",
-      extension: "ogg",
-      mime: "audio/ogg",
-      from: true,
-      to: false,
-      internal: "audio"
-    });
-    if (dummy.canPlayType("audio/flac")) this.supportedFormats.push({
-      name: "Free Lossless Audio Codec",
-      format: "flac",
-      extension: "flac",
-      mime: "audio/flac",
-      from: true,
-      to: false,
-      internal: "audio"
-    });
+    this.supportedFormats.push(
+      CommonFormats.WAV.builder("audio")
+        .allowFrom(dummy.canPlayType("audio/wav") !== "")
+        .allowTo()
+    );
+    
+    if (dummy.canPlayType("audio/mpeg")) this.supportedFormats.push(
+      // lossless=false, lossy reconstruction 
+      CommonFormats.MP3.supported("audio", true, false)
+    );
+    if (dummy.canPlayType("audio/ogg")) this.supportedFormats.push(
+      CommonFormats.OGG.builder("audio").allowFrom()
+    );
+    if (dummy.canPlayType("audio/flac")) this.supportedFormats.push(
+      CommonFormats.FLAC.builder("audio").allowFrom()
+    );
     dummy.remove();
 
     this.#audioContext = new AudioContext({
@@ -116,7 +74,9 @@ class meydaHandler implements FormatHandler {
     const bufferSize = 2048;
     const hopSize = bufferSize / 2;
 
-
+    if (inputIsImage === outputIsImage) {
+      throw "Invalid input/output format.";
+    }
 
     if (inputIsImage) {
       for (const inputFile of inputFiles) {

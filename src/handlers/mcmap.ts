@@ -87,7 +87,9 @@ class mcMapHandler implements FormatHandler {
                 mime: "image/x-rgb",
                 from: false,
                 to: true,
-                internal: "rgb"
+                internal: "rgb",
+                category: "image",
+                lossless: true
             },
             {
                 name: "Minecraft Map File",

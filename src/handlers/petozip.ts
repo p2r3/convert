@@ -6,6 +6,7 @@ import * as Pe from "pe-library";
 import JSZip from "jszip";
 
 import { Buffer } from "buffer";
+import CommonFormats from "src/CommonFormats.ts";
 if (typeof window !== "undefined") {
   (window as any).Buffer = Buffer;
 }
@@ -33,15 +34,7 @@ class peToZipHandler implements FormatHandler {
       to: false,
       internal: "dll"
     },
-    {
-      name: "ZIP Archive",
-      format: "zip",
-      extension: "zip",
-      mime: "application/zip",
-      from: false,
-      to: true,
-      internal: "zip"
-    }
+    CommonFormats.ZIP.builder("zip").allowTo().markLossless()
   ];
 
   public ready: boolean = true;

@@ -1,3 +1,4 @@
+import CommonFormats from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import { imageToText, rgbaToGrayscale } from "./image-to-txt/src/convert.ts";
 
@@ -6,60 +7,12 @@ class canvasToBlobHandler implements FormatHandler {
   public name: string = "canvasToBlob";
 
   public supportedFormats: FileFormat[] = [
-    {
-      name: "Portable Network Graphics",
-      format: "png",
-      extension: "png",
-      mime: "image/png",
-      from: true,
-      to: true,
-      internal: "png"
-    },
-    {
-      name: "Joint Photographic Experts Group JFIF",
-      format: "jpeg",
-      extension: "jpg",
-      mime: "image/jpeg",
-      from: true,
-      to: true,
-      internal: "jpeg"
-    },
-    {
-      name: "WebP",
-      format: "webp",
-      extension: "webp",
-      mime: "image/webp",
-      from: true,
-      to: true,
-      internal: "webp"
-    },
-    {
-      name: "CompuServe Graphics Interchange Format (GIF)",
-      format: "gif",
-      extension: "gif",
-      mime: "image/gif",
-      from: true,
-      to: false,
-      internal: "gif"
-    },
-    {
-      name: "Scalable Vector Graphics",
-      format: "svg",
-      extension: "svg",
-      mime: "image/svg+xml",
-      from: true,
-      to: false,
-      internal: "svg"
-    },
-    {
-      name: "Plain Text",
-      format: "text",
-      extension: "txt",
-      mime: "text/plain",
-      from: true,
-      to: true,
-      internal: "text"
-    }
+    CommonFormats.PNG.supported("png", true, true, true),
+    CommonFormats.JPEG.supported("jpeg", true, true),
+    CommonFormats.WEBP.supported("webp", true, true),
+    CommonFormats.GIF.supported("gif", true, false),
+    CommonFormats.SVG.supported("svg", true, false),
+    CommonFormats.TEXT.supported("text", true, true)
   ];
 
   #canvas?: HTMLCanvasElement;

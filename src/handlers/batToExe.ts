@@ -1,3 +1,4 @@
+import CommonFormats from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 
 import headUrl from "./batToExe/exe65824head.bin?url";
@@ -6,8 +7,8 @@ import footUrl from "./batToExe/exe65824foot.bin?url";
 class batToExeHandler implements FormatHandler {
   public name = "batToExe";
   public supportedFormats = [
-    { name: "Windows Batch file",       format: "batch",      extension: "text/bat", mime: "text/windows-batch", from: true,  to: false, internal: "bat" },
-    { name: "Windows 64bit Executable", format: "executable", extension: "exe",      mime: "binary/exe-win64",   from: false, to: true,  internal: "exe" }
+    CommonFormats.BATCH.supported("bat", true, false),
+    { name: "Windows 64bit Executable", format: "executable", extension: "exe", mime: "binary/exe-win64", from: false, to: true, internal: "exe", category: "binary", lossless: true } // Tecnically it lossless because stores bat inside
   ];
   public ready = false;
 

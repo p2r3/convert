@@ -1,3 +1,4 @@
+import CommonFormats from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import parseXML from "./envelope/parseXML.js";
 import * as yaml from "@std/yaml";
@@ -8,42 +9,10 @@ export class toJsonHandler implements FormatHandler {
   public ready: boolean = true;
 
   public supportedFormats: FileFormat[] = [
-    {
-      name: "Comma Separated Values",
-      format: "csv",
-      extension: "csv",
-      mime: "text/csv",
-      from: true,
-      to: false,
-      internal: "csv"
-    },
-    {
-      name: "Extensible Markup Language",
-      format: "xml",
-      extension: "xml",
-      mime: "application/xml",
-      from: true,
-      to: false,
-      internal: "xml"
-    },
-    {
-      name: "YAML Ain't Markup Language",
-      format: "yaml",
-      extension: "yml",
-      mime: "application/yaml",
-      from: true,
-      to: false,
-      internal: "yaml"
-    },
-    {
-      name: "JavaScript Object Notation",
-      format: "json",
-      extension: "json",
-      mime: "application/json",
-      from: false,
-      to: true,
-      internal: "json"
-    },
+    CommonFormats.CSV.builder("csv").allowFrom(),
+    CommonFormats.XML.builder("xml").allowFrom(),
+    CommonFormats.YML.builder("yaml").allowFrom(),
+    CommonFormats.JSON.supported("json", false, true, true)
   ];
 
   async init() {
@@ -107,42 +76,10 @@ export class fromJsonHandler {
   public ready: boolean = true;
 
   public supportedFormats: FileFormat[] = [
-    {
-      name: "Comma Separated Values",
-      format: "csv",
-      extension: "csv",
-      mime: "text/csv",
-      from: false,
-      to: true,
-      internal: "csv"
-    },
-    {
-      name: "Extensible Markup Language",
-      format: "xml",
-      extension: "xml",
-      mime: "application/xml",
-      from: false,
-      to: true,
-      internal: "xml"
-    },
-    {
-      name: "YAML Ain't Markup Language",
-      format: "yaml",
-      extension: "yml",
-      mime: "application/yaml",
-      from: false,
-      to: true,
-      internal: "yaml"
-    },
-    {
-      name: "JavaScript Object Notation",
-      format: "json",
-      extension: "json",
-      mime: "application/json",
-      from: true,
-      to: false,
-      internal: "json"
-    },
+    CommonFormats.CSV.builder("csv").allowTo(),
+    CommonFormats.XML.builder("xml").allowTo(),
+    CommonFormats.YML.builder("yaml").allowTo(),
+    CommonFormats.JSON.supported("json", true, false)
   ];
 
   async init() {
