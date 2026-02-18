@@ -100,8 +100,8 @@ export class LZHDecoder {
       return null; // End of archive or invalid header
     }
 
-    const startOffset = this.offset - 1;
-    const headerChecksum = this.readByte();
+    // Read header checksum
+    this.readByte();
     
     // Read method (5 bytes)
     const method = this.readString(5);
@@ -130,8 +130,8 @@ export class LZHDecoder {
     const dosDate = this.readWord();
     const timestamp = this.dosDateTimeToDate(dosDate, dosTime);
     
-    // Read attributes
-    const attributes = this.readByte();
+    // Read attributes byte
+    this.readByte();
     
     // Read level
     const level = this.readByte();

@@ -46,7 +46,7 @@ class flptojsonHandler implements FormatHandler {
 
   async doConvert (
     inputFiles: FileData[],
-    inputFormat: FileFormat,
+    _inputFormat: FileFormat,
     outputFormat: FileFormat
   ): Promise<FileData[]> {
 

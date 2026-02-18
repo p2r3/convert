@@ -25,8 +25,8 @@
     "noUncheckedSideEffectImports": true,
     /* Temporary fix!!! This is only really a problem in dependencies. */
     /* Not sure how to best handle this in the long term, though. */
-    "noUnusedLocals": false, /* SHOULD be true */
-    "noUnusedParameters": false, /* SHOULD be true */
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     /**
      * The TS transpilation of the qoi-fu dependency isn't compabile with
      * our settings. They do provide a JS file, but tsc _really_ wants to
@@ -46,7 +46,9 @@
     "src/handlers/qoi-fu/**/*",
     "src/handlers/qoa-fu/**/*",
     "src/handlers/sppd/**/*",
-    "src/handlers/image-to-txt/src/app.ts",
-    "src/handlers/image-to-txt/src/generate.ts"
+    "src/handlers/image-to-txt/**/*",
+    "src/handlers/canvasToBlob.ts",
+    "src/handlers/envelope.ts",
+    "src/handlers/json.ts"
   ]
 }
