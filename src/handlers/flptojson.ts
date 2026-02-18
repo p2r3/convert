@@ -30,7 +30,8 @@ class flptojsonHandler implements FormatHandler {
       mime: "application/octet-stream",
       from: true,
       to: false,
-      internal: "flp"
+      internal: "flp",
+      category: "audio",
     },
     {
       name: "JavaScript Object Notation",
@@ -39,7 +40,9 @@ class flptojsonHandler implements FormatHandler {
       mime: "application/json",
       from: false,
       to: true,
-      internal: "json"
+      internal: "json",
+      category: "data",
+      lossless: false // Unsure about this, it might be lossless
     }
   ];
 

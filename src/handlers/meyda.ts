@@ -108,7 +108,7 @@ class meydaHandler implements FormatHandler {
     this.ready = true;
 
   }
-  // TODO: Use all 3 channels to encode more for lossless conversion img -> audio -> img
+  
   async doConvert (
     inputFiles: FileData[],
     inputFormat: FileFormat,

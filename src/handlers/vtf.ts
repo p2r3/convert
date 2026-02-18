@@ -807,7 +807,8 @@ class vtfHandler implements FormatHandler {
       mime: "image/x-vtf",
       from: true,
       to: false,
-      internal: "vtf"
+      internal: "vtf",
+      category: "image"
     },
     {
       name: "Portable Network Graphics",
@@ -816,7 +817,9 @@ class vtfHandler implements FormatHandler {
       mime: "image/png",
       from: false,
       to: true,
-      internal: "png"
+      internal: "png",
+      category: "image",
+      lossless: true
     },
     {
       name: "Joint Photographic Experts Group JFIF",
@@ -825,7 +828,9 @@ class vtfHandler implements FormatHandler {
       mime: "image/jpeg",
       from: false,
       to: true,
-      internal: "jpeg"
+      internal: "jpeg",
+      category: "image",
+      lossless: false
     },
     {
       name: "WebP",
@@ -834,7 +839,9 @@ class vtfHandler implements FormatHandler {
       mime: "image/webp",
       from: false,
       to: true,
-      internal: "webp"
+      internal: "webp",
+      category: "image",
+      lossless: false
     }
   ];
 

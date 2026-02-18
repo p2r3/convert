@@ -11,7 +11,9 @@ class htmlEmbedHandler implements FormatHandler {
       mime: "text/html",
       from: false,
       to: true,
-      internal: "html"
+      internal: "html",
+      category: "document",
+      lossless: true
     },
     {
       name: "Portable Network Graphics",
@@ -20,7 +22,8 @@ class htmlEmbedHandler implements FormatHandler {
       mime: "image/png",
       from: true,
       to: false,
-      internal: "png"
+      internal: "png",
+      category: "image"
     },
     {
       name: "Joint Photographic Experts Group JFIF",
@@ -29,7 +32,8 @@ class htmlEmbedHandler implements FormatHandler {
       mime: "image/jpeg",
       from: true,
       to: false,
-      internal: "jpeg"
+      internal: "jpeg",
+      category: "image",
     },
     {
       name: "WebP",
@@ -38,7 +42,8 @@ class htmlEmbedHandler implements FormatHandler {
       mime: "image/webp",
       from: true,
       to: false,
-      internal: "webp"
+      internal: "webp",
+      category: "image",
     },
     {
       name: "CompuServe Graphics Interchange Format (GIF)",
@@ -47,7 +52,8 @@ class htmlEmbedHandler implements FormatHandler {
       mime: "image/gif",
       from: true,
       to: false,
-      internal: "gif"
+      internal: "gif",
+      category: "image",
     },
     {
       name: "Scalable Vector Graphics",
@@ -56,7 +62,8 @@ class htmlEmbedHandler implements FormatHandler {
       mime: "image/svg+xml",
       from: true,
       to: false,
-      internal: "svg"
+      internal: "svg",
+      category: ["image", "vector"],
     },
     {
       name: "Plain Text",
@@ -65,7 +72,8 @@ class htmlEmbedHandler implements FormatHandler {
       mime: "text/plain",
       from: true,
       to: false,
-      internal: "text"
+      internal: "text",
+      category: "text"
     },
     {
       name: "MPEG-4 Part 14",
@@ -74,7 +82,8 @@ class htmlEmbedHandler implements FormatHandler {
       mime: "video/mp4",
       from: true,
       to: false,
-      internal: "mp4"
+      internal: "mp4",
+      category: "video"
     },
     {
       name: "MP3 Audio",
@@ -83,7 +92,8 @@ class htmlEmbedHandler implements FormatHandler {
       mime: "audio/mpeg",
       from: true,
       to: false,
-      internal: "mp3"
+      internal: "mp3",
+      category: "audio"
     }
   ];
   public ready: boolean = false;

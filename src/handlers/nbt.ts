@@ -17,7 +17,9 @@ class nbtHandler implements FormatHandler {
                 mime: "application/x-minecraft-nbt",
                 from: true,
                 to: true,
-                internal: "nbt"
+                internal: "nbt",
+                category: "data",
+                lossless: true
             },
             {
                 name: "JavaScript Object Notation",
@@ -26,7 +28,9 @@ class nbtHandler implements FormatHandler {
                 mime: "application/json",
                 from: true,
                 to: true,
-                internal: "json"
+                internal: "json",
+                category: "data",
+                lossless: true
             },
             {
                 name: "String Named Binary Tag",
@@ -35,7 +39,9 @@ class nbtHandler implements FormatHandler {
                 mime: "application/x-minecraft-snbt",
                 from: true,
                 to: true,
-                internal: "snbt"
+                internal: "snbt",
+                category: "data",
+                lossless: true
             },
         ]
         this.ready = true

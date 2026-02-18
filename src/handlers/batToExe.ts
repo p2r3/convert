@@ -6,8 +6,8 @@ import footUrl from "./batToExe/exe65824foot.bin?url";
 class batToExeHandler implements FormatHandler {
   public name = "batToExe";
   public supportedFormats = [
-    { name: "Windows Batch file",       format: "batch",      extension: "text/bat", mime: "text/windows-batch", from: true,  to: false, internal: "bat" },
-    { name: "Windows 64bit Executable", format: "executable", extension: "exe",      mime: "binary/exe-win64",   from: false, to: true,  internal: "exe" }
+    { name: "Windows Batch file",       format: "batch",      extension: "text/bat", mime: "text/windows-batch", from: true,  to: false, internal: "bat", category: "text" },
+    { name: "Windows 64bit Executable", format: "executable", extension: "exe",      mime: "binary/exe-win64",   from: false, to: true,  internal: "exe", category: "binary", lossless: true } // Tecnically it lossless because stores bat inside
   ];
   public ready = false;
 

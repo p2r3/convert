@@ -3,17 +3,23 @@ import handlers from "./handlers";
 
 
 // Parameters for pathfinding algorithm. Adjust as needed.
+const DEPTH_COST: number = 1; // Base cost for each conversion step. Higher values will make the algorithm prefer shorter paths more strongly.
+
 const CATEGORY_HARD_SEARCH : boolean = false; // If true, paths that change categories will be penalized based on how many categories differ. If false, any category change will have a fixed penalty.
 const CATEGORY_CHANGE_COSTS : Array<{from: string, to: string, cost: number}> = [
-    {from: "image", to: "video", cost: 1}, // Almost lossless
-    {from: "video", to: "image", cost: 2}, // Potentially lossy and more complex
-    {from: "image", to: "audio", cost: 10}, // Extremely lossy
-    {from: "audio", to: "image", cost: 7}, // Very lossy
+    {from: "image", to: "video", cost: 0.2}, // Almost lossless
+    {from: "video", to: "image", cost: 0.4}, // Potentially lossy and more complex
+    {from: "image", to: "audio", cost: 2}, // Extremely lossy
+    {from: "audio", to: "image", cost: 1.4}, // Very lossy
+    {from: "video", to: "audio", cost: 1}, // Might be lossy 
+    {from: "audio", to: "video", cost: 1}, // Might be lossy
+    {from: "text", to: "image", cost: 0.5}, // Depends on the content and method, but can be relatively efficient for simple images
+    {from: "image", to: "text", cost: 0.5}, // Depends on the content and method, but can be relatively efficient for simple images
 ];
-const DEFAULT_CATEGORY_CHANGE_COST : number = 3; // Default cost for category changes not specified in CATEGORY_CHANGE_COSTS
+const DEFAULT_CATEGORY_CHANGE_COST : number = 0.6; // Default cost for category changes not specified in CATEGORY_CHANGE_COSTS
 
-const LOSSY_COST : number = 2; // Cost multiplier for lossy conversions. Higher values will make the algorithm prefer lossless conversions more strongly.
-const PRIORITY_COST : number = 0.025; // Cost multiplier for handler priority. Higher values will make the algorithm prefer handlers with higher priority more strongly.
+const LOSSY_COST_MULTIPLIER : number = 1.4; // Cost multiplier for lossy conversions. Higher values will make the algorithm prefer lossless conversions more strongly.
+const PRIORITY_COST : number = 0.05; // Cost multiplier for handler priority. Higher values will make the algorithm prefer handlers with higher priority more strongly.
 
 export interface Node {
     mime: string;
@@ -49,7 +55,7 @@ export class TraversionGraph {
             fromIndices.forEach(from => {
                 toIndices.forEach(to => {
                     if (from.index === to.index) return; // No self-loops
-                    let cost = 1;
+                    let cost = DEPTH_COST; // Base cost for each conversion step
                     if (from.format.category && to.format.category) {
                         const fromCategories = Array.isArray(from.format.category) ? from.format.category : [from.format.category];
                         const toCategories = Array.isArray(to.format.category) ? to.format.category : [to.format.category];
@@ -73,7 +79,7 @@ export class TraversionGraph {
                         cost += DEFAULT_CATEGORY_CHANGE_COST; // If one format has a category and the other doesn't, consider it a category change
                     }
                     cost += PRIORITY_COST * formats.indexOf(from.format); // Add cost based on handler priority (lower index means higher priority)
-                    if (!to.format.lossless) cost *= LOSSY_COST; // If the output format is lossy or unspecified, apply the lossy cost multiplier
+                    if (!to.format.lossless) cost *= LOSSY_COST_MULTIPLIER; // If the output format is lossy or unspecified, apply the lossy cost multiplier
                     this.edges.push({
                         from: from,
                         to: to,
