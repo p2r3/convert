@@ -8,6 +8,7 @@ class meydaHandler implements FormatHandler {
 
   public name: string = "meyda";
   public supportedFormats: FileFormat[] = [
+    // Lossy reconstruction due to 2 channel encoding
     CommonFormats.PNG.supported("image", true, true),
     CommonFormats.JPEG.supported("image", true, true),
     CommonFormats.WEBP.supported("image", true, true),
@@ -21,42 +22,21 @@ class meydaHandler implements FormatHandler {
   async init () {
 
     const dummy = document.createElement("audio");
-    this.supportedFormats.push({
-      name: "Waveform Audio File Format",
-      format: "wav",
-      extension: "wav",
-      mime: "audio/wav",
-      from: dummy.canPlayType("audio/wav") !== "",
-      to: true,
-      internal: "audio",
-      category: "audio",
-      lossless: false // Lossy reconstruction
-    });
+    this.supportedFormats.push(
+      CommonFormats.WAV.builder("audio")
+        .allowFrom(dummy.canPlayType("audio/wav") !== "")
+    );
+    
     if (dummy.canPlayType("audio/mpeg")) this.supportedFormats.push(
+      // lossless=false, lossy reconstruction 
       CommonFormats.MP3.supported("audio", true, false)
     );
-    if (dummy.canPlayType("audio/ogg")) this.supportedFormats.push({
-      name: "Ogg Audio",
-      format: "ogg",
-      extension: "ogg",
-      mime: "audio/ogg",
-      from: true,
-      to: false,
-      internal: "audio",
-      category: "audio",
-      lossless: false // Lossy reconstruction
-    });
-    if (dummy.canPlayType("audio/flac")) this.supportedFormats.push({
-      name: "Free Lossless Audio Codec",
-      format: "flac",
-      extension: "flac",
-      mime: "audio/flac",
-      from: true,
-      to: false,
-      internal: "audio",
-      category: "audio",
-      lossless: false // Lossy reconstruction
-    });
+    if (dummy.canPlayType("audio/ogg")) this.supportedFormats.push(
+      CommonFormats.OGG.builder("audio").allowFrom()
+    );
+    if (dummy.canPlayType("audio/flac")) this.supportedFormats.push(
+      CommonFormats.FLAC.builder("audio").allowFrom()
+    );
     dummy.remove();
 
     this.#audioContext = new AudioContext({

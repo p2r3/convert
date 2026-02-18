@@ -99,11 +99,11 @@ class dummyHandler implements FormatHandler {
 
   async init () {
     this.supportedFormats = [
-      // Create a FileFormat based on the common PNG definition.
-      // "png" is this handler's internal format identifier.
-      // Both `from` and `to` are set to false, meaning this handler
-      // does not support conversion from or to PNG.
-      CommonFormats.PNG.supported("png", false, false)
+      // Example PNG format, with both input and output disabled
+      CommonFormats.PNG.builder("png")
+        .markLossless()
+        // .allowFrom()
+        // .allowTo()
     ];
     this.ready = true;
   }

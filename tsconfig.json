@@ -35,7 +35,8 @@
      */
     "baseUrl": ".",
     "paths": {
-      "qoi-fu": ["./src/handlers/qoi-fu/transpiled/QOI.js"]
+      "qoi-fu": ["./src/handlers/qoi-fu/transpiled/QOI.js"],
+      "qoa-fu": ["./src/handlers/qoa-fu/transpiled/QOA.js"]
     }
   },
   "include": [
@@ -43,6 +44,7 @@
   ],
   "exclude": [
     "src/handlers/qoi-fu/**/*",
+    "src/handlers/qoa-fu/**/*",
     "src/handlers/sppd/**/*",
     "src/handlers/image-to-txt/src/app.ts",
     "src/handlers/image-to-txt/src/generate.ts"

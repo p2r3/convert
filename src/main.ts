@@ -332,11 +332,18 @@ async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
       }
       if (!supportedFormats) throw `Handler "${handler.name}" doesn't support any formats.`;
       const inputFormat = supportedFormats.find(c => c.mime === path[i].format.mime && c.from)!;
-      files = await handler.doConvert(files, inputFormat, path[i + 1].format);
+      files = (await Promise.all([
+        handler.doConvert(files, inputFormat, path[i + 1].format),
+        // Ensure that we wait long enough for the UI to update
+        new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+      ]))[0];
       if (files.some(c => !c.bytes.length)) throw "Output is empty.";
     } catch (e) {
       console.log(path.map(c => c.format.format));
       console.error(handler.name, `${path[i].format.format} → ${path[i + 1].format.format}`, e);
+      ui.popupBox.innerHTML = `<h2>Finding conversion route...</h2>
+        <p>Looking for a valid path...</p>`;
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
       return null;
     }
   }
@@ -351,6 +358,10 @@ async function tryConvertByTraversing (
   to: ConvertPathNode
 ) {
   for await (const path of window.traversionGraph.searchPath(from, to, simpleMode)) {
+    // Use exact output format if the target handler supports it
+    if (path.at(-1)?.handler === to.handler) {
+      path[path.length - 1] = to;
+    }
     const attempt = await attemptConvertPath(files, path);
     if (attempt) return attempt;
   }
@@ -399,6 +410,8 @@ ui.convertButton.onclick = async function () {
     }
 
     window.showPopup("<h2>Finding conversion route...</h2>");
+    // Delay for a bit to give the browser time to render
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
     const output = await tryConvertByTraversing(inputFileData, inputOption, outputOption);
     if (!output) {

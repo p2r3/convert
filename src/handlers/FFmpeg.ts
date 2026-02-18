@@ -154,7 +154,7 @@ class FFmpegHandler implements FormatHandler {
 
     // ====== Manual fine-tuning ======
 
-    const prioritize = ["webm", "mp4", "gif"];
+    const prioritize = ["webm", "mp4", "gif", "wav"];
     prioritize.reverse();
 
     this.supportedFormats.sort((a, b) => {

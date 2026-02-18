@@ -1,6 +1,7 @@
 import { imageTracer } from 'imagetracer'
 
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
+import CommonFormats from 'src/CommonFormats.ts';
 
 class svgTraceHandler implements FormatHandler {
 
@@ -10,47 +11,11 @@ class svgTraceHandler implements FormatHandler {
 
   async init() {
     this.supportedFormats = [
-      {
-        name: "Portable Network Graphics",
-        format: "png",
-        extension: "png",
-        mime: "image/png",
-        from: true,
-        to: false,
-        internal: "png",
-        category: "image"
-      },
-      {
-        name: "Joint Photographic Experts Group JFIF",
-        format: "jpeg",
-        extension: "jpg",
-        mime: "image/jpeg",
-        from: true,
-        to: false,
-        internal: "jpeg",
-        category: "image",
-      },
-      {
-        name: "WebP",
-        format: "webp",
-        extension: "webp",
-        mime: "image/webp",
-        from: true,
-        to: false,
-        internal: "webp", // note there is both animated svgs, and animted webPs, although this converter does not support either
-        category: "image"
-      },
-      {
-        name: "Scalable Vector Graphics",
-        format: "svg",
-        extension: "svg",
-        mime: "image/svg+xml",
-        from: false,
-        to: true,
-        internal: "svg",
-        category: ["image", "vector", "document"],
-        lossless: false
-      },
+      CommonFormats.PNG.builder("png").allowFrom(),
+      CommonFormats.JPEG.builder("jpeg").allowFrom(),
+      // note there is both animated svgs, and animted webPs, although this converter does not support either
+      CommonFormats.WEBP.builder("webp").allowFrom(),
+      CommonFormats.SVG.builder("svg").allowTo()
     ];
     this.ready = true;
   }

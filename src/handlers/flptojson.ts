@@ -34,6 +34,7 @@ class flptojsonHandler implements FormatHandler {
       internal: "flp",
       category: "audio",
     },
+    // Unsure about this, it might be lossless
     CommonFormats.JSON.supported("json", false, true)
   ];
 
