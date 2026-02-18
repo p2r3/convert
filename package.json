@@ -38,7 +38,6 @@
     "mime": "^4.1.0",
     "nbtify": "^2.2.0",
     "pako": "^2.1.0",
-    "parse-sb3-blocks": "^0.5.2",
     "pdftoimg-js": "^0.2.5",
     "pe-library": "^2.0.1",
     "scratchblocks": "^3.6.4",

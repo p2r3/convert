@@ -25,7 +25,7 @@ import peToZipHandler from "./petozip.ts";
 import flptojsonHandler from "./flptojson.ts";
 import floHandler from "./flo.ts";
 import batToExeHandler from "./batToExe.ts";
-import sb3ToPngHandler from "./sb3topng.ts";
+import sb3ToPngHandler from "./sb3tohtml.ts";
 import textEncodingHandler from "./textEncoding.ts";
 
 const handlers: FormatHandler[] = [];
