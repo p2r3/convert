@@ -57,7 +57,7 @@ export class FormatDefinition implements IFormatDefinition {
    * @param ref Format identifier for the handler's internal reference.
    * @param from Whether conversion **from** this format is supported.
    * @param to Whether conversion **to** this format is supported.
-   * @param lossless lossless (Optional) Whether the format is lossless in this context. Defaults to `false`.
+   * @param lossless (Optional) Whether the format is lossless in this context. Defaults to `false`.
    * @param override Format definition values to override
    * @returns 
    */
