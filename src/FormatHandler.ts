@@ -22,7 +22,7 @@ export interface FileFormat extends IFormatDefinition {
   to: boolean;
   /** Format identifier for the handler's internal reference. */
   internal: string;
-  /** Whether the format is lossless (if applicable). */
+  /** (Optional) Whether the format is lossless in this context. Defaults to `false`. */
   lossless?: boolean;
 }
 
@@ -68,7 +68,7 @@ export class FormatDefinition implements IFormatDefinition {
       internal: ref,
       from: from,
       to: to,
-      lossless: lossless
+      lossless: lossless ?? false
     }
   }
 
@@ -76,34 +76,61 @@ export class FormatDefinition implements IFormatDefinition {
    * Returns a builder to fluently create FileFormat
    */
   builder() {
-    // Initialize flags
     const def = this
-    const flags: { from: boolean; to: boolean; lossless?: boolean; override: Partial<IFormatDefinition> } = {
+    const data: { 
+      from: boolean; 
+      to: boolean; 
+      lossless?: boolean; 
+      override: Partial<IFormatDefinition>;
+      name: string;
+      format: string;
+      extension: string;
+      mime: string;
+     } = {
       from: false,
       to: false,
-      override: {}
+      override: {},
+      name: def.name,
+      format: def.format,
+      extension: def.extension,
+      mime: def.mime
     }
-
-    // Return the builder object with chainable methods
     return {
       allowFrom() {
-        flags.from = true
+        data.from = true
         return this
       },
       allowTo() {
-        flags.to = true
+        data.to = true
         return this
       },
-      markLossless() {
-        flags.lossless = true
+      lossless() {
+        data.lossless = true
+        return this
+      },
+      named(name: string) {
+        data.name = name
+        return this
+      },
+      format(format: string) {
+        data.format = format
+        return this
+      },
+      extension(ext: string) {
+        data.extension = ext
+        return this
+      },
+      mime(mimetype: string) {
+        data.mime = mimetype
         return this
       },
       override(values: Partial<IFormatDefinition>) {
-        flags.override = { ...flags.override, ...values }
+        data.override = { ...data.override, ...values }
         return this
       },
       supported(ref: string) {
-        return def.supported(ref, flags.from, flags.to, flags.lossless, flags.override)
+        const nf = new FormatDefinition(data.name, data.format, data.extension, data.mime, def.category)
+        return nf.supported(ref, data.from, data.to, data.lossless, data.override)
       }
     }
   }
