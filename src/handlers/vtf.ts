@@ -808,11 +808,12 @@ class vtfHandler implements FormatHandler {
       mime: "image/x-vtf",
       from: true,
       to: false,
-      internal: "vtf"
+      internal: "vtf",
+      category: "image"
     },
-    CommonFormats.PNG.supported("png", false, true),
-    CommonFormats.JPEG.supported("jpeg", false, true),
-    CommonFormats.WEBP.supported("webp", false, true)
+    CommonFormats.PNG.supported("png", false, true, true),
+    CommonFormats.JPEG.supported("jpeg", false, true, false),
+    CommonFormats.WEBP.supported("webp", false, true, false)
   ];
 
   #canvas?: HTMLCanvasElement;

@@ -31,9 +31,11 @@ class flptojsonHandler implements FormatHandler {
       mime: "application/octet-stream",
       from: true,
       to: false,
-      internal: "flp"
+      internal: "flp",
+      category: "audio",
     },
-    CommonFormats.JSON.supported("json", false, true)
+    // Unsure about this, it might be lossless
+    CommonFormats.JSON.supported("json", false, true, false)
   ];
 
   public ready: boolean = true;

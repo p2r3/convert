@@ -8,9 +8,10 @@ class meydaHandler implements FormatHandler {
 
   public name: string = "meyda";
   public supportedFormats: FileFormat[] = [
-    CommonFormats.PNG.supported("image", true, true),
-    CommonFormats.JPEG.supported("image", true, true),
-    CommonFormats.WEBP.supported("image", true, true),
+    // Lossy reconstruction due to 2 channel encoding
+    CommonFormats.PNG.supported("image", true, true, false),
+    CommonFormats.JPEG.supported("image", true, true, false),
+    CommonFormats.WEBP.supported("image", true, true, false),
   ];
   public ready: boolean = false;
 
@@ -28,10 +29,13 @@ class meydaHandler implements FormatHandler {
       mime: "audio/wav",
       from: dummy.canPlayType("audio/wav") !== "",
       to: true,
-      internal: "audio"
+      internal: "audio",
+      category: "audio",
+      lossless: false // Lossy reconstruction 
     });
     if (dummy.canPlayType("audio/mpeg")) this.supportedFormats.push(
-      CommonFormats.MP3.supported("audio", true, false)
+      // lossless=false, lossy reconstruction 
+      CommonFormats.MP3.supported("audio", true, false, false)
     );
     if (dummy.canPlayType("audio/ogg")) this.supportedFormats.push({
       name: "Ogg Audio",
@@ -40,7 +44,9 @@ class meydaHandler implements FormatHandler {
       mime: "audio/ogg",
       from: true,
       to: false,
-      internal: "audio"
+      internal: "audio",
+      category: "audio",
+      lossless: false // Lossy reconstruction 
     });
     if (dummy.canPlayType("audio/flac")) this.supportedFormats.push({
       name: "Free Lossless Audio Codec",
@@ -49,7 +55,9 @@ class meydaHandler implements FormatHandler {
       mime: "audio/flac",
       from: true,
       to: false,
-      internal: "audio"
+      internal: "audio",
+      category: "audio",
+      lossless: false // Lossy reconstruction 
     });
     dummy.remove();
 
@@ -65,7 +73,7 @@ class meydaHandler implements FormatHandler {
     this.ready = true;
 
   }
-
+  
   async doConvert (
     inputFiles: FileData[],
     inputFormat: FileFormat,
@@ -87,9 +95,7 @@ class meydaHandler implements FormatHandler {
     const bufferSize = 2048;
     const hopSize = bufferSize / 2;
 
-    if (inputIsImage === outputIsImage) {
-      throw "Invalid input/output format.";
-    }
+
 
     if (inputIsImage) {
       for (const inputFile of inputFiles) {

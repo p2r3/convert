@@ -5,7 +5,7 @@ class htmlEmbedHandler implements FormatHandler {
 
   public name: string = "htmlEmbed";
   public supportedFormats: FileFormat[] = [
-    CommonFormats.HTML.supported("html", false, true),
+    CommonFormats.HTML.supported("html", false, true, true),
     CommonFormats.PNG.supported("png", true, false),
     CommonFormats.JPEG.supported("jpeg", true, false),
     CommonFormats.WEBP.supported("webp", true, false),
@@ -19,7 +19,8 @@ class htmlEmbedHandler implements FormatHandler {
       mime: "video/mp4",
       from: true,
       to: false,
-      internal: "mp4"
+      internal: "mp4",
+      category: "video"
     },
     CommonFormats.MP3.supported("mp3", true, false)
   ];

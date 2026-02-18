@@ -7,9 +7,9 @@ class canvasToBlobHandler implements FormatHandler {
   public name: string = "canvasToBlob";
 
   public supportedFormats: FileFormat[] = [
-    CommonFormats.PNG.supported("png", true, true),
-    CommonFormats.JPEG.supported("jpeg", true, true),
-    CommonFormats.WEBP.supported("webp", true, true),
+    CommonFormats.PNG.supported("png", true, true, true),
+    CommonFormats.JPEG.supported("jpeg", true, true, false),
+    CommonFormats.WEBP.supported("webp", true, true, false),
     CommonFormats.GIF.supported("gif", true, false),
     CommonFormats.SVG.supported("svg", true, false),
     CommonFormats.TEXT.supported("text", true, true)

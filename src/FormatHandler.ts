@@ -11,6 +11,8 @@ export interface IFormatDefinition {
   extension: string;
   /** MIME type. */
   mime: string;
+  /** Category for grouping formats. */
+  category?: Array<string> | string
 }
 
 export interface FileFormat extends IFormatDefinition {
@@ -20,6 +22,8 @@ export interface FileFormat extends IFormatDefinition {
   to: boolean;
   /** Format identifier for the handler's internal reference. */
   internal: string;
+  /** Whether the format is lossless (if applicable). */
+  lossless?: boolean;
 }
 
 /**
@@ -31,12 +35,14 @@ export class FormatDefinition implements IFormatDefinition {
   public readonly format: string;
   public readonly extension: string;
   public readonly mime: string;
+  public readonly category?: Array<string> | string
 
-  constructor(name: string, format: string, extension: string, mime: string) {
+  constructor(name: string, format: string, extension: string, mime: string, category?: Array<string> | string) {
     this.name = name
     this.format = format
     this.extension = extension
     this.mime = mime
+    this.category = category
   }
 
   /**
@@ -45,16 +51,18 @@ export class FormatDefinition implements IFormatDefinition {
    * @param ref Format identifier for the handler's internal reference.
    * @param from Whether conversion **from** this format is supported.
    * @param to Whether conversion **to** this format is supported.
+   * @param lossless Whether the format is lossless (if applicable).
    * @param override Format definition values to override
    * @returns 
    */
-  supported(ref: string, from: boolean, to: boolean, override: Partial<IFormatDefinition> = {}): FileFormat {
+  supported(ref: string, from: boolean, to: boolean, lossless?: boolean, override: Partial<IFormatDefinition> = {}): FileFormat {
     return {
       ...this,
       ...override,
       internal: ref,
       from: from,
-      to: to
+      to: to,
+      lossless: lossless
     }
   }
 }

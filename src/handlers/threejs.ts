@@ -16,11 +16,12 @@ class threejsHandler implements FormatHandler {
       mime: "model/gltf-binary",
       from: true,
       to: false,
-      internal: "glb"
+      internal: "glb",
+      category: "model"
     },
-    CommonFormats.PNG.supported("png", false, true),
-    CommonFormats.JPEG.supported("jpeg", false, true),
-    CommonFormats.WEBP.supported("webp", false, true)
+    CommonFormats.PNG.supported("png", false, true, false),
+    CommonFormats.JPEG.supported("jpeg", false, true, false),
+    CommonFormats.WEBP.supported("webp", false, true, false)
   ];
   public ready: boolean = false;
 

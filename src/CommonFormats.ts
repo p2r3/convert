@@ -1,5 +1,15 @@
 import { FormatDefinition } from "src/FormatHandler"
 
+const Category = {
+    DATA: "data",
+    IMAGE: "image",
+    VIDEO: "video",
+    VECTOR: "vector",
+    DOCUMENT: "document",
+    TEXT: "text",
+    AUDIO: "audio"
+}
+
 /**
  * Common format definitions which can be used to reduce boilerplate definitions
  */
@@ -9,50 +19,58 @@ const CommonFormats = {
         "Portable Network Graphics",
         "png",
         "png",
-        "image/png"
+        "image/png",
+        Category.IMAGE
     ),
     JPEG: new FormatDefinition(
         "Joint Photographic Experts Group JFIF",
         "jpeg",
         "jpg",
-        "image/jpeg"
+        "image/jpeg",
+        Category.IMAGE
     ),
     WEBP: new FormatDefinition(
         "WebP",
         "webp",
         "webp",
-        "image/webp"
+        "image/webp",
+        Category.IMAGE
     ),
     GIF: new FormatDefinition(
         "CompuServe Graphics Interchange Format (GIF)",
         "gif",
         "gif",
-        "image/gif"
+        "image/gif",
+        [Category.IMAGE, Category.VIDEO]
     ),
     SVG: new FormatDefinition(
         "Scalable Vector Graphics",
         "svg",
         "svg",
-        "image/svg+xml"
+        "image/svg+xml",
+        [Category.IMAGE, Category.VECTOR, Category.DOCUMENT]
     ),
     // texts
     JSON: new FormatDefinition(
         "JavaScript Object Notation",
         "json",
         "json",
-        "application/json"
+        "application/json",
+        Category.DATA
     ),
     TEXT: new FormatDefinition(
         "Plain Text",
         "text",
         "txt",
-        "text/plain"
+        "text/plain",
+        Category.TEXT
     ),
     HTML: new FormatDefinition(
         "Hypertext Markup Language",
         "html",
         "html",
-        "text/html"
+        "text/html",
+        [Category.DOCUMENT, Category.TEXT]
     ),
     MD: new FormatDefinition(
         "Markdown Document",
@@ -65,7 +83,8 @@ const CommonFormats = {
         "MP3 Audio",
         "mp3",
         "mp3",
-        "audio/mpeg"
+        "audio/mpeg",
+        Category.AUDIO
     )
 }
 

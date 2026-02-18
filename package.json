@@ -15,6 +15,7 @@
     "vite-tsconfig-paths": "^6.0.5"
   },
   "dependencies": {
+    "@bjorn3/browser_wasi_shim": "^0.4.2",
     "@ffmpeg/core": "^0.12.10",
     "@ffmpeg/ffmpeg": "^0.12.15",
     "@ffmpeg/util": "^0.12.2",
@@ -26,6 +27,7 @@
     "@types/pako": "^2.0.4",
     "@types/three": "^0.182.0",
     "buffer": "^6.0.3",
+    "imagetracer": "^0.2.2",
     "jszip": "^3.10.1",
     "meyda": "^5.6.3",
     "mime": "^4.1.0",
@@ -33,18 +35,10 @@
     "pako": "^2.1.0",
     "pdftoimg-js": "^0.2.5",
     "pe-library": "^2.0.1",
-    "rehype-parse": "^9.0.1",
-    "rehype-remark": "^10.0.1",
-    "rehype-stringify": "^10.0.1",
-    "remark-gfm": "^4.0.1",
-    "remark-parse": "^11.0.0",
-    "remark-rehype": "^11.1.2",
-    "remark-stringify": "^11.0.0",
     "three": "^0.182.0",
     "three-bvh-csg": "^0.0.17",
     "three-mesh-bvh": "^0.9.8",
     "ts-flp": "^1.0.3",
-    "unified": "^11.0.5",
     "vite-plugin-static-copy": "^3.1.6",
     "wavefile": "^11.0.0"
   }

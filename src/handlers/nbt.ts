@@ -18,9 +18,11 @@ class nbtHandler implements FormatHandler {
                 mime: "application/x-minecraft-nbt",
                 from: true,
                 to: true,
-                internal: "nbt"
+                internal: "nbt",
+                category: "data",
+                lossless: true
             },
-            CommonFormats.JSON.supported("json", true, true),
+            CommonFormats.JSON.supported("json", true, true, true),
             {
                 name: "String Named Binary Tag",
                 format: "SNBT",
@@ -28,7 +30,9 @@ class nbtHandler implements FormatHandler {
                 mime: "application/x-minecraft-snbt",
                 from: true,
                 to: true,
-                internal: "snbt"
+                internal: "snbt",
+                category: "data",
+                lossless: true // only compression data is lost
             },
         ]
         this.ready = true
