@@ -30,7 +30,9 @@ const ui = {
   inputSearch: document.querySelector("#search-from") as HTMLInputElement,
   outputSearch: document.querySelector("#search-to") as HTMLInputElement,
   popupBox: document.querySelector("#popup") as HTMLDivElement,
-  popupBackground: document.querySelector("#popup-bg") as HTMLDivElement
+  popupBackground: document.querySelector("#popup-bg") as HTMLDivElement,
+  popupMessage: document.querySelector("#popup #popup-message") as HTMLHeadingElement,
+  popupProgress: document.querySelector("#popup #popup-progress") as HTMLProgressElement
 };
 
 /**
@@ -198,6 +200,9 @@ async function buildOptionList () {
   ui.outputList.innerHTML = "";
 
   for (const handler of handlers) {
+    ui.popupProgress.value = Math.round((handlers.indexOf(handler) + 1) / handlers.length * 100);
+    ui.popupMessage.innerText = `Loading ${handler.name}...`
+
     if (!window.supportedFormatCache.has(handler.name)) {
       console.warn(`Cache miss for formats of handler "${handler.name}".`);
       try {
