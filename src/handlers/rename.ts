@@ -25,16 +25,7 @@ function renameHandler(name: string, formats: FileFormat[]): FormatHandler {
 /// handler for renaming various aliased zip files
 export const renameZipHandler = renameHandler("renamezip", [
   CommonFormats.ZIP.builder("zip").allowTo(),
-  {
-    name: "Microsoft Office 365 Word Document",
-    format: "docx",
-    extension: "docx",
-    mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    from: true,
-    to: false,
-    internal: "docx",
-    category: "document"
-  },
+  CommonFormats.DOCX.builder("docx").allowFrom(),
   {
     name: "Microsoft Office 365 Workbook",
     format: "xlsx",

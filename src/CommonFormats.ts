@@ -153,6 +153,14 @@ const CommonFormats = {
         "pdf",
         "application/pdf",
         Category.DOCUMENT
+    ),
+    // documents - Microsoft Office
+    DOCX: new FormatDefinition(
+        "Microsoft Office 365 Word Document",
+        "docx",
+        "docx",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        Category.DOCUMENT
     )
 }
 
