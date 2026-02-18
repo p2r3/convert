@@ -4,6 +4,7 @@ import { parseODT, parseODP, parseODS } from "./envelope/parseODF.js";
 import parseDOCX from "./envelope/parseDOCX.js";
 import parsePPTX from "./envelope/parsePPTX.js";
 import parseXLSX from "./envelope/parseXLSX.js";
+import CommonFormats from "src/CommonFormats.ts";
 
 class envelopeHandler implements FormatHandler {
 
@@ -70,17 +71,7 @@ class envelopeHandler implements FormatHandler {
       internal: "ods",
       category: "spreadsheet"
     },
-    {
-      name: "Hypertext Markup Language",
-      format: "html",
-      extension: "html",
-      mime: "text/html",
-      from: false,
-      to: true,
-      internal: "html",
-      category: ["document", "text"],
-      lossless: true // Technically not "lossless", but it's about as close as we'll ever get
-    }
+    CommonFormats.HTML.supported("html", false, true, true)
   ];
 
   public ready: boolean = true;

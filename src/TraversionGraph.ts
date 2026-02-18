@@ -48,6 +48,7 @@ export class TraversionGraph {
     public init() {
         console.log("Initializing traversion graph...");
         const startTime = performance.now();
+        let handlerIndex = 0;
         window.supportedFormatCache.forEach((formats, handler) => {
             let fromIndices: Array<{format: FileFormat, index: number}> = [];
             let toIndices: Array<{format: FileFormat, index: number}> = [];
@@ -90,7 +91,7 @@ export class TraversionGraph {
                         // Should theoretically never be encountered, unless the MIME type is misspecified
                         cost += DEFAULT_CATEGORY_CHANGE_COST;
                     }
-                    cost += PRIORITY_COST * formats.indexOf(from.format); // Add cost based on handler priority (lower index means higher priority)
+                    cost += PRIORITY_COST * handlerIndex; // Add cost based on handler priority (lower index means higher priority)
                     if (!to.format.lossless) cost *= LOSSY_COST_MULTIPLIER; // If the output format is lossy or unspecified, apply the lossy cost multiplier
                     this.edges.push({
                         from: from,
@@ -101,6 +102,7 @@ export class TraversionGraph {
                     this.nodes[from.index].edges.push(this.edges.length - 1);
                 });
             });
+            handlerIndex ++;
         });
         const endTime = performance.now();
         console.log(`Traversion graph initialized in ${(endTime - startTime).toFixed(2)} ms with ${this.nodes.length} nodes and ${this.edges.length} edges.`);

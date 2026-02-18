@@ -1,80 +1,17 @@
+import CommonFormats from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 
 class htmlEmbedHandler implements FormatHandler {
 
   public name: string = "htmlEmbed";
   public supportedFormats: FileFormat[] = [
-    {
-      name: "Hypertext Markup Language",
-      format: "html",
-      extension: "html",
-      mime: "text/html",
-      from: false,
-      to: true,
-      internal: "html",
-      category: "document",
-      lossless: true
-    },
-    {
-      name: "Portable Network Graphics",
-      format: "png",
-      extension: "png",
-      mime: "image/png",
-      from: true,
-      to: false,
-      internal: "png",
-      category: "image"
-    },
-    {
-      name: "Joint Photographic Experts Group JFIF",
-      format: "jpeg",
-      extension: "jpg",
-      mime: "image/jpeg",
-      from: true,
-      to: false,
-      internal: "jpeg",
-      category: "image",
-    },
-    {
-      name: "WebP",
-      format: "webp",
-      extension: "webp",
-      mime: "image/webp",
-      from: true,
-      to: false,
-      internal: "webp",
-      category: "image",
-    },
-    {
-      name: "CompuServe Graphics Interchange Format (GIF)",
-      format: "gif",
-      extension: "gif",
-      mime: "image/gif",
-      from: true,
-      to: false,
-      internal: "gif",
-      category: "image",
-    },
-    {
-      name: "Scalable Vector Graphics",
-      format: "svg",
-      extension: "svg",
-      mime: "image/svg+xml",
-      from: true,
-      to: false,
-      internal: "svg",
-      category: ["image", "vector", "document"],
-    },
-    {
-      name: "Plain Text",
-      format: "text",
-      extension: "txt",
-      mime: "text/plain",
-      from: true,
-      to: false,
-      internal: "text",
-      category: "text"
-    },
+    CommonFormats.HTML.supported("html", false, true, true),
+    CommonFormats.PNG.supported("png", true, false),
+    CommonFormats.JPEG.supported("jpeg", true, false),
+    CommonFormats.WEBP.supported("webp", true, false),
+    CommonFormats.GIF.supported("gif", true, false),
+    CommonFormats.SVG.supported("svg", true, false),
+    CommonFormats.TEXT.supported("text", true, false),
     {
       name: "MPEG-4 Part 14",
       format: "mp4",
@@ -85,16 +22,7 @@ class htmlEmbedHandler implements FormatHandler {
       internal: "mp4",
       category: "video"
     },
-    {
-      name: "MP3 Audio",
-      format: "mp3",
-      extension: "mp3",
-      mime: "audio/mpeg",
-      from: true,
-      to: false,
-      internal: "mp3",
-      category: "audio"
-    }
+    CommonFormats.MP3.supported("mp3", true, false)
   ];
   public ready: boolean = false;
 

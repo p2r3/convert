@@ -1,3 +1,4 @@
+import CommonFormats from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 
 class svgForeignObjectHandler implements FormatHandler {
@@ -5,27 +6,8 @@ class svgForeignObjectHandler implements FormatHandler {
   public name: string = "svgForeignObject";
 
   public supportedFormats: FileFormat[] = [
-    {
-      name: "Hypertext Markup Language",
-      format: "html",
-      extension: "html",
-      mime: "text/html",
-      from: true,
-      to: false,
-      internal: "html",
-      category: ["document", "text"]
-    },
-    {
-      name: "Scalable Vector Graphics",
-      format: "svg",
-      extension: "svg",
-      mime: "image/svg+xml",
-      from: false,
-      to: true,
-      internal: "svg",
-      category: ["image", "vector", "document"],
-      lossless: true // Identical to the input HTML, just wrapped in an SVG foreignObject, so it's lossless
-    }
+    CommonFormats.HTML.supported("html", true, false),
+    CommonFormats.SVG.supported("svg", false, true, true)
   ];
 
   public ready: boolean = true;

@@ -1,3 +1,4 @@
+import CommonFormats from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 
 import * as THREE from "three";
@@ -18,39 +19,9 @@ class threejsHandler implements FormatHandler {
       internal: "glb",
       category: "model"
     },
-    {
-      name: "Portable Network Graphics",
-      format: "png",
-      extension: "png",
-      mime: "image/png",
-      from: false,
-      to: true,
-      internal: "png",
-      category: "image",
-      lossless: false // Because the conversion from glb to png is lossy, even though png itself is a lossless format
-    },
-    {
-      name: "Joint Photographic Experts Group JFIF",
-      format: "jpeg",
-      extension: "jpg",
-      mime: "image/jpeg",
-      from: false,
-      to: true,
-      internal: "jpeg",
-      category: "image",
-      lossless: false // Because the conversion from glb to jpeg is lossy, and jpeg itself is a lossy format
-    },
-    {
-      name: "WebP",
-      format: "webp",
-      extension: "webp",
-      mime: "image/webp",
-      from: false,
-      to: true,
-      internal: "webp",
-      category: "image",
-      lossless: false // Because the conversion from glb to webp is lossy, and webp itself is a lossy format
-    },
+    CommonFormats.PNG.supported("png", false, true),
+    CommonFormats.JPEG.supported("jpeg", false, true),
+    CommonFormats.WEBP.supported("webp", false, true)
   ];
   public ready: boolean = false;
 

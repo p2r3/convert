@@ -312,21 +312,12 @@ ui.modeToggleButton.addEventListener("click", () => {
   buildOptionList();
 });
 
-const convertPathCache: Array<{
-  files: FileData[],
-  node: ConvertPathNode
-}> = [];
-
 async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
 
   ui.popupBox.innerHTML = `<h2>Finding conversion route...</h2>
     <p>Trying <b>${path.map(c => c.format.format).join(" → ")}</b>...</p>`;
 
-  const cacheLast = convertPathCache.at(-1);
-  if (cacheLast) files = cacheLast.files;
-
-  const start = cacheLast ? convertPathCache.length : 0;
-  for (let i = start; i < path.length - 1; i ++) {
+  for (let i = 0; i < path.length - 1; i ++) {
     const handler = path[i + 1].handler;
     try {
       let supportedFormats = window.supportedFormatCache.get(handler.name);
@@ -343,7 +334,6 @@ async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
       const inputFormat = supportedFormats.find(c => c.mime === path[i].format.mime && c.from)!;
       files = await handler.doConvert(files, inputFormat, path[i + 1].format);
       if (files.some(c => !c.bytes.length)) throw "Output is empty.";
-      convertPathCache.push({ files, node: path[i + 1] });
     } catch (e) {
       console.log(path.map(c => c.format.format));
       console.error(handler.name, `${path[i].format.format} → ${path[i + 1].format.format}`, e);
@@ -360,7 +350,6 @@ async function tryConvertByTraversing (
   from: ConvertPathNode,
   to: ConvertPathNode
 ) {
-  convertPathCache.length = 0;
   for await (const path of window.traversionGraph.searchPath(from, to, simpleMode)) {
     const attempt = await attemptConvertPath(files, path);
     if (attempt) return attempt;

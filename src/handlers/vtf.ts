@@ -1,3 +1,4 @@
+import CommonFormats from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 
 const TEXTUREFLAGS_ENVMAP = 0x00004000;
@@ -810,39 +811,9 @@ class vtfHandler implements FormatHandler {
       internal: "vtf",
       category: "image"
     },
-    {
-      name: "Portable Network Graphics",
-      format: "png",
-      extension: "png",
-      mime: "image/png",
-      from: false,
-      to: true,
-      internal: "png",
-      category: "image",
-      lossless: true
-    },
-    {
-      name: "Joint Photographic Experts Group JFIF",
-      format: "jpeg",
-      extension: "jpg",
-      mime: "image/jpeg",
-      from: false,
-      to: true,
-      internal: "jpeg",
-      category: "image",
-      lossless: false
-    },
-    {
-      name: "WebP",
-      format: "webp",
-      extension: "webp",
-      mime: "image/webp",
-      from: false,
-      to: true,
-      internal: "webp",
-      category: "image",
-      lossless: false
-    }
+    CommonFormats.PNG.supported("png", false, true, true),
+    CommonFormats.JPEG.supported("jpeg", false, true),
+    CommonFormats.WEBP.supported("webp", false, true)
   ];
 
   #canvas?: HTMLCanvasElement;

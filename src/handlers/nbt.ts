@@ -1,5 +1,6 @@
 import type { FileData, FileFormat, FormatHandler } from "src/FormatHandler";
 import * as NBT from "nbtify";
+import CommonFormats from "src/CommonFormats";
 
 class nbtHandler implements FormatHandler {
     public name: string = "nbt";
@@ -21,17 +22,7 @@ class nbtHandler implements FormatHandler {
                 category: "data",
                 lossless: true
             },
-            {
-                name: "JavaScript Object Notation",
-                format: "json",
-                extension: "json",
-                mime: "application/json",
-                from: true,
-                to: true,
-                internal: "json",
-                category: "data",
-                lossless: true
-            },
+            CommonFormats.JSON.supported("json", true, true, true),
             {
                 name: "String Named Binary Tag",
                 format: "SNBT",
@@ -79,10 +70,10 @@ class nbtHandler implements FormatHandler {
                 })
             }
         }
-        
+
         // snbt <-> nbt
         if (inputFormat.internal == "snbt" && outputFormat.internal == "nbt") {
-            for (const file of inputFiles) { 
+            for (const file of inputFiles) {
                 const text = decoder.decode(file.bytes)
                 const nbt = NBT.parse(text)
                 const bd = await NBT.write(nbt)

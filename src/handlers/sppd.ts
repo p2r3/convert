@@ -5,6 +5,7 @@ import * as CSG from "three-bvh-csg";
 
 import { Demo } from "./sppd/sppd/Demo.ts";
 import { Vector } from "./sppd/sppd/Vector.ts";
+import CommonFormats from "src/CommonFormats.ts";
 
 function toThreeVector (vec: Vector) {
   return new THREE.Vector3(vec.y, vec.z, vec.x);
@@ -186,39 +187,9 @@ class sppdHandler implements FormatHandler {
       to: false,
       internal: "dem"
     },
-    {
-      name: "Portable Network Graphics",
-      format: "png",
-      extension: "png",
-      mime: "image/png",
-      from: false,
-      to: true,
-      internal: "png",
-      category: "image",
-      lossless: false // Because the conversion from demo to png is lossy, even though png itself is a lossless format
-    },
-    {
-      name: "Joint Photographic Experts Group JFIF",
-      format: "jpeg",
-      extension: "jpg",
-      mime: "image/jpeg",
-      from: false,
-      to: true,
-      internal: "jpeg",
-      category: "image",
-      lossless: false // Because the conversion from demo to jpeg is lossy, and jpeg itself is a lossy format
-    },
-    {
-      name: "JavaScript Object Notation",
-      format: "json",
-      extension: "json",
-      mime: "application/json",
-      from: false,
-      to: true,
-      internal: "json",
-      category: "data",
-      lossless: false // Unsure about it, but assuming demo state destructuring and reconstruction is lossy in some way
-    }
+    CommonFormats.PNG.supported("png", false, true),
+    CommonFormats.JPEG.supported("jpeg", false, true),
+    CommonFormats.JSON.supported("json", false, true, true)
   ];
 
   public ready: boolean = false;
