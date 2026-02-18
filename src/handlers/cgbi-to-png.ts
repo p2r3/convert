@@ -1,5 +1,5 @@
-import pako from 'pako';
-import type { FileData, FileFormat, FormatHandler } from '../FormatHandler.ts';
+import pako from "pako";
+import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 
 async function revertCgBIBuffer(input: Uint8Array | ArrayBuffer): Promise<Uint8Array> {
   const buffer = input instanceof Uint8Array ? input : new Uint8Array(input);
@@ -41,7 +41,7 @@ async function revertCgBIBuffer(input: Uint8Array | ArrayBuffer): Promise<Uint8A
     return (crc ^ 0xffffffff) >>> 0;
   };
 
-  const ignoreChunkTypes = new Set(['CgBI', 'iDOT']);
+  const ignoreChunkTypes = new Set(["CgBI", "iDOT"]);
   const chunks: { length: number; type: string; data: Uint8Array; crc: number }[] = [];
   let offset = 8;
   const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
@@ -64,7 +64,7 @@ async function revertCgBIBuffer(input: Uint8Array | ArrayBuffer): Promise<Uint8A
     const crc = view.getUint32(offset, false);
     offset += 4;
 
-    if (type === 'CgBI') {
+    if (type === "CgBI") {
       isIphoneCompressed = true;
     }
 
@@ -72,18 +72,18 @@ async function revertCgBIBuffer(input: Uint8Array | ArrayBuffer): Promise<Uint8A
       continue;
     }
 
-    if (type === 'IHDR') {
+    if (type === "IHDR") {
       const dataView = new DataView(data.buffer, data.byteOffset, data.byteLength);
       width = dataView.getUint32(0, false);
       height = dataView.getUint32(4, false);
     }
 
-    if (type === 'IDAT' && isIphoneCompressed) {
+    if (type === "IDAT" && isIphoneCompressed) {
       idatCgbiData = concat([idatCgbiData, data]);
       continue;
     }
 
-    if (type === 'IEND' && isIphoneCompressed) {
+    if (type === "IEND" && isIphoneCompressed) {
       const uncompressed = pako.inflateRaw(idatCgbiData);
 
       const newData = new Uint8Array(uncompressed.length);
@@ -107,7 +107,7 @@ async function revertCgBIBuffer(input: Uint8Array | ArrayBuffer): Promise<Uint8A
 
       chunks.push({
         length: compressedIdat.length,
-        type: 'IDAT',
+        type: "IDAT",
         data: compressedIdat,
         crc: newCrc
       });
@@ -143,27 +143,27 @@ async function revertCgBIBuffer(input: Uint8Array | ArrayBuffer): Promise<Uint8A
 }
 
 class CgbiToPngHandler implements FormatHandler {
-  public name = 'CgBI to PNG converter';
+  public name = "CgBI to PNG converter";
   public ready = true;
 
   public supportedFormats: FileFormat[] = [
     {
-      name: 'CgBI PNG (iPhone optimized)',
-      format: 'cgbi-png',
-      extension: 'png',
-      mime: 'image/png-cgbi',
+      name: "CgBI PNG (iPhone optimized)",
+      format: "cgbi-png",
+      extension: "png",
+      mime: "image/png-cgbi", // Should include "image/png" in the name to appear in suggested formats 
       from: true,
       to: false,
-      internal: 'cgbi-png'
+      internal: "cgbi-png"
     },
     {
-      name: 'Portable Network Graphics',
-      format: 'png',
-      extension: 'png',
-      mime: 'image/png',
+      name: "Portable Network Graphics",
+      format: "png",
+      extension: "png",
+      mime: "image/png",
       from: false,
       to: true,
-      internal: 'png'
+      internal: "png"
     }
   ];
 
@@ -177,7 +177,7 @@ class CgbiToPngHandler implements FormatHandler {
     outputFormat: FileFormat,
     _args?: string[]
   ): Promise<FileData[]> {
-    if (inputFormat.internal !== 'cgbi-png' || outputFormat.internal !== 'png') {
+    if (inputFormat.internal !== "cgbi-png" || outputFormat.internal !== "png") {
       throw `Unsupported conversion: ${inputFormat.internal} → ${outputFormat.internal}`;
     }
 
@@ -187,7 +187,7 @@ class CgbiToPngHandler implements FormatHandler {
       try {
         const standardPng = await revertCgBIBuffer(inputFile.bytes);
 
-        const baseName = inputFile.name.replace(/\.[^/.]+$/, '');
+        const baseName = inputFile.name.replace(/\.[^/.]+$/, "");
         const outputName = `${baseName}.${outputFormat.extension}`;
 
         outputFiles.push({
