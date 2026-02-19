@@ -242,22 +242,16 @@ class mcMapHandler implements FormatHandler {
                         const width = NBT.isTag<NBT.IntTag>(mapdata["width"]) ? mapdata["width"].valueOf() : DEFAULT_WIDTH;
                         const height = NBT.isTag<NBT.IntTag>(mapdata["height"]) ? mapdata["height"].valueOf() : DEFAULT_HEIGHT;
                         const colors = NBT.isTag<NBT.ByteArrayTag>(mapdata["colors"]) ? new Uint8Array(mapdata["colors"]) : new Uint8Array([]);
-                        const bytes = new Uint8Array(map2rgba(colors, width, height));
+                        const rgba = map2rgba(colors, width, height);
 
-                        const blob = new Blob([file.bytes as BlobPart], { type: inputFormat.mime });
+                        this.#canvas.width = 128
+                        this.#canvas.height = 128
 
-                        const image = new Image();
-                        await new Promise((resolve, reject) => {
-                            image.addEventListener("load", resolve);
-                            image.addEventListener("error", reject);
-                            image.src = URL.createObjectURL(blob);
-                        });
+                        const image_data = new ImageData(new Uint8ClampedArray(rgba), 128, 128);
 
-                        this.#canvas.width = 128;
-                        this.#canvas.height = 128;
-                        this.#ctx.drawImage(image, 0, 0);
+                        this.#ctx.putImageData(image_data, 0, 0)
 
-                        const bytes2: Uint8Array = await new Promise((resolve, reject) => {
+                        const bytes: Uint8Array = await new Promise((resolve, reject) => {
                             this.#canvas!.toBlob((blob) => {
                                 if (!blob) return reject("Canvas output failed");
                                 blob.arrayBuffer().then(buf => resolve(new Uint8Array(buf)));
@@ -266,7 +260,7 @@ class mcMapHandler implements FormatHandler {
 
                         outputFiles.push({
                             name: file.name,
-                            bytes: bytes2
+                            bytes: bytes
                         });
                     }
                 }
