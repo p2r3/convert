@@ -171,18 +171,32 @@ class pandocHandler implements FormatHandler {
 
     this.supportedFormats = [];
     for (const format of allFormats) {
+      // PDF doesn't seem to work, at least with this configuration
+      if (format === "pdf") continue;
+      // RevealJS seems to hang forever?
+      if (format === "revealjs") continue;
       const name = pandocHandler.formatNames.get(format) || format;
       const extension = pandocHandler.formatExtensions.get(format) || format;
+      const isOfficeDocument = format === "docx"
+        || format === "xlsx"
+        || format === "pptx"
+        || format === "odt"
+        || format === "ods"
+        || format === "odp";
       this.supportedFormats.push({
         name, format, extension,
         mime: normalizeMimeType(mime.getType(extension) || `text/${format}`),
         from: inputFormats.includes(format),
         to: outputFormats.includes(format),
-        internal: format
+        internal: format,
+        // HACK: misrepresent format intentionally for Office documents.
+        // Pandoc strips rich formatting like color and text alignment,
+        // so this is done to avoid that wherever possible. In a way,
+        // Pandoc's outputs are often more "text" than "document", anyway.
+        category: isOfficeDocument ? "text" : "document",
+        lossless: !isOfficeDocument
       });
     }
-
-    console.log(this.supportedFormats);
 
     this.ready = true;
   }

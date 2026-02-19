@@ -187,6 +187,8 @@ class floHandler implements FormatHandler {
         from: true,
         to: true,
         internal: "flo",
+        category: "audio",
+        lossless: false
       },
       {
         name: "WAV (signed 16-bit)",
@@ -196,6 +198,8 @@ class floHandler implements FormatHandler {
         from: true,
         to: true,
         internal: "wav",
+        category: "audio",
+        lossless: true
       },
       {
         name: "Raw PCM Float32LE",
@@ -205,6 +209,8 @@ class floHandler implements FormatHandler {
         from: true,
         to: true,
         internal: "f32le",
+        category: "audio",
+        lossless: true
       },
     ];
     this.ready = true;

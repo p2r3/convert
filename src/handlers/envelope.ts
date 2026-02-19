@@ -4,39 +4,16 @@ import { parseODT, parseODP, parseODS } from "./envelope/parseODF.js";
 import parseDOCX from "./envelope/parseDOCX.js";
 import parsePPTX from "./envelope/parsePPTX.js";
 import parseXLSX from "./envelope/parseXLSX.js";
+import CommonFormats from "src/CommonFormats.ts";
 
 class envelopeHandler implements FormatHandler {
 
   public name: string = "envelope";
 
   public supportedFormats: FileFormat[] = [
-    {
-      name: "Microsoft Office 365 Word Document",
-      format: "docx",
-      extension: "docx",
-      mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      from: true,
-      to: false,
-      internal: "docx"
-    },
-    {
-      name: "Microsoft Office 365 Presentation",
-      format: "pptx",
-      extension: "pptx",
-      mime: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-      from: true,
-      to: false,
-      internal: "pptx"
-    },
-    {
-      name: "Microsoft Office 365 Workbook",
-      format: "xlsx",
-      extension: "xlsx",
-      mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      from: true,
-      to: false,
-      internal: "xlsx"
-    },
+    CommonFormats.DOCX.builder("docx").allowFrom(),
+    CommonFormats.PPTX.builder("pptx").allowFrom(),
+    CommonFormats.XLSX.builder("xlsx").allowFrom(),
     {
       name: "OpenDocument Text",
       format: "odt",
@@ -44,7 +21,8 @@ class envelopeHandler implements FormatHandler {
       mime: "application/vnd.oasis.opendocument.text",
       from: true,
       to: false,
-      internal: "odt"
+      internal: "odt",
+      category: "document"
     },
     {
       name: "OpenDocument Presentation",
@@ -53,7 +31,8 @@ class envelopeHandler implements FormatHandler {
       mime: "application/vnd.oasis.opendocument.presentation",
       from: true,
       to: false,
-      internal: "odp"
+      internal: "odp",
+      category: "presentation"
     },
     {
       name: "OpenDocument Spreadsheet",
@@ -62,17 +41,11 @@ class envelopeHandler implements FormatHandler {
       mime: "application/vnd.oasis.opendocument.spreadsheet",
       from: true,
       to: false,
-      internal: "ods"
+      internal: "ods",
+      category: "spreadsheet"
     },
-    {
-      name: "Hypertext Markup Language",
-      format: "html",
-      extension: "html",
-      mime: "text/html",
-      from: false,
-      to: true,
-      internal: "html"
-    }
+    // Technically not "lossless", but it's about as close as we'll ever get
+    CommonFormats.HTML.supported("html", false, true, true)
   ];
 
   public ready: boolean = true;

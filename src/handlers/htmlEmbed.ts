@@ -1,90 +1,19 @@
+import CommonFormats from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 
 class htmlEmbedHandler implements FormatHandler {
 
   public name: string = "htmlEmbed";
   public supportedFormats: FileFormat[] = [
-    {
-      name: "Hypertext Markup Language",
-      format: "html",
-      extension: "html",
-      mime: "text/html",
-      from: false,
-      to: true,
-      internal: "html"
-    },
-    {
-      name: "Portable Network Graphics",
-      format: "png",
-      extension: "png",
-      mime: "image/png",
-      from: true,
-      to: false,
-      internal: "png"
-    },
-    {
-      name: "Joint Photographic Experts Group JFIF",
-      format: "jpeg",
-      extension: "jpg",
-      mime: "image/jpeg",
-      from: true,
-      to: false,
-      internal: "jpeg"
-    },
-    {
-      name: "WebP",
-      format: "webp",
-      extension: "webp",
-      mime: "image/webp",
-      from: true,
-      to: false,
-      internal: "webp"
-    },
-    {
-      name: "CompuServe Graphics Interchange Format (GIF)",
-      format: "gif",
-      extension: "gif",
-      mime: "image/gif",
-      from: true,
-      to: false,
-      internal: "gif"
-    },
-    {
-      name: "Scalable Vector Graphics",
-      format: "svg",
-      extension: "svg",
-      mime: "image/svg+xml",
-      from: true,
-      to: false,
-      internal: "svg"
-    },
-    {
-      name: "Plain Text",
-      format: "text",
-      extension: "txt",
-      mime: "text/plain",
-      from: true,
-      to: false,
-      internal: "text"
-    },
-    {
-      name: "MPEG-4 Part 14",
-      format: "mp4",
-      extension: "mp4",
-      mime: "video/mp4",
-      from: true,
-      to: false,
-      internal: "mp4"
-    },
-    {
-      name: "MP3 Audio",
-      format: "mp3",
-      extension: "mp3",
-      mime: "audio/mpeg",
-      from: true,
-      to: false,
-      internal: "mp3"
-    }
+    CommonFormats.HTML.supported("html", false, true, true),
+    CommonFormats.PNG.supported("png", true, false),
+    CommonFormats.JPEG.supported("jpeg", true, false),
+    CommonFormats.WEBP.supported("webp", true, false),
+    CommonFormats.GIF.supported("gif", true, false),
+    CommonFormats.SVG.supported("svg", true, false),
+    CommonFormats.TEXT.supported("text", true, false),
+    CommonFormats.MP4.builder("mp4").allowFrom(),
+    CommonFormats.MP3.supported("mp3", true, false)
   ];
   public ready: boolean = false;
 
