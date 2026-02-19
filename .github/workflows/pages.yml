@@ -39,7 +39,7 @@ jobs:
       - name: Generate cache
         run: bun run buildCache.js dist/cache.json
 
-      - name: Run unit tests
+      - name: Test common conversion routes
         run: bun test test/commonFormats.test.ts
 
       - name: Upload Pages artifact
