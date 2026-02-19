@@ -1,0 +1,94 @@
+name: Cloudflare CI/CD
+
+on:
+  pull_request:
+  push:
+    branches: ["master"]
+  workflow_dispatch:
+    inputs:
+      target_env:
+        description: "Cloudflare target environment"
+        required: true
+        default: production
+        type: choice
+        options:
+          - production
+          - staging
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: "1.3.3"
+          cache: true
+
+      - name: Install dependencies
+        run: bun i --frozen-lockfile
+
+      - name: Deterministic validation suite
+        run: bun run validate:ci
+
+  deploy:
+    name: Deploy to Cloudflare
+    needs: verify
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    environment:
+      name: ${{ github.event_name == 'workflow_dispatch' && inputs.target_env || 'production' }}
+    env:
+      TARGET_ENV: ${{ github.event_name == 'workflow_dispatch' && inputs.target_env || 'production' }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+      CF_OPS_LOG_TOKEN: ${{ secrets.CF_OPS_LOG_TOKEN }}
+      CF_APP_VERSION: ${{ github.ref_name }}-${{ github.run_number }}
+      CF_BUILD_SHA: ${{ github.sha }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: "1.3.3"
+          cache: true
+
+      - name: Install dependencies
+        run: bun i --frozen-lockfile
+
+      - name: Guard required deploy secret
+        run: |
+          if [ -z "${CLOUDFLARE_API_TOKEN}" ]; then
+            echo "::error::Missing required GitHub secret: CLOUDFLARE_API_TOKEN"
+            exit 1
+          fi
+
+      - name: Sync optional OPS_LOG_TOKEN secret to Worker
+        if: env.CF_OPS_LOG_TOKEN != ''
+        run: |
+          printf '%s' "${CF_OPS_LOG_TOKEN}" | bunx --bun wrangler@4 secret put OPS_LOG_TOKEN --config wrangler.jsonc
+          if [ "${TARGET_ENV}" = "staging" ]; then
+            printf '%s' "${CF_OPS_LOG_TOKEN}" | bunx --bun wrangler@4 secret put OPS_LOG_TOKEN --config wrangler.jsonc --env staging
+          fi
+
+      - name: Deploy
+        run: bash scripts/deploy.sh "${TARGET_ENV}"
