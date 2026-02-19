@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "docker": "bun run docker:build && bun run docker:up",
+    "docker:build": "docker compose -f docker/docker-compose.yml -f docker/docker-compose.override.yml build --build-arg VITE_COMMIT_SHA=$(git rev-parse HEAD)",
+    "docker:up": "docker compose -f docker/docker-compose.yml -f docker/docker-compose.override.yml up -d"
   },
   "devDependencies": {
     "@types/jszip": "^3.4.0",

@@ -439,3 +439,11 @@ ui.convertButton.onclick = async function () {
   }
 
 };
+
+// Display the current git commit SHA in the UI, if available
+{
+  const commitElement = document.querySelector("#commit-id");
+  if (commitElement) {
+    commitElement.textContent = import.meta.env.VITE_COMMIT_SHA ?? "unknown";
+  }
+}

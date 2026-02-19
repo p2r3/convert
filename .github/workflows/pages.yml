@@ -34,7 +34,9 @@ jobs:
         run: bun i --frozen-lockfile
 
       - name: Build
-        run: bun run build
+        run: |
+          export VITE_COMMIT_SHA=${GITHUB_SHA}
+          bun run build
 
       - name: Generate cache
         run: bun run buildCache.js dist/cache.json

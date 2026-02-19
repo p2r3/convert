@@ -2,5 +2,7 @@ services:
   convert:
     build:
       context: ..
+      args:
+        VITE_COMMIT_SHA: docker
       dockerfile: docker/Dockerfile
     image: convert:dev
