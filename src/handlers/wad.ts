@@ -28,7 +28,7 @@ class wadHandler implements FormatHandler {
 
     public supportedFormats: FileFormat[] = [
         WADFormat.builder("wad").allowFrom().allowTo().markLossless(),
-        CommonFormats.ZIP.builder("zip").allowFrom().allowTo(),
+        CommonFormats.ZIP.builder("zip").allowFrom().allowTo().markLossless(),
         CommonFormats.JSON.builder("json").allowTo()
     ];
 
@@ -65,7 +65,7 @@ class wadHandler implements FormatHandler {
         return { type: magic, lumps };
     }
 
-    private buildWAD(lumps: WadLump[]): Uint8Array {
+    private buildWAD(lumps: WadLump[], wadType: string = "PWAD"): Uint8Array {
         const headerSize = 12;
         let dataSize = 0;
         for (const lump of lumps) dataSize += lump.data.length;
@@ -75,8 +75,12 @@ class wadHandler implements FormatHandler {
         const buffer = new Uint8Array(total);
         const view = new DataView(buffer.buffer);
 
-        // Write "PWAD" magic
-        buffer[0] = 0x50; buffer[1] = 0x57; buffer[2] = 0x41; buffer[3] = 0x44;
+        // Write WAD type magic (IWAD or PWAD)
+        const magic = wadType === "IWAD" ? "IWAD" : "PWAD";
+        buffer[0] = magic.charCodeAt(0);
+        buffer[1] = magic.charCodeAt(1);
+        buffer[2] = magic.charCodeAt(2);
+        buffer[3] = magic.charCodeAt(3);
         view.setInt32(4, lumps.length, true);
         view.setInt32(8, headerSize + dataSize, true); // directory offset
 
@@ -95,8 +99,8 @@ class wadHandler implements FormatHandler {
         for (let i = 0; i < lumps.length; i++) {
             view.setInt32(dirPos, lumpOffsets[i], true);
             view.setInt32(dirPos + 4, lumps[i].data.length, true);
-            // Lump name: 8 bytes, null-padded, uppercase
-            const nameBytes = encoder.encode(lumps[i].name.substring(0, 8).toUpperCase());
+            // Lump name: 8 bytes, null-padded (preserve original casing)
+            const nameBytes = encoder.encode(lumps[i].name.substring(0, 8));
             buffer.set(nameBytes, dirPos + 8);
             dirPos += 16;
         }
@@ -119,15 +123,26 @@ class wadHandler implements FormatHandler {
                 if (outputFormat.internal === "zip") {
                     // WAD → ZIP: each lump becomes a file
                     const zip = new JSZip();
+                    
+                    // Store WAD metadata for lossless roundtrip
+                    const metadata = {
+                        wadType: type,
+                        lumps: lumps.map((l, i) => ({ index: i, name: l.name }))
+                    };
+                    zip.file(".wadmeta.json", JSON.stringify(metadata, null, 2));
+                    
                     const nameCounts: Record<string, number> = {};
-                    for (const lump of lumps) {
+                    for (let i = 0; i < lumps.length; i++) {
+                        const lump = lumps[i];
                         let zipName = lump.name || "UNNAMED";
-                        // Deduplicate names
+                        // Deduplicate names by appending index
                         if (nameCounts[zipName] !== undefined) {
                             nameCounts[zipName]++;
-                            zipName = `${zipName}_${nameCounts[zipName]}`;
+                            zipName = `${zipName}.${i}`;
                         } else {
-                            nameCounts[zipName] = 0;
+                            nameCounts[zipName] = 1;
+                            // Add index for first occurrence for consistency
+                            zipName = `${zipName}.${i}`;
                         }
                         zip.file(zipName, lump.data);
                     }
@@ -151,8 +166,8 @@ class wadHandler implements FormatHandler {
                     });
 
                 } else if (outputFormat.internal === "wad") {
-                    // WAD → WAD (passthrough / normalize to PWAD)
-                    const rebuilt = this.buildWAD(lumps);
+                    // WAD → WAD (passthrough / preserve type)
+                    const rebuilt = this.buildWAD(lumps, type);
                     outputFiles.push({ bytes: rebuilt, name: baseName + ".wad" });
                 }
             }
@@ -162,22 +177,54 @@ class wadHandler implements FormatHandler {
             for (const file of inputFiles) {
                 const baseName = file.name.replace(/\.zip$/i, "");
                 const zip = await JSZip.loadAsync(file.bytes);
+                
+                // Check for metadata file for lossless conversion
+                let wadType = "PWAD";
+                let metadata: { wadType: string; lumps: { index: number; name: string }[] } | null = null;
+                
+                const metaFile = zip.files[".wadmeta.json"];
+                if (metaFile && !metaFile.dir) {
+                    try {
+                        const metaText = await metaFile.async("string");
+                        const parsedMeta = JSON.parse(metaText);
+                        metadata = parsedMeta;
+                        wadType = parsedMeta.wadType;
+                    } catch (e) {
+                        // Invalid metadata, proceed without it
+                    }
+                }
+                
                 const lumps: WadLump[] = [];
-
-                const sortedPaths = Object.keys(zip.files).sort();
-                for (const filePath of sortedPaths) {
-                    const entry = zip.files[filePath];
-                    if (entry.dir) continue;
-                    const data = await entry.async("uint8array");
-                    // Use filename without extension as lump name (max 8 chars, uppercase)
-                    const lumpName = filePath.split("/").pop()!
-                        .replace(/\.[^.]*$/, "")
-                        .substring(0, 8)
-                        .toUpperCase();
-                    lumps.push({ name: lumpName, data });
+                
+                if (metadata) {
+                    // Lossless mode: reconstruct using metadata
+                    for (const lumpMeta of metadata.lumps) {
+                        const zipFileName = `${lumpMeta.name}.${lumpMeta.index}`;
+                        const entry = zip.files[zipFileName];
+                        if (entry && !entry.dir) {
+                            const data = await entry.async("uint8array");
+                            lumps.push({ name: lumpMeta.name, data });
+                        } else {
+                            // File missing, create empty lump
+                            lumps.push({ name: lumpMeta.name, data: new Uint8Array(0) });
+                        }
+                    }
+                } else {
+                    // Lossy mode: extract files as best effort
+                    const sortedPaths = Object.keys(zip.files).sort();
+                    for (const filePath of sortedPaths) {
+                        const entry = zip.files[filePath];
+                        if (entry.dir) continue;
+                        const data = await entry.async("uint8array");
+                        // Use filename without extension as lump name (max 8 chars)
+                        const lumpName = filePath.split("/").pop()!
+                            .replace(/\.[^.]*$/, "")
+                            .substring(0, 8);
+                        lumps.push({ name: lumpName, data });
+                    }
                 }
 
-                const wadBytes = this.buildWAD(lumps);
+                const wadBytes = this.buildWAD(lumps, wadType);
                 outputFiles.push({ bytes: wadBytes, name: baseName + ".wad" });
             }
         }
