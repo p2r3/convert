@@ -1,52 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <script type="module" src="./src/ui/scripts/theme-detection.ts"></script>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="base.css">
   <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
   <title>Convert to it!</title>
 </head>
+
 <body>
 
-  <input id="file-input" type="file">
-
-  <div id="file-area">
-    <h2>Click to add your file</h2>
-    <p id="drop-hint-text">or drag and drop it here</p>
-  </div>
-  <div id="side-panel">
-    <button id="mode-button">Advanced mode</button>
-  </div>
-
-  <div id="format-containers">
-
-    <div id="from-container" class="format-container">
-      <h2>Convert from:</h2>
-      <input type="text" id="search-from" class="search" placeholder="Search">
-      <div id="from-list" class="format-list">
-
-      </div>
-    </div>
-
-    <div id="to-container" class="format-container">
-      <h2>Convert to:</h2>
-      <input type="text" id="search-to" class="search" placeholder="Search">
-      <div id="to-list" class="format-list">
-
-      </div>
-    </div>
-
-  </div>
-
-  <button id="convert-button" class="disabled">Convert</button>
-
-  <div id="popup-bg"></div>
-  <div id="popup">
-    <h2>Loading tools...</h2>
-  </div>
-
-  <script type="module" src="src/main.ts"></script>
-
 </body>
+<script type="module" src="src/main.ts"></script>
+<script type="module" src="src/ui/index.tsx"></script>
+
 </html>

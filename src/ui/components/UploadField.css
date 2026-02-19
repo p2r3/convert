@@ -1,0 +1,163 @@
+.upload-field {
+	height: 100%;
+	display: flex;
+	flex-grow: 1;
+
+	.upload-card {
+		width: clamp(400px, 75vw, 800px);
+		height: max(450px, 50vh);
+		border-radius: 20px;
+		align-self: center;
+		display: flex;
+		flex-direction: column;
+		position: relative;
+		/* padding: 2em; */
+
+		background-color: var(--bg-card);
+		box-shadow: 0 15px 15px rgba(0 0 0 / .1);
+		border: .1rem solid rgba(0 0 0 / .1);
+
+		.upload-card-header {
+			display: flex;
+			width: 100%;
+			justify-content: center;
+			border-block-end: .1rem solid rgba(0 0 0 / .1);
+			padding: 2em;
+
+			h1 {
+				display: flex;
+				font-weight: 900;
+				align-items: center;
+				gap: .3em;
+
+				.upload-card-logo {
+					display: inline-block;
+					width: 60px;
+					height: 60px;
+					background-color: var(--primary);
+					-webkit-mask-repeat: no-repeat;
+					-webkit-mask-size: contain;
+					-webkit-mask-position: center;
+					mask-repeat: no-repeat;
+					mask-size: contain;
+					mask-position: center;
+				}
+			}
+		}
+
+		.upload-card-theme-toggle {
+			position: absolute;
+			top: 5px;
+			right: 5px;
+		}
+
+		.upload-card-dropzone-hint {
+			flex-grow: 1;
+			margin: 1.5em;
+
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+			text-align: center;
+
+			background-color: var(--bg-card-alt);
+			border: 2px dashed var(--bg-overlay);
+			border-radius: 12px;
+
+			cursor: pointer;
+			transition: all 0.2s ease-in-out;
+			user-select: none;
+
+			&:hover,
+			&.active-drag {
+				background-color: var(--bg-card-alt-hover);
+				border-color: var(--btn-bg-primary);
+			}
+
+			input[type="file"] {
+				display: none;
+			}
+
+			.upload-card-dropzone-icon-container {
+				background-color: var(--bg-card);
+				padding: 1em;
+				border-radius: 50%;
+				box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+				margin-bottom: 1em;
+				transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+				display: flex;
+				align-items: center;
+				justify-content: center;
+			}
+
+			&:hover .upload-card-dropzone-icon-container,
+			&.active-drag .upload-card-dropzone-icon-container {
+				transform: scale(1.1);
+			}
+
+			.upload-card-dropzone-icon {
+				width: 40px;
+				height: 40px;
+
+				background-color: var(--primary);
+
+				-webkit-mask: url('../img/fa-upload-solid-full.svg') no-repeat center;
+				-webkit-mask-size: contain;
+
+				mask: url('../img/fa-upload-solid-full.svg') no-repeat center;
+				mask-size: contain;
+
+				display: inline-block;
+			}
+
+			.upload-card-dropzone-button {
+				background-color: var(--btn-bg-primary);
+				color: var(--text-inverse);
+				font-weight: 600;
+				padding: 0.5rem 1.5rem;
+				border-radius: 8px;
+				border: none;
+				box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+				margin-bottom: 0.5rem;
+				cursor: pointer;
+				transition: background-color 0.15s ease-in-out;
+				pointer-events: auto;
+			}
+
+			.upload-card-dropzone-button:hover {
+				background-color: var(--btn-bg-primary-hover);
+			}
+
+			.upload-card-dropzone-subtext {
+				color: var(--text-secondary);
+				font-size: 0.875rem;
+			}
+		}
+
+		.upload-card-buttons {
+			margin-block: auto 0;
+			display: flex;
+			justify-content: center;
+			gap: 1em;
+			margin-block-end: 1em;
+
+			button {
+				appearance: none;
+				border: .1rem solid var(--btn-border);
+				border-radius: 8px;
+				padding: .75em;
+				color: var(--text-muted);
+				background: var(--btn-bg-secondary);
+				transition: color 150ms, background 150ms;
+
+				&:hover,
+				&:focus-visible {
+					color: var(--text-primary);
+					background: var(--btn-bg-secondary-hover);
+				}
+			}
+		}
+	}
+}

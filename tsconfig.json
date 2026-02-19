@@ -37,7 +37,12 @@
     "paths": {
       "qoi-fu": ["./src/handlers/qoi-fu/transpiled/QOI.js"],
       "qoa-fu": ["./src/handlers/qoa-fu/transpiled/QOA.js"]
-    }
+    },
+    /**
+    * JSX setup
+    */
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact"
   },
   "include": [
     "src"

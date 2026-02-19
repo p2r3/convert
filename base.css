@@ -1,0 +1,29 @@
+html,
+body {
+  padding: 0;
+  font-family: sans-serif;
+}
+
+*,
+*::after,
+*::before {
+  margin: 0;
+  box-sizing: border-box
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    interpolate-size: allow-keywords;
+  }
+}
+
+input,
+button,
+textarea,
+select {
+  font: inherit;
+}
+
+img {
+  font-size: 12px;
+}

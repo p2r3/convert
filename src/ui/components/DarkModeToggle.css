@@ -1,0 +1,31 @@
+.dark-mode-toggle {
+    appearance: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 41px;
+    height: 41px;
+    padding: 0;
+
+    border: 1px solid var(--border-primary);
+    border-radius: 1rem;
+
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+
+    cursor: pointer;
+    transition: all 150ms;
+}
+
+.dark-mode-toggle:hover,
+.dark-mode-toggle:focus-visible {
+    border: 0.1rem solid var(--border-secondary);
+    box-shadow: 0 6px 6px rgba(0, 0, 0, 0.07);
+}
+
+.dark-mode-toggle-icon {
+    width: 24px;
+    height: 24px;
+    filter: contrast(0);
+}
