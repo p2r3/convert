@@ -13,3 +13,6 @@
 [submodule "src/handlers/image-to-txt"]
 	path = src/handlers/image-to-txt
 	url = https://git.sr.ht/~thezipcreator/image-to-txt
+[submodule "src/handlers/espeakng.js"]
+	path = src/handlers/espeakng.js
+	url = https://github.com/TheZipCreator/espeakng.js

@@ -62,8 +62,10 @@ export class TraversionGraph {
         {from: "audio", to: "video", cost: 1}, // Might be lossy
         {from: "text", to: "image", cost: 0.5}, // Depends on the content and method, but can be relatively efficient for simple images
         {from: "image", to: "text", cost: 0.5}, // Depends on the content and method, but can be relatively efficient for simple images
+        {from: "text", to: "audio", cost: 0.6}, // Somewhat lossy for anything that isn't speakable text
     ];
     private categoryAdaptiveCosts: CategoryAdaptiveCost[] = [
+        { categories: ["text", "image", "audio"], cost: 5 }, // Text to audio through an image is likely not what the user wants
         { categories: ["image", "video", "audio"], cost: 10000 }, // Converting from image to audio through video is especially lossy
         { categories: ["audio", "video", "image"], cost: 10000 }, // Converting from audio to image through video is especially lossy
     ];
