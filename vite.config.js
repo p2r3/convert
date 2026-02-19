@@ -36,6 +36,14 @@ export default defineConfig({
         {
           src: "src/handlers/libopenmpt/libopenmpt.js",
           dest: "wasm"
+        },
+        {
+          src: "src/handlers/espeakng.js/js/espeakng.worker.js",
+          dest: "js"
+        },
+        {
+          src: "src/handlers/espeakng.js/js/espeakng.worker.data",
+          dest: "js"
         }
       ]
     }),

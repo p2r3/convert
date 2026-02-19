@@ -2,6 +2,7 @@ function normalizeMimeType (mime: string) {
   switch (mime) {
     case "audio/x-wav": return "audio/wav";
     case "audio/vnd.wave": return "audio/wav";
+    case "application/x-gzip": return "application/gzip";
     case "image/x-icon": return "image/vnd.microsoft.icon";
     case "image/vtf": return "image/x-vtf";
     case "image/qoi": return "image/x-qoi";
@@ -15,6 +16,7 @@ function normalizeMimeType (mime: string) {
     case "application/lha": return "application/x-lzh-compressed";
     case "application/x-lha": return "application/x-lzh-compressed";
     case "application/x-lzh": return "application/x-lzh-compressed";
+    case "audio/x-flac": return "audio/flac";
   }
   return mime;
 }
