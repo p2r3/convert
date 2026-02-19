@@ -11,6 +11,10 @@ function normalizeMimeType (mime: string) {
     case "audio/x-quicktime": return "video/quicktime";
     case "audio/x-flo": return "audio/flo";
     case "application/x-flo": return "audio/flo";
+    case "application/x-lharc": return "application/x-lzh-compressed";
+    case "application/lha": return "application/x-lzh-compressed";
+    case "application/x-lha": return "application/x-lzh-compressed";
+    case "application/x-lzh": return "application/x-lzh-compressed";
   }
   return mime;
 }

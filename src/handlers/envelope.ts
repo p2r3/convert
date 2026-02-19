@@ -11,36 +11,9 @@ class envelopeHandler implements FormatHandler {
   public name: string = "envelope";
 
   public supportedFormats: FileFormat[] = [
-    {
-      name: "Microsoft Office 365 Word Document",
-      format: "docx",
-      extension: "docx",
-      mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      from: true,
-      to: false,
-      internal: "docx",
-      category: "document"
-    },
-    {
-      name: "Microsoft Office 365 Presentation",
-      format: "pptx",
-      extension: "pptx",
-      mime: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-      from: true,
-      to: false,
-      internal: "pptx",
-      category: "presentation"
-    },
-    {
-      name: "Microsoft Office 365 Workbook",
-      format: "xlsx",
-      extension: "xlsx",
-      mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      from: true,
-      to: false,
-      internal: "xlsx",
-      category: "spreadsheet"
-    },
+    CommonFormats.DOCX.builder("docx").allowFrom(),
+    CommonFormats.PPTX.builder("pptx").allowFrom(),
+    CommonFormats.XLSX.builder("xlsx").allowFrom(),
     {
       name: "OpenDocument Text",
       format: "odt",
@@ -71,6 +44,7 @@ class envelopeHandler implements FormatHandler {
       internal: "ods",
       category: "spreadsheet"
     },
+    // Technically not "lossless", but it's about as close as we'll ever get
     CommonFormats.HTML.supported("html", false, true, true)
   ];
 

@@ -49,6 +49,7 @@
   ],
   "exclude": [
     "src/handlers/qoi-fu/**/*",
+    "src/handlers/qoa-fu/**/*",
     "src/handlers/sppd/**/*",
     "src/handlers/image-to-txt/src/app.ts",
     "src/handlers/image-to-txt/src/generate.ts"
