@@ -125,33 +125,6 @@ class mcMapHandler implements FormatHandler {
         this.ready = true;
     }
 
-    getShades(shadeArray: any, mappedColours: any) {
-        for (const colour of mappedColours) {
-            const shade1 = { R: Math.floor(colour.R * 180 / 255), G: Math.floor(colour.G * 180 / 255), B: Math.floor(colour.B * 180 / 255), A: colour.A };
-            const shade2 = { R: Math.floor(colour.R * 220 / 255), G: Math.floor(colour.G * 220 / 255), B: Math.floor(colour.B * 220 / 255), A: colour.A };
-            const shade3 = { R: colour.R, G: colour.G, B: colour.B, A: colour.A };
-            const shade4 = { R: Math.floor(colour.R * 135 / 255), G: Math.floor(colour.G * 135 / 255), B: Math.floor(colour.B * 135 / 255), A: colour.A };
-
-            shadeArray.push(shade1, shade2, shade3, shade4);
-        }
-    }
-
-    getClosestColor(to_check: any, available_colours: any) {
-        return available_colours.reduce((previous: any, current: any) => {
-            const previousDistance = Math.sqrt(
-                (previous.R - to_check.R) ** 2 +
-                (previous.G - to_check.G) ** 2 +
-                (previous.B - to_check.B) ** 2
-            );
-            const currentDistance = Math.sqrt(
-                (current.R - to_check.R) ** 2 +
-                (current.G - to_check.G) ** 2 +
-                (current.B - to_check.B) ** 2
-            );
-            return (currentDistance < previousDistance) ? current : previous;
-        });
-    }
-
     async doConvert(
         inputFiles: FileData[],
         inputFormat: FileFormat,
@@ -165,35 +138,36 @@ class mcMapHandler implements FormatHandler {
 
         if (inputFormat.mime == CommonFormats.PNG.mime) {
 
-            if (outputFormat.internal == 'mcmap_grid') {
-                for (const file of inputFiles) {
+            for (const file of inputFiles) {
+
+                const fileName = file.name.split('.')[0]
+
+                let startDigit = 0
+
+                // Check to see if user already renamed the file to correct format
+                if (fileName.startsWith("map_")) {
+                    const after = fileName.split('_')[1]
+                    if (Number.isInteger(Number(after))) {
+                        startDigit = parseInt(after)
+                    }
+                }
+                else if (!Number.isNaN(Number(fileName))) {
+                    startDigit = parseInt(fileName)
+
+                }
+
+                const blob = new Blob([file.bytes as BlobPart], { type: inputFormat.mime });
+
+                const image = new Image();
+                await new Promise((resolve, reject) => {
+                    image.addEventListener("load", resolve);
+                    image.addEventListener("error", reject);
+                    image.src = URL.createObjectURL(blob);
+                });
+
+                if (outputFormat.internal == 'mcmap_grid') {
 
                     const zip = new JSZip();
-
-                    const fileName = file.name.split('.')[0]
-
-                    let startDigit = 0
-
-                    // Check to see if user already renamed the file to correct format
-                    if (fileName.startsWith("map_")) {
-                        const after = fileName.split('_')[1]
-                        if (Number.isInteger(Number(after))) {
-                            startDigit = parseInt(after)
-                        }
-                    }
-                    else if (!Number.isNaN(Number(fileName))) {
-                        startDigit = parseInt(fileName)
-
-                    }
-
-                    const blob = new Blob([file.bytes as BlobPart], { type: inputFormat.mime });
-
-                    const image = new Image();
-                    await new Promise((resolve, reject) => {
-                        image.addEventListener("load", resolve);
-                        image.addEventListener("error", reject);
-                        image.src = URL.createObjectURL(blob);
-                    });
 
                     this.#canvas.width = Math.ceil(image.naturalWidth / 128) * 128;
                     this.#canvas.height = Math.ceil(image.naturalHeight / 128) * 128;
@@ -201,25 +175,10 @@ class mcMapHandler implements FormatHandler {
 
                     const pixels = this.#ctx.getImageData(0, 0, this.#canvas.width, this.#canvas.height);
 
-                    let shades: any = [];
-
-                    const mappedColours = base_colours.map(([R, G, B, A]) => ({
-                        R, G, B, A
-                    }));
-
-                    this.getShades(shades, mappedColours);
-
                     const columns = Math.ceil(image.width / 128);
-                    let rows = Math.ceil(image.height / 128);
+                    const rows = Math.ceil(image.height / 128);
 
-                    let colours = new Uint8Array(pixels.data.length / 4);
-
-                    for (let cursor = 0; cursor < colours.length; cursor++) {
-
-                        const closest_colour_match = this.getClosestColor({ R: pixels.data[cursor * 4], G: pixels.data[cursor * 4 + 1], B: pixels.data[cursor * 4 + 2], A: pixels.data[cursor * 4 + 3] }, shades)
-
-                        colours[cursor] = shades.indexOf(closest_colour_match)
-                    }
+                    const colours = mapRGBA2ColourIDs(pixels.data);
 
                     for (let column = 0; column < columns; column++) {
 
@@ -235,23 +194,7 @@ class mcMapHandler implements FormatHandler {
                                 tile.set(colours.subarray(start, end), 128 * t)
                             }
 
-                            let d = {
-                                data: {
-                                    scale: new NBT.Int32(0),
-                                    dimension: "minecraft:overworld",
-                                    trackingPosition: new NBT.Int32(0),
-                                    unlimitedTracking: new NBT.Int32(0),
-                                    locked: new NBT.Int32(1),
-                                    xCenter: new NBT.Int32(0),
-                                    width: new NBT.Int32(128),
-                                    height: new NBT.Int32(128),
-                                    zCenter: new NBT.Int32(0),
-                                    colors: tile
-                                },
-                                DataVersion: new NBT.Int32(4671)
-                            }
-
-                            const data = await NBT.write(d)
+                            const data = await NBT.write(formatMapNBT(tile, 4671))
 
                             zip.file(`map_${startDigit}.dat`, pako.gzip(data));
 
@@ -265,36 +208,8 @@ class mcMapHandler implements FormatHandler {
                     const output = await zip.generateAsync({ type: "uint8array" });
 
                     outputFiles.push({ bytes: output, name: "output.zip" });
-
-
                 }
-            }
-            else if (outputFormat.internal == 'mcmap') {
-
-                for (const file of inputFiles) {
-
-                    let fileName = file.name.split('.')[0]
-
-                    // Check to see if user already renamed file to correct format
-                    if (fileName.startsWith("map_")) {
-                        fileName = fileName.concat(".dat")
-                    }
-                    else if (Number.isInteger(Number(fileName))) {
-                        fileName = `map_${fileName}.dat`
-
-                    }
-                    else {
-                        fileName = "map_0.dat"
-                    }
-
-                    const blob = new Blob([file.bytes as BlobPart], { type: inputFormat.mime });
-
-                    const image = new Image();
-                    await new Promise((resolve, reject) => {
-                        image.addEventListener("load", resolve);
-                        image.addEventListener("error", reject);
-                        image.src = URL.createObjectURL(blob);
-                    });
+                else if (outputFormat.internal == 'mcmap') {
 
                     this.#canvas.width = 128;
                     this.#canvas.height = 128;
@@ -302,47 +217,14 @@ class mcMapHandler implements FormatHandler {
 
                     const pixels = this.#ctx.getImageData(0, 0, this.#canvas.width, this.#canvas.height);
 
-                    let shades: any = [];
+                    let colours = mapRGBA2ColourIDs(pixels.data);
 
-                    const mappedColours = base_colours.map(([R, G, B, A]) => ({
-                        R, G, B, A
-                    }));
-
-                    this.getShades(shades, mappedColours);
-
-                    let colours = new Uint8Array(128 * 128);
-
-                    for (let cursor = 0; cursor < colours.length; cursor++) {
-
-                        const closest_colour_match = this.getClosestColor({ R: pixels.data[cursor * 4], G: pixels.data[cursor * 4 + 1], B: pixels.data[cursor * 4 + 2], A: pixels.data[cursor * 4 + 3] }, shades)
-
-                        colours[cursor] = shades.indexOf(closest_colour_match)
-                    }
-
-                    let d = {
-                        data: {
-                            scale: new NBT.Int32(0),
-                            dimension: "minecraft:overworld",
-                            trackingPosition: new NBT.Int32(0),
-                            unlimitedTracking: new NBT.Int32(0),
-                            locked: new NBT.Int32(1),
-                            xCenter: new NBT.Int32(0),
-                            width: new NBT.Int32(128),
-                            height: new NBT.Int32(128),
-                            zCenter: new NBT.Int32(0),
-                            colors: colours
-                        },
-                        DataVersion: new NBT.Int32(4671)
-                    }
-
-                    const data = await NBT.write(d)
+                    const data = await NBT.write(formatMapNBT(colours, 4671))
 
                     outputFiles.push({
-                        name: fileName,
+                        name: `map_${startDigit}.dat`,
                         bytes: pako.gzip(data)
                     })
-
-
                 }
             }
         }
@@ -459,6 +341,23 @@ function map2rgba(colors: Uint8Array, width: number, height: number): number[] {
     return out;
 }
 
+function mapRGBA2ColourIDs(data: Uint8ClampedArray): Uint8Array {
+
+    let colourIDs: Uint8Array = new Uint8Array(data.length / 4);
+
+    let shades = getShades();
+
+    for (let cursor = 0; cursor < data.length / 4; cursor++) {
+
+        const closest_colour_match = getClosestColor({ R: data[cursor * 4], G: data[cursor * 4 + 1], B: data[cursor * 4 + 2], A: data[cursor * 4 + 3] }, shades)
+
+        colourIDs[cursor] = shades.indexOf(closest_colour_match)
+    }
+
+    return colourIDs;
+
+}
+
 function color_id_to_rgb(id: number): number[] | null {
     const [base_id, shade_id] = [Math.floor(id / 4), id % 4]
     if (!(base_id in base_colours)) return null;
@@ -473,5 +372,61 @@ function color_id_to_rgb(id: number): number[] | null {
 
     return [Math.floor((r * shade_mul) / 255), Math.floor((g * shade_mul) / 255), Math.floor((b * shade_mul) / 255)];
 }
+
+
+function getShades() {
+
+    const mappedColours = base_colours.map(([R, G, B, A]) => ({
+        R, G, B, A
+    }));
+
+    let shadeArray = []
+
+    for (const colour of mappedColours) {
+        const shade1 = { R: Math.floor(colour.R * 180 / 255), G: Math.floor(colour.G * 180 / 255), B: Math.floor(colour.B * 180 / 255), A: colour.A };
+        const shade2 = { R: Math.floor(colour.R * 220 / 255), G: Math.floor(colour.G * 220 / 255), B: Math.floor(colour.B * 220 / 255), A: colour.A };
+        const shade3 = { R: colour.R, G: colour.G, B: colour.B, A: colour.A };
+        const shade4 = { R: Math.floor(colour.R * 135 / 255), G: Math.floor(colour.G * 135 / 255), B: Math.floor(colour.B * 135 / 255), A: colour.A };
+
+        shadeArray.push(shade1, shade2, shade3, shade4);
+    }
+
+    return shadeArray;
+}
+
+function getClosestColor(to_check: any, available_colours: any) {
+    return available_colours.reduce((previous: any, current: any) => {
+        const previousDistance = Math.sqrt(
+            (previous.R - to_check.R) ** 2 +
+            (previous.G - to_check.G) ** 2 +
+            (previous.B - to_check.B) ** 2
+        );
+        const currentDistance = Math.sqrt(
+            (current.R - to_check.R) ** 2 +
+            (current.G - to_check.G) ** 2 +
+            (current.B - to_check.B) ** 2
+        );
+        return (currentDistance < previousDistance) ? current : previous;
+    });
+}
+
+function formatMapNBT(colours: Uint8Array, dataVersion: number = 4671) {
+    return {
+        data: {
+            scale: new NBT.Int32(0),
+            dimension: "minecraft:overworld",
+            trackingPosition: new NBT.Int32(0),
+            unlimitedTracking: new NBT.Int32(0),
+            locked: new NBT.Int32(1),
+            xCenter: new NBT.Int32(0),
+            width: new NBT.Int32(128),
+            height: new NBT.Int32(128),
+            zCenter: new NBT.Int32(0),
+            colors: colours
+        },
+        DataVersion: new NBT.Int32(dataVersion)
+    };
+}
+
 
 export default mcMapHandler;
