@@ -1,9 +1,9 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import CommonFormats from "src/CommonFormats.ts";
 
-class txtToIcHandler implements FormatHandler {
+class txtToInfiniteCraftHandler implements FormatHandler {
 
-    public name: string = "dummy";
+    public name: string = "txtToInfiniteCraft";
     public supportedFormats?: FileFormat[];
     public ready: boolean = false;
 
@@ -80,4 +80,4 @@ class txtToIcHandler implements FormatHandler {
 
 }
 
-export default txtToIcHandler;
+export default txtToInfiniteCraftHandler;
