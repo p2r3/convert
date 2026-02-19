@@ -32,7 +32,7 @@ class nbtHandler implements FormatHandler {
                 to: true,
                 internal: "snbt",
                 category: "data",
-                lossless: true
+                lossless: true // only compression data is lost
             },
         ]
         this.ready = true

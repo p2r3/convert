@@ -29,6 +29,7 @@ class ImageMagickHandler implements FormatHandler {
     Magick.supportedFormats.forEach(format => {
       const formatName = format.format.toLowerCase();
       if (formatName === "apng") return;
+      if (formatName === "svg") return;
       const mimeType = format.mimeType || mime.getType(formatName);
       if (
         !mimeType
@@ -38,7 +39,7 @@ class ImageMagickHandler implements FormatHandler {
       ) return;
       this.supportedFormats.push({
         name: format.description,
-        format: formatName,
+        format: formatName === "jpg" ? "jpeg" : formatName,
         extension: formatName,
         mime: normalizeMimeType(mimeType),
         from: format.supportsReading,
