@@ -49,6 +49,8 @@ class pdftoimgHandler implements FormatHandler {
       const images = await pdfToImg(url, {
         imgType: outputFormat.format,
         pages: "all"
+      }).finally(() => {
+        URL.revokeObjectURL(url);
       });
 
       const baseName = inputFile.name.split(".")[0];

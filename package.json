@@ -5,8 +5,21 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "pseo:build": "node scripts/build-pseo.mjs",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "cf:deploy": "bash scripts/deploy.sh production",
+    "cf:deploy:staging": "bash scripts/deploy.sh staging",
+    "cf:deploy:dry-run": "bash scripts/deploy.sh production --dry-run",
+    "cf:logs:check": "bash scripts/cf-log-check.sh production --base-url $CF_DEPLOY_BASE_URL",
+    "cf:rollback": "bash scripts/cf-rollback.sh production",
+    "check:seo-policy": "node scripts/check-seo-domain-policy.mjs",
+    "check:integrity": "node scripts/check-critical-files.mjs",
+    "check:cf-assets": "node scripts/check-cloudflare-asset-sizes.mjs",
+    "test:unit": "bun test tests",
+    "test:browser": "bun test test/commonFormats.test.ts",
+    "validate:safe": "bash scripts/validate-safe.sh",
+    "validate:ci": "VALIDATE_INCLUDE_BUILD=1 bun run validate:safe"
   },
   "devDependencies": {
     "puppeteer": "^24.36.0",

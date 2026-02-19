@@ -1,0 +1,4 @@
+https://converttoit.app/* https://converttoit.com/:splat 301!
+http://converttoit.app/* https://converttoit.com/:splat 301!
+https://www.converttoit.app/* https://converttoit.com/:splat 301!
+http://www.converttoit.app/* https://converttoit.com/:splat 301!

@@ -5,6 +5,23 @@ import type { LogEvent } from "@ffmpeg/ffmpeg";
 
 import mime from "mime";
 import normalizeMimeType from "../normalizeMimeType.ts";
+import { wasmAssetPath, withBasePath } from "../assetPath.ts";
+
+const DEFAULT_FFMPEG_CORE_BASE_URL = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/esm";
+
+function resolveFFmpegAssetUrl(base: string, fileName: string) {
+  const normalizedBase = base.trim().replace(/\/+$/, "");
+  if (normalizedBase.length === 0) {
+    return wasmAssetPath(fileName);
+  }
+
+  if (/^https?:\/\//i.test(normalizedBase)) {
+    return `${normalizedBase}/${fileName}`;
+  }
+
+  const pathWithoutLeadingSlash = normalizedBase.replace(/^\/+/, "");
+  return withBasePath(`${pathWithoutLeadingSlash}/${fileName}`);
+}
 
 class FFmpegHandler implements FormatHandler {
 
@@ -13,6 +30,9 @@ class FFmpegHandler implements FormatHandler {
   public ready: boolean = false;
 
   #ffmpeg?: FFmpeg;
+  #onLog = (log: LogEvent) => {
+    this.handleStdout(log);
+  };
 
   #stdout: string = "";
   handleStdout (log: LogEvent) {
@@ -24,17 +44,40 @@ class FFmpegHandler implements FormatHandler {
   async getStdout (callback: () => void | Promise<void>) {
     if (!this.#ffmpeg) return "";
     this.clearStdout();
-    this.#ffmpeg.on("log", this.handleStdout.bind(this));
-    await callback();
-    this.#ffmpeg.off("log", this.handleStdout.bind(this));
-    return this.#stdout;
+    this.#ffmpeg.off("log", this.#onLog);
+    this.#ffmpeg.on("log", this.#onLog);
+    try {
+      await callback();
+      return this.#stdout;
+    } finally {
+      this.#ffmpeg.off("log", this.#onLog);
+    }
   }
 
   async loadFFmpeg () {
     if (!this.#ffmpeg) return;
-    return await this.#ffmpeg.load({
-      coreURL: "/convert/wasm/ffmpeg-core.js"
-    });
+
+    const configuredBase = `${import.meta.env.VITE_FFMPEG_CORE_BASE_URL ?? ""}`.trim();
+    const baseCandidates = configuredBase.length > 0
+      ? [configuredBase]
+      : [DEFAULT_FFMPEG_CORE_BASE_URL, "/wasm"];
+
+    let lastError: unknown;
+    for (const base of baseCandidates) {
+      const coreURL = resolveFFmpegAssetUrl(base, "ffmpeg-core.js");
+      const wasmURL = resolveFFmpegAssetUrl(base, "ffmpeg-core.wasm");
+      try {
+        await this.#ffmpeg.load({
+          coreURL,
+          wasmURL
+        });
+        return;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    throw lastError ?? new Error("Failed to load FFmpeg core assets.");
   }
   terminateFFmpeg () {
     if (!this.#ffmpeg) return;

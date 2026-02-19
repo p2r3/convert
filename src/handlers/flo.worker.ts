@@ -1,4 +1,5 @@
 import initReflo, { decode as refloDecode, encode as refloEncode, get_flo_file_info } from "@flo-audio/reflo";
+import { wasmAssetPath } from "../assetPath.ts";
 
 type Msg =
   | { id: number; type: "ready" }
@@ -10,7 +11,7 @@ let ready = false;
 
 async function init() {
   try {
-    await initReflo('/convert/wasm/reflo_bg.wasm');
+    await initReflo(wasmAssetPath("reflo_bg.wasm"));
     ready = true;
     // signal ready
     (self as any).postMessage({ id: 0, type: 'ready' });

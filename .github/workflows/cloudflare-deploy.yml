@@ -55,7 +55,7 @@ jobs:
     env:
       TARGET_ENV: ${{ github.event_name == 'workflow_dispatch' && inputs.target_env || 'production' }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       CF_OPS_LOG_TOKEN: ${{ secrets.CF_OPS_LOG_TOKEN }}
       CF_APP_VERSION: ${{ github.ref_name }}-${{ github.run_number }}
       CF_BUILD_SHA: ${{ github.sha }}
@@ -81,13 +81,20 @@ jobs:
             echo "::error::Missing required GitHub secret: CLOUDFLARE_API_TOKEN"
             exit 1
           fi
+          if [ -z "${CLOUDFLARE_ACCOUNT_ID}" ]; then
+            echo "::error::Missing required GitHub secret: CLOUDFLARE_ACCOUNT_ID"
+            exit 1
+          fi
+
+      - name: Prepare Wrangler runtime config from template
+        run: cp wrangler.toml.example wrangler.toml
 
       - name: Sync optional OPS_LOG_TOKEN secret to Worker
         if: env.CF_OPS_LOG_TOKEN != ''
         run: |
-          printf '%s' "${CF_OPS_LOG_TOKEN}" | bunx --bun wrangler@4 secret put OPS_LOG_TOKEN --config wrangler.jsonc
+          printf '%s' "${CF_OPS_LOG_TOKEN}" | bunx --bun wrangler@4 secret put OPS_LOG_TOKEN --config wrangler.toml
           if [ "${TARGET_ENV}" = "staging" ]; then
-            printf '%s' "${CF_OPS_LOG_TOKEN}" | bunx --bun wrangler@4 secret put OPS_LOG_TOKEN --config wrangler.jsonc --env staging
+            printf '%s' "${CF_OPS_LOG_TOKEN}" | bunx --bun wrangler@4 secret put OPS_LOG_TOKEN --config wrangler.toml --env staging
           fi
 
       - name: Deploy

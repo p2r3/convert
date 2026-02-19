@@ -1,6 +1,17 @@
-bun.lock
 package-lock.json
 node_modules
 start.sh
 dist
 cache.json
+
+# local secrets / runtime vars
+.env*
+!.env.cf.example
+!.env.local.example
+.dev.vars
+.env.cf.local
+.env.local
+wrangler.toml
+
+# local assistant docs
+CLAUDE.md

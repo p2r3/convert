@@ -1,0 +1,282 @@
+{
+  "generatedAt": "2026-02-19T07:48:31.085Z",
+  "domain": "https://converttoit.com",
+  "families": [
+    {
+      "family": "format",
+      "urlPattern": "/format/{from}-to-{to}/",
+      "intentModel": "transactional"
+    },
+    {
+      "family": "compare",
+      "urlPattern": "/compare/{format-a}-vs-{format-b}/",
+      "intentModel": "commercial"
+    }
+  ],
+  "entries": [
+    {
+      "family": "format",
+      "slug": "png-to-jpg",
+      "url": "/format/png-to-jpg/",
+      "primaryKeyword": "convert png to jpg",
+      "secondaryKeywords": [
+        "png to jpg converter",
+        "change png into jpg",
+        "make png file smaller"
+      ],
+      "intent": "transactional",
+      "cluster": "image-conversion"
+    },
+    {
+      "family": "format",
+      "slug": "jpg-to-png",
+      "url": "/format/jpg-to-png/",
+      "primaryKeyword": "convert jpg to png",
+      "secondaryKeywords": [
+        "jpg to png converter",
+        "turn jpeg into png",
+        "save jpeg as png"
+      ],
+      "intent": "transactional",
+      "cluster": "image-conversion"
+    },
+    {
+      "family": "format",
+      "slug": "webp-to-png",
+      "url": "/format/webp-to-png/",
+      "primaryKeyword": "convert webp to png",
+      "secondaryKeywords": [
+        "webp to png converter",
+        "open webp in photoshop",
+        "webp compatibility converter"
+      ],
+      "intent": "transactional",
+      "cluster": "image-conversion"
+    },
+    {
+      "family": "format",
+      "slug": "svg-to-png",
+      "url": "/format/svg-to-png/",
+      "primaryKeyword": "convert svg to png",
+      "secondaryKeywords": [
+        "svg to png converter",
+        "export vector to raster",
+        "rasterize svg"
+      ],
+      "intent": "transactional",
+      "cluster": "design-asset-conversion"
+    },
+    {
+      "family": "format",
+      "slug": "pdf-to-jpg",
+      "url": "/format/pdf-to-jpg/",
+      "primaryKeyword": "convert pdf to jpg",
+      "secondaryKeywords": [
+        "pdf page to image",
+        "pdf to jpg converter",
+        "extract jpg from pdf page"
+      ],
+      "intent": "transactional",
+      "cluster": "document-conversion"
+    },
+    {
+      "family": "format",
+      "slug": "mov-to-mp4",
+      "url": "/format/mov-to-mp4/",
+      "primaryKeyword": "convert mov to mp4",
+      "secondaryKeywords": [
+        "mov to mp4 converter",
+        "make mov playable everywhere",
+        "apple mov to mp4"
+      ],
+      "intent": "transactional",
+      "cluster": "video-conversion"
+    },
+    {
+      "family": "format",
+      "slug": "wav-to-mp3",
+      "url": "/format/wav-to-mp3/",
+      "primaryKeyword": "convert wav to mp3",
+      "secondaryKeywords": [
+        "wav to mp3 converter",
+        "compress wav audio",
+        "reduce audio file size"
+      ],
+      "intent": "transactional",
+      "cluster": "audio-conversion"
+    },
+    {
+      "family": "compare",
+      "slug": "png-vs-jpg",
+      "url": "/compare/png-vs-jpg/",
+      "primaryKeyword": "png vs jpg",
+      "secondaryKeywords": [
+        "png vs jpeg quality",
+        "png or jpg for web",
+        "png versus jpg size"
+      ],
+      "intent": "commercial",
+      "cluster": "image-format-comparison"
+    },
+    {
+      "family": "compare",
+      "slug": "jpg-vs-webp",
+      "url": "/compare/jpg-vs-webp/",
+      "primaryKeyword": "jpg vs webp",
+      "secondaryKeywords": [
+        "webp vs jpeg",
+        "webp for seo",
+        "jpg webp compatibility"
+      ],
+      "intent": "commercial",
+      "cluster": "image-format-comparison"
+    },
+    {
+      "family": "compare",
+      "slug": "svg-vs-png",
+      "url": "/compare/svg-vs-png/",
+      "primaryKeyword": "svg vs png",
+      "secondaryKeywords": [
+        "svg or png logo",
+        "vector vs raster image",
+        "svg png difference"
+      ],
+      "intent": "commercial",
+      "cluster": "design-format-comparison"
+    },
+    {
+      "family": "compare",
+      "slug": "mov-vs-mp4",
+      "url": "/compare/mov-vs-mp4/",
+      "primaryKeyword": "mov vs mp4",
+      "secondaryKeywords": [
+        "mov or mp4",
+        "mp4 compatibility",
+        "mov file size"
+      ],
+      "intent": "commercial",
+      "cluster": "video-format-comparison"
+    },
+    {
+      "family": "compare",
+      "slug": "wav-vs-mp3",
+      "url": "/compare/wav-vs-mp3/",
+      "primaryKeyword": "wav vs mp3",
+      "secondaryKeywords": [
+        "wav or mp3",
+        "wav mp3 quality",
+        "audio file size comparison"
+      ],
+      "intent": "commercial",
+      "cluster": "audio-format-comparison"
+    },
+    {
+      "family": "compare",
+      "slug": "pdf-vs-docx",
+      "url": "/compare/pdf-vs-docx/",
+      "primaryKeyword": "pdf vs docx",
+      "secondaryKeywords": [
+        "pdf or word document",
+        "docx vs pdf for sharing",
+        "editable vs fixed document"
+      ],
+      "intent": "commercial",
+      "cluster": "document-format-comparison"
+    }
+  ],
+  "clusters": [
+    {
+      "family": "format",
+      "cluster": "image-conversion",
+      "intent": "transactional",
+      "urlPattern": "/format/{from}-to-{to}/",
+      "urls": [
+        "/format/png-to-jpg/",
+        "/format/jpg-to-png/",
+        "/format/webp-to-png/"
+      ]
+    },
+    {
+      "family": "format",
+      "cluster": "design-asset-conversion",
+      "intent": "transactional",
+      "urlPattern": "/format/{from}-to-{to}/",
+      "urls": [
+        "/format/svg-to-png/"
+      ]
+    },
+    {
+      "family": "format",
+      "cluster": "document-conversion",
+      "intent": "transactional",
+      "urlPattern": "/format/{from}-to-{to}/",
+      "urls": [
+        "/format/pdf-to-jpg/"
+      ]
+    },
+    {
+      "family": "format",
+      "cluster": "video-conversion",
+      "intent": "transactional",
+      "urlPattern": "/format/{from}-to-{to}/",
+      "urls": [
+        "/format/mov-to-mp4/"
+      ]
+    },
+    {
+      "family": "format",
+      "cluster": "audio-conversion",
+      "intent": "transactional",
+      "urlPattern": "/format/{from}-to-{to}/",
+      "urls": [
+        "/format/wav-to-mp3/"
+      ]
+    },
+    {
+      "family": "compare",
+      "cluster": "image-format-comparison",
+      "intent": "commercial",
+      "urlPattern": "/compare/{format-a}-vs-{format-b}/",
+      "urls": [
+        "/compare/png-vs-jpg/",
+        "/compare/jpg-vs-webp/"
+      ]
+    },
+    {
+      "family": "compare",
+      "cluster": "design-format-comparison",
+      "intent": "commercial",
+      "urlPattern": "/compare/{format-a}-vs-{format-b}/",
+      "urls": [
+        "/compare/svg-vs-png/"
+      ]
+    },
+    {
+      "family": "compare",
+      "cluster": "video-format-comparison",
+      "intent": "commercial",
+      "urlPattern": "/compare/{format-a}-vs-{format-b}/",
+      "urls": [
+        "/compare/mov-vs-mp4/"
+      ]
+    },
+    {
+      "family": "compare",
+      "cluster": "audio-format-comparison",
+      "intent": "commercial",
+      "urlPattern": "/compare/{format-a}-vs-{format-b}/",
+      "urls": [
+        "/compare/wav-vs-mp3/"
+      ]
+    },
+    {
+      "family": "compare",
+      "cluster": "document-format-comparison",
+      "intent": "commercial",
+      "urlPattern": "/compare/{format-a}-vs-{format-b}/",
+      "urls": [
+        "/compare/pdf-vs-docx/"
+      ]
+    }
+  ]
+}

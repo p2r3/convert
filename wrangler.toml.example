@@ -1,0 +1,33 @@
+# Copy to wrangler.toml for local deploy/rollback/log checks:
+#   cp wrangler.toml.example wrangler.toml
+#
+# Security note:
+# - Do not commit wrangler.toml (it is gitignored).
+# - Keep account_id out of config.
+# - Set CLOUDFLARE_ACCOUNT_ID in environment instead.
+
+name = "converttoit-site"
+main = "cloudflare/worker/index.mjs"
+compatibility_date = "2026-02-19"
+workers_dev = true
+
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+
+[vars]
+ENVIRONMENT = "production"
+APP_VERSION = "0.0.0"
+BUILD_SHA = "local"
+
+[env.staging]
+name = "converttoit-site-staging"
+
+[env.staging.vars]
+ENVIRONMENT = "staging"
+APP_VERSION = "0.0.0-staging"
+BUILD_SHA = "local-staging"

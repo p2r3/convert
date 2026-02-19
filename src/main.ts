@@ -13,6 +13,10 @@ let selectedFiles: File[] = [];
  */
 let simpleMode: boolean = true;
 
+const MAX_UPLOAD_FILES = 100;
+const MAX_SINGLE_FILE_SIZE = 256 * 1024 * 1024; // 256 MB
+const MAX_TOTAL_FILE_SIZE = 512 * 1024 * 1024; // 512 MB
+
 /** Handlers that support conversion from any formats. */
 const conversionsFromAnyInput: ConvertPathNode[] = handlers
 .filter(h => h.supportAnyInput && h.supportedFormats)
@@ -32,6 +36,48 @@ const ui = {
   popupBox: document.querySelector("#popup") as HTMLDivElement,
   popupBackground: document.querySelector("#popup-bg") as HTMLDivElement
 };
+
+function formatBytes (bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  const units = ["KB", "MB", "GB", "TB"];
+  let value = bytes / 1024;
+  let unitIndex = 0;
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex++;
+  }
+  return `${value.toFixed(1)} ${units[unitIndex]}`;
+}
+
+function validateSelectedFiles (files: File[]): string | null {
+  if (files.length > MAX_UPLOAD_FILES) {
+    return `You selected ${files.length} files. Limit is ${MAX_UPLOAD_FILES} files per conversion.`;
+  }
+
+  const tooLargeFile = files.find(file => file.size > MAX_SINGLE_FILE_SIZE);
+  if (tooLargeFile) {
+    return `File "${tooLargeFile.name}" is ${formatBytes(tooLargeFile.size)}. ` +
+      `Maximum single file size is ${formatBytes(MAX_SINGLE_FILE_SIZE)}.`;
+  }
+
+  const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
+  if (totalBytes > MAX_TOTAL_FILE_SIZE) {
+    return `Selected files total ${formatBytes(totalBytes)}. ` +
+      `Maximum total size is ${formatBytes(MAX_TOTAL_FILE_SIZE)}.`;
+  }
+
+  return null;
+}
+
+function renderSelectedFiles (files: File[]) {
+  const title = document.createElement("h2");
+  title.appendChild(document.createTextNode(files[0].name));
+  if (files.length > 1) {
+    title.appendChild(document.createElement("br"));
+    title.appendChild(document.createTextNode(`... and ${files.length - 1} more`));
+  }
+  ui.fileSelectArea.replaceChildren(title);
+}
 
 /**
  * Filters a list of butttons to exclude those not matching a substring.
@@ -105,16 +151,16 @@ const fileSelectHandler = (event: Event) => {
   const files = Array.from(inputFiles);
   if (files.length === 0) return;
 
+  const fileValidationError = validateSelectedFiles(files);
+  if (fileValidationError) return alert(fileValidationError);
+
   if (files.some(c => c.type !== files[0].type)) {
     return alert("All input files must be of the same type.");
   }
   files.sort((a, b) => a.name === b.name ? 0 : (a.name < b.name ? -1 : 1));
   selectedFiles = files;
 
-  ui.fileSelectArea.innerHTML = `<h2>
-    ${files[0].name}
-    ${files.length > 1 ? `<br>... and ${files.length - 1} more` : ""}
-  </h2>`;
+  renderSelectedFiles(files);
 
   // Common MIME type adjustments (to match "mime" library)
   let mimeType = normalizeMimeType(files[0].type);
@@ -370,10 +416,17 @@ window.tryConvertByTraversing = async function (
 
 function downloadFile (bytes: Uint8Array, name: string, mime: string) {
   const blob = new Blob([bytes as BlobPart], { type: mime });
+  const objectURL = URL.createObjectURL(blob);
   const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
+  link.href = objectURL;
   link.download = name;
+  link.style.display = "none";
+  document.body.appendChild(link);
   link.click();
+  setTimeout(() => {
+    URL.revokeObjectURL(objectURL);
+    link.remove();
+  }, 0);
 }
 
 ui.convertButton.onclick = async function () {
@@ -383,6 +436,9 @@ ui.convertButton.onclick = async function () {
   if (inputFiles.length === 0) {
     return alert("Select an input file.");
   }
+
+  const fileValidationError = validateSelectedFiles(inputFiles);
+  if (fileValidationError) return alert(fileValidationError);
 
   const inputButton = document.querySelector("#from-list .selected");
   if (!inputButton) return alert("Specify input file format.");

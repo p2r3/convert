@@ -35,6 +35,42 @@ import {
   ConsoleStdout,
   PreopenDirectory,
 } from "@bjorn3/browser_wasi_shim";
+import { wasmAssetPath, withBasePath } from "../../assetPath.ts";
+
+const DEFAULT_PANDOC_WASM_URL = "https://raw.githubusercontent.com/p2r3/convert/master/src/handlers/pandoc/pandoc.wasm";
+
+function resolveWasmUrl(value) {
+  const trimmed = `${value ?? ""}`.trim();
+  if (!trimmed) return wasmAssetPath("pandoc.wasm");
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+
+  const pathWithoutLeadingSlash = trimmed.replace(/^\/+/, "");
+  return withBasePath(pathWithoutLeadingSlash);
+}
+
+async function instantiatePandocWasm() {
+  const configuredUrl = `${import.meta.env.VITE_PANDOC_WASM_URL ?? ""}`.trim();
+  const candidates = configuredUrl.length > 0
+    ? [configuredUrl]
+    : [DEFAULT_PANDOC_WASM_URL, "wasm/pandoc.wasm"];
+
+  let lastError;
+  for (const candidate of candidates) {
+    try {
+      const wasmUrl = resolveWasmUrl(candidate);
+      return await WebAssembly.instantiateStreaming(
+        fetch(wasmUrl),
+        {
+          wasi_snapshot_preview1: wasi.wasiImport,
+        }
+      );
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError ?? new Error("Failed to load pandoc.wasm");
+}
 
 const args = ["pandoc.wasm", "+RTS", "-H64m", "-RTS"];
 const env = [];
@@ -51,12 +87,7 @@ const fds = [
 ];
 const options = { debug: false };
 const wasi = new WASI(args, env, fds, options);
-const { instance } = await WebAssembly.instantiateStreaming(
-  fetch("/convert/wasm/pandoc.wasm"),
-  {
-    wasi_snapshot_preview1: wasi.wasiImport,
-  }
-);
+const { instance } = await instantiatePandocWasm();
 
 wasi.initialize(instance);
 instance.exports.__wasm_call_ctors();

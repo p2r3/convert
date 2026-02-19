@@ -1,5 +1,6 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import normalizeMimeType from "../normalizeMimeType.ts";
+import { wasmAssetPath } from "../assetPath.ts";
 
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 
@@ -96,7 +97,7 @@ async function decodeWithFFmpeg(
   bytes: Uint8Array,
 ): Promise<{ samples: Float32Array; sampleRate: number; channels: number }> {
   const ffmpeg = new FFmpeg();
-  await ffmpeg.load({ coreURL: "/convert/wasm/ffmpeg-core.js" });
+  await ffmpeg.load({ coreURL: wasmAssetPath("ffmpeg-core.js") });
   await ffmpeg.writeFile("infile", bytes);
   // produce f32le raw samples with WAV header so we can parse sampleRate/channels
   try {
@@ -340,5 +341,4 @@ class floHandler implements FormatHandler {
 }
 
 export default floHandler;
-
 

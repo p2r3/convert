@@ -97,11 +97,15 @@ class qoiFuHandler implements FormatHandler {
         const url = URL.createObjectURL(blob);
 
         const image = new Image();
-        await new Promise((resolve, reject) => {
-          image.addEventListener("load", resolve);
-          image.addEventListener("error", reject);
-          image.src = url;
-        });
+        try {
+          await new Promise((resolve, reject) => {
+            image.addEventListener("load", resolve);
+            image.addEventListener("error", reject);
+            image.src = url;
+          });
+        } finally {
+          URL.revokeObjectURL(url);
+        }
 
         const width = image.naturalWidth;
         const height = image.naturalHeight;

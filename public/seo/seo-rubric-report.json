@@ -1,0 +1,248 @@
+{
+  "rubricVersion": "strict-seo-template-rubric-v1",
+  "maxScore": 30,
+  "targetMinimumScore": 24,
+  "summary": {
+    "pagesEvaluated": 13,
+    "averageScore": 29.46,
+    "minScore": 29,
+    "maxScore": 30,
+    "passingPages": 13
+  },
+  "pageScores": [
+    {
+      "url": "/format/png-to-jpg/",
+      "score": 29,
+      "breakdown": {
+        "title": 4,
+        "meta": 4,
+        "keywordPlacement": 5,
+        "snippets": 3,
+        "internalLinks": 4,
+        "technical": 3,
+        "social": 3,
+        "contentDepth": 3
+      },
+      "titleLength": 59,
+      "descriptionLength": 158,
+      "keywordInFirst100Words": true,
+      "internalSelfLinkCount": 0
+    },
+    {
+      "url": "/format/jpg-to-png/",
+      "score": 29,
+      "breakdown": {
+        "title": 4,
+        "meta": 4,
+        "keywordPlacement": 5,
+        "snippets": 3,
+        "internalLinks": 4,
+        "technical": 3,
+        "social": 3,
+        "contentDepth": 3
+      },
+      "titleLength": 59,
+      "descriptionLength": 158,
+      "keywordInFirst100Words": true,
+      "internalSelfLinkCount": 0
+    },
+    {
+      "url": "/format/webp-to-png/",
+      "score": 29,
+      "breakdown": {
+        "title": 4,
+        "meta": 4,
+        "keywordPlacement": 5,
+        "snippets": 3,
+        "internalLinks": 4,
+        "technical": 3,
+        "social": 3,
+        "contentDepth": 3
+      },
+      "titleLength": 60,
+      "descriptionLength": 159,
+      "keywordInFirst100Words": true,
+      "internalSelfLinkCount": 0
+    },
+    {
+      "url": "/format/svg-to-png/",
+      "score": 29,
+      "breakdown": {
+        "title": 4,
+        "meta": 4,
+        "keywordPlacement": 5,
+        "snippets": 3,
+        "internalLinks": 4,
+        "technical": 3,
+        "social": 3,
+        "contentDepth": 3
+      },
+      "titleLength": 59,
+      "descriptionLength": 158,
+      "keywordInFirst100Words": true,
+      "internalSelfLinkCount": 0
+    },
+    {
+      "url": "/format/pdf-to-jpg/",
+      "score": 29,
+      "breakdown": {
+        "title": 4,
+        "meta": 4,
+        "keywordPlacement": 5,
+        "snippets": 3,
+        "internalLinks": 4,
+        "technical": 3,
+        "social": 3,
+        "contentDepth": 3
+      },
+      "titleLength": 59,
+      "descriptionLength": 158,
+      "keywordInFirst100Words": true,
+      "internalSelfLinkCount": 0
+    },
+    {
+      "url": "/format/mov-to-mp4/",
+      "score": 29,
+      "breakdown": {
+        "title": 4,
+        "meta": 4,
+        "keywordPlacement": 5,
+        "snippets": 3,
+        "internalLinks": 4,
+        "technical": 3,
+        "social": 3,
+        "contentDepth": 3
+      },
+      "titleLength": 59,
+      "descriptionLength": 158,
+      "keywordInFirst100Words": true,
+      "internalSelfLinkCount": 0
+    },
+    {
+      "url": "/format/wav-to-mp3/",
+      "score": 29,
+      "breakdown": {
+        "title": 4,
+        "meta": 4,
+        "keywordPlacement": 5,
+        "snippets": 3,
+        "internalLinks": 4,
+        "technical": 3,
+        "social": 3,
+        "contentDepth": 3
+      },
+      "titleLength": 59,
+      "descriptionLength": 158,
+      "keywordInFirst100Words": true,
+      "internalSelfLinkCount": 0
+    },
+    {
+      "url": "/compare/png-vs-jpg/",
+      "score": 30,
+      "breakdown": {
+        "title": 4,
+        "meta": 4,
+        "keywordPlacement": 5,
+        "snippets": 4,
+        "internalLinks": 4,
+        "technical": 3,
+        "social": 3,
+        "contentDepth": 3
+      },
+      "titleLength": 59,
+      "descriptionLength": 154,
+      "keywordInFirst100Words": true,
+      "internalSelfLinkCount": 0
+    },
+    {
+      "url": "/compare/jpg-vs-webp/",
+      "score": 30,
+      "breakdown": {
+        "title": 4,
+        "meta": 4,
+        "keywordPlacement": 5,
+        "snippets": 4,
+        "internalLinks": 4,
+        "technical": 3,
+        "social": 3,
+        "contentDepth": 3
+      },
+      "titleLength": 60,
+      "descriptionLength": 155,
+      "keywordInFirst100Words": true,
+      "internalSelfLinkCount": 0
+    },
+    {
+      "url": "/compare/svg-vs-png/",
+      "score": 30,
+      "breakdown": {
+        "title": 4,
+        "meta": 4,
+        "keywordPlacement": 5,
+        "snippets": 4,
+        "internalLinks": 4,
+        "technical": 3,
+        "social": 3,
+        "contentDepth": 3
+      },
+      "titleLength": 59,
+      "descriptionLength": 154,
+      "keywordInFirst100Words": true,
+      "internalSelfLinkCount": 0
+    },
+    {
+      "url": "/compare/mov-vs-mp4/",
+      "score": 30,
+      "breakdown": {
+        "title": 4,
+        "meta": 4,
+        "keywordPlacement": 5,
+        "snippets": 4,
+        "internalLinks": 4,
+        "technical": 3,
+        "social": 3,
+        "contentDepth": 3
+      },
+      "titleLength": 59,
+      "descriptionLength": 154,
+      "keywordInFirst100Words": true,
+      "internalSelfLinkCount": 0
+    },
+    {
+      "url": "/compare/wav-vs-mp3/",
+      "score": 30,
+      "breakdown": {
+        "title": 4,
+        "meta": 4,
+        "keywordPlacement": 5,
+        "snippets": 4,
+        "internalLinks": 4,
+        "technical": 3,
+        "social": 3,
+        "contentDepth": 3
+      },
+      "titleLength": 59,
+      "descriptionLength": 154,
+      "keywordInFirst100Words": true,
+      "internalSelfLinkCount": 0
+    },
+    {
+      "url": "/compare/pdf-vs-docx/",
+      "score": 30,
+      "breakdown": {
+        "title": 4,
+        "meta": 4,
+        "keywordPlacement": 5,
+        "snippets": 4,
+        "internalLinks": 4,
+        "technical": 3,
+        "social": 3,
+        "contentDepth": 3
+      },
+      "titleLength": 60,
+      "descriptionLength": 155,
+      "keywordInFirst100Words": true,
+      "internalSelfLinkCount": 0
+    }
+  ]
+}

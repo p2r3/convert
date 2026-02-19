@@ -1,17 +1,17 @@
-# [Convert to it!](https://convert.to.it/)
+# [Convert to it!](https://converttoit.com/)
 **Truly universal online file converter.**
 
 Many online file conversion tools are **boring** and **insecure**. They only allow conversion between two formats in the same medium (images to images, videos to videos, etc.), and they require that you _upload your files to some server_.
 
 This is not just terrible for privacy, it's also incredibly lame. What if you _really_ need to convert an AVI video to a PDF document? Try to find an online tool for that, I dare you.
 
-[Convert.to.it](https://convert.to.it/) aims to be a tool that "just works". You're almost _guaranteed_ to get an output - perhaps not always the one you expected, but it'll try its best to not leave you hanging.
+[ConvertToIt](https://converttoit.com/) aims to be a tool that "just works". You're almost _guaranteed_ to get an output - perhaps not always the one you expected, but it'll try its best to not leave you hanging.
 
 For a semi-technical overview of this tool, check out the video: https://youtu.be/btUbcsTbVA8
 
 ## Usage
 
-1. Go to [convert.to.it](https://convert.to.it/)
+1. Go to [converttoit.com](https://converttoit.com/)
 2. Click the big blue box to add your file (or just drag it on to the window).
 3. An input format should have been automatically selected. If it wasn't, yikes! Try searching for it, or if it's really not there, see the "Issues" section below.
 4. Select an output format from the second list. If you're on desktop, that's the one on the right side. If you're on mobile, it'll be somewhere lower down.
@@ -52,6 +52,38 @@ _The following steps are optional, but recommended for performance:_
 When you first open the page, it'll take a while to generate the list of supported formats for each tool. If you open the console, you'll see it complaining a bunch about missing caches.
 
 After this is done (indicated by a `Built initial format list` message in the console), use `printSupportedFormatCache()` to get a JSON string with the cache data. You can then save this string to `cache.json` to skip that loading screen on startup.
+
+### Cloudflare production deployment (Workers + static assets)
+
+Cloudflare deployment assets are defined in:
+
+- `wrangler.toml.example` (template, committed)
+- `wrangler.toml` (local runtime config, gitignored)
+- `cloudflare/worker/index.mjs`
+- `scripts/deploy.sh`
+- `scripts/cf-log-check.sh`
+- `scripts/cf-rollback.sh`
+
+To satisfy Workers static asset limits, oversized wasm binaries (FFmpeg core and Pandoc) are loaded from remote URLs by default. You can override build-time sources via `VITE_FFMPEG_CORE_BASE_URL` / `VITE_PANDOC_WASM_URL`.
+
+Operational runbook:
+
+- [`docs/ops/cloudflare-deploy-runbook.md`](docs/ops/cloudflare-deploy-runbook.md)
+- [`docs/ops/seo-pseo-production-rollout.md`](docs/ops/seo-pseo-production-rollout.md)
+- [`docs/architecture/cloudflare-ops-endpoints.md`](docs/architecture/cloudflare-ops-endpoints.md)
+
+Recommended production gate (SEO + pSEO + deploy validation):
+
+```bash
+cp .env.local.example .env.local
+source .env.local
+bun run pseo:build
+VALIDATE_INCLUDE_BUILD=1 bun run validate:safe
+bun run check:cf-assets
+bun run cf:deploy:dry-run
+bun run cf:deploy
+CF_DEPLOY_BASE_URL="https://converttoit.com" bun run cf:logs:check
+```
 
 ### Docker (prebuilt image)
 

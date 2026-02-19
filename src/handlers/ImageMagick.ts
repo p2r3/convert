@@ -8,6 +8,7 @@ import {
 
 import mime from "mime";
 import normalizeMimeType from "../normalizeMimeType.ts";
+import { wasmAssetPath } from "../assetPath.ts";
 
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 
@@ -21,7 +22,7 @@ class ImageMagickHandler implements FormatHandler {
 
   async init () {
 
-    const wasmLocation = "/convert/wasm/magick.wasm";
+    const wasmLocation = wasmAssetPath("magick.wasm");
     const wasmBytes = await fetch(wasmLocation).then(r => r.bytes());
 
     await initializeImageMagick(wasmBytes);

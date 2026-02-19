@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  verify:
     runs-on: ubuntu-latest
 
     steps:
@@ -27,7 +27,30 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
         with:
-          bun-version: "latest"
+          bun-version: "1.3.3"
+          cache: true
+
+      - name: Install dependencies
+        run: bun i --frozen-lockfile
+
+      - name: Deterministic validation suite
+        run: bun run validate:ci
+
+  build:
+    needs: verify
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: "1.3.3"
           cache: true
 
       - name: Install dependencies
@@ -39,11 +62,7 @@ jobs:
       - name: Generate cache
         run: bun run buildCache.js dist/cache.json
 
-      - name: Test common conversion routes
-        run: bun test test/commonFormats.test.ts
-
       - name: Upload Pages artifact
-        if: github.event_name == 'push'
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist

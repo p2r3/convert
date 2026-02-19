@@ -1,15 +1,60 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-US">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="description" content="Convert files online for free in your browser. ConvertToIt supports image, audio, video, document, and archive formats without uploading your files to a server.">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <meta name="theme-color" content="#1C77FF">
+  <link rel="canonical" href="https://converttoit.com/">
+  <link rel="alternate" hreflang="en" href="https://converttoit.com/">
+  <link rel="alternate" hreflang="x-default" href="https://converttoit.com/">
   <link rel="stylesheet" href="style.css">
   <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
-  <title>Convert to it!</title>
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="ConvertToIt">
+  <meta property="og:title" content="Online File Converter (Free & Secure) | ConvertToIt">
+  <meta property="og:description" content="Convert files directly in your browser across many formats. No server upload required for most conversions.">
+  <meta property="og:url" content="https://converttoit.com/">
+  <meta property="og:image" content="https://converttoit.com/favicon.ico">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Online File Converter (Free & Secure) | ConvertToIt">
+  <meta name="twitter:description" content="Convert files directly in your browser across many formats.">
+  <meta name="twitter:image" content="https://converttoit.com/favicon.ico">
+  <title>Online File Converter (Free & Secure) | ConvertToIt</title>
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "name": "ConvertToIt",
+          "url": "https://converttoit.com/",
+          "inLanguage": "en-US",
+          "description": "Convert files online directly in your browser across image, audio, video, document, and archive formats."
+        },
+        {
+          "@type": "SoftwareApplication",
+          "name": "ConvertToIt",
+          "applicationCategory": "UtilitiesApplication",
+          "operatingSystem": "Any",
+          "url": "https://converttoit.com/",
+          "description": "Browser-based file converter that supports many formats.",
+          "isAccessibleForFree": true,
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          }
+        }
+      ]
+    }
+  </script>
 </head>
 <body>
 
   <input id="file-input" type="file">
+  <h1 class="sr-only">Convert files online for free with ConvertToIt</h1>
 
   <div id="file-area">
     <h2>Click to add your file</h2>
@@ -18,6 +63,14 @@
   <div id="side-panel">
     <button id="mode-button">Advanced mode</button>
   </div>
+
+  <nav class="site-nav" aria-label="On-page navigation">
+    <a href="#file-area">Converter</a>
+    <a href="#how-it-works">How it works</a>
+    <a href="#faq">FAQ</a>
+    <a href="/format/">Format Guides</a>
+    <a href="/compare/">Compare Formats</a>
+  </nav>
 
   <div id="format-containers">
 
@@ -40,6 +93,31 @@
   </div>
 
   <button id="convert-button" class="disabled">Convert</button>
+
+  <section id="how-it-works" class="seo-content">
+    <h2>How ConvertToIt works</h2>
+    <p>Choose a file, select an output format, and convert it directly in your browser. ConvertToIt focuses on broad format support and practical output.</p>
+    <p>Need page-specific help? Explore <a href="/format/">Format Guides</a> and <a href="/compare/">Compare Formats</a>.</p>
+    <p>Need policy details? Read our <a href="/privacy.html">Privacy Policy</a> and <a href="/terms.html">Terms of Service</a>.</p>
+  </section>
+
+  <section id="faq" class="seo-content">
+    <h2>FAQ</h2>
+    <h3>Do I need to install software?</h3>
+    <p>No. ConvertToIt runs in modern browsers.</p>
+    <h3>Is the converter free to use?</h3>
+    <p>Yes. The core web converter is free.</p>
+  </section>
+
+  <footer class="site-footer">
+    <a href="/">Home</a>
+    <a href="/format/">Format Guides</a>
+    <a href="/compare/">Compare</a>
+    <a href="/privacy.html">Privacy</a>
+    <a href="/terms.html">Terms</a>
+    <a href="/sitemap.xml">Sitemap</a>
+    <a href="/robots.txt">Robots</a>
+  </footer>
 
   <div id="popup-bg"></div>
   <div id="popup">

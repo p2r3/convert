@@ -46,9 +46,11 @@ class threejsHandler implements FormatHandler {
       const blob = new Blob([inputFile.bytes as BlobPart]);
       const url = URL.createObjectURL(blob);
 
-      const gltf: GLTF = await new Promise((resolve, reject) => {
+      const gltf: GLTF = await new Promise<GLTF>((resolve, reject) => {
         const loader = new GLTFLoader();
         loader.load(url, resolve, undefined, reject);
+      }).finally(() => {
+        URL.revokeObjectURL(url);
       });
 
       const bbox = new THREE.Box3().setFromObject(gltf.scene);

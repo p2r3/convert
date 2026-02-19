@@ -1,0 +1,32 @@
+/*
+  Strict-Transport-Security: max-age=31536000
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: accelerometer=(), autoplay=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), interest-cohort=()
+  X-Permitted-Cross-Domain-Policies: none
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; upgrade-insecure-requests
+
+/
+  Cache-Control: public, max-age=0, must-revalidate
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+/privacy.html
+  Cache-Control: public, max-age=0, must-revalidate
+/terms.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+/wasm/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+/style.css
+  Cache-Control: public, max-age=86400, stale-while-revalidate=86400
+/favicon.ico
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+/robots.txt
+  Cache-Control: public, max-age=86400, stale-while-revalidate=86400
+/sitemap.xml
+  Cache-Control: public, max-age=86400, stale-while-revalidate=86400

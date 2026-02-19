@@ -1,0 +1,16 @@
+{
+  "canonicalDomain": "https://converttoit.com",
+  "canonicalHost": "converttoit.com",
+  "redirectSourceHosts": [
+    "https://converttoit.app",
+    "http://converttoit.app",
+    "https://www.converttoit.app",
+    "http://www.converttoit.app"
+  ],
+  "rules": [
+    "Canonical and hreflang URLs must always use https://converttoit.com.",
+    ".app hostnames are valid only as redirect sources into the canonical .com host.",
+    "Sitemap and generated page metadata must not contain .app canonical targets."
+  ],
+  "generatedAt": "2026-02-19T07:48:31.098Z"
+}

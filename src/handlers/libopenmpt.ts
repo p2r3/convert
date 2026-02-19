@@ -1,4 +1,5 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
+import { wasmAssetPath } from "../assetPath.ts";
 
 interface LibOpenMPTModule {
   __render(fileData: Uint8Array, sampleRate: number): Int16Array;
@@ -86,21 +87,26 @@ class libopenmptHandler implements FormatHandler {
   #module?: LibOpenMPTModule;
 
   async init (): Promise<void> {
+    const wasmBinaryPath = wasmAssetPath("libopenmpt.wasm");
+    const scriptPath = wasmAssetPath("libopenmpt.js");
     // Pre-fetch the WASM binary so the Emscripten module can use it directly.
-    const wasmBinary = await fetch("/convert/wasm/libopenmpt.wasm")
+    const wasmBinary = await fetch(wasmBinaryPath)
       .then(r => r.arrayBuffer());
 
     // Set the global that Emscripten picks up:
     //   var Module = typeof libopenmpt != "undefined" ? libopenmpt : {}
     // libopenmpt.js was patched to attach __readyPromise (resolves with Module)
     // and __render (uses closure-scoped HEAPU8/HEAP16) before calling run().
-    (globalThis as any).libopenmpt = { wasmBinary };
+    (globalThis as any).libopenmpt = {
+      wasmBinary,
+      locateFile: (fileName: string) => wasmAssetPath(fileName)
+    };
 
     // Load as a classic <script> tag so it is never run through Rollup/Vite's
     // module pipeline (which would break the Emscripten global-variable pattern).
     await new Promise<void>((resolve, reject) => {
       const script = document.createElement("script");
-      script.src = "/convert/wasm/libopenmpt.js";
+      script.src = scriptPath;
       script.onload = () => resolve();
       script.onerror = () => reject(new Error("Failed to load libopenmpt.js"));
       document.head.appendChild(script);
