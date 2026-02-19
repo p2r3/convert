@@ -753,7 +753,7 @@ function decodeSurface (
   }
 }
 
-function decodeVTF (bytes: Uint8Array): DecodedImage {
+export function decodeVTF (bytes: Uint8Array): DecodedImage {
   const header = parseHeader(bytes);
   const highResOffset = findHighResDataOffset(bytes, header);
   const faces = getFaces(header.flags);
