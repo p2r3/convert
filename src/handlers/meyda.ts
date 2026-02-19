@@ -52,7 +52,7 @@ class meydaHandler implements FormatHandler {
     this.ready = true;
 
   }
-
+  
   async doConvert (
     inputFiles: FileData[],
     inputFormat: FileFormat,

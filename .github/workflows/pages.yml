@@ -39,6 +39,9 @@ jobs:
       - name: Generate cache
         run: bun run buildCache.js dist/cache.json
 
+      - name: Test common conversion routes
+        run: bun test test/commonFormats.test.ts
+
       - name: Upload Pages artifact
         if: github.event_name == 'push'
         uses: actions/upload-pages-artifact@v3
