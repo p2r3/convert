@@ -352,7 +352,7 @@ async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
 
 }
 
-async function tryConvertByTraversing (
+window.tryConvertByTraversing = async function (
   files: FileData[],
   from: ConvertPathNode,
   to: ConvertPathNode
@@ -413,7 +413,7 @@ ui.convertButton.onclick = async function () {
     // Delay for a bit to give the browser time to render
     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
-    const output = await tryConvertByTraversing(inputFileData, inputOption, outputOption);
+    const output = await window.tryConvertByTraversing(inputFileData, inputOption, outputOption);
     if (!output) {
       window.hidePopup();
       alert("Failed to find conversion route.");
