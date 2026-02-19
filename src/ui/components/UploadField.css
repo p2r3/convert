@@ -28,10 +28,19 @@
 				display: flex;
 				font-weight: 900;
 				align-items: center;
-				gap: .5em;
+				gap: .3em;
 
 				.upload-card-logo {
+					display: inline-block;
 					width: 60px;
+					height: 60px;
+					background-color: var(--primary);
+					-webkit-mask-repeat: no-repeat;
+					-webkit-mask-size: contain;
+					-webkit-mask-position: center;
+					mask-repeat: no-repeat;
+					mask-size: contain;
+					mask-position: center;
 				}
 			}
 		}
@@ -43,67 +52,87 @@
 		}
 
 		.upload-card-dropzone-hint {
-			&.active-drag {
-				border-width: .5rem;
-			}
+			flex-grow: 1;
+			margin: 1.5em;
 
-			min-height: 30px;
 			display: flex;
 			flex-direction: column;
 			justify-content: center;
 			align-items: center;
-			gap: 1em;
-			flex-grow: 1;
-			margin: 1em;
-
-			user-select: none;
-			cursor: pointer;
+			text-align: center;
 
 			background-color: var(--bg-card-alt);
-			border: 0.15rem dashed var(--border-primary);
-			border-radius: 20px;
+			border: 2px dashed var(--bg-overlay);
+			border-radius: 12px;
 
-			>* {
-				cursor: pointer;
+			cursor: pointer;
+			transition: all 0.2s ease-in-out;
+			user-select: none;
+
+			&:hover,
+			&.active-drag {
+				background-color: var(--bg-card-alt-hover);
+				border-color: var(--btn-bg-primary);
 			}
 
 			input[type="file"] {
 				display: none;
-				visibility: hidden;
 			}
 
 			.upload-card-dropzone-icon-container {
 				background-color: var(--bg-card);
-				aspect-ratio: 1 / 1;
-				padding: 0.5em;
-				border-radius: 100vh;
+				padding: 1em;
+				border-radius: 50%;
+				box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+				margin-bottom: 1em;
+				transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
-				.upload-card-dropzone-icon {
-					width: 60px;
-					filter: contrast(0);
-				}
+				display: flex;
+				align-items: center;
+				justify-content: center;
+			}
+
+			&:hover .upload-card-dropzone-icon-container,
+			&.active-drag .upload-card-dropzone-icon-container {
+				transform: scale(1.1);
+			}
+
+			.upload-card-dropzone-icon {
+				width: 40px;
+				height: 40px;
+
+				background-color: var(--primary);
+
+				-webkit-mask: url('../img/fa-upload-solid-full.svg') no-repeat center;
+				-webkit-mask-size: contain;
+
+				mask: url('../img/fa-upload-solid-full.svg') no-repeat center;
+				mask-size: contain;
+
+				display: inline-block;
 			}
 
 			.upload-card-dropzone-button {
-				appearance: none;
-				border: 0;
-				box-shadow: 0 3px 3px rgba(0 0 0 / .1);
+				background-color: var(--btn-bg-primary);
+				color: var(--text-inverse);
+				font-weight: 600;
+				padding: 0.5rem 1.5rem;
 				border-radius: 8px;
-				padding: .75em;
-				background-color: var(--highlight-color);
-				color:  var(--text-inverse);
-				font-weight: bold;
-				transition: box-shadow 150ms, translate 150ms;
+				border: none;
+				box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+				margin-bottom: 0.5rem;
+				cursor: pointer;
+				transition: background-color 0.15s ease-in-out;
+				pointer-events: auto;
+			}
 
-				&:hover,
-				&:focus-visible {
-					box-shadow: 0 6px 6px rgba(0 0 0 / .07);
-					translate: 0 -.1rem;
-				}
+			.upload-card-dropzone-button:hover {
+				background-color: var(--btn-bg-primary-hover);
 			}
 
 			.upload-card-dropzone-subtext {
-				color: var(--text-muted);
+				color: var(--text-secondary);
+				font-size: 0.875rem;
 			}
 		}
 
@@ -116,16 +145,17 @@
 
 			button {
 				appearance: none;
-				border: .1rem solid var(--border-primary);
+				border: .1rem solid var(--btn-border);
 				border-radius: 8px;
 				padding: .75em;
 				color: var(--text-muted);
-				background: transparent;
-				transition: border 150ms;
+				background: var(--btn-bg-secondary);
+				transition: color 150ms, background 150ms;
 
 				&:hover,
 				&:focus-visible {
-					border: .1rem solid var(--border-secondary);
+					color: var(--text-primary);
+					background: var(--btn-bg-secondary-hover);
 				}
 			}
 		}

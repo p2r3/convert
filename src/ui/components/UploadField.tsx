@@ -1,7 +1,7 @@
 import { useRef, useState } from 'preact/hooks'
 
 import uploadImage from '../img/fa-upload-solid-full.svg';
-import logoImage from '../../../favicon.ico';
+import logoImage from '../img/logo.svg';
 
 import DarkModeToggle from './DarkModeToggle';
 
@@ -51,7 +51,10 @@ export default function UploadField({ disabled = false }: UploadFieldComponentPr
 
 				<div class="upload-card-header">
 					<h1>
-						<img class="upload-card-logo" src={ logoImage } alt="Logo" />
+						<span
+							className="upload-card-logo"
+							style={{WebkitMaskImage: `url(${logoImage})`, maskImage: `url(${logoImage})`}}
+						></span>
 						<span class="upload-card-title">Convert to it!</span>
 					</h1>
 					<div class="upload-card-theme-toggle">
@@ -78,15 +81,15 @@ export default function UploadField({ disabled = false }: UploadFieldComponentPr
 						tabIndex={ 0 }
 					/>
 					<div className="upload-card-dropzone-icon-container">
-						<img class="upload-card-dropzone-icon" src={ uploadImage } alt="Upload" />
+						<div className="upload-card-dropzone-icon"></div>
 					</div>
 					<button class="upload-card-dropzone-button">Click to add your file</button>
 					<span className="upload-card-dropzone-subtext">or drag and drop here</span>
 				</div>
 
 				<div class="upload-card-buttons">
-					<button className="upload-card-button-advanced-mode">Advanced mode</button>
-					<button className="upload-card-button-help">Help</button>
+					<button className="button">Advanced mode</button>
+					<button className="button">Help</button>
 				</div>
 
 			</div>
