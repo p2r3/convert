@@ -8,7 +8,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "docker": "bun run docker:build && bun run docker:up",
-    "docker:build": "docker compose -f docker/docker-compose.yml -f docker/docker-compose.override.yml build --build-arg GIT_COMMIT_SHA=$(git rev-parse HEAD)",
+    "docker:build": "docker compose -f docker/docker-compose.yml -f docker/docker-compose.override.yml build --build-arg VITE_COMMIT_SHA=$(git rev-parse HEAD)",
     "docker:up": "docker compose -f docker/docker-compose.yml -f docker/docker-compose.override.yml up -d"
   },
   "devDependencies": {

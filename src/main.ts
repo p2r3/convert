@@ -476,6 +476,6 @@ ui.convertButton.onclick = async function () {
 {
   const commitElement = document.querySelector("#commit-id");
   if (commitElement) {
-    commitElement.textContent = import.meta.env.GIT_COMMIT_SHA ?? "unknown";
+    commitElement.textContent = import.meta.env.VITE_COMMIT_SHA ?? "unknown";
   }
 }
