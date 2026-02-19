@@ -3,7 +3,7 @@ import CommonFormats from "src/CommonFormats.ts";
 
 class txtToIcHandler implements FormatHandler {
 
-    public name: string = "dummy";
+    public name: string = "txttoic";
     public supportedFormats?: FileFormat[];
     public ready: boolean = false;
 
