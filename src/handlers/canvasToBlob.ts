@@ -88,8 +88,7 @@ class canvasToBlobHandler implements FormatHandler {
           const name = baseName + pageSuffix + "." + outputFormat.extension;
 
           let bytes: Uint8Array;
-          // Convert the current page's canvas to bytes
-
+          // Convert the current page's canvas to bytes (pagination loop is text-only).
           const mime = outputFormat.mime;
           const quality = mime === "image/jpeg" ? 0.92 : undefined;
 
