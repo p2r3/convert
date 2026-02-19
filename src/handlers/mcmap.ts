@@ -3,7 +3,6 @@ import CommonFormats from "src/CommonFormats.ts";
 
 import pako from "pako";
 import * as NBT from "nbtify";
-import { Jimp, type JimpInstance } from "jimp";
 import JSZip from "jszip";
 
 const DEFAULT_WIDTH = 128
@@ -81,11 +80,13 @@ class mcMapHandler implements FormatHandler {
     public supportedFormats?: FileFormat[];
     public ready: boolean = false;
 
+    #canvas?: HTMLCanvasElement;
+    #ctx?: CanvasRenderingContext2D;
+
     async init() {
 
         this.supportedFormats = [
-            CommonFormats.PNG.supported("png", true, false, true),
-            CommonFormats.PNG.supported("png", false, true, false),
+            CommonFormats.PNG.supported("png", true, true, false),
             {
                 name: "RGB",
                 format: "rgb",
@@ -117,15 +118,19 @@ class mcMapHandler implements FormatHandler {
                 lossless: false
             }
         ];
+
+        this.#canvas = document.createElement("canvas");
+        this.#ctx = this.#canvas.getContext("2d") || undefined;
+
         this.ready = true;
     }
 
     getShades(shadeArray: any, mappedColours: any) {
         for (const colour of mappedColours) {
-            const shade1 = { R: Math.floor(colour.R * 180 / 255), G: Math.floor(colour.G * 180 / 255), B: Math.floor(colour.B * 180 / 255) };
-            const shade2 = { R: Math.floor(colour.R * 220 / 255), G: Math.floor(colour.G * 220 / 255), B: Math.floor(colour.B * 220 / 255) };
-            const shade3 = { R: colour.R, G: colour.G, B: colour.B };
-            const shade4 = { R: Math.floor(colour.R * 135 / 255), G: Math.floor(colour.G * 135 / 255), B: Math.floor(colour.B * 135 / 255) };
+            const shade1 = { R: Math.floor(colour.R * 180 / 255), G: Math.floor(colour.G * 180 / 255), B: Math.floor(colour.B * 180 / 255), A: colour.A };
+            const shade2 = { R: Math.floor(colour.R * 220 / 255), G: Math.floor(colour.G * 220 / 255), B: Math.floor(colour.B * 220 / 255), A: colour.A };
+            const shade3 = { R: colour.R, G: colour.G, B: colour.B, A: colour.A };
+            const shade4 = { R: Math.floor(colour.R * 135 / 255), G: Math.floor(colour.G * 135 / 255), B: Math.floor(colour.B * 135 / 255), A: colour.A };
 
             shadeArray.push(shade1, shade2, shade3, shade4);
         }
@@ -154,6 +159,10 @@ class mcMapHandler implements FormatHandler {
     ): Promise<FileData[]> {
         const outputFiles: FileData[] = [];
 
+        if (!this.#canvas || !this.#ctx) {
+            throw "Handler not initialized.";
+        }
+
         if (inputFormat.mime == CommonFormats.PNG.mime) {
 
             if (outputFormat.internal == 'mcmap_grid') {
@@ -173,57 +182,57 @@ class mcMapHandler implements FormatHandler {
                         }
                     }
                     else if (!Number.isNaN(Number(fileName))) {
-                        console.log(Number(fileName))
-
                         startDigit = parseInt(fileName)
 
                     }
 
-                    const image = await Jimp.read(new Uint8Array(file.bytes).buffer)
+                    const blob = new Blob([file.bytes as BlobPart], { type: inputFormat.mime });
 
-                    image.resize({ w: Math.ceil(image.width / 128) * 128, h: Math.ceil(image.height / 128) * 128 });
+                    const image = new Image();
+                    await new Promise((resolve, reject) => {
+                        image.addEventListener("load", resolve);
+                        image.addEventListener("error", reject);
+                        image.src = URL.createObjectURL(blob);
+                    });
+
+                    this.#canvas.width = Math.ceil(image.naturalWidth / 128) * 128;
+                    this.#canvas.height = Math.ceil(image.naturalHeight / 128) * 128;
+                    this.#ctx.drawImage(image, 0, 0, this.#canvas.width, this.#canvas.height);
+
+                    const pixels = this.#ctx.getImageData(0, 0, this.#canvas.width, this.#canvas.height);
 
                     let shades: any = [];
 
-                    const mappedColours = base_colours.map(([R, G, B]) => ({
-                        R, G, B
+                    const mappedColours = base_colours.map(([R, G, B, A]) => ({
+                        R, G, B, A
                     }));
 
                     this.getShades(shades, mappedColours);
 
                     const columns = Math.ceil(image.width / 128);
-                    const rows = Math.ceil(image.height / 128);
+                    let rows = Math.ceil(image.height / 128);
 
-                    let colours = new Uint8Array(image.bitmap.data.length / 4);
-
+                    let colours = new Uint8Array(pixels.data.length / 4);
 
                     for (let cursor = 0; cursor < colours.length; cursor++) {
 
-                        const closest_colour_match = this.getClosestColor({ R: image.bitmap.data[cursor * 4], G: image.bitmap.data[cursor * 4 + 1], B: image.bitmap.data[cursor * 4 + 2] }, shades)
+                        const closest_colour_match = this.getClosestColor({ R: pixels.data[cursor * 4], G: pixels.data[cursor * 4 + 1], B: pixels.data[cursor * 4 + 2], A: pixels.data[cursor * 4 + 3] }, shades)
 
                         colours[cursor] = shades.indexOf(closest_colour_match)
                     }
-
 
                     for (let column = 0; column < columns; column++) {
 
                         for (let row = 0; row < rows; row++) {
 
-                            const square = new Uint8Array(128 * 128);
-
-                            let offset = 0;
+                            const tile = new Uint8Array(128 * 128);
 
                             for (let t = 0; t < 128; t++) {
-                                const pixelX = column * 128;
-                                const pixelY = row * 128 + t;
-
-                                const start = (pixelY * image.width + pixelX);
+                                const tileOffset = 128 * (this.#canvas.width * column + row)
+                                const start = this.#canvas.width * t + tileOffset;
                                 const end = start + 128;
 
-                                const rowChunk = colours.subarray(start, end);
-                                square.set(rowChunk, offset);
-
-                                offset += rowChunk.length;
+                                tile.set(colours.subarray(start, end), 128 * t)
                             }
 
                             let d = {
@@ -237,7 +246,7 @@ class mcMapHandler implements FormatHandler {
                                     width: new NBT.Int32(128),
                                     height: new NBT.Int32(128),
                                     zCenter: new NBT.Int32(0),
-                                    colors: square
+                                    colors: tile
                                 },
                                 DataVersion: new NBT.Int32(4671)
                             }
@@ -278,25 +287,36 @@ class mcMapHandler implements FormatHandler {
                         fileName = "map_0.dat"
                     }
 
-                    let colours = new Uint8Array(128 * 128);
+                    const blob = new Blob([file.bytes as BlobPart], { type: inputFormat.mime });
 
-                    let image = await Jimp.read(new Uint8Array(file.bytes).buffer);
+                    const image = new Image();
+                    await new Promise((resolve, reject) => {
+                        image.addEventListener("load", resolve);
+                        image.addEventListener("error", reject);
+                        image.src = URL.createObjectURL(blob);
+                    });
 
-                    image.resize({ w: 128, h: 128 });
+                    this.#canvas.width = 128;
+                    this.#canvas.height = 128;
+                    this.#ctx.drawImage(image, 0, 0, this.#canvas.width, this.#canvas.height);
+
+                    const pixels = this.#ctx.getImageData(0, 0, this.#canvas.width, this.#canvas.height);
 
                     let shades: any = [];
 
-                    const mappedColours = base_colours.map(([R, G, B]) => ({
-                        R, G, B
+                    const mappedColours = base_colours.map(([R, G, B, A]) => ({
+                        R, G, B, A
                     }));
 
                     this.getShades(shades, mappedColours);
 
+                    let colours = new Uint8Array(128 * 128);
+
                     for (let cursor = 0; cursor < colours.length; cursor++) {
 
-                        const closestColourMatch = this.getClosestColor({ R: image.bitmap.data[cursor * 4], G: image.bitmap.data[cursor * 4 + 1], B: image.bitmap.data[cursor * 4 + 2] }, shades)
+                        const closest_colour_match = this.getClosestColor({ R: pixels.data[cursor * 4], G: pixels.data[cursor * 4 + 1], B: pixels.data[cursor * 4 + 2], A: pixels.data[cursor * 4 + 3] }, shades)
 
-                        colours[cursor] = shades.indexOf(closestColourMatch)
+                        colours[cursor] = shades.indexOf(closest_colour_match)
                     }
 
                     let d = {
@@ -324,11 +344,8 @@ class mcMapHandler implements FormatHandler {
 
 
                 }
-
-
             }
         }
-
 
         if (inputFormat.internal == 'mcmap' && outputFormat.mime == CommonFormats.PNG.mime) {
 
@@ -345,15 +362,29 @@ class mcMapHandler implements FormatHandler {
                         const colors = NBT.isTag<NBT.ByteArrayTag>(mapdata["colors"]) ? new Uint8Array(mapdata["colors"]) : new Uint8Array([]);
                         const bytes = new Uint8Array(map2rgba(colors, width, height));
 
-                        const buffer = await Jimp.fromBitmap({
-                            data: bytes,
-                            width: 128,
-                            height: 128
-                        }).getBuffer("image/png");
+                        const blob = new Blob([file.bytes as BlobPart], { type: inputFormat.mime });
+
+                        const image = new Image();
+                        await new Promise((resolve, reject) => {
+                            image.addEventListener("load", resolve);
+                            image.addEventListener("error", reject);
+                            image.src = URL.createObjectURL(blob);
+                        });
+
+                        this.#canvas.width = 128;
+                        this.#canvas.height = 128;
+                        this.#ctx.drawImage(image, 0, 0);
+
+                        const bytes2: Uint8Array = await new Promise((resolve, reject) => {
+                            this.#canvas!.toBlob((blob) => {
+                                if (!blob) return reject("Canvas output failed");
+                                blob.arrayBuffer().then(buf => resolve(new Uint8Array(buf)));
+                            }, outputFormat.mime);
+                        });
 
                         outputFiles.push({
                             name: file.name,
-                            bytes: buffer
+                            bytes: bytes2
                         });
                     }
                 }
@@ -388,6 +419,7 @@ class mcMapHandler implements FormatHandler {
             throw new Error("Not Implemented")
         }
         return outputFiles;
+
     }
 }
 
