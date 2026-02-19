@@ -57,7 +57,7 @@ class canvasToBlobHandler implements FormatHandler {
         this.#canvas.width = maxLineWidth;
         this.#canvas.height = Math.floor(fontSize * lines.length + footerPadding);
 
-        if (outputFormat.mime === "image/jpeg") {
+        if (outputFormat.category === "image" || outputFormat.category?.includes("image")) {
           this.#ctx.fillStyle = "white";
           this.#ctx.fillRect(0, 0, this.#canvas.width, this.#canvas.height);
         }
