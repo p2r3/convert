@@ -155,3 +155,7 @@ If your tool requires an external dependency (which it likely does), there are c
 **Please try to avoid CDNs (Content Delivery Networks).** They're really cool on paper, but they don't work well with TypeScript, and each one introduces a tiny bit of instability. For a project that leans heavily on external dependencies, those bits of instability can add up fast.
 
 - If you need to load a WebAssembly binary (or similar), add its path to [vite.config.js](vite.config.js) and target it under `/convert/wasm/`. **Do not link to node_modules**.
+
+## Attribution
+
+`./assets/GeneralUser-GS.sf2` - GeneralUser soundfont. Available at https://schristiancollins.com/generaluser.php

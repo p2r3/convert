@@ -36,6 +36,7 @@
     "pako": "^2.1.0",
     "pdftoimg-js": "^0.2.5",
     "pe-library": "^2.0.1",
+    "spessasynth_core": "^4.1.5",
     "three": "^0.182.0",
     "three-bvh-csg": "^0.0.17",
     "three-mesh-bvh": "^0.9.8",

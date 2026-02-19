@@ -44,6 +44,10 @@ export default defineConfig({
         {
           src: "src/handlers/espeakng.js/js/espeakng.worker.data",
           dest: "js"
+        },
+        {
+          src: "assets/GeneralUser-GS.sf2",
+          dest: "assets"
         }
       ]
     }),
