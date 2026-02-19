@@ -42,20 +42,22 @@ class canvasToBlobHandler implements FormatHandler {
       if (inputFormat.mime === "text/plain") {
 
         const font = "48px sans-serif";
-        const fontSize = parseInt(font);
+        const fontSize = parseInt(font, 10);
         const footerPadding = fontSize * 0.5;
         const string = new TextDecoder().decode(inputFile.bytes);
         const lines = string.split("\n");
 
+        this.#ctx.font = font;
         let maxLineWidth = 0;
         for (const line of lines) {
           const width = this.#ctx.measureText(line).width;
           if (width > maxLineWidth) maxLineWidth = width;
         }
-
-        this.#ctx.font = font;
-        this.#canvas.width = maxLineWidth;
-        this.#canvas.height = Math.floor(fontSize * lines.length + footerPadding);
+        // Ensure minimum dimensions so toBlob() never gets zero-size canvas (can return null)
+        const minWidth = 1;
+        const minHeight = 1;
+        this.#canvas.width = Math.max(minWidth, maxLineWidth);
+        this.#canvas.height = Math.max(minHeight, Math.floor(fontSize * lines.length + footerPadding));
 
         if (outputFormat.mime === "image/jpeg") {
           this.#ctx.fillStyle = "white";
@@ -106,11 +108,13 @@ class canvasToBlobHandler implements FormatHandler {
         }));
       }
       else {
+        const mime = outputFormat.mime;
+        const quality = mime === "image/jpeg" ? 0.92 : undefined;
         bytes = await new Promise((resolve, reject) => {
           this.#canvas!.toBlob((blob) => {
             if (!blob) return reject("Canvas output failed");
             blob.arrayBuffer().then(buf => resolve(new Uint8Array(buf)));
-          }, outputFormat.mime);
+          }, mime, quality);
         });
       }
 
