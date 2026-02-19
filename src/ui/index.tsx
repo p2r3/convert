@@ -12,6 +12,7 @@ export const enum Pages {
 }
 
 export const CurrentPage = signal<Pages>(Pages.Upload);
+export const UploadedFiles = signal<File[]>([]);
 
 function App() {
 	return (

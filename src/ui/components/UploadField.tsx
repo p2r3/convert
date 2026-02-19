@@ -1,3 +1,4 @@
+
 import { useRef, useState } from 'preact/hooks'
 
 import uploadImage from '../img/fa-upload-solid-full.svg';
@@ -6,6 +7,7 @@ import logoImage from '../img/logo.svg';
 import DarkModeToggle from './DarkModeToggle';
 
 import './UploadField.css'
+import { UploadedFiles } from '..';
 
 interface UploadFieldComponentProps {
 	disabled?: boolean
@@ -20,7 +22,6 @@ export default function UploadField({ disabled = false }: UploadFieldComponentPr
 	const handleClick = (ev: MouseEvent) => {
 		ev.preventDefault();
 		fileRef.current?.click();
-		console.debug(fileRef.current?.files);
 	}
 
 	const handleDrop = (ev: DragEvent) => {
@@ -43,6 +44,17 @@ export default function UploadField({ disabled = false }: UploadFieldComponentPr
 	const handleDragOver = (ev: DragEvent) => {
 		ev.preventDefault()
 
+	}
+
+	const handleChange = (_ev: preact.TargetedEvent<HTMLInputElement, Event>) => {
+		const files = fileRef.current?.files;
+		// check if files uploaded were empty
+		if (
+			!files
+			|| files.length === 0
+		) return
+
+		UploadedFiles.value.push(...files);
 	}
 
 	return (
@@ -69,6 +81,7 @@ export default function UploadField({ disabled = false }: UploadFieldComponentPr
 					onDragOver={ handleDragOver }
 					onDragEnter={ handleDragEnter }
 					onDragLeave={ handleDragLeave }
+					onChange={ handleChange }
 				>
 					<input
 						ref={ fileRef }
