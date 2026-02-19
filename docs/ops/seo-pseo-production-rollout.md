@@ -66,7 +66,7 @@ bun run cf:deploy
 ```bash
 curl -fsS https://converttoit.com/_ops/health | jq
 curl -fsS https://converttoit.com/_ops/version | jq
-CF_DEPLOY_BASE_URL="https://converttoit.com" bun run cf:logs:check
+CF_DEPLOY_BASE_URL="https://converttoit.com" bun run cf:post-gate
 ```
 
 ### 3.5 Rollback trigger
@@ -107,9 +107,9 @@ Capture and attach these in each production release note:
 2. `bun run cf:deploy` output (deployed version id).
 3. `/_ops/health` JSON snapshot (timestamp + environment).
 4. `/_ops/version` JSON snapshot (version + commit metadata).
-5. `bun run cf:logs:check` output containing:
-   - generated correlation id
-   - `SUCCESS: correlation id found in Cloudflare tail output.`
+5. `bun run cf:post-gate` output containing:
+   - `/_ops/health` + `/_ops/version` JSON responses
+   - `SUCCESS: /_ops + log-check gate passed.`
 
 ## 7) Residual risks and follow-ups
 

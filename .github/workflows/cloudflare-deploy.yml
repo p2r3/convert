@@ -97,3 +97,9 @@ jobs:
 
       - name: Deploy
         run: bash scripts/deploy.sh "${TARGET_ENV}"
+
+      - name: Post-deploy observability gate (/_ops + log-check)
+        if: env.TARGET_ENV == 'production'
+        env:
+          CF_DEPLOY_BASE_URL: https://converttoit.com
+        run: bash scripts/cf-post-deploy-gate.sh production --base-url "$CF_DEPLOY_BASE_URL"

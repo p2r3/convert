@@ -281,6 +281,7 @@ for (const requiredToken of [
   "CANONICAL_ORIGIN = \"https://converttoit.com\"",
   "\"converttoit.app\"",
   "\"www.converttoit.app\"",
+  "\"www.converttoit.com\"",
   "Response.redirect(canonicalUrl.toString(), 301)"
 ]) {
   if (!workerSource.includes(requiredToken)) {

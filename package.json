@@ -11,6 +11,7 @@
     "cf:deploy": "bash scripts/deploy.sh production",
     "cf:deploy:staging": "bash scripts/deploy.sh staging",
     "cf:deploy:dry-run": "bash scripts/deploy.sh production --dry-run",
+    "cf:post-gate": "bash scripts/cf-post-deploy-gate.sh production --base-url $CF_DEPLOY_BASE_URL",
     "cf:logs:check": "bash scripts/cf-log-check.sh production --base-url $CF_DEPLOY_BASE_URL",
     "cf:rollback": "bash scripts/cf-rollback.sh production",
     "check:seo-policy": "node scripts/check-seo-domain-policy.mjs",

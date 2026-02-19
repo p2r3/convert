@@ -37,6 +37,8 @@ function assertFileExists(relativePath) {
 
 const requiredFiles = [
   "index.html",
+  ".github/workflows/cloudflare-deploy.yml",
+  ".github/workflows/pages.yml",
   "public/robots.txt",
   "public/sitemap.xml",
   "public/privacy.html",
@@ -55,6 +57,7 @@ const requiredFiles = [
   "wrangler.toml.example",
   "scripts/build-pseo.mjs",
   "scripts/check-cloudflare-asset-sizes.mjs",
+  "scripts/cf-post-deploy-gate.sh",
   "scripts/validate-safe.sh"
 ];
 
@@ -142,10 +145,45 @@ for (const requiredWorkerToken of [
   "MAX_CORRELATION_ID_LENGTH = 64",
   "CANONICAL_ORIGIN = \"https://converttoit.com\"",
   "\"converttoit.app\"",
+  "\"www.converttoit.com\"",
   "Response.redirect(canonicalUrl.toString(), 301)"
 ]) {
   if (!workerSource.includes(requiredWorkerToken)) {
     errors.push(`cloudflare/worker/index.mjs: missing hardening token -> ${requiredWorkerToken}`);
+  }
+}
+
+const wranglerTemplate = readFile("wrangler.toml.example");
+for (const requiredWranglerToken of [
+  "binding = \"ASSETS\"",
+  "run_worker_first = true"
+]) {
+  if (!wranglerTemplate.includes(requiredWranglerToken)) {
+    errors.push(`wrangler.toml.example: missing token -> ${requiredWranglerToken}`);
+  }
+}
+
+const cloudflareWorkflow = readFile(".github/workflows/cloudflare-deploy.yml");
+for (const requiredWorkflowToken of [
+  "Post-deploy observability gate (/_ops + log-check)",
+  "scripts/cf-post-deploy-gate.sh",
+  "CF_DEPLOY_BASE_URL: https://converttoit.com"
+]) {
+  if (!cloudflareWorkflow.includes(requiredWorkflowToken)) {
+    errors.push(`.github/workflows/cloudflare-deploy.yml: missing token -> ${requiredWorkflowToken}`);
+  }
+}
+
+const postDeployScript = readFile("scripts/cf-post-deploy-gate.sh");
+for (const requiredGateToken of [
+  "base host must be converttoit.com",
+  "/_ops/health",
+  "/_ops/version",
+  "cf-log-check.sh",
+  "SUCCESS: /_ops + log-check gate passed"
+]) {
+  if (!postDeployScript.includes(requiredGateToken)) {
+    errors.push(`scripts/cf-post-deploy-gate.sh: missing gate token -> ${requiredGateToken}`);
   }
 }
 

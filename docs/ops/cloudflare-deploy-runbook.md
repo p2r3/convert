@@ -8,6 +8,7 @@ Last updated: 2026-02-19
 - Edge Worker entrypoint: `cloudflare/worker/index.mjs`
 - Wrangler config template: `wrangler.toml.example` (committed)
 - Wrangler runtime config: `wrangler.toml` (gitignored)
+- Workers assets config: `run_worker_first = true` to enforce canonical redirect logic before static asset responses
 - Ops endpoints:
   - `GET|HEAD /_ops/health`
   - `GET|HEAD /_ops/version`
@@ -100,9 +101,9 @@ curl -fsS https://<your-worker-url>/_ops/version | jq
 Verify logs end-to-end with correlation id:
 
 ```bash
-CF_DEPLOY_BASE_URL="https://<your-worker-url>" \
+CF_DEPLOY_BASE_URL="https://converttoit.com" \
 CF_OPS_LOG_TOKEN="${CF_OPS_LOG_TOKEN:-}" \
-bash scripts/cf-log-check.sh production
+bash scripts/cf-post-deploy-gate.sh production
 ```
 
 Notes:
@@ -110,10 +111,7 @@ Notes:
 - `--base-url` must be `https://...`.
 - `converttoit.app` is blocked for `--base-url` (redirect-only domain).
 
-Expected result:
-
-- Script prints a JSON response from `/_ops/log-ping`
-- Script ends with `SUCCESS: correlation id found in Cloudflare tail output.`
+Expected result: `SUCCESS: /_ops + log-check gate passed.`
 
 ## 5) Rollback
 

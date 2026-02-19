@@ -61,10 +61,12 @@ Cloudflare deployment assets are defined in:
 - `wrangler.toml` (local runtime config, gitignored)
 - `cloudflare/worker/index.mjs`
 - `scripts/deploy.sh`
+- `scripts/cf-post-deploy-gate.sh`
 - `scripts/cf-log-check.sh`
 - `scripts/cf-rollback.sh`
 
 To satisfy Workers static asset limits, oversized wasm binaries (FFmpeg core and Pandoc) are loaded from remote URLs by default. You can override build-time sources via `VITE_FFMPEG_CORE_BASE_URL` / `VITE_PANDOC_WASM_URL`.
+`wrangler.toml.example` enables `run_worker_first = true` so canonical host redirects and ops endpoints are enforced before static asset responses.
 
 Operational runbook:
 
@@ -82,7 +84,7 @@ VALIDATE_INCLUDE_BUILD=1 bun run validate:safe
 bun run check:cf-assets
 bun run cf:deploy:dry-run
 bun run cf:deploy
-CF_DEPLOY_BASE_URL="https://converttoit.com" bun run cf:logs:check
+CF_DEPLOY_BASE_URL="https://converttoit.com" bun run cf:post-gate
 ```
 
 ### Docker (prebuilt image)
