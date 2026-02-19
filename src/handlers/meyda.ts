@@ -265,8 +265,7 @@ class meydaHandler implements FormatHandler {
               const magnitude = Math.sqrt(real[j] * real[j] + imaginary[j] * imaginary[j]) / bufferSize * 2;
               const phase = Math.atan2(imaginary[j], real[j]);
 
-              // Visual Y: 0 at top, corresponding to j=channelHeight-1 (highest freq).
-              // We want low freq (j=0) at bottom.
+              // Map frequency bins to pixel rows, ensuring low frequencies (j=0) are at the bottom.
               const pixelIndex = (channelHeight - j - 1) * 4;
 
               // Encode magnitude in R, G channels
