@@ -14,7 +14,8 @@
     "docker:build": "docker compose -f docker/docker-compose.yml -f docker/docker-compose.override.yml build --build-arg VITE_COMMIT_SHA=$(git rev-parse HEAD)",
     "docker:up": "docker compose -f docker/docker-compose.yml -f docker/docker-compose.override.yml up -d",
     "desktop:build": "tsc && IS_DESKTOP=true vite build",
-    "desktop:start": "bun run desktop:build && electron .",
+    "desktop:preview": "electron .",
+    "desktop:start": "bun run desktop:build && bun run desktop:preview",
     "desktop:dist:win": "bun run desktop:build && electron-builder --win",
     "desktop:dist:mac": "bun run desktop:build && electron-builder --mac",
     "desktop:dist:linux": "bun run desktop:build && electron-builder --linux"
