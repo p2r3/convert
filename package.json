@@ -1,6 +1,8 @@
 {
   "name": "p2r3-convert",
   "productName": "Convert to it!",
+  "author": "PortalRunner",
+  "description": "Truly universal online file converter",
   "private": true,
   "version": "0.0.0",
   "type": "module",
