@@ -1,4 +1,5 @@
 const { app, BrowserWindow, protocol, net } = require('electron');
+const { URL } = require('node:url');
 const path = require('path');
 
 protocol.registerSchemesAsPrivileged([
@@ -63,6 +64,15 @@ app.whenReady().then(() => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 });
+
+app.on('web-contents-created', (event, contents) => {
+  contents.on('will-navigate', (event, navigationUrl) => {
+    const parsedUrl = new URL(navigationUrl)
+    if (parsedUrl.origin !== 'app://') {
+      event.preventDefault()
+    }
+  })
+})
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
