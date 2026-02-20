@@ -155,3 +155,13 @@ If your tool requires an external dependency (which it likely does), there are c
 **Please try to avoid CDNs (Content Delivery Networks).** They're really cool on paper, but they don't work well with TypeScript, and each one introduces a tiny bit of instability. For a project that leans heavily on external dependencies, those bits of instability can add up fast.
 
 - If you need to load a WebAssembly binary (or similar), add its path to [vite.config.js](vite.config.js) and target it under `/convert/wasm/`. **Do not link to node_modules**.
+### Example: STL → PNG heightmap (experimental)
+
+There is an experimental handler for **STL 3D models** that shows how to plug a new tool into the system:
+
+- **Input:** STL 3D Model (`.stl`)
+- **Output:** PNG (`.png`) heightmap, where pixel brightness corresponds roughly to the model’s height (Z) at that point.
+- **Implementation:** The handler lives in `src/handlers/stl.ts`, uses `@amandaghassaei/stl-parser` in the browser to parse binary/ASCII STL geometry, and generates a 1024×1024 grayscale PNG.
+- **Routing:** The output is a regular PNG (same extension and MIME type), so it can be converted further by existing image handlers (e.g. PNG → PDF, etc.).
+
+This is a good reference if you want to add more 3D-related formats or other “weird” conversions that still end up as common formats like PNG.

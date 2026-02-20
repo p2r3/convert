@@ -19,6 +19,7 @@
     "vite-tsconfig-paths": "^6.0.5"
   },
   "dependencies": {
+    "@amandaghassaei/stl-parser": "^1.7.0",
     "@bjorn3/browser_wasi_shim": "^0.4.2",
     "@ffmpeg/core": "^0.12.10",
     "@ffmpeg/ffmpeg": "^0.12.15",
