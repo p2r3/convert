@@ -61,7 +61,7 @@ class pandocHandler implements FormatHandler {
     ["opml", "OPML"],
     ["org", "Emacs Org mode"],
     ["pdf", "PDF via Typst"],
-    ["plain", "plain text"],
+    ["text", "plain text"],
     ["pod", "Perl POD"],
     ["pptx", "PowerPoint"],
     ["revealjs", "reveal.js HTML slides"],
@@ -111,7 +111,7 @@ class pandocHandler implements FormatHandler {
     ["epub3", "epub"],
     ["rst", "rst"],
     ["org", "org"],
-    ["plain", "txt"],
+    ["text", "txt"],
     ["json", "json"],
     ["native", "native"],
     ["docbook", "xml"],
@@ -170,11 +170,13 @@ class pandocHandler implements FormatHandler {
     outputFormats.forEach(format => allFormats.add(format));
 
     this.supportedFormats = [];
-    for (const format of allFormats) {
+    for (let format of allFormats) {
       // PDF doesn't seem to work, at least with this configuration
       if (format === "pdf") continue;
       // RevealJS seems to hang forever?
       if (format === "revealjs") continue;
+      // Adjust plaintext format name to match other handlers
+      if (format === "plain") format = "text";
       const name = pandocHandler.formatNames.get(format) || format;
       const extension = pandocHandler.formatExtensions.get(format) || format;
       const mimeType = normalizeMimeType(mime.getType(extension) || `text/${format}`);
