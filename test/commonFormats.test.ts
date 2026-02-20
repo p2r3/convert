@@ -17,6 +17,7 @@ declare global {
 const server = Bun.serve({
   async fetch (req) {
     let path = new URL(req.url).pathname.replace("/convert/", "") || "index.html";
+    path = path.replaceAll("..", "");
     if (path.startsWith("/test/")) path = "../test/resources/" + path.slice(6);
     const file = Bun.file(`${__dirname}/../dist/${path}`);
     if (!(await file.exists())) return new Response("Not Found", { status: 404 });
@@ -109,7 +110,7 @@ test("mp4 → apng", async () => {
   const conversion = await attemptConversion(
     ["doom.mp4"],
     CommonFormats.MP4,
-    CommonFormats.PNG
+    CommonFormats.PNG.builder("apng").withFormat("apng")
   );
 
   expect(conversion).toBeTruthy();

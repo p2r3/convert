@@ -12,8 +12,9 @@ class envelopeHandler implements FormatHandler {
 
   public supportedFormats: FileFormat[] = [
     CommonFormats.DOCX.builder("docx").allowFrom(),
-    CommonFormats.PPTX.builder("pptx").allowFrom(),
-    CommonFormats.XLSX.builder("xlsx").allowFrom(),
+    // Currently, Pancoc handles PPTX and XLSX better than Envelope.
+    // CommonFormats.PPTX.builder("pptx").allowFrom(),
+    // CommonFormats.XLSX.builder("xlsx").allowFrom(),
     {
       name: "OpenDocument Text",
       format: "odt",
