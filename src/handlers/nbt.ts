@@ -34,6 +34,39 @@ class nbtHandler implements FormatHandler {
                 category: "data",
                 lossless: true // only compression data is lost
             },
+            {
+                name: "Minecraft Schematic",
+                format: "SCHEMATIC",
+                extension: "schematic",
+                mime: "application/x-minecraft-schematic",
+                from: true,
+                to: true,
+                internal: "nbt",
+                category: "data",
+                lossless: true
+            },
+            {
+                name: "Sponge Schematic",
+                format: "SCHEM",
+                extension: "schem",
+                mime: "application/x-minecraft-schem",
+                from: true,
+                to: true,
+                internal: "nbt",
+                category: "data",
+                lossless: true
+            },
+            {
+                name: "Litematica Schematic",
+                format: "LITEMATIC",
+                extension: "litematic",
+                mime: "application/x-minecraft-litematic",
+                from: true,
+                to: true,
+                internal: "nbt",
+                category: "data",
+                lossless: true
+            },
         ]
         this.ready = true
     }
