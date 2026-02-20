@@ -1,4 +1,5 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
+import { extractEvents, tableToString, stringToTable, buildMidi } from "./midi/midifilelib.js";
 
 const SAMPLE_RATE = 44100;
 const BUFFER_FRAMES = 4096;
@@ -78,9 +79,10 @@ class midiHandler implements FormatHandler {
     this.#sfontBin = sfontBin;
 
     this.supportedFormats.push(
-      { name: "MIDI",          format: "mid",  extension: "mid",  mime: "audio/midi",   from: true,  to: false, internal: "mid",  category: "audio", lossless: true },
+      { name: "MIDI",          format: "mid",  extension: "mid",  mime: "audio/midi",   from: true,  to: true,  internal: "mid",  category: "audio", lossless: true },
       { name: "MIDI",          format: "midi", extension: "midi", mime: "audio/x-midi", from: true,  to: false, internal: "midi", category: "audio", lossless: true },
       { name: "Waveform Audio", format: "wav", extension: "wav",  mime: "audio/wav",    from: false, to: true,  internal: "wav",  category: "audio", lossless: true },
+      { name: "Plain Text",    format: "txt", extension: "txt",  mime: "text/plain",   from: true,  to: true,  internal: "txt",  category: "text",  lossless: true },
     );
 
     this.ready = true;
@@ -89,12 +91,33 @@ class midiHandler implements FormatHandler {
   async doConvert(
     inputFiles: FileData[],
     _inputFormat: FileFormat,
-    _outputFormat: FileFormat
+    outputFormat: FileFormat
   ): Promise<FileData[]> {
     if (!this.ready || !this.#sfontBin) throw "Handler not initialized.";
 
     const JSSynth = this.#JSSynth;
     const outputFiles: FileData[] = [];
+
+    if (outputFormat.internal === "txt") {
+      for (const inputFile of inputFiles) {
+        const table = extractEvents(inputFile.bytes);
+        const text  = tableToString(table);
+        const bytes = new TextEncoder().encode(text);
+        outputFiles.push({ bytes, name: inputFile.name.replace(/\.[^.]+$/, "") + ".txt" });
+      }
+      return outputFiles;
+    }
+
+    if (outputFormat.internal === "mid" || outputFormat.internal === "midi") {
+      const ext = outputFormat.extension;
+      for (const inputFile of inputFiles) {
+        const text  = new TextDecoder().decode(inputFile.bytes);
+        const table = stringToTable(text);
+        const bytes = buildMidi(table);
+        outputFiles.push({ bytes, name: inputFile.name.replace(/\.[^.]+$/, "") + "." + ext });
+      }
+      return outputFiles;
+    }
 
     for (const inputFile of inputFiles) {
       const synth = new JSSynth.Synthesizer();
