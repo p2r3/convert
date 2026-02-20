@@ -646,3 +646,96 @@ export function buildMidi(table) {
 
   return buf;
 }
+
+// Builder helpers
+
+/**
+ * Append a note-on + note-off pair to an event array (in-place).
+ * @param {Array<Object>} events       target array
+ * @param {number}        track        MIDI track index
+ * @param {number}        channel      MIDI channel (0–15)
+ * @param {number}        tick         start tick
+ * @param {number}        note         MIDI note number (0–127)
+ * @param {number}        durationTicks
+ * @param {number}        [velocity=100]
+ */
+export function addNote(events, track, channel, tick, note, durationTicks, velocity = 100) {
+  events.push(
+    { track, tick,                    absoluteSec: null, type: "note_on",  channel, note, noteName: noteName(note), velocity },
+    { track, tick: tick + Math.max(1, durationTicks), absoluteSec: null, type: "note_off", channel, note, noteName: noteName(note), velocity: 0 },
+  );
+}
+
+/**
+ * Prepend a MIDI file header event and a tempo meta event to an event array (in-place).
+ * Call this after all notes are already in the array so numTracks is computed correctly.
+ * @param {Array<Object>} events       event array
+ * @param {number}        ticksPerBeat ticks per quarter note
+ * @param {number}        bpm          tempo in beats per minute
+ * @param {number}        [format=0]   MIDI file format (0 = single track)
+ */
+export function initTrack(events, ticksPerBeat, bpm, format = 0) {
+  if (bpm <= 0) throw new Error("initTrack: bpm must be positive");
+  const usedTracks = new Set(events.filter(e => e.track >= 0).map(e => e.track));
+  const numTracks  = usedTracks.size || 1;
+
+  events.unshift(
+    { track: -1, tick: 0, absoluteSec: null, type: "header",
+      format, numTracks, division: ticksPerBeat, ticksPerBeat },
+    { track: 0,  tick: 0, absoluteSec: null, type: "meta", metaType: 0x51, metaName: "Set Tempo",
+      tempo: Math.round(60_000_000 / bpm), bpm },
+  );
+}
+
+/** Convert a frequency in Hz to the nearest MIDI note number (clamped 0–127). */
+function freqToMidi(hz) {
+  return Math.max(0, Math.min(127, Math.round(69 + 12 * Math.log2(hz / 440))));
+}
+
+/**
+ * Parse a GRUB init tune string and return a MIDI event table for buildMidi().
+ *
+ * Accepted input:
+ *   "tempo freq1 dur1 freq2 dur2 ..."            (bare numbers)
+ *   GRUB_INIT_TUNE="tempo freq1 dur1 ..."        (shell-variable form, comments allowed)
+ *
+ * tempo  – BPM (60 = 1 beat/s)
+ * freq   – Hz; 0 = rest
+ * dur    – duration in beats
+ *
+ * @param {string} text
+ * @returns {Array<Object>}
+ */
+export function parseGrubTune(text) {
+  // Try to extract from GRUB_INIT_TUNE="..." wrapper first
+  const tuneMatch = text.match(/GRUB_INIT_TUNE\s*=\s*["']([^"']+)["']/);
+  const raw = tuneMatch
+    ? tuneMatch[1]
+    : text.split("\n").filter(l => !l.trim().startsWith("#")).join(" ");
+
+  const nums = raw.trim().split(/\s+/).map(Number);
+  if (nums.length < 3 || nums.some(isNaN)) {
+    throw new Error("Invalid GRUB init tune: expected 'tempo freq dur [freq dur ...]'");
+  }
+
+  const TICKS   = 480;
+  const bpm     = nums[0];
+  if (bpm <= 0) throw new Error("Invalid GRUB init tune: tempo must be positive");
+
+  const events  = [];
+  let   tick    = 0;
+
+  for (let i = 1; i + 1 < nums.length; i += 2) {
+    const freq          = nums[i];
+    const durationTicks = Math.round(nums[i + 1] * TICKS);
+
+    if (freq > 0) {
+      addNote(events, 0, 0, tick, freqToMidi(freq), durationTicks);
+    }
+    tick += Math.max(1, durationTicks);
+  }
+
+  events.push({ track: 0, tick, absoluteSec: null, type: "end_of_track", metaType: 0x2f });
+  initTrack(events, TICKS, bpm, 0);
+  return events;
+}

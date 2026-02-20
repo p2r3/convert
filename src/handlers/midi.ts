@@ -1,5 +1,5 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-import { extractEvents, tableToString, stringToTable, buildMidi } from "./midi/midifilelib.js";
+import { extractEvents, tableToString, stringToTable, buildMidi, parseGrubTune } from "./midi/midifilelib.js";
 
 const SAMPLE_RATE = 44100;
 const BUFFER_FRAMES = 4096;
@@ -112,7 +112,9 @@ class midiHandler implements FormatHandler {
       const ext = outputFormat.extension;
       for (const inputFile of inputFiles) {
         const text  = new TextDecoder().decode(inputFile.bytes);
-        const table = stringToTable(text);
+        const table = text.trimStart().startsWith("# MIDI File")
+          ? stringToTable(text)
+          : parseGrubTune(text);
         const bytes = buildMidi(table);
         outputFiles.push({ bytes, name: inputFile.name.replace(/\.[^.]+$/, "") + "." + ext });
       }
