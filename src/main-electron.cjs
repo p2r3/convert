@@ -1,4 +1,4 @@
-const { app, BrowserWindow, protocol, net } = require('electron');
+const { app, BrowserWindow, protocol, net, shell } = require('electron');
 const { URL } = require('node:url');
 const path = require('path');
 
@@ -70,6 +70,7 @@ app.on('web-contents-created', (event, contents) => {
     const parsedUrl = new URL(navigationUrl)
     if (parsedUrl.origin !== 'app://') {
       event.preventDefault()
+      shell.openExternal(navigationUrl);
     }
   })
 })
