@@ -1,4 +1,4 @@
-// file: obj.ts
+// file: src/handlers/obj.ts
 
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 
@@ -133,7 +133,7 @@ class objHandler implements FormatHandler {
   public supportedFormats?: FileFormat[];
   public ready: boolean = false;
 
-  async init () {
+  async init() {
     this.supportedFormats = [
       {
         name: "Wavefront OBJ 3D Model",
@@ -144,7 +144,7 @@ class objHandler implements FormatHandler {
         to: false,
         internal: "obj",
         category: ["3d"],
-        lossless: true
+        lossless: true,
       },
       {
         // This must match the STL node used by your stlHandler
@@ -156,32 +156,50 @@ class objHandler implements FormatHandler {
         to: true,
         internal: "stl",
         category: ["3d"],
-        lossless: true
-      }
+        lossless: true,
+      },
     ];
     this.ready = true;
   }
 
-  async doConvert (
+  async doConvert(
     inputFiles: FileData[],
-    inputFormat: FileFormat,
-    outputFormat: FileFormat
+    _inputFormat: FileFormat,
+    _outputFormat: FileFormat
   ): Promise<FileData[]> {
-
     const first = inputFiles[0];
 
-    // Decode OBJ text
+    // Normalize bytes to a plain Uint8Array so TextDecoder is happy
+    const rawBytes = first.bytes as unknown;
+    let u8: Uint8Array;
+
+    if (rawBytes instanceof Uint8Array) {
+      u8 = new Uint8Array(rawBytes.byteLength);
+      u8.set(rawBytes);
+    } else if (ArrayBuffer.isView(rawBytes)) {
+      const view = rawBytes as ArrayBufferView;
+      u8 = new Uint8Array(view.byteLength);
+      u8.set(new Uint8Array(view.buffer, view.byteOffset, view.byteLength));
+    } else {
+      u8 = new Uint8Array(rawBytes as ArrayBufferLike);
+    }
+
     const decoder = new TextDecoder("utf-8");
-    const text = decoder.decode(first.bytes);
+    const text = decoder.decode(u8);
 
     const { vertices, faces } = parseOBJ(text);
 
     if (vertices.length === 0 || faces.length === 0) {
       // If parsing fails, just echo the original file so the user doesn't lose it
-      return [{
-        name: first.name,
-        bytes: new Uint8Array(first.bytes),
-      }];
+      const echoBytes = new Uint8Array(u8.byteLength);
+      echoBytes.set(u8);
+
+      return [
+        {
+          name: first.name,
+          bytes: echoBytes,
+        },
+      ];
     }
 
     const stlBytes = writeBinarySTL(vertices, faces);

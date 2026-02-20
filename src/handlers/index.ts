@@ -1,86 +1,97 @@
+// file: src/handlers/index.ts
+
 import type { FormatHandler } from "../FormatHandler.ts";
 
-import objHandler from "./obj.ts";
-import stlHandler from "./stl.ts";
-import canvasToBlobHandler from "./canvasToBlob.ts";
-import meydaHandler from "./meyda.ts";
-import htmlEmbedHandler from "./htmlEmbed.ts";
-import FFmpegHandler from "./FFmpeg.ts";
-import pdftoimgHandler from "./pdftoimg.ts";
-import ImageMagickHandler from "./ImageMagick.ts";
-import svgTraceHandler from "./svgTrace.ts";
-import { renameZipHandler, renameTxtHandler } from "./rename.ts";
-import envelopeHandler from "./envelope.ts";
-import pandocHandler from "./pandoc.ts";
-import svgForeignObjectHandler from "./svgForeignObject.ts";
-import qoiFuHandler from "./qoi-fu.ts";
-import sppdHandler from "./sppd.ts";
-import threejsHandler from "./threejs.ts";
-import sqlite3Handler from "./sqlite.ts";
-import vtfHandler from "./vtf.ts";
-import mcMapHandler from "./mcmap.ts";
-import jszipHandler from "./jszip.ts";
 import alsHandler from "./als.ts";
-import qoaFuHandler from "./qoa-fu.ts";
-import pyTurtleHandler from "./pyTurtle.ts";
-import { fromJsonHandler, toJsonHandler } from "./json.ts";
-import nbtHandler from "./nbt.ts";
-import peToZipHandler from "./petozip.ts";
-import flptojsonHandler from "./flptojson.ts";
-import floHandler from "./flo.ts";
-import cgbiToPngHandler from "./cgbi-to-png.ts";
-import batToExeHandler from "./batToExe.ts";
-import textEncodingHandler from "./textEncoding.ts";
-import sb3ToHtmlHandler from "./sb3tohtml.ts";
-import libopenmptHandler from "./libopenmpt.ts";
-import lzhHandler from "./lzh.ts";
-import espeakngHandler from "./espeakng.js"
-import textToShellHandler from "./texttoshell.ts";
+import batToExeHandler from "./batch.ts";
 import batchHandler from "./batch.ts";
 import bsorHandler from "./bsor.ts";
+import canvasToBlobHandler from "./canvasToBlob.ts";
+import cgbiToPngHandler from "./ImageMagick.ts";
+import envelopeHandler from "./envelope.ts";
+import espeakngHandler from "./espeakng.ts";
+import FFmpegHandler from "./FFmpeg.ts";
+import flptojsonHandler from "./flptojson.ts";
+import floHandler from "./flo.ts";
+
+// FIXED: json exports are named, not default
+import { fromJsonHandler, toJsonHandler } from "./json.ts";
+
+import htmlEmbedHandler from "./htmlEmbed.ts";
+import ImageMagickHandler from "./ImageMagick.ts";
+import jszipHandler from "./jszip.ts";
+import libopenmptHandler from "./libopenmpt.ts";
+import lzhHandler from "./lzh.ts";
+import mcMapHandler from "./mcmap.ts";
+import meydaHandler from "./meyda.ts";
+import nbtHandler from "./nbt.ts";
+import objHandler from "./obj.ts";
+import pandocHandler from "./pandoc.ts";
+import pdftoimgHandler from "./pdftoimg.ts";
+import peToZipHandler from "./petozip.ts";
+import pngHeightmapToStlHandler from "./pngHeightmapToStl.ts";
+import pyTurtleHandler from "./pyTurtle.ts";
+import qoaFuHandler from "./qoa-fu.ts";
+import qoiFuHandler from "./qoi-fu.ts";
+
+// FIXED: rename exports are named, not default
+import { renameTxtHandler, renameZipHandler } from "./rename.ts";
+
+import sb3ToHtmlHandler from "./sb3tohtml.ts";
+import sppdHandler from "./sppd.ts";
+import sqlite3Handler from "./sqlite.ts";
+import stlHandler from "./stl.ts";
+import svgForeignObjectHandler from "./svgForeignObject.ts";
+import svgTraceHandler from "./svgTrace.ts";
+import textEncodingHandler from "./textEncoding.ts";
+import textToShellHandler from "./texttoshell.ts";
+import threejsHandler from "./threejs.ts";
+import vtfHandler from "./vtf.ts";
 
 const handlers: FormatHandler[] = [];
-try { handlers.push(new svgTraceHandler()) } catch (_) { };
-try { handlers.push(new canvasToBlobHandler()) } catch (_) { };
-try { handlers.push(new meydaHandler()) } catch (_) { };
-try { handlers.push(new htmlEmbedHandler()) } catch (_) { };
-try { handlers.push(new FFmpegHandler()) } catch (_) { };
-try { handlers.push(new pdftoimgHandler()) } catch (_) { };
-try { handlers.push(new ImageMagickHandler()) } catch (_) { };
-try { handlers.push(renameZipHandler) } catch (_) { };
-try { handlers.push(renameTxtHandler) } catch (_) { };
-try { handlers.push(new envelopeHandler()) } catch (_) { };
-try { handlers.push(new svgForeignObjectHandler()) } catch (_) { };
-try { handlers.push(new qoiFuHandler()) } catch (_) { };
-try { handlers.push(new sppdHandler()) } catch (_) { };
-try { handlers.push(new threejsHandler()) } catch (_) { };
-try { handlers.push(new sqlite3Handler()) } catch (_) { };
-try { handlers.push(new vtfHandler()) } catch (_) { };
-try { handlers.push(new mcMapHandler()) } catch (_) { };
-try { handlers.push(new jszipHandler()) } catch (_) { };
-try { handlers.push(new alsHandler()) } catch (_) { };
-try { handlers.push(new qoaFuHandler()) } catch (_) { };
-try { handlers.push(new pyTurtleHandler()) } catch (_) { };
-try { handlers.push(new fromJsonHandler()) } catch (_) { };
-try { handlers.push(new toJsonHandler()) } catch (_) { };
-try { handlers.push(new nbtHandler()) } catch (_) { };
-try { handlers.push(new peToZipHandler()) } catch (_) { };
-try { handlers.push(new flptojsonHandler()) } catch (_) { };
-try { handlers.push(new floHandler()) } catch (_) { };
-try { handlers.push(new cgbiToPngHandler()) } catch (_) { };
-try { handlers.push(new batToExeHandler()) } catch (_) { };
-try { handlers.push(new sb3ToHtmlHandler()) } catch (_) { };
-try { handlers.push(new textEncodingHandler()) } catch (_) { };
-try { handlers.push(new libopenmptHandler()) } catch (_) { };
-try { handlers.push(new lzhHandler()) } catch (_) { };
-try { handlers.push(new pandocHandler()) } catch (_) { };
-try { handlers.push(new espeakngHandler()) } catch (_) { };
-try { handlers.push(new textToShellHandler()) } catch (_) { };
-try { handlers.push(new batchHandler()) } catch (_) { };
-try { handlers.push(new bsorHandler()) } catch (_) { };
-try { handlers.push(new stlHandler()) } catch (_) { };
 
-try { handlers.push(new objHandler()) } catch (_) { };
+try { handlers.push(new svgTraceHandler()) } catch (_) {}
+try { handlers.push(new canvasToBlobHandler()) } catch (_) {}
+try { handlers.push(new meydaHandler()) } catch (_) {}
+try { handlers.push(new htmlEmbedHandler()) } catch (_) {}
+try { handlers.push(new FFmpegHandler()) } catch (_) {}
+try { handlers.push(new pdftoimgHandler()) } catch (_) {}
+try { handlers.push(new ImageMagickHandler()) } catch (_) {}
+try { handlers.push(renameZipHandler) } catch (_) {}
+try { handlers.push(renameTxtHandler) } catch (_) {}
+try { handlers.push(new envelopeHandler()) } catch (_) {}
+try { handlers.push(new svgForeignObjectHandler()) } catch (_) {}
+try { handlers.push(new qoiFuHandler()) } catch (_) {}
+try { handlers.push(new sppdHandler()) } catch (_) {}
+try { handlers.push(new threejsHandler()) } catch (_) {}
+try { handlers.push(new sqlite3Handler()) } catch (_) {}
+try { handlers.push(new vtfHandler()) } catch (_) {}
+try { handlers.push(new mcMapHandler()) } catch (_) {}
+try { handlers.push(new jszipHandler()) } catch (_) {}
+try { handlers.push(new alsHandler()) } catch (_) {}
+try { handlers.push(new qoaFuHandler()) } catch (_) {}
+try { handlers.push(new pyTurtleHandler()) } catch (_) {}
+try { handlers.push(new fromJsonHandler()) } catch (_) {}
+try { handlers.push(new toJsonHandler()) } catch (_) {}
+try { handlers.push(new nbtHandler()) } catch (_) {}
+try { handlers.push(new peToZipHandler()) } catch (_) {}
+try { handlers.push(new flptojsonHandler()) } catch (_) {}
+try { handlers.push(new floHandler()) } catch (_) {}
+try { handlers.push(new cgbiToPngHandler()) } catch (_) {}
+try { handlers.push(new batToExeHandler()) } catch (_) {}
+try { handlers.push(new sb3ToHtmlHandler()) } catch (_) {}
+try { handlers.push(new textEncodingHandler()) } catch (_) {}
+try { handlers.push(new libopenmptHandler()) } catch (_) {}
+try { handlers.push(new lzhHandler()) } catch (_) {}
+try { handlers.push(new pandocHandler()) } catch (_) {}
+try { handlers.push(new espeakngHandler()) } catch (_) {}
+try { handlers.push(new textToShellHandler()) } catch (_) {}
+try { handlers.push(new batchHandler()) } catch (_) {}
+try { handlers.push(new bsorHandler()) } catch (_) {}
+try { handlers.push(new stlHandler()) } catch (_) {}
+try { handlers.push(new objHandler()) } catch (_) {}
+
+// PNG heightmap → STL handler
+try { handlers.push(new pngHeightmapToStlHandler()) } catch (_) {}
 
 export default handlers;
-
