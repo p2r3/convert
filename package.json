@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "cache:build" : "bun run buildCache.js dist/cache.json",
     "preview": "vite preview",
     "docker": "bun run docker:build && bun run docker:up",
     "docker:build": "docker compose -f docker/docker-compose.yml -f docker/docker-compose.override.yml build --build-arg VITE_COMMIT_SHA=$(git rev-parse HEAD)",

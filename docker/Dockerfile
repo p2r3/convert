@@ -19,7 +19,7 @@ ARG VITE_COMMIT_SHA
 ENV VITE_COMMIT_SHA=$VITE_COMMIT_SHA
 
 RUN bun run build
-RUN bun run buildCache.js dist/cache.json
+RUN bun run cache:build
 
 FROM nginx:stable-alpine AS runtime
 
