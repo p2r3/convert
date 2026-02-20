@@ -1,5 +1,6 @@
 import type { FormatHandler } from "../FormatHandler.ts";
 
+import objHandler from "./obj.ts";
 import stlHandler from "./stl.ts";
 import canvasToBlobHandler from "./canvasToBlob.ts";
 import meydaHandler from "./meyda.ts";
@@ -77,7 +78,9 @@ try { handlers.push(new espeakngHandler()) } catch (_) { };
 try { handlers.push(new textToShellHandler()) } catch (_) { };
 try { handlers.push(new batchHandler()) } catch (_) { };
 try { handlers.push(new bsorHandler()) } catch (_) { };
-try { handlers.push(new bsorHandler()) } catch (_) { };
 try { handlers.push(new stlHandler()) } catch (_) { };
 
+try { handlers.push(new objHandler()) } catch (_) { };
+
 export default handlers;
+
