@@ -693,6 +693,78 @@ function freqToMidi(hz) {
 }
 
 /**
+ * Parse an RTTTL (Nokia Ring Tone Text Transfer Language) string into a MIDI event table.
+ *
+ * Format:  name:d=N,o=N,b=N:notes
+ *   d = default duration  (1|2|4|8|16|32)
+ *   o = default octave    (4–7)
+ *   b = tempo in BPM
+ *
+ * Each note token: [duration][pitch][#][octave][.]
+ *   pitch  – a b c d e f g  (or p for rest)
+ *   #      – sharp
+ *   .      – dotted (x1.5 duration)
+ *
+ * @param {string} text
+ * @returns {Array<Object>}
+ */
+export function parseRtttl(text) {
+  const parts = text.trim().split(":");
+  if (parts.length < 3) throw new Error("Invalid RTTTL: expected 'name:settings:notes'");
+
+  // Settings (part 2): key=value pairs with single-letter keys
+  const settings = {};
+  for (const param of parts[1].split(",")) {
+    const m = param.trim().match(/^([a-z])\s*=\s*(\d+)$/i);
+    if (m) settings[m[1].toLowerCase()] = parseInt(m[2]);
+  }
+
+  const defaultDuration = settings.d || 4;
+  const defaultOctave   = settings.o || 5;
+  const bpm             = settings.b || 63;
+  const TICKS           = 480;
+
+  // Semitone offset from C within an octave (natural notes only; # adds 1)
+  const SEMITONES = { c: 0, d: 2, e: 4, f: 5, g: 7, a: 9, b: 11 };
+
+  const events = [];
+  let   tick   = 0;
+
+  // Notes (part 3+; join remaining in case text has extra colons)
+  for (const noteStr of parts.slice(2).join(":").split(",")) {
+    const s = noteStr.trim();
+    if (!s) continue;
+
+    // [duration][pitch][#?][octave?][.?]
+    const m = s.match(/^(\d*)(p|a|b|c|d|e|f|g)(#?)(\d?)(\.?)$/i);
+    if (!m) continue;
+
+    const durNum = m[1] ? parseInt(m[1]) : defaultDuration;
+    const pitch  = m[2].toLowerCase();
+    const sharp  = m[3] === "#";
+    const octave = m[4] ? parseInt(m[4]) : defaultOctave;
+    const dotted = m[5] === ".";
+
+    // Quarter note = TICKS ticks; whole = 4xTICKS; eighth = TICKS/2, etc.
+    let durationTicks = Math.round((4 / durNum) * TICKS);
+    if (dotted) durationTicks = Math.round(durationTicks * 1.5);
+
+    if (pitch === "p") {
+      tick += Math.max(1, durationTicks);
+    } else {
+      const semitone = SEMITONES[pitch] + (sharp ? 1 : 0);
+      const midiNote = Math.max(0, Math.min(127, 12 * (octave + 1) + semitone));
+      addNote(events, 0, 0, tick, midiNote, durationTicks);
+      tick += Math.max(1, durationTicks);
+    }
+  }
+
+  events.push({ track: 0, tick, absoluteSec: null, type: "end_of_track", metaType: 0x2f });
+  initTrack(events, TICKS, bpm, 0);
+  return events;
+}
+
+/**
  * Parse a GRUB init tune string and return a MIDI event table for buildMidi().
  *
  * Accepted input:

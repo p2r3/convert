@@ -1,5 +1,5 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-import { extractEvents, tableToString, stringToTable, buildMidi, parseGrubTune } from "./midi/midifilelib.js";
+import { extractEvents, tableToString, stringToTable, buildMidi, parseRtttl, parseGrubTune } from "./midi/midifilelib.js";
 
 const SAMPLE_RATE = 44100;
 const BUFFER_FRAMES = 4096;
@@ -22,69 +22,72 @@ function loadScript(src: string): Promise<void> {
   return p;
 }
 
-// Cache the full init so concurrent or repeated init() calls share one run.
+// Cache the full FluidSynth init so concurrent or repeated calls share one run.
 let midiInitPromise: Promise<{ JSSynth: any; sfontBin: ArrayBuffer }> | null = null;
 
-class midiHandler implements FormatHandler {
-  public name = "midi";
+function loadFluidSynth(): Promise<{ JSSynth: any; sfontBin: ArrayBuffer }> {
+  if (!midiInitPromise) {
+    midiInitPromise = (async () => {
+      // libfluidsynth-2.4.6.js and libopenmpt.js both declare "class ExceptionInfo"
+      // at the top level of a classic <script>. Top-level class declarations behave
+      // like let so redeclaring one in the same global scope throws a SyntaxError.
+      // Fix: fetch libfluidsynth content and import it via a Blob URL as an ES module.
+      // Module-scoped class declarations dont pollute the global scope.
+      //
+      // The Emscripten init pattern still works because modules have access to the
+      // global scope chain, so "typeof Module != 'undefined'" finds globalThis.Module.
+      let fluidModuleResolve!: (mod: unknown) => void;
+      const fluidModuleReady = new Promise<unknown>(r => { fluidModuleResolve = r; });
+      (globalThis as any).Module = {
+        onRuntimeInitialized(this: unknown) { fluidModuleResolve(this); }
+      };
+
+      let fluidSrc = await fetch("/convert/wasm/libfluidsynth-2.4.6.js").then(r => r.text());
+      // In an ES module, "var Module" is hoisted to "undefined", shadowing globalThis.Module.
+      // Patch the Emscripten init line so it reads from globalThis explicitly.
+      fluidSrc = fluidSrc.replace(
+        'var Module=typeof Module!="undefined"?Module:{}',
+        'var Module=globalThis.Module||{}'
+      );
+      const blob = new Blob([fluidSrc], { type: "text/javascript" });
+      const blobUrl = URL.createObjectURL(blob);
+      await import(/* @vite-ignore */ blobUrl);
+      URL.revokeObjectURL(blobUrl);
+      const fluidModule = await fluidModuleReady;
+
+      await loadScript("/convert/wasm/js-synthesizer.js");
+
+      const JSSynth = (globalThis as any).JSSynth;
+      JSSynth.Synthesizer.initializeWithFluidSynthModule(fluidModule);
+      await JSSynth.Synthesizer.waitForWasmInitialized();
+
+      const sfontBin = await fetch("/convert/wasm/TimGM6mb.sf2").then(r => r.arrayBuffer());
+      return { JSSynth, sfontBin };
+    })();
+  }
+  return midiInitPromise;
+}
+
+// Codec handler: text formats <-> MIDI binary (pure JS, no FluidSynth)
+//
+// Kept separate from midiSynthHandler so the routing graph never creates a
+// direct rtttl->wav or txt->wav edge: text formats live here, wav lives only in
+// midiSynthHandler.  The two-step path rtttl->mid (codec) -> wav (synth) is the
+// shortest valid route.
+
+export class midiCodecHandler implements FormatHandler {
+  public name = "miditextcodec";
   public supportedFormats: FileFormat[] = [];
   public ready = false;
 
-  #sfontBin?: ArrayBuffer;
-  #JSSynth?: any;
-
   async init(): Promise<void> {
-    if (!midiInitPromise) {
-      midiInitPromise = (async () => {
-        // libfluidsynth-2.4.6.js and libopenmpt.js both declare "class ExceptionInfo"
-        // at the top level of a classic <script>. Top-level class declarations behave
-        // like let so redeclaring one in the same global scope throws a SyntaxError.
-        // Fix: fetch libfluidsynth content and import it via a Blob URL as an ES module.
-        // Module-scoped class declarations dont pollute the global scope.
-        //
-        // The Emscripten init pattern still works because modules have access to the
-        // global scope chain, so "typeof Module != 'undefined'" finds globalThis.Module.
-        let fluidModuleResolve!: (mod: unknown) => void;
-        const fluidModuleReady = new Promise<unknown>(r => { fluidModuleResolve = r; });
-        (globalThis as any).Module = {
-          onRuntimeInitialized(this: unknown) { fluidModuleResolve(this); }
-        };
-
-        let fluidSrc = await fetch("/convert/wasm/libfluidsynth-2.4.6.js").then(r => r.text());
-        // In an ES module, "var Module" is hoisted to "undefined", shadowing globalThis.Module.
-        // Patch the Emscripten init line so it reads from globalThis explicitly.
-        fluidSrc = fluidSrc.replace(
-          'var Module=typeof Module!="undefined"?Module:{}',
-          'var Module=globalThis.Module||{}'
-        );
-        const blob = new Blob([fluidSrc], { type: "text/javascript" });
-        const blobUrl = URL.createObjectURL(blob);
-        await import(/* @vite-ignore */ blobUrl);
-        URL.revokeObjectURL(blobUrl);
-        const fluidModule = await fluidModuleReady;
-
-        await loadScript("/convert/wasm/js-synthesizer.js");
-
-        const JSSynth = (globalThis as any).JSSynth;
-        JSSynth.Synthesizer.initializeWithFluidSynthModule(fluidModule);
-        await JSSynth.Synthesizer.waitForWasmInitialized();
-
-        const sfontBin = await fetch("/convert/wasm/TimGM6mb.sf2").then(r => r.arrayBuffer());
-        return { JSSynth, sfontBin };
-      })();
-    }
-
-    const { JSSynth, sfontBin } = await midiInitPromise;
-    this.#JSSynth = JSSynth;
-    this.#sfontBin = sfontBin;
-
     this.supportedFormats.push(
-      { name: "MIDI",          format: "mid",  extension: "mid",  mime: "audio/midi",   from: true,  to: true,  internal: "mid",  category: "audio", lossless: true },
-      { name: "MIDI",          format: "midi", extension: "midi", mime: "audio/x-midi", from: true,  to: false, internal: "midi", category: "audio", lossless: true },
-      { name: "Waveform Audio", format: "wav", extension: "wav",  mime: "audio/wav",    from: false, to: true,  internal: "wav",  category: "audio", lossless: true },
-      { name: "Plain Text",    format: "txt", extension: "txt",  mime: "text/plain",   from: true,  to: true,  internal: "txt",  category: "text",  lossless: true },
+      { name: "MIDI",          format: "mid",    extension: "mid",    mime: "audio/midi",   from: true,  to: true,  internal: "mid",   category: "audio", lossless: true },
+      { name: "MIDI",          format: "midi",   extension: "midi",   mime: "audio/x-midi", from: true,  to: false, internal: "midi",  category: "audio", lossless: true },
+      { name: "RTTTL",         format: "rtttl",  extension: "rtttl",  mime: "audio/rtttl",  from: true,  to: false, internal: "rtttl", category: "text",  lossless: true },
+      { name: "NokRing",       format: "rtttl",  extension: "nokring",mime: "audio/rtttl",  from: true,  to: false, internal: "rtttl", category: "text",  lossless: true },
+      { name: "Plain Text",    format: "txt",    extension: "txt",    mime: "text/plain",   from: true,  to: true,  internal: "txt",   category: "text",  lossless: true },
     );
-
     this.ready = true;
   }
 
@@ -93,11 +96,10 @@ class midiHandler implements FormatHandler {
     _inputFormat: FileFormat,
     outputFormat: FileFormat
   ): Promise<FileData[]> {
-    if (!this.ready || !this.#sfontBin) throw "Handler not initialized.";
-
-    const JSSynth = this.#JSSynth;
+    if (!this.ready) throw "Handler not initialized.";
     const outputFiles: FileData[] = [];
 
+    // MIDI binary -> human-readable text
     if (outputFormat.internal === "txt") {
       for (const inputFile of inputFiles) {
         const table = extractEvents(inputFile.bytes);
@@ -108,18 +110,63 @@ class midiHandler implements FormatHandler {
       return outputFiles;
     }
 
+    // Text (MIDI-text / RTTTL / GRUB tune) -> MIDI binary
     if (outputFormat.internal === "mid" || outputFormat.internal === "midi") {
       const ext = outputFormat.extension;
       for (const inputFile of inputFiles) {
-        const text  = new TextDecoder().decode(inputFile.bytes);
-        const table = text.trimStart().startsWith("# MIDI File")
-          ? stringToTable(text)
-          : parseGrubTune(text);
+        const text    = new TextDecoder().decode(inputFile.bytes);
+        const trimmed = text.trimStart();
+        const table   =
+          trimmed.startsWith("# MIDI File")
+            ? stringToTable(text)
+            : /^[^\s:]+\s*:(?:\s*[a-zA-Z]=\d+\s*,?\s*)+:/.test(trimmed)
+              ? parseRtttl(text)
+              : parseGrubTune(text);
         const bytes = buildMidi(table);
         outputFiles.push({ bytes, name: inputFile.name.replace(/\.[^.]+$/, "") + "." + ext });
       }
       return outputFiles;
     }
+
+    throw "Unsupported output format";
+  }
+}
+
+// Synth handler: MIDI binary -> WAV (FluidSynth)
+//
+// Only exposes mid (from) and wav (to).  wav is intentionally absent from
+// midiCodecHandler so no direct text->wav edge is created in the routing graph.
+
+export class midiSynthHandler implements FormatHandler {
+  public name = "midi";
+  public supportedFormats: FileFormat[] = [];
+  public ready = false;
+
+  #sfontBin?: ArrayBuffer;
+  #JSSynth?: any;
+
+  async init(): Promise<void> {
+    const { JSSynth, sfontBin } = await loadFluidSynth();
+    this.#JSSynth = JSSynth;
+    this.#sfontBin = sfontBin;
+
+    this.supportedFormats.push(
+      { name: "MIDI",           format: "mid", extension: "mid", mime: "audio/midi", from: true,  to: false, internal: "mid", category: "audio", lossless: true },
+      { name: "Waveform Audio", format: "wav", extension: "wav", mime: "audio/wav",  from: false, to: true,  internal: "wav", category: "audio", lossless: true },
+    );
+
+    this.ready = true;
+  }
+
+  async doConvert(
+    inputFiles: FileData[],
+    _inputFormat: FileFormat,
+    _outputFormat: FileFormat
+  ): Promise<FileData[]> {
+    if (!this.ready || !this.#sfontBin) throw "Handler not initialized.";
+
+    const JSSynth = this.#JSSynth;
+    const outputFiles: FileData[] = [];
 
     for (const inputFile of inputFiles) {
       const synth = new JSSynth.Synthesizer();
@@ -199,5 +246,3 @@ function buildWav(pcmData: Int16Array, sampleRate: number, numChannels: number, 
 
   return new Uint8Array(buffer);
 }
-
-export default midiHandler;
