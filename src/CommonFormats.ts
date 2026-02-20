@@ -98,8 +98,8 @@ const CommonFormats = {
     ),
     MD: new FormatDefinition(
         "Markdown Document",
-        "md",
-        "md",
+        "markdown",
+        "markdown",
         "text/markdown",
         ["document", "text"]
     ),
@@ -190,7 +190,7 @@ const CommonFormats = {
         "pptx",
         "pptx",
         "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-        Category.PRESENTATION
+        [Category.PRESENTATION, Category.DOCUMENT]
     )
 }
 

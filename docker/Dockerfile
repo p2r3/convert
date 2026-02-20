@@ -15,6 +15,9 @@ RUN bun install --frozen-lockfile
 
 COPY . .
 
+ARG VITE_COMMIT_SHA
+ENV VITE_COMMIT_SHA=$VITE_COMMIT_SHA
+
 RUN bun run build
 RUN bun run buildCache.js dist/cache.json
 

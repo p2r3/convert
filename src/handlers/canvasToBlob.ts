@@ -47,13 +47,14 @@ class canvasToBlobHandler implements FormatHandler {
         const string = new TextDecoder().decode(inputFile.bytes);
         const lines = string.split("\n");
 
+        this.#ctx.font = font;
+
         let maxLineWidth = 0;
         for (const line of lines) {
           const width = this.#ctx.measureText(line).width;
           if (width > maxLineWidth) maxLineWidth = width;
         }
 
-        this.#ctx.font = font;
         this.#canvas.width = maxLineWidth;
         this.#canvas.height = Math.floor(fontSize * lines.length + footerPadding);
 

@@ -16,6 +16,7 @@ function normalizeMimeType (mime: string) {
     case "application/lha": return "application/x-lzh-compressed";
     case "application/x-lha": return "application/x-lzh-compressed";
     case "application/x-lzh": return "application/x-lzh-compressed";
+    case "audio/x-flac": return "audio/flac";
   }
   return mime;
 }

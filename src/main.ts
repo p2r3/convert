@@ -312,10 +312,29 @@ ui.modeToggleButton.addEventListener("click", () => {
   buildOptionList();
 });
 
+let deadEndAttempts: ConvertPathNode[][];
+
 async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
 
+  const pathString = path.map(c => c.format.format).join(" → ");
+
+  // Exit early if we've encountered a known dead end
+  for (const deadEnd of deadEndAttempts) {
+    let isDeadEnd = true;
+    for (let i = 0; i < deadEnd.length; i++) {
+      if (path[i] === deadEnd[i]) continue;
+      isDeadEnd = false;
+      break;
+    }
+    if (isDeadEnd) {
+      const deadEndString = deadEnd.slice(-2).map(c => c.format.format).join(" → ");
+      console.warn(`Skipping ${pathString} due to dead end near ${deadEndString}.`);
+      return null;
+    }
+  }
+
   ui.popupBox.innerHTML = `<h2>Finding conversion route...</h2>
-    <p>Trying <b>${path.map(c => c.format.format).join(" → ")}</b>...</p>`;
+    <p>Trying <b>${pathString}</b>...</p>`;
 
   for (let i = 0; i < path.length - 1; i ++) {
     const handler = path[i + 1].handler;
@@ -339,12 +358,23 @@ async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
       ]))[0];
       if (files.some(c => !c.bytes.length)) throw "Output is empty.";
     } catch (e) {
+
       console.log(path.map(c => c.format.format));
       console.error(handler.name, `${path[i].format.format} → ${path[i + 1].format.format}`, e);
+
+      // Dead ends are added both to the graph and to the attempt system.
+      // The graph may still have old paths queued from before they were
+      // marked as dead ends, so we catch that here.
+      const deadEndPath = path.slice(0, i + 2);
+      deadEndAttempts.push(deadEndPath);
+      window.traversionGraph.addDeadEndPath(path.slice(0, i + 2));
+
       ui.popupBox.innerHTML = `<h2>Finding conversion route...</h2>
         <p>Looking for a valid path...</p>`;
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
       return null;
+
     }
   }
 
@@ -357,6 +387,8 @@ window.tryConvertByTraversing = async function (
   from: ConvertPathNode,
   to: ConvertPathNode
 ) {
+  deadEndAttempts = [];
+  window.traversionGraph.clearDeadEndPaths();
   for await (const path of window.traversionGraph.searchPath(from, to, simpleMode)) {
     // Use exact output format if the target handler supports it
     if (path.at(-1)?.handler === to.handler) {
@@ -439,3 +471,11 @@ ui.convertButton.onclick = async function () {
   }
 
 };
+
+// Display the current git commit SHA in the UI, if available
+{
+  const commitElement = document.querySelector("#commit-id");
+  if (commitElement) {
+    commitElement.textContent = import.meta.env.VITE_COMMIT_SHA ?? "unknown";
+  }
+}

@@ -5,6 +5,7 @@ import type { LogEvent } from "@ffmpeg/ffmpeg";
 
 import mime from "mime";
 import normalizeMimeType from "../normalizeMimeType.ts";
+import CommonFormats from "src/CommonFormats.ts";
 
 class FFmpegHandler implements FormatHandler {
 
@@ -119,6 +120,8 @@ class FFmpegHandler implements FormatHandler {
       const formats = parts[1].split(",");
 
       if (description.startsWith("piped ")) continue;
+      if (description.toLowerCase().includes("subtitle")) continue;
+      if (description.toLowerCase().includes("manifest")) continue;
 
       for (const format of formats) {
 
@@ -136,11 +139,27 @@ class FFmpegHandler implements FormatHandler {
         }
         mimeType = normalizeMimeType(mimeType);
 
+        let category = mimeType.split("/")[0];
         if (
-          !mimeType.startsWith("video/")
-          && !mimeType.startsWith("audio/")
-          && !mimeType.startsWith("image/")
-        ) continue;
+          description.includes("PCM")
+          || description.includes("PWM")
+          || primaryFormat === "aptx"
+          || primaryFormat === "aptx_hd"
+          || primaryFormat === "codec2"
+          || primaryFormat === "codec2raw"
+          || primaryFormat === "apm"
+          || primaryFormat === "alp"
+        ) {
+          category = "audio";
+          mimeType = "audio/" + mimeType.split("/")[1];
+        } else if (
+          category !== "audio"
+          && category !== "video"
+          && category !== "image"
+        ) {
+          if (description.toLowerCase().includes("audio")) category = "audio";
+          else category = "video";
+        }
 
         this.supportedFormats.push({
           name: description + (formats.length > 1 ? (" / " + format) : ""),
@@ -150,7 +169,7 @@ class FFmpegHandler implements FormatHandler {
           from: flags.includes("D"),
           to: flags.includes("E"),
           internal: format,
-          category: mimeType.split("/")[0],
+          category,
           lossless: ["png", "bmp", "tiff"].includes(format)
         });
 
@@ -172,7 +191,9 @@ class FFmpegHandler implements FormatHandler {
     // AV1 doesn't seem to be included in WASM FFmpeg
     this.supportedFormats.splice(this.supportedFormats.findIndex(c => c.mime === "image/avif"), 1);
     // HEVC stalls when attempted
-    this.supportedFormats.splice(this.supportedFormats.findIndex(c => c.mime === "video/hevc"), 1);
+    this.supportedFormats.splice(this.supportedFormats.findIndex(c => c.internal === "hevc"), 1);
+    // RTSP stalls when attempted
+    this.supportedFormats.splice(this.supportedFormats.findIndex(c => c.internal === "rtsp"), 1);
 
     // Add .qta (QuickTime Audio) support - uses same mov demuxer
     this.supportedFormats.push({
@@ -184,6 +205,10 @@ class FFmpegHandler implements FormatHandler {
       to: true,
       internal: "mov"
     });
+
+    // Add PNG input explicitly - FFmpeg otherwise treats both PNG and
+    // APNG as the same thing.
+    this.supportedFormats.push(CommonFormats.PNG.builder("png").allowFrom());
 
     this.#ffmpeg.terminate();
 
@@ -221,6 +246,10 @@ class FFmpegHandler implements FormatHandler {
     const command = ["-hide_banner", "-f", "concat", "-safe", "0", "-i", "list.txt", "-f", outputFormat.internal];
     if (outputFormat.mime === "video/mp4") {
       command.push("-pix_fmt", "yuv420p");
+    } else if (outputFormat.internal === "dvd") {
+      command.push("-vf", "setsar=1", "-target", "ntsc-dvd", "-pix_fmt", "rgb24");
+    } else if (outputFormat.internal === "vcd") {
+      command.push("-vf", "scale=352:288,setsar=1", "-target", "pal-vcd", "-pix_fmt", "rgb24");
     }
     if (args) command.push(...args);
     command.push("output");
