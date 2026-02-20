@@ -1,5 +1,5 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-import { extractEvents, tableToString, stringToTable, buildMidi, parseRtttl, parseGrubTune, tableToRtttl, tableToGrubTune } from "./midi/midifilelib.js";
+import { extractEvents, tableToString, stringToTable, buildMidi, parseRtttl, parseGrubTune, tableToRtttl, tableToGrubTune, pngToMidi } from "./midi/midifilelib.js";
 
 const SAMPLE_RATE = 44100;
 const BUFFER_FRAMES = 4096;
@@ -88,71 +88,86 @@ export class midiCodecHandler implements FormatHandler {
       { name: "NokRing",       format: "rtttl",  extension: "nokring",mime: "audio/rtttl",  from: true,  to: false, internal: "rtttl", category: "text",  lossless: false },
       { name: "GRUB Init Tune",format: "grub",   extension: "grub",   mime: "text/plain",   from: true,  to: true,  internal: "grub",  category: "text",  lossless: false },
       { name: "Plain Text",    format: "txt",    extension: "txt",    mime: "text/plain",   from: true,  to: true,  internal: "txt",   category: "text",  lossless: true },
+      // PNG spectrogram -> MIDI (matches meyda's internal="image" so routing picks
+      // up the audio->png->mid path automatically)
+      { name: "PNG",           format: "png",    extension: "png",    mime: "image/png",    from: true,  to: false, internal: "image", category: "image", lossless: false },
     );
     this.ready = true;
   }
 
   async doConvert(
     inputFiles: FileData[],
-    _inputFormat: FileFormat,
+    inputFormat: FileFormat,
     outputFormat: FileFormat
   ): Promise<FileData[]> {
     if (!this.ready) throw "Handler not initialized.";
     const outputFiles: FileData[] = [];
 
-    // MIDI binary -> human-readable text
-    if (outputFormat.internal === "txt") {
-      for (const inputFile of inputFiles) {
-        const table = extractEvents(inputFile.bytes);
-        const text  = tableToString(table);
-        const bytes = new TextEncoder().encode(text);
-        outputFiles.push({ bytes, name: inputFile.name.replace(/\.[^.]+$/, "") + ".txt" });
-      }
-      return outputFiles;
-    }
+    for (const inputFile of inputFiles) {
+      const baseName = inputFile.name.replace(/\.[^.]+$/, "");
 
-    // MIDI binary -> RTTTL
-    if (outputFormat.internal === "rtttl") {
-      for (const inputFile of inputFiles) {
-        const table    = extractEvents(inputFile.bytes);
-        const baseName = inputFile.name.replace(/\.[^.]+$/, "");
-        const text     = tableToRtttl(table, baseName);
-        const bytes    = new TextEncoder().encode(text);
-        outputFiles.push({ bytes, name: baseName + ".rtttl" });
-      }
-      return outputFiles;
-    }
+      // Step 1: input -> event table
 
-    // MIDI binary -> GRUB init tune
-    if (outputFormat.internal === "grub") {
-      for (const inputFile of inputFiles) {
-        const table = extractEvents(inputFile.bytes);
-        const text  = tableToGrubTune(table);
-        const bytes = new TextEncoder().encode(text);
-        outputFiles.push({ bytes, name: inputFile.name.replace(/\.[^.]+$/, "") + ".grub" });
-      }
-      return outputFiles;
-    }
+      let table: any[];
 
-    // Text (MIDI-text / RTTTL / GRUB tune) -> MIDI binary
-    if (outputFormat.internal === "mid" || outputFormat.internal === "midi") {
-      const ext = outputFormat.extension;
-      for (const inputFile of inputFiles) {
+      if (inputFormat.internal === "image") {
+        // PNG spectrogram: decode pixels then extract notes
+        const blob   = new Blob([inputFile.bytes as BlobPart], { type: inputFormat.mime });
+        const url    = URL.createObjectURL(blob);
+        const img    = new Image();
+        await new Promise<void>((res, rej) => {
+          img.onload  = () => res();
+          img.onerror = () => rej(new Error("Failed to load spectrogram image"));
+          img.src     = url;
+        });
+        URL.revokeObjectURL(url);
+        const canvas = document.createElement("canvas");
+        canvas.width  = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx    = canvas.getContext("2d")!;
+        ctx.drawImage(img, 0, 0);
+        const { data, width, height } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        table = pngToMidi(data, width, height);
+
+      } else if (inputFormat.internal === "mid" || inputFormat.internal === "midi") {
+        table = extractEvents(inputFile.bytes);
+
+      } else {
+        // Text input: MIDI-text, RTTTL, or GRUB tune
         const text    = new TextDecoder().decode(inputFile.bytes);
         const trimmed = text.trimStart();
-        const table   =
+        table =
           trimmed.startsWith("# MIDI File")
             ? stringToTable(text)
             : /^[^\s:]+\s*:(?:\s*[a-zA-Z]=\d+\s*,?\s*)+:/.test(trimmed)
               ? parseRtttl(text)
               : parseGrubTune(text);
-        const bytes = buildMidi(table);
-        outputFiles.push({ bytes, name: inputFile.name.replace(/\.[^.]+$/, "") + "." + ext });
       }
-      return outputFiles;
+
+      // Step 2: event table -> output format
+
+      if (outputFormat.internal === "txt") {
+        const text = tableToString(table);
+        outputFiles.push({ bytes: new TextEncoder().encode(text), name: baseName + ".txt" });
+
+      } else if (outputFormat.internal === "rtttl") {
+        const text = tableToRtttl(table, baseName);
+        outputFiles.push({ bytes: new TextEncoder().encode(text), name: baseName + ".rtttl" });
+
+      } else if (outputFormat.internal === "grub") {
+        const text = tableToGrubTune(table);
+        outputFiles.push({ bytes: new TextEncoder().encode(text), name: baseName + ".grub" });
+
+      } else if (outputFormat.internal === "mid" || outputFormat.internal === "midi") {
+        const bytes = buildMidi(table);
+        outputFiles.push({ bytes, name: baseName + "." + outputFormat.extension });
+
+      } else {
+        throw "Unsupported output format";
+      }
     }
 
-    throw "Unsupported output format";
+    return outputFiles;
   }
 }
 

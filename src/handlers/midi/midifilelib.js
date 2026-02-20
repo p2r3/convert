@@ -1044,3 +1044,160 @@ export function tableToGrubTune(table) {
 
   return `GRUB_INIT_TUNE="${parts.join(" ")}"`;
 }
+
+// PNG spectrogram -> MIDI
+
+/**
+ * Convert a spectrogram PNG (as produced by meyda.ts) back to a MIDI event table.
+ *
+ * Spectrogram format assumed:
+ *   - Pixel data: RGBA row-major from top (high freq) to bottom (0 Hz).
+ *   - Row r corresponds to FFT bin j = imageHeight - 1 - r,
+ *     frequency = j * 44100 / (2 * imageHeight) Hz.
+ *   - Amplitude: magInt = R + (G << 8), normalized amplitude = magInt / 65535.
+ *   - Each column x = one FFT frame, hopSize = imageHeight samples at 44100 Hz.
+ *
+ * Algorithm per chunk of CHUNK_COLS columns:
+ *   1. Average amplitudes per row across the chunk columns.
+ *   2. For each MIDI note n (21..108), take the max amplitude within
+ *      the pixel rows that fall inside n's frequency band
+ *      (half-semitone boundary on each side).
+ *   3. Keep the top MAX_POLY notes above ONSET_THRESH.
+ *   4. Emit note_on for new notes.  Track active notes with HOLD_CHUNKS frames
+ *      of hysteresis before emitting note_off so brief dips do not create gaps.
+ *   5. Retrigger (note_off + note_on at lower velocity) when a note's current
+ *      amplitude drops to <= DECAY_RATIO of its onset velocity, carrying the
+ *      rough decay curve into the MIDI dynamics.
+ *
+ * @param {Uint8ClampedArray} pixels - RGBA pixel data from ImageData.data
+ * @param {number} imageWidth
+ * @param {number} imageHeight
+ * @returns {Array} event table compatible with buildMidi()
+ */
+export function pngToMidi(pixels, imageWidth, imageHeight) {
+  const SAMPLE_RATE    = 44100;
+  const CHUNK_COLS     = 4;      // columns averaged per MIDI time step
+  const MAX_POLY       = 12;     // max simultaneous notes
+  const ONSET_THRESH   = 0.002;  // normalized amplitude to start a note
+  const OFFSET_THRESH  = 0.0008; // amplitude below which hold counter starts
+  const HOLD_CHUNKS    = 2;      // chunks to hold note after going quiet
+  const DECAY_RATIO    = 0.5;    // retrigger when amplitude falls to this fraction
+  const TICKS_PER_BEAT = 480;
+  const BPM            = 120;
+
+  // hopSize = imageHeight (meyda: hopSize = bufferSize/2 = imageHeight)
+  // ticksPerCol = (hopSize / sampleRate) * (BPM / 60) * TICKS_PER_BEAT
+  const ticksPerChunk = (imageHeight / SAMPLE_RATE) * (BPM / 60) * TICKS_PER_BEAT * CHUNK_COLS;
+
+  const MIDI_MIN = 21;  // A0, ~27.5 Hz
+  const MIDI_MAX = 108; // C8, ~4186 Hz
+
+  // Precompute pixel row range [rLow, rHigh] (inclusive) for each MIDI note.
+  // Row r (0=top) corresponds to bin j = imageHeight - 1 - r, so:
+  //   rLow  = imageHeight - 1 - jHigh  (top of range, smaller row number)
+  //   rHigh = imageHeight - 1 - jLow   (bottom of range, larger row number)
+  const noteRows = new Array(128).fill(null);
+  for (let n = MIDI_MIN; n <= MIDI_MAX; n++) {
+    const fCtr  = 440 * Math.pow(2, (n - 69) / 12);
+    const fLow  = 440 * Math.pow(2, (n - 0.5 - 69) / 12);
+    const fHigh = 440 * Math.pow(2, (n + 0.5 - 69) / 12);
+    // bin index for frequency f: j = f * 2 * imageHeight / SAMPLE_RATE
+    const jLow  = Math.ceil(fLow  * 2 * imageHeight / SAMPLE_RATE);
+    const jHigh = Math.floor(fHigh * 2 * imageHeight / SAMPLE_RATE);
+    const jL    = Math.max(0, jLow);
+    const jH    = Math.min(imageHeight - 1, jHigh);
+    if (jL > jH) {
+      // Frequency band covers less than one bin - use nearest bin only
+      const j    = Math.max(0, Math.min(imageHeight - 1, Math.round(fCtr * 2 * imageHeight / SAMPLE_RATE)));
+      const r    = imageHeight - 1 - j;
+      noteRows[n] = [r, r];
+    } else {
+      noteRows[n] = [imageHeight - 1 - jH, imageHeight - 1 - jL];
+    }
+  }
+
+  // activeNotes: Map<midiNote, { velocity, holdRemaining }>
+  const activeNotes = new Map();
+  const events      = [];
+  let   tickFloat   = 0;
+
+  const numChunks = Math.ceil(imageWidth / CHUNK_COLS);
+
+  for (let chunk = 0; chunk < numChunks; chunk++) {
+    const xStart = chunk * CHUNK_COLS;
+    const xEnd   = Math.min(xStart + CHUNK_COLS, imageWidth);
+    const cols   = xEnd - xStart;
+    const tick   = Math.round(tickFloat);
+
+    // Average amplitude per row across the chunk columns
+    const rowAmps = new Float32Array(imageHeight);
+    for (let x = xStart; x < xEnd; x++) {
+      for (let r = 0; r < imageHeight; r++) {
+        const i = (r * imageWidth + x) * 4;
+        rowAmps[r] += (pixels[i] + (pixels[i + 1] << 8)) / 65535;
+      }
+    }
+    for (let r = 0; r < imageHeight; r++) rowAmps[r] /= cols;
+
+    // Per-note amplitude: max over the note's pixel row range
+    const noteAmps = new Float32Array(128);
+    for (let n = MIDI_MIN; n <= MIDI_MAX; n++) {
+      const rows = noteRows[n];
+      if (!rows) continue;
+      let maxAmp = 0;
+      for (let r = rows[0]; r <= rows[1]; r++) {
+        if (rowAmps[r] > maxAmp) maxAmp = rowAmps[r];
+      }
+      noteAmps[n] = maxAmp;
+    }
+
+    // Sort candidates above onset threshold by amplitude, keep top MAX_POLY
+    const candidates = [];
+    for (let n = MIDI_MIN; n <= MIDI_MAX; n++) {
+      if (noteAmps[n] >= ONSET_THRESH) candidates.push(n);
+    }
+    candidates.sort((a, b) => noteAmps[b] - noteAmps[a]);
+    const activeSet = new Set(candidates.slice(0, MAX_POLY));
+
+    // Update hold counter for notes no longer in top set or below offset threshold
+    for (const [n, state] of activeNotes) {
+      if (activeSet.has(n) && noteAmps[n] >= OFFSET_THRESH) {
+        // Note still active - check for significant decay and retrigger if so
+        const newVel = Math.max(1, Math.min(127, Math.round(noteAmps[n] * 100 * 127))); // scale to match input scale
+        if (newVel <= state.velocity * DECAY_RATIO) {
+          events.push({ track: 0, tick, absoluteSec: null, type: "note_off", channel: 0, note: n, velocity: 0 });
+          events.push({ track: 0, tick, absoluteSec: null, type: "note_on",  channel: 0, note: n, velocity: newVel });
+          state.velocity = newVel;
+        }
+        state.holdRemaining = HOLD_CHUNKS;
+      } else {
+        state.holdRemaining--;
+        if (state.holdRemaining <= 0) {
+          events.push({ track: 0, tick, absoluteSec: null, type: "note_off", channel: 0, note: n, velocity: 0 });
+          activeNotes.delete(n);
+        }
+      }
+    }
+
+    // Start new notes
+    for (const n of activeSet) {
+      if (!activeNotes.has(n)) {
+        const velocity = Math.max(1, Math.min(127, Math.round(noteAmps[n] * 1000 * 127))); // scale to match input scale
+        events.push({ track: 0, tick, absoluteSec: null, type: "note_on", channel: 0, note: n, velocity });
+        activeNotes.set(n, { velocity, holdRemaining: HOLD_CHUNKS });
+      }
+    }
+
+    tickFloat += ticksPerChunk;
+  }
+
+  // Close remaining notes
+  const finalTick = Math.round(tickFloat);
+  for (const n of activeNotes.keys()) {
+    events.push({ track: 0, tick: finalTick, absoluteSec: null, type: "note_off", channel: 0, note: n, velocity: 0 });
+  }
+
+  events.push({ track: 0, tick: finalTick, absoluteSec: null, type: "end_of_track", metaType: 0x2f });
+  initTrack(events, TICKS_PER_BEAT, BPM, 0);
+  return events;
+}
