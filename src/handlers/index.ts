@@ -28,7 +28,7 @@ import floHandler from "./flo.ts";
 import cgbiToPngHandler from "./cgbi-to-png.ts";
 import batToExeHandler from "./batToExe.ts";
 import textEncodingHandler from "./textEncoding.ts";
-import cHandler from "./c.ts"
+import jsonToCHandler from "./jsonToC.ts";
 import libopenmptHandler from "./libopenmpt.ts";
 import lzhHandler from "./lzh.ts";
 
@@ -62,7 +62,7 @@ try { handlers.push(new floHandler()) } catch (_) { };
 try { handlers.push(new cgbiToPngHandler()) } catch (_) { };
 try { handlers.push(new batToExeHandler()) } catch (_) { };
 try { handlers.push(new textEncodingHandler()) } catch (_) { };
-try { handlers.push(new cHandler()) } catch (_) { };
+try { handlers.push(new jsonToCHandler()) } catch (_) { };
 try { handlers.push(new libopenmptHandler()) } catch (_) { };
 try { handlers.push(new lzhHandler()) } catch (_) { };
 try { handlers.push(new pandocHandler()) } catch (_) { };
