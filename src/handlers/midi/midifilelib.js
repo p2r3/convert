@@ -1053,9 +1053,9 @@ export function tableToGrubTune(table) {
  * Spectrogram format assumed:
  *   - Pixel data: RGBA row-major from top (high freq) to bottom (0 Hz).
  *   - Row r corresponds to FFT bin j = imageHeight - 1 - r,
- *     frequency = j * 44100 / (2 * imageHeight) Hz.
+ *     frequency = j * 34000 / (2 * imageHeight) Hz.
  *   - Amplitude: magInt = R + (G << 8), normalized amplitude = magInt / 65535.
- *   - Each column x = one FFT frame, hopSize = imageHeight samples at 44100 Hz.
+ *   - Each column x = one FFT frame, hopSize = imageHeight samples at 34000 Hz.
  *
  * Algorithm per chunk of CHUNK_COLS columns:
  *   1. Average amplitudes per row across the chunk columns.
@@ -1075,7 +1075,7 @@ export function tableToGrubTune(table) {
  * @returns {Array} event table compatible with buildMidi()
  */
 export function pngToMidi(pixels, imageWidth, imageHeight) {
-  const SAMPLE_RATE    = 44100;
+  const SAMPLE_RATE    = 34000;
   const CHUNK_COLS     = 4;      // columns averaged per MIDI time step
   const MAX_POLY       = 12;     // max simultaneous notes
   const ONSET_THRESH   = 0.002;  // normalized amplitude to start a note
@@ -1200,4 +1200,111 @@ export function pngToMidi(pixels, imageWidth, imageHeight) {
   events.push({ track: 0, tick: finalTick, absoluteSec: null, type: "end_of_track", metaType: 0x2f });
   initTrack(events, TICKS_PER_BEAT, BPM, 0);
   return events;
+}
+
+// ---- MIDI piano roll -> PNG ----------------------------------------------
+
+/**
+ * Render a MIDI event table as a piano-roll PNG using the same frequency->row
+ * mapping as pngToMidi (and meyda.ts at 34000 Hz sample rate):
+ *   - imageHeight = 1024, SAMPLE_RATE = 34000
+ *   - Row r (0=top) = bin j = imageHeight-1-r, frequency = j * 34000 / (2*1024) Hz
+ *   - Pixel encoding: R = magInt & 0xFF, G = (magInt >> 8) & 0xFF, B = 0, A = 255
+ *     where magInt = floor((velocity/127) * 65535)
+ *   - One column = hopSize/SAMPLE_RATE seconds = IMAGE_HEIGHT/SAMPLE_RATE seconds
+ *
+ * Returns { pixels: Uint8ClampedArray, width, height } for the caller to
+ * blit onto a canvas and encode as PNG.
+ *
+ * @param {Array} table - event table from extractEvents() or buildMidi() parsing
+ * @returns {{ pixels: Uint8ClampedArray, width: number, height: number }}
+ */
+export function midiToPng(table) {
+  const SAMPLE_RATE  = 34000;
+  const IMAGE_HEIGHT = 1024;
+  const MIDI_MIN     = 21;
+  const MIDI_MAX     = 108;
+
+  // Same noteRows calculation as pngToMidi
+  const noteRows = new Array(128).fill(null);
+  for (let n = MIDI_MIN; n <= MIDI_MAX; n++) {
+    const fCtr  = 440 * Math.pow(2, (n - 69) / 12);
+    const fLow  = 440 * Math.pow(2, (n - 0.5 - 69) / 12);
+    const fHigh = 440 * Math.pow(2, (n + 0.5 - 69) / 12);
+    const jLow  = Math.ceil(fLow  * 2 * IMAGE_HEIGHT / SAMPLE_RATE);
+    const jHigh = Math.floor(fHigh * 2 * IMAGE_HEIGHT / SAMPLE_RATE);
+    const jL    = Math.max(0, jLow);
+    const jH    = Math.min(IMAGE_HEIGHT - 1, jHigh);
+    if (jL > jH) {
+      const j = Math.max(0, Math.min(IMAGE_HEIGHT - 1, Math.round(fCtr * 2 * IMAGE_HEIGHT / SAMPLE_RATE)));
+      noteRows[n] = [IMAGE_HEIGHT - 1 - j, IMAGE_HEIGHT - 1 - j];
+    } else {
+      noteRows[n] = [IMAGE_HEIGHT - 1 - jH, IMAGE_HEIGHT - 1 - jL];
+    }
+  }
+
+  // Read timing from table header
+  let ticksPerBeat = 480;
+  let bpm          = 120;
+  for (const ev of table) {
+    if (ev.type === "header" && ev.ticksPerBeat) ticksPerBeat = ev.ticksPerBeat;
+    if (ev.type === "set_tempo")                 bpm          = Math.round(60000000 / ev.tempo);
+  }
+
+  // Collect all polyphonic notes as { note, startTick, endTick, velocity }
+  // Key: channel-note string to handle overlapping same-pitch notes per channel
+  const activeMap = new Map();
+  const notes     = [];
+  let   maxTick   = 0;
+
+  for (const ev of table) {
+    if (ev.tick > maxTick) maxTick = ev.tick;
+    if (ev.note === undefined) continue;
+    const key = `${ev.channel}-${ev.note}`;
+    if (ev.type === "note_on" && ev.velocity > 0) {
+      activeMap.set(key, { startTick: ev.tick, velocity: ev.velocity });
+    } else if (ev.type === "note_off" || (ev.type === "note_on" && ev.velocity === 0)) {
+      const s = activeMap.get(key);
+      if (s) {
+        notes.push({ note: ev.note, startTick: s.startTick, endTick: ev.tick, velocity: s.velocity });
+        activeMap.delete(key);
+      }
+    }
+  }
+  // Close any unterminated notes at maxTick
+  for (const [key, s] of activeMap) {
+    const note = parseInt(key.split("-")[1]);
+    notes.push({ note, startTick: s.startTick, endTick: maxTick, velocity: s.velocity });
+  }
+
+  // tick -> column: t_seconds = tick / ticksPerBeat * 60/bpm
+  //                 col = t_seconds * SAMPLE_RATE / IMAGE_HEIGHT
+  const secPerTick = 60 / (bpm * ticksPerBeat);
+  const colsPerSec = SAMPLE_RATE / IMAGE_HEIGHT;
+  const tickToCol  = tick => tick * secPerTick * colsPerSec;
+
+  const imageWidth = Math.max(1, Math.ceil(tickToCol(maxTick)) + 1);
+  const pixels     = new Uint8ClampedArray(imageWidth * IMAGE_HEIGHT * 4);
+  // Pre-fill alpha channel
+  for (let i = 3; i < pixels.length; i += 4) pixels[i] = 255;
+
+  for (const { note, startTick, endTick, velocity } of notes) {
+    const rows = noteRows[note];
+    if (!rows) continue;
+    const xStart = Math.max(0, Math.floor(tickToCol(startTick)));
+    const xEnd   = Math.min(imageWidth - 1, Math.ceil(tickToCol(endTick)));
+    const magInt = Math.floor((velocity / 127) * 65535);
+    const rByte  = magInt & 0xFF;
+    const gByte  = (magInt >> 8) & 0xFF;
+    for (let x = xStart; x <= xEnd; x++) {
+      for (let r = rows[0]; r <= rows[1]; r++) {
+        const i     = (r * imageWidth + x) * 4;
+        pixels[i]   = rByte;
+        pixels[i+1] = gByte;
+        // pixels[i+2] = 0 (no phase), pixels[i+3] = 255 (already set)
+      }
+    }
+  }
+
+  return { pixels, width: imageWidth, height: IMAGE_HEIGHT };
 }

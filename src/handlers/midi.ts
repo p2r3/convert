@@ -1,5 +1,5 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-import { extractEvents, tableToString, stringToTable, buildMidi, parseRtttl, parseGrubTune, tableToRtttl, tableToGrubTune, pngToMidi } from "./midi/midifilelib.js";
+import { extractEvents, tableToString, stringToTable, buildMidi, parseRtttl, parseGrubTune, tableToRtttl, tableToGrubTune, pngToMidi, midiToPng } from "./midi/midifilelib.js";
 
 const SAMPLE_RATE = 44100;
 const BUFFER_FRAMES = 4096;
@@ -90,7 +90,7 @@ export class midiCodecHandler implements FormatHandler {
       { name: "Plain Text",    format: "txt",    extension: "txt",    mime: "text/plain",   from: true,  to: true,  internal: "txt",   category: "text",  lossless: true },
       // PNG spectrogram -> MIDI (matches meyda's internal="image" so routing picks
       // up the audio->png->mid path automatically)
-      { name: "PNG",           format: "png",    extension: "png",    mime: "image/png",    from: true,  to: false, internal: "image", category: "image", lossless: false },
+      { name: "PNG",           format: "png",    extension: "png",    mime: "image/png",    from: true,  to: true,  internal: "image", category: "image", lossless: false },
     );
     this.ready = true;
   }
@@ -161,6 +161,22 @@ export class midiCodecHandler implements FormatHandler {
       } else if (outputFormat.internal === "mid" || outputFormat.internal === "midi") {
         const bytes = buildMidi(table);
         outputFiles.push({ bytes, name: baseName + "." + outputFormat.extension });
+
+      } else if (outputFormat.internal === "image") {
+        // Render piano roll onto a PNG using the same frequency->row mapping as pngToMidi
+        const { pixels, width, height } = midiToPng(table);
+        const canvas = document.createElement("canvas");
+        canvas.width  = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d")!;
+        ctx.putImageData(new ImageData(pixels as ImageDataArray, width, height), 0, 0);
+        const bytes: Uint8Array = await new Promise((res, rej) => {
+          canvas.toBlob(b => {
+            if (!b) return rej("Canvas output failed");
+            b.arrayBuffer().then(buf => res(new Uint8Array(buf)));
+          }, "image/png");
+        });
+        outputFiles.push({ bytes, name: baseName + ".png" });
 
       } else {
         throw "Unsupported output format";
