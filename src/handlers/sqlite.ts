@@ -20,6 +20,16 @@ class sqlite3Handler implements FormatHandler {
         internal: "sqlite3",
         category: "database"
       },
+      {
+        name: "Magic: The Gathering Arena Database",
+        format: "mtga",
+        extension: "mtga",
+        mime: "application/vnd.sqlite3",
+        from: true,
+        to: false,
+        internal: "sqlite3",
+        category: "database"
+      },
       // Lossy because extracts only tables  
       CommonFormats.CSV.builder("csv").allowTo()
     ];

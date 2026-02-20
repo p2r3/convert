@@ -35,11 +35,11 @@ jobs:
 
       - name: Build
         run: |
-          export GIT_COMMIT_SHA=${GITHUB_SHA}
+          export VITE_COMMIT_SHA=${{ github.sha }}
           bun run build
 
       - name: Generate cache
-        run: bun run buildCache.js dist/cache.json
+        run: bun run cache:build
 
       - name: Test traversion graph
         run: bun test test/TraversionGraph.test.ts

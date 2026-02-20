@@ -16,7 +16,15 @@ function normalizeMimeType (mime: string) {
     case "application/lha": return "application/x-lzh-compressed";
     case "application/x-lha": return "application/x-lzh-compressed";
     case "application/x-lzh": return "application/x-lzh-compressed";
+    case "application/x-mtga": return "application/vnd.sqlite3";
     case "audio/x-flac": return "audio/flac";
+    case "application/font-sfnt": return "font/ttf";
+    case "application/x-font-ttf": return "font/ttf"; // both TTF & OTF
+    case "application/x-font-opentype": return "font/otf";
+    case "application/font-woff": return "font/woff";
+    case "application/x-font-woff": return "font/woff";
+    case "application/font-woff2": return "font/woff2";
+    case "application/x-font-woff2": return "font/woff2";
   }
   return mime;
 }

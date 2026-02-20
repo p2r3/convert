@@ -61,7 +61,7 @@ class pandocHandler implements FormatHandler {
     ["opml", "OPML"],
     ["org", "Emacs Org mode"],
     ["pdf", "PDF via Typst"],
-    ["plain", "plain text"],
+    ["text", "plain text"],
     ["pod", "Perl POD"],
     ["pptx", "PowerPoint"],
     ["revealjs", "reveal.js HTML slides"],
@@ -111,7 +111,7 @@ class pandocHandler implements FormatHandler {
     ["epub3", "epub"],
     ["rst", "rst"],
     ["org", "org"],
-    ["plain", "txt"],
+    ["text", "txt"],
     ["json", "json"],
     ["native", "native"],
     ["docbook", "xml"],
@@ -170,13 +170,27 @@ class pandocHandler implements FormatHandler {
     outputFormats.forEach(format => allFormats.add(format));
 
     this.supportedFormats = [];
-    for (const format of allFormats) {
+    for (let format of allFormats) {
       // PDF doesn't seem to work, at least with this configuration
       if (format === "pdf") continue;
       // RevealJS seems to hang forever?
       if (format === "revealjs") continue;
+      // Adjust plaintext format name to match other handlers
+      if (format === "plain") format = "text";
       const name = pandocHandler.formatNames.get(format) || format;
       const extension = pandocHandler.formatExtensions.get(format) || format;
+      const mimeType = normalizeMimeType(mime.getType(extension) || `text/${format}`);
+      const categories: string[] = [];
+      if (format === "xlsx") categories.push("spreadsheet");
+      else if (format === "pptx") categories.push("presentation");
+      if (
+        name.toLowerCase().includes("text")
+        || mimeType === "text/plain"
+      ) {
+        categories.push("text");
+      } else {
+        categories.push("document");
+      }
       const isOfficeDocument = format === "docx"
         || format === "xlsx"
         || format === "pptx"
@@ -185,18 +199,20 @@ class pandocHandler implements FormatHandler {
         || format === "odp";
       this.supportedFormats.push({
         name, format, extension,
-        mime: normalizeMimeType(mime.getType(extension) || `text/${format}`),
+        mime: mimeType,
         from: inputFormats.includes(format),
         to: outputFormats.includes(format),
         internal: format,
-        // HACK: misrepresent format intentionally for Office documents.
-        // Pandoc strips rich formatting like color and text alignment,
-        // so this is done to avoid that wherever possible. In a way,
-        // Pandoc's outputs are often more "text" than "document", anyway.
-        category: isOfficeDocument ? "text" : "document",
+        category: categories.length === 1 ? categories[0] : categories,
         lossless: !isOfficeDocument
       });
     }
+
+    // Move HTML up, it's the only format that can embed resources
+    const htmlIndex = this.supportedFormats.findIndex(c => c.internal === "html");
+    const htmlFormat = this.supportedFormats[htmlIndex];
+    this.supportedFormats.splice(htmlIndex, 1);
+    this.supportedFormats.unshift(htmlFormat);
 
     this.ready = true;
   }

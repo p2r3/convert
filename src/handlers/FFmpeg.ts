@@ -5,6 +5,7 @@ import type { LogEvent } from "@ffmpeg/ffmpeg";
 
 import mime from "mime";
 import normalizeMimeType from "../normalizeMimeType.ts";
+import CommonFormats from "src/CommonFormats.ts";
 
 class FFmpegHandler implements FormatHandler {
 
@@ -204,6 +205,10 @@ class FFmpegHandler implements FormatHandler {
       to: true,
       internal: "mov"
     });
+
+    // Add PNG input explicitly - FFmpeg otherwise treats both PNG and
+    // APNG as the same thing.
+    this.supportedFormats.push(CommonFormats.PNG.builder("png").allowFrom());
 
     this.#ffmpeg.terminate();
 

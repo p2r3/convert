@@ -42,10 +42,6 @@ export interface Edge {
 };
 
 export class TraversionGraph {
-    constructor(disableSafeChecks: boolean = false) {
-        this.disableSafeChecks = disableSafeChecks;
-    }
-    private disableSafeChecks: boolean;
     private handlers: FormatHandler[] = [];
     private nodes: Node[] = [];
     private edges: Edge[] = [];
@@ -63,6 +59,7 @@ export class TraversionGraph {
         {from: "text", to: "image", cost: 0.5}, // Depends on the content and method, but can be relatively efficient for simple images
         {from: "image", to: "text", cost: 0.5}, // Depends on the content and method, but can be relatively efficient for simple images
         {from: "text", to: "audio", cost: 0.6}, // Somewhat lossy for anything that isn't speakable text
+        {from: "document", to: "text", cost: 1}, // Often very lossy, loses rich formatting
     ];
     private categoryAdaptiveCosts: CategoryAdaptiveCost[] = [
         { categories: ["text", "image", "audio"], cost: 15 }, // Text to audio through an image is likely not what the user wants
@@ -306,40 +303,19 @@ export class TraversionGraph {
             }
             if (current.index === toIndex) {
                 // Return the path of handlers and formats to get from the input format to the output format
-                console.log(`Found path at iteration ${iterations} with cost ${current.cost}: ${current.path.map(p => p.handler.name + "(" + p.format.mime + ")").join(" -> ")}`);
-                if (!this.disableSafeChecks) {
-                    // HACK HACK HACK!!
-                    //   Converting image -> video -> audio loses all meaningful media.
-                    //   For now, we explicitly check for this case to avoid blocking Meyda.
-                    let found = false;
-                    for (let i = 0; i < current.path.length; i ++) {
-                        const curr = current.path[i];
-                        const next = current.path[i + 1];
-                        const last = current.path[i + 2];
-                        if (!curr || !next || !last) break;
-                        if (
-                            [curr.format.category].flat().includes("image")
-                            && [next.format.category].flat().includes("video")
-                            && [last.format.category].flat().includes("audio")
-                        ) {
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (found) {
-                        console.log(`Skipping path ${current.path.map(p => p.format.mime).join(" → ")} due to complete loss of media.`);
-                        continue;
-                    }
-                    // END OF HACK HACK HACK!!
-                }
-                if (simpleMode || !to.handler || to.handler.name === current.path.at(-1)?.handler.name) {
-                    console.log(`Found path at iteration ${iterations} with cost ${current.cost}: ${current.path.map(p => p.handler.name + "(" + p.format.mime + ")").join(" -> ")}`);
+                const logString = `${iterations} with cost ${current.cost.toFixed(3)}: ${current.path.map(p => p.handler.name + "(" + p.format.mime + ")").join(" → ")}`;
+                const foundPathLast = current.path.at(-1);
+                if (
+                    to.format.format === foundPathLast?.format.format &&
+                    (simpleMode || !to.handler || to.handler.name === foundPathLast?.handler.name)
+                ) {
+                    console.log(`Found path at iteration ${logString}`);
                     this.dispatchEvent("found", current.path);
                     yield current.path;
                     pathsFound++;
                 }
                 else {
-                    console.log(`Unvalid path at iteration ${iterations} with cost ${current.cost}: ${current.path.map(p => p.handler.name + "(" + p.format.mime + ")").join(" -> ")}`);
+                    console.log(`Unvalid path at iteration ${logString}`);
                     this.dispatchEvent("skipped", current.path);
                 }
                 continue;
@@ -348,6 +324,10 @@ export class TraversionGraph {
             this.dispatchEvent("searching", current.path);
             this.nodes[current.index].edges.forEach(edgeIndex => {
                 let edge = this.edges[edgeIndex];
+                if ( // Always start paths from the exact format that the user selected
+                    current.path.length === 1
+                    && edge.from.format.format !== from.format.format
+                ) return;
                 const indexInVisited = visited.indexOf(edge.to.index);
                 if (indexInVisited >= 0 && indexInVisited < current.visitedBorder) return;
                 const handler = this.handlers.find(h => h.name === edge.handler);
