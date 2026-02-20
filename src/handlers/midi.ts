@@ -1,5 +1,5 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-import { extractEvents, tableToString, stringToTable, buildMidi, parseRtttl, parseGrubTune } from "./midi/midifilelib.js";
+import { extractEvents, tableToString, stringToTable, buildMidi, parseRtttl, parseGrubTune, tableToRtttl, tableToGrubTune } from "./midi/midifilelib.js";
 
 const SAMPLE_RATE = 44100;
 const BUFFER_FRAMES = 4096;
@@ -84,8 +84,9 @@ export class midiCodecHandler implements FormatHandler {
     this.supportedFormats.push(
       { name: "MIDI",          format: "mid",    extension: "mid",    mime: "audio/midi",   from: true,  to: true,  internal: "mid",   category: "audio", lossless: true },
       { name: "MIDI",          format: "midi",   extension: "midi",   mime: "audio/x-midi", from: true,  to: false, internal: "midi",  category: "audio", lossless: true },
-      { name: "RTTTL",         format: "rtttl",  extension: "rtttl",  mime: "audio/rtttl",  from: true,  to: false, internal: "rtttl", category: "text",  lossless: true },
-      { name: "NokRing",       format: "rtttl",  extension: "nokring",mime: "audio/rtttl",  from: true,  to: false, internal: "rtttl", category: "text",  lossless: true },
+      { name: "RTTTL",         format: "rtttl",  extension: "rtttl",  mime: "audio/rtttl",  from: true,  to: true,  internal: "rtttl", category: "text",  lossless: false },
+      { name: "NokRing",       format: "rtttl",  extension: "nokring",mime: "audio/rtttl",  from: true,  to: false, internal: "rtttl", category: "text",  lossless: false },
+      { name: "GRUB Init Tune",format: "grub",   extension: "grub",   mime: "text/plain",   from: true,  to: true,  internal: "grub",  category: "text",  lossless: false },
       { name: "Plain Text",    format: "txt",    extension: "txt",    mime: "text/plain",   from: true,  to: true,  internal: "txt",   category: "text",  lossless: true },
     );
     this.ready = true;
@@ -106,6 +107,29 @@ export class midiCodecHandler implements FormatHandler {
         const text  = tableToString(table);
         const bytes = new TextEncoder().encode(text);
         outputFiles.push({ bytes, name: inputFile.name.replace(/\.[^.]+$/, "") + ".txt" });
+      }
+      return outputFiles;
+    }
+
+    // MIDI binary -> RTTTL
+    if (outputFormat.internal === "rtttl") {
+      for (const inputFile of inputFiles) {
+        const table    = extractEvents(inputFile.bytes);
+        const baseName = inputFile.name.replace(/\.[^.]+$/, "");
+        const text     = tableToRtttl(table, baseName);
+        const bytes    = new TextEncoder().encode(text);
+        outputFiles.push({ bytes, name: baseName + ".rtttl" });
+      }
+      return outputFiles;
+    }
+
+    // MIDI binary -> GRUB init tune
+    if (outputFormat.internal === "grub") {
+      for (const inputFile of inputFiles) {
+        const table = extractEvents(inputFile.bytes);
+        const text  = tableToGrubTune(table);
+        const bytes = new TextEncoder().encode(text);
+        outputFiles.push({ bytes, name: inputFile.name.replace(/\.[^.]+$/, "") + ".grub" });
       }
       return outputFiles;
     }

@@ -310,6 +310,27 @@ export function extractEvents(midiBytes) {
 }
 
 /**
+    .                 ...
+   | "..             .".#\
+  |     \.           |##" \
+  |.     \".         |#    \
+   |      \#.".      |#     \
+   |.      \## ".    |#      \         __________________________
+    |.      \##. "".  # #.    \       | Hai :3 you found me hehe |
+      ".     |"### ."|"#.#. #  \      |  ________________________|
+       ".    >   "#"  ".# # #/""\     |/
+         "--..". |.##"" |    /##\
+ ......""#::".#"/.#### ".#. |### |
+|         """" / |####  | ##:.:\#\|
+ \_           |  \####  |   ####" |
+   ""-.     .-"|  "-...."        ."
+       """""    \      ...     ."
+                 "..   "\ """"/
+                    "".. ".../
+                        ""--"
+*/
+
+/**
  * Convert an event table to a newline-separated human-readable string.
  * @param {Array<Object>} table
  * @returns {string}
@@ -810,4 +831,216 @@ export function parseGrubTune(text) {
   events.push({ track: 0, tick, absoluteSec: null, type: "end_of_track", metaType: 0x2f });
   initTrack(events, TICKS, bpm, 0);
   return events;
+}
+
+// Melody extraction (MIDI -> monophonic note list)
+
+/**
+ * Extract a monophonic melody from an event table.
+ *
+ * Algorithm:
+ *   1. Read tempo from first set_tempo meta event (default 120 BPM).
+ *   2. Collect all note_on (velocity > 0) and note_off events.
+ *   3. Group note_ons by tick; for each tick keep only the highest-pitched note.
+ *   4. For each selected note:
+ *      - duration = min(note_off tick, next note_on tick) - note_on tick
+ *      - rest     = max(0, next note_on tick - note_off tick)
+ *        (if the next note_on starts before the note_off, rest = 0)
+ *   5. Return { bpm, ticksPerBeat, melody } where melody is an array of
+ *      { note (MIDI 0-127), durationTicks, restTicks }.
+ *
+ * @param {Array} table - event table from extractEvents()
+ * @returns {{ bpm: number, ticksPerBeat: number, melody: Array }}
+ */
+function extractMelody(table) {
+  let ticksPerBeat = 480;
+  let bpm          = 120;
+
+  for (const ev of table) {
+    if (ev.type === "header") {
+      if (ev.ticksPerBeat) ticksPerBeat = ev.ticksPerBeat;
+    } else if (ev.type === "set_tempo") {
+      bpm = Math.round(60000000 / ev.tempo);
+    }
+  }
+
+  const rawOns  = [];
+  const rawOffs = [];
+
+  for (const ev of table) {
+    if (ev.type === "note_on" && ev.velocity > 0) {
+      rawOns.push({ tick: ev.tick, note: ev.note, channel: ev.channel });
+    } else if (ev.type === "note_off" || (ev.type === "note_on" && ev.velocity === 0)) {
+      rawOffs.push({ tick: ev.tick, note: ev.note, channel: ev.channel });
+    }
+  }
+
+  if (rawOns.length === 0) return { bpm, ticksPerBeat, melody: [] };
+
+  // Group by tick, keep highest pitch per tick
+  const onsByTick = new Map();
+  for (const on of rawOns) {
+    const prev = onsByTick.get(on.tick);
+    if (prev === undefined || on.note > prev) {
+      onsByTick.set(on.tick, on.note);
+    }
+  }
+
+  const selected = Array.from(onsByTick.entries())
+    .sort((a, b) => a[0] - b[0])
+    .map(([tick, note]) => ({ tick, note }));
+
+  const melody = [];
+
+  for (let i = 0; i < selected.length; i++) {
+    const { tick, note } = selected[i];
+    const nextOnTick     = i + 1 < selected.length ? selected[i + 1].tick : Infinity;
+
+    // Find earliest note_off for this note at or after its note_on tick
+    let offTick = Infinity;
+    for (const off of rawOffs) {
+      if (off.note === note && off.tick >= tick && off.tick < offTick) {
+        offTick = off.tick;
+      }
+    }
+    if (offTick === Infinity) offTick = nextOnTick;
+
+    const durationTicks = Math.max(1, Math.min(offTick, nextOnTick) - tick);
+    const restTicks     = nextOnTick === Infinity ? 0 : Math.max(0, nextOnTick - offTick);
+
+    melody.push({ note, durationTicks, restTicks });
+  }
+
+  return { bpm, ticksPerBeat, melody };
+}
+
+// RTTTL quantization helper
+
+// Standard RTTTL durations: [code, beats] where beats = 4 / code (quarter note = 1 beat).
+// Dotted variants add 50%.
+const RTTTL_DURATIONS = [
+  [1,  4.0],
+  [2,  2.0],
+  [4,  1.0],
+  [8,  0.5],
+  [16, 0.25],
+  [32, 0.125],
+];
+
+function quantizeToRtttl(durationBeats) {
+  let bestCode   = 4;
+  let bestDotted = false;
+  let bestDiff   = Infinity;
+
+  for (const [code, beats] of RTTTL_DURATIONS) {
+    for (const dotted of [false, true]) {
+      const b    = dotted ? beats * 1.5 : beats;
+      const diff = Math.abs(b - durationBeats);
+      if (diff < bestDiff) {
+        bestDiff   = diff;
+        bestCode   = code;
+        bestDotted = dotted;
+      }
+    }
+  }
+
+  return { code: bestCode, dotted: bestDotted };
+}
+
+const RTTTL_NOTE_NAMES = ["c","c#","d","d#","e","f","f#","g","g#","a","a#","b"];
+
+function midiNoteToRtttl(note) {
+  const semitone = note % 12;
+  // MIDI octave: note=60 -> C4, so octave = floor(note/12) - 1
+  const octave   = Math.floor(note / 12) - 1;
+  return { name: RTTTL_NOTE_NAMES[semitone], octave: Math.max(4, Math.min(7, octave)) };
+}
+
+// MIDI -> RTTTL
+
+/**
+ * Convert an event table to an RTTTL string.
+ *
+ * The most common octave and duration become the header defaults so that
+ * individual tokens can omit them when they match.
+ *
+ * @param {Array}  table - event table from extractEvents()
+ * @param {string} [name] - song name (default "song")
+ * @returns {string} RTTTL string
+ */
+export function tableToRtttl(table, name) {
+  const songName = (name || "song").replace(/:/g, "");
+  const { bpm, ticksPerBeat, melody } = extractMelody(table);
+
+  if (melody.length === 0) return `${songName}:d=4,o=5,b=120:p`;
+
+  const octaveCounts   = new Map();
+  const durationCounts = new Map();
+  const tokens         = [];
+
+  for (const { note, durationTicks, restTicks } of melody) {
+    const beats            = durationTicks / ticksPerBeat;
+    const { code, dotted } = quantizeToRtttl(beats);
+    const { name: pname, octave } = midiNoteToRtttl(note);
+
+    octaveCounts.set(octave, (octaveCounts.get(octave) || 0) + 1);
+    durationCounts.set(code, (durationCounts.get(code) || 0) + 1);
+    tokens.push({ code, dotted, pname, octave });
+
+    if (restTicks > 0) {
+      const rbeats           = restTicks / ticksPerBeat;
+      const { code: rc, dotted: rd } = quantizeToRtttl(rbeats);
+      durationCounts.set(rc, (durationCounts.get(rc) || 0) + 1);
+      tokens.push({ code: rc, dotted: rd, pname: "p", octave: null });
+    }
+  }
+
+  let defaultOctave   = 5;
+  let defaultDuration = 4;
+  let bestOct = -1, bestDur = -1;
+  for (const [o, c] of octaveCounts)   if (c > bestOct) { bestOct = c; defaultOctave   = o; }
+  for (const [d, c] of durationCounts) if (c > bestDur) { bestDur = c; defaultDuration = d; }
+
+  const parts = tokens.map(({ code, dotted, pname, octave }) => {
+    let token = "";
+    if (code !== defaultDuration) token += code;
+    token += pname;
+    if (dotted) token += ".";
+    if (octave !== null && octave !== defaultOctave) token += octave;
+    return token;
+  });
+
+  return `${songName}:d=${defaultDuration},o=${defaultOctave},b=${Math.round(bpm)}:${parts.join(",")}`;
+}
+
+// MIDI -> GRUB init tune
+
+/**
+ * Convert an event table to a GRUB_INIT_TUNE string.
+ *
+ * Duration is expressed as a decimal beat count (1 = one beat at the given BPM).
+ * Rests are encoded as freq=0 with the gap duration in beats.
+ *
+ * @param {Array} table - event table from extractEvents()
+ * @returns {string} e.g. GRUB_INIT_TUNE="120 440 1 0 0.5 494 1"
+ */
+export function tableToGrubTune(table) {
+  const { bpm, ticksPerBeat, melody } = extractMelody(table);
+
+  if (melody.length === 0) return `GRUB_INIT_TUNE="${Math.round(bpm)}"`;
+
+  const parts = [String(Math.round(bpm))];
+
+  for (const { note, durationTicks, restTicks } of melody) {
+    const hz  = Math.round(440 * Math.pow(2, (note - 69) / 12));
+    const dur = parseFloat((durationTicks / ticksPerBeat).toFixed(4));
+    parts.push(String(hz), String(dur));
+
+    if (restTicks > 0) {
+      const rdur = parseFloat((restTicks / ticksPerBeat).toFixed(4));
+      parts.push("0", String(rdur));
+    }
+  }
+
+  return `GRUB_INIT_TUNE="${parts.join(" ")}"`;
 }
