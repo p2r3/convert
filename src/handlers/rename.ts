@@ -100,4 +100,18 @@ export const renameTxtHandler = renameHandler("renametxt", [
   CommonFormats.JSON.builder("json").allowFrom(),
   CommonFormats.XML.builder("xml").allowFrom(),
   CommonFormats.YML.builder("yaml").allowFrom()
-])
+]);
+/// handler for renaming json-based formats
+export const renameJsonHandler = renameHandler("renamejson", [
+  CommonFormats.JSON.builder("json").allowTo(),
+  {
+    name: "HTTP Archive",
+    format: "har",
+    extension: "har",
+    mime: "application/har+json",
+    from: true,
+    to: false,
+    category: "archive",
+    internal: "har"
+  }
+]);
