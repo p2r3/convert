@@ -3,6 +3,7 @@ function normalizeMimeType (mime: string) {
     case "audio/x-wav": return "audio/wav";
     case "audio/vnd.wave": return "audio/wav";
     case "application/x-gzip": return "application/gzip";
+    case "image/x-icns": return "image/icns";
     case "image/x-icon": return "image/vnd.microsoft.icon";
     case "image/vtf": return "image/x-vtf";
     case "image/aseprite": return "image/x-aseprite";
