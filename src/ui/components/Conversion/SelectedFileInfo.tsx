@@ -1,21 +1,21 @@
-import {Icon} from "./Icon.tsx";
+import { Icon } from "../Icon.tsx";
 
 import "./SelectedFileInfo.css"
 
-import faImageRegular from "../img/fa-image-regular-full.svg";
-import type {CSSProperties} from "preact";
+import faImageRegular from "../../img/fa-image-regular-full.svg";
+import type { CSSProperties } from "preact";
 
 interface SelectedFileInfoProps {
     className?: string;
     style?: CSSProperties;
 }
 
-export default function SelectedFileInfo({className = "", style = {}}: SelectedFileInfoProps) {
+export default function SelectedFileInfo({ className = "", style = {} }: SelectedFileInfoProps) {
     return (
-        <div className={`file-info-badge ${className}`} style={style}>
+        <div className={ `file-info-badge ${className}` } style={ style }>
             <Icon
-                src={faImageRegular}
-                size={16}
+                src={ faImageRegular }
+                size={ 16 }
                 color="var(--text-secondary)"
             />
             <span className="file-name">some_image.svg</span>

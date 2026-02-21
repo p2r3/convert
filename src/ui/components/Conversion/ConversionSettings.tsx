@@ -1,10 +1,10 @@
-import faWrenchSolid from '../img/fa-wrench-solid-full.svg';
-import faChevronDownSolid from '../img/fa-chevron-down-solid-full.svg';
-import faSlidersSolid from '../img/fa-sliders-solid-full.svg';
-import faLinkSolid from '../img/fa-link-solid-full.svg';
-import type {FormatCategory} from "./SideNav.tsx";
-import {useState} from "preact/hooks";
-import {Icon} from "./Icon.tsx";
+import faWrenchSolid from '../../img/fa-wrench-solid-full.svg';
+import faChevronDownSolid from '../../img/fa-chevron-down-solid-full.svg';
+import faSlidersSolid from '../../img/fa-sliders-solid-full.svg';
+import faLinkSolid from '../../img/fa-link-solid-full.svg';
+import type { FormatCategory } from "./SideNav";
+import { useState } from "preact/hooks";
+import { Icon } from "../Icon.tsx";
 
 import "./ConversionSettings.css"
 
@@ -20,7 +20,7 @@ export default function ConversionSettings(props: ConversionSettingsProps) {
     };
 
     return (
-        <div className={`conversion-settings ${isSettingsExpanded ? 'is-expanded' : ''}`}>
+        <div className={ `conversion-settings ${isSettingsExpanded ? 'is-expanded' : ''}` }>
             <div className="mobile-settings-header mobile-only" onClick={ toggleSettings }>
                 <h3>
                     <Icon

@@ -1,5 +1,5 @@
-import {Icon} from "./Icon.tsx";
-import {fromJsonHandler} from "../../handlers/json.ts";
+import { Icon } from "../Icon.tsx";
+import { fromJsonHandler } from "../../../handlers/json.ts";
 
 import "./SideNav.css"
 
@@ -13,7 +13,7 @@ interface SideNavProps {
     items: FormatCategory[];
 }
 
-export default function SideNav({items}: SideNavProps) {
+export default function SideNav({ items }: SideNavProps) {
     return (
         <aside className="side-nav">
             <div className="nav-header">

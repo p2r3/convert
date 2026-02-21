@@ -2,7 +2,7 @@ import DarkModeToggle from '../components/DarkModeToggle';
 
 import './Conversion.css'
 
-import {Icon} from "../components/Icon.tsx";
+import { Icon } from "../components/Icon.tsx";
 
 import logoImage from '../img/logo.svg';
 import faImageRegular from '../img/fa-image-regular-full.svg';
@@ -11,11 +11,11 @@ import faFileLinesRegular from '../img/fa-file-lines-regular-full.svg';
 import faVideoSolid from '../img/fa-video-solid-full.svg';
 import faMusicSolid from '../img/fa-music-solid-full.svg';
 import faMagnifyingGlassSolid from '../img/fa-magnifying-glass-solid-full.svg';
-import FormatCard, {type FormatType} from "../components/FormatCard.tsx";
-import SideNav, {type FormatCategory} from "../components/SideNav.tsx";
+import FormatCard, { type FormatType } from "../components/Conversion/FormatCard.tsx";
+import SideNav, { type FormatCategory } from "../components/Conversion/SideNav.tsx";
 import Footer from "../components/Footer.tsx";
-import ConversionSettings from "../components/ConversionSettings.tsx";
-import SelectedFileInfo from "../components/SelectedFileInfo.tsx";
+import ConversionSettings from "../components/Conversion/ConversionSettings.tsx";
+import SelectedFileInfo from "../components/Conversion/SelectedFileInfo.tsx";
 
 interface ConversionPageProps {
 
@@ -48,35 +48,35 @@ export default function Conversion(props: ConversionPageProps | undefined) {
             <header className="conversion-header">
                 <div className="header-left">
                     <Icon
-                        src={logoImage}
-                        size={40}
+                        src={ logoImage }
+                        size={ 40 }
                         color="var(--primary)"
                     />
                     <h1 className="conversion-title">Convert to it!</h1>
                 </div>
 
                 <div className="header-right">
-                    {/* Desktop File Info */}
-                    <SelectedFileInfo className="desktop-only"/>
-                    <DarkModeToggle/>
+                    {/* Desktop File Info */ }
+                    <SelectedFileInfo className="desktop-only" />
+                    <DarkModeToggle />
                 </div>
             </header>
 
-            {/* Mobile File Info */}
-            <SelectedFileInfo className="mobile-only"/>
+            {/* Mobile File Info */ }
+            <SelectedFileInfo className="mobile-only" />
 
             <main className="conversion-main">
                 <div className="content-wrapper">
-                    <SideNav items={sidebarItems}/>
+                    <SideNav items={ sidebarItems } />
 
-                    {/* Center Browser */}
+                    {/* Center Browser */ }
                     <section className="format-browser">
                         <div className="search-container">
                             <div className="search-input-wrapper">
                                 <Icon
-                                    src={faMagnifyingGlassSolid}
+                                    src={ faMagnifyingGlassSolid }
                                     className="icon"
-                                    size={16}
+                                    size={ 16 }
                                     color="var(--text-secondary)"
                                 />
                                 <input
@@ -89,28 +89,28 @@ export default function Conversion(props: ConversionPageProps | undefined) {
                         <div className="format-list-container scroller">
                             <div className="list-header desktop-only">
                                 <h2>Common Formats</h2>
-                                <span>Showing {formatCards.length} formats</span>
+                                <span>Showing { formatCards.length } formats</span>
                             </div>
 
                             <div className="format-grid">
-                                {formatCards.map((card, index) => (
-                                    <FormatCard formatType={card}/>
-                                ))}
+                                { formatCards.map((card, index) => (
+                                    <FormatCard formatType={ card } />
+                                )) }
                             </div>
                         </div>
                     </section>
                 </div>
 
-                {/* Right Settings Sidebar / Bottom Settings Accordion */}
+                {/* Right Settings Sidebar / Bottom Settings Accordion */ }
                 <aside className="settings-sidebar">
-                    <ConversionSettings/>
+                    <ConversionSettings />
                     <div className="spacer"></div>
                     <div className="action-footer">
                         <button className="btn-convert">Convert!</button>
                     </div>
                 </aside>
             </main>
-            <Footer/>
+            <Footer />
         </div>
     );
 }

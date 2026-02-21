@@ -1,13 +1,13 @@
 import { useRef, useState } from 'preact/hooks';
 
-import { CurrentPage, Pages } from '../index';
+import { CurrentPage, Pages } from '../../index';
 import { selectedFiles } from 'src/main';
 
-import uploadImage from '../img/fa-upload-solid-full.svg';
-import logoImage from '../img/logo.svg';
+import uploadImage from '../../img/fa-upload-solid-full.svg';
+import logoImage from '../../img/logo.svg';
 
-import DarkModeToggle from './DarkModeToggle';
-import { Icon } from "./Icon.tsx";
+import DarkModeToggle from '../DarkModeToggle.tsx';
+import { Icon } from "../Icon.tsx";
 
 import './UploadField.css'
 

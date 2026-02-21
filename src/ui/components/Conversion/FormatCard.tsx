@@ -1,4 +1,4 @@
-import { Icon } from "../components/Icon.tsx";
+import { Icon } from "../Icon.tsx";
 
 import "./FormatCard.css"
 
@@ -20,7 +20,7 @@ export default function FormatCard(props: FormatCardProps) {
         "formatType" in props ? props.formatType : props;
 
     return (
-        <div className={formatData.active ? "format-card active" : "format-card"}>
+        <div className={ formatData.active ? "format-card active" : "format-card" }>
             {/* Mobile Card Layout */ }
             <div className="card-mobile-header mobile-only">
                 <div className="card-title-group">

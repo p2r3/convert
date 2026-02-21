@@ -1,5 +1,5 @@
 import Footer from "../components/Footer"
-import UploadField from "../components/UploadField"
+import UploadField from "../components/Upload/UploadField"
 
 import './Upload.css'
 
