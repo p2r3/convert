@@ -221,6 +221,21 @@ const CommonFormats = {
         "woff2",
         "font/woff2",
         [Category.FONT]
+    ),
+    // music notation
+    MUSICXML: new FormatDefinition(
+        "MusicXML",
+        "musicxml",
+        "musicxml",
+        "application/vnd.recordare.musicxml+xml",
+        Category.DOCUMENT
+    ),
+    MXL: new FormatDefinition(
+        "MusicXML Compressed",
+        "mxl",
+        "mxl",
+        "application/vnd.recordare.musicxml",
+        Category.DOCUMENT
     )
 }
 

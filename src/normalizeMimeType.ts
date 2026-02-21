@@ -27,6 +27,8 @@ function normalizeMimeType (mime: string) {
     case "application/x-font-woff": return "font/woff";
     case "application/font-woff2": return "font/woff2";
     case "application/x-font-woff2": return "font/woff2";
+    case "application/musicxml": return "application/vnd.recordare.musicxml+xml";
+    case "application/musicxml+xml": return "application/vnd.recordare.musicxml+xml";
   }
   return mime;
 }
