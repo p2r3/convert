@@ -36,7 +36,7 @@ import espeakngHandler from "./espeakng.js"
 import textToShellHandler from "./texttoshell.ts";
 import batchHandler from "./batch.ts";
 import bsorHandler from "./bsor.ts";
-import TxtToPyHandler from './textToPy.ts';
+import txtToPyHandler from './textToPy.ts';
 
 const handlers: FormatHandler[] = [];
 try { handlers.push(new svgTraceHandler()) } catch (_) { };

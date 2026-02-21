@@ -1,7 +1,7 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import CommonFormats from "../CommonFormats.ts";
 
-class TxtToPyHandler implements FormatHandler {
+class txtToPyHandler implements FormatHandler {
 
   public name: string = "Text to Python Script";
   public ready: boolean = true;
@@ -38,4 +38,4 @@ class TxtToPyHandler implements FormatHandler {
   }
 }
 
-export default TxtToPyHandler;
+export default txtToPyHandler;
