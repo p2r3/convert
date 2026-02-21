@@ -18,6 +18,7 @@ import faSlidersSolid from '../img/fa-sliders-solid-full.svg';
 import faLinkSolid from '../img/fa-link-solid-full.svg';
 import { useState } from "preact/hooks";
 
+import SideNav, {type FormatCategory} from "../components/SideNav.tsx";
 
 interface ConversionPageProps {
 
@@ -26,13 +27,13 @@ interface ConversionPageProps {
 export default function Conversion(props: ConversionPageProps | undefined) {
     const [isSettingsExpanded, setIsSettingsExpanded] = useState(false);
 
-    const sidebarLinks = [
-        { label: "Archive", icon: faBoxArchiveSolid },
-        { label: "Image", icon: faImageRegular, active: true },
-        { label: "Document", icon: faFileLinesRegular },
-        { label: "Video", icon: faVideoSolid },
-        { label: "Audio", icon: faMusicSolid },
-        { label: "E-Book", icon: faFileLinesRegular },
+    const sidebarItems: FormatCategory[] = [
+        { category: "Archive", icon: faBoxArchiveSolid },
+        { category: "Image", icon: faImageRegular, active: true },
+        { category: "Document", icon: faFileLinesRegular },
+        { category: "Video", icon: faVideoSolid },
+        { category: "Audio", icon: faMusicSolid },
+        { category: "E-Book", icon: faFileLinesRegular },
     ]
 
     const formatCards = [
@@ -103,27 +104,7 @@ export default function Conversion(props: ConversionPageProps | undefined) {
 
             <main className="conversion-main">
                 <div className="content-wrapper">
-                    {/* Left Sidebar */ }
-                    <aside className="side-nav">
-                        <div className="nav-header">
-                            <span>Format Category</span>
-                        </div>
-                        <div className="nav-list scroller">
-                            <ul>
-                                { sidebarLinks.map((link, index) => (
-                                    <li key={ index }>
-                                        <a href="#" className={ link.active ? "active" : undefined }>
-                                            <Icon
-                                                src={ link.icon }
-                                                size={ 16 }
-                                            />{ " " }
-                                            { link.label }
-                                        </a>
-                                    </li>
-                                )) }
-                            </ul>
-                        </div>
-                    </aside>
+                    <SideNav items={sidebarItems}/>
 
                     {/* Center Browser */ }
                     <section className="format-browser">
