@@ -16,3 +16,6 @@
 [submodule "src/handlers/espeakng.js"]
 	path = src/handlers/espeakng.js
 	url = https://github.com/TheZipCreator/espeakng.js
+[submodule "src/handlers/pandoc"]
+	path = src/handlers/pandoc
+	url = https://github.com/igm/pandoc
