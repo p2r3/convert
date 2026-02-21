@@ -1,4 +1,7 @@
-import { useRef, useState } from 'preact/hooks'
+import { useRef, useState } from 'preact/hooks';
+
+import { CurrentPage, Pages } from '../index';
+import { selectedFiles } from 'src/main';
 
 import uploadImage from '../img/fa-upload-solid-full.svg';
 import logoImage from '../img/logo.svg';
@@ -53,6 +56,9 @@ export default function UploadField({ disabled = false }: UploadFieldComponentPr
 			!files
 			|| files.length === 0
 		) return
+
+		selectedFiles.push(...files);
+		CurrentPage.value = Pages.Conversion;
 	}
 
 	return (

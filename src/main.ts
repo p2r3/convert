@@ -4,7 +4,7 @@ import handlers from "./handlers";
 import { TraversionGraph } from "./TraversionGraph.js";
 
 /** Files currently selected for conversion */
-let selectedFiles: File[] = [];
+export let selectedFiles: File[] = [];
 /**
  * Whether to use "simple" mode.
  * - In **simple** mode, the input/output lists are grouped by file format.
