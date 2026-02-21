@@ -115,8 +115,8 @@ const CommonFormats = {
         "py",
         "py",
         "text/x-python",
-        Category.TEXT
-    )
+        [Category.TEXT, Category.IMAGE]
+    ),
     SH: new FormatDefinition(
         "Shell Script",
         "sh",
