@@ -71,16 +71,17 @@ export namespace JsonType {
 
         setNumElements(pNumElements: number) {
             this.numElements = pNumElements;
+            this.value = new Array(this.numElements);
         }
 
         toCType(): string {
             return this.type.toCType();
         }
-
         
         convertValue(pValue: string, pIndex?: number) {
             if (pIndex !== undefined) {
-                this.value[pIndex] = this.type.convertValue(pValue);
+                this.type.convertValue(pValue);
+                this.value[pIndex] = this.type.value;
             }
         }
     }

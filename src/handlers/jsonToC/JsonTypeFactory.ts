@@ -35,6 +35,8 @@ export default class JsonTypeFactory {
         } else if (!isNaN(Number(pVal))) {
             if (Number.isInteger(Number(pVal))) {
                 result = new JsonType.IntType();
+                console.debug("result=");
+                console.debug(result);
             } else {
                 result = new JsonType.FloatType();
             }

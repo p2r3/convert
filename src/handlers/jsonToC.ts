@@ -1,6 +1,6 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import {JsonType} from "./jsonToC/JsonType.ts";
-
+import JsonTypeFactory from "./jsonToC/JsonTypeFactory.ts";
 
 export default class jsonToCHandler implements FormatHandler {
     /**************************************************/
@@ -48,12 +48,13 @@ export default class jsonToCHandler implements FormatHandler {
             switch (outputFormat.internal) {
                 case "c":
                     if (inputFormat.internal === "json") {
+                        console.log("converting from .json to .c");
                         bytes = await this.jsonToC(file);
                     }
                     break;
                 case "json":
                     if (inputFormat.internal === "c") {
-                        console.debug("converting from .json to .c")
+                        console.log("converting from .c to .json")
                         bytes = await this.cToJson(file);
                     }
                 break;
@@ -66,7 +67,6 @@ export default class jsonToCHandler implements FormatHandler {
             
 
         };
-        console.debug(outputFiles);
         
         return outputFiles;
     }
@@ -114,20 +114,21 @@ export default class jsonToCHandler implements FormatHandler {
     async cToJson(pFile: FileData): Promise<Uint8Array> {
         let result = new Uint8Array();
         let cStr: string = "";
-        let resultJson: Map<string, any> = new Map();
+        let resultObj: any = {};
         
         // Map of variable name, to either nested maps or JsonType
-        let dataDictionary: Map<string, any | JsonType[]> = new Map();
-        let previousDicts: Map<string, any | JsonType[]>[] = [dataDictionary];
+        let dataDictionary: any = {}
+        let previousDicts: any[] = [dataDictionary];
 
         pFile.bytes.forEach((byte) => {
             cStr += String.fromCharCode(byte);
         });
         let lines: string[] = cStr.split("\n");
-        let assignmentRegex = /^(?!#)[^0-9]*\.[^0-9]*/;
-        let declarationRegex = /(?!(.+{$))(void\*|char\*|int|float|bool) .+/;
-        let structRegex = /^(typedef struct|union)\s*{\s*$/
-        let structEndRegex = /^}\s*.+$/;
+        const ASSIGNMENT_REGEX = /^(?!#)[^0-9]*\.[^0-9]*/;
+        const DECLARATION_REGEX = /(?!(.+{$))(void\*|char\*|int|float|bool) .+/;
+        const STRUCT_REGEX = /^(typedef struct|union)\s*{\s*$/
+        const STRUCT_END_REGEX = /^}\s*.+$/;
+        const ARRAY_REGEX = /(^.+)\[(\d+)\]$/;
         let previousLine: string = '';
 
         for (let line of lines) {
@@ -135,14 +136,14 @@ export default class jsonToCHandler implements FormatHandler {
             line = line.replaceAll(/;/g, '');
             // Remove potential double-spaces to make parsing easier
             line = line.replaceAll(/\s\s/g, ' ');
-            if (line.match(structRegex)) {
+            if (line.match(STRUCT_REGEX)) {
                 previousDicts.push(new Map());
-            } else if (line.match(structEndRegex)) {
+            } else if (line.match(STRUCT_END_REGEX)) {
                 let structName = line.replaceAll(/}|\s/g, '');
                 // Type can not logically be undefined, but it calms the typescript compiler
                 if (previousDicts.length > 1) {
-                    let toAdd: Map<string, any> | undefined = previousDicts.pop();
-                    let toAddTo: Map<string, any> | undefined;
+                    let toAdd: any | undefined = previousDicts.pop();
+                    let toAddTo: any | undefined;
                     // ensure that the base dict isn't removed when popping
                     if (previousDicts.length > 1) {
                         toAddTo = previousDicts.pop();
@@ -151,8 +152,8 @@ export default class jsonToCHandler implements FormatHandler {
                     }
                     if (toAddTo !== undefined) {
                         let index = previousDicts.length-1;
-                        // Why the actual heck does this return a new object!?!?
-                        previousDicts[index] = toAddTo.set(structName, toAdd);
+                        toAddTo[structName] = toAdd;
+                        previousDicts[index] = toAddTo;
                         if (previousDicts.length === 1) {
                             dataDictionary = previousDicts[index];
                         }
@@ -160,23 +161,29 @@ export default class jsonToCHandler implements FormatHandler {
                 }
             }
 
-            if (line.match(declarationRegex)) {
+            if (line.match(DECLARATION_REGEX)) {
                 let lineSplit: string[] = line.split(' ');
-                let dataType: JsonType = await this.cTypeToJson(lineSplit[0]);
+                let dataType: JsonType.JsonType = JsonTypeFactory.fromCType(lineSplit[0]);
                 let index = previousDicts.length-1;
                 let varName = lineSplit[1];
                 // regex with capture groups to capture if variable is array
-                let arrayPattern = /(^.+)\[(\d+)\]$/;
-                let matched = varName.match(arrayPattern);
+                let matched = varName.match(ARRAY_REGEX);
+                // if variable is array
                 if (matched !== null) {
-                    previousDicts[index] = previousDicts[index].set(varName, [JsonType.LIST, dataType]);
+                    let toAdd = new JsonType.ListType(dataType);
+                    varName = matched[1];
+                    let numElementsStr: string = matched[2];
+                    if (matched.length == 3) {
+                        toAdd.setNumElements(Number(numElementsStr));
+                    }
+                    previousDicts[index][varName] = toAdd;
                 } else {
-                    previousDicts[index] = previousDicts[index].set(varName, [dataType]);
+                    previousDicts[index][varName] = dataType;
                 }
 
             }
 
-            if (line.match(assignmentRegex)) {
+            if (line.match(ASSIGNMENT_REGEX)) {
                 // remove whitespace characters
                 line = line.replaceAll(/\s/g, '');
                 let structSplitRegex: RegExp = /\.(?!\d)/;
@@ -184,27 +191,47 @@ export default class jsonToCHandler implements FormatHandler {
                 subStructs = subStructs.slice(1, subStructs.length);
                 let operands = subStructs[subStructs.length-1].split("=");
                 let varName = operands[0];
+                let newVarValue = operands[1];
                 subStructs = subStructs.slice(0, subStructs.length-1);
-                let previousResult: Map<string, any> = resultJson;
-                let selectedDataDict: Map<string, JsonType | any> = dataDictionary;
+                let previousResult: any = resultObj;
+                let selectedDataDict: any = dataDictionary;
                 // Iterate to find struct to retrieve values from
                 for (let structName of subStructs) {
                     // Create map if doesn't exist
-                    if (!previousResult.has(structName)) {
-                        previousResult = previousResult.set(structName, new Map<string, any>());
+                    if (!(structName in previousResult)) {
+                        previousResult[structName] = {};
                     }
                     // select map
-                    previousResult = previousResult.get(structName);
-                    selectedDataDict = selectedDataDict.get(structName);
+                    previousResult = previousResult[structName];
+                    selectedDataDict = selectedDataDict[structName];
                 }
-
-                previousResult = previousResult.set(varName, operands[1]);
-                console.debug("resultJson=");
-                console.debug(resultJson);
+                let matchedArray = varName.match(ARRAY_REGEX);
+                let dataType: JsonType.JsonType | null = null;
+                if (matchedArray) {
+                    if (matchedArray.length === 3) {
+                        varName = matchedArray[1];
+                        let index = matchedArray[2];
+                        dataType = selectedDataDict[varName];
+                        if (dataType instanceof JsonType.ListType) {
+                            dataType.convertValue(newVarValue, Number(index));
+                        }
+                    }
+                } else {
+                    dataType = selectedDataDict[varName];
+                    if (dataType !== null) {
+                        dataType.convertValue(newVarValue);
+                    }
+                }
+                if (dataType !== null) {
+                    previousResult = previousResult[varName] = dataType.value;
+                }
             }
             previousLine = line;
         }
-        //console.debug(resultJson);
+
+        let resultStr = JSON.stringify(resultObj, undefined, 4);
+        let encoder = new TextEncoder();
+        result = new Uint8Array(encoder.encode(resultStr));
 
         return result;
     }
@@ -225,23 +252,23 @@ export default class jsonToCHandler implements FormatHandler {
         let key: keyof Object;
         for (key in pObject) {
             let val: any = pObject[key];
-            let cTypeStr: string = "";
-            let valType: JsonType[] = await this.getValueType(val);
-            if (!(valType[0] instanceof InvalidType)) {
+
+            let valType: JsonType.JsonType = JsonTypeFactory.fromAny(val);
+            if (!(valType instanceof JsonType.InvalidType)) {
                 result += indent;
                 if (isUnion) {
                     result += "\t";
                 }
-                if (valType[0] instanceof ListType) {
+                if (valType instanceof JsonType.ListType) {
                     let valLength: number = val.length;
-                    result += await this.jsonToCType(valType[1]) + " " + key + `[${valLength}];\n`;
-                } else if (valType[0] instanceof ObjectType) {
+                    result += valType.type.toCType() + " " + key + `[${valLength}];\n`;
+                } else if (valType instanceof JsonType.ObjectType) {
                     result += await this.createStruct(key, val, pRecursionLevel+1);
                 } else {
-                    result += await this.jsonToCType(valType[0]) + " " + key + ";\n";
+                    valType.value = val;
+                    result += valType.toCType() + " " + key + ";\n";
                 }
             }
-            cTypeStr = await this.jsonToCType(valType[0]);
         }
 
         result += shortIndent + "} " + pKey + ";\n";
@@ -253,7 +280,7 @@ export default class jsonToCHandler implements FormatHandler {
         let key: keyof Object;
         for (key in pObject) {
             let val = pObject[key];
-            let objType: JsonType.JsonType = await this.getValueType(val);
+            let objType: JsonType.JsonType = JsonTypeFactory.fromAny(val);
             if (!(objType instanceof JsonType.InvalidType)) {
                 if (objType instanceof JsonType.ListType) {
                     let i = 0;
@@ -272,16 +299,6 @@ export default class jsonToCHandler implements FormatHandler {
                 }
             }
         }
-        return result;
-    }
-
-    async getValueType(pVal: any): Promise<JsonType.JsonType> {
-
-    }
-
-    async createListOfType(pType: JsonType): Promise<Array<any>> {
-        let result: any[] = [];
-        
         return result;
     }
 
