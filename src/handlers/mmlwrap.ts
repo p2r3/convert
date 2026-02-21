@@ -45,8 +45,7 @@ class mmlwrapHandler implements FormatHandler {
       const out = `<math>${content}</math>`;
       const outputName =
         file.name.split(".").slice(0, -1).join(".") +
-        "." +
-        outputFormat.extension;
+        ".html"
     outputFiles.push({
         name: outputName,
         bytes: out,
