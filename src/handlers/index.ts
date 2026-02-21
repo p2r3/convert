@@ -41,6 +41,7 @@ import batchHandler from "./batch.ts";
 import bsorHandler from "./bsor.ts";
 import fontHandler from "./font.ts";
 import icnsHandler from "./icns.ts";
+import asepriteHandler from "./aseprite.ts";
 
 const handlers: FormatHandler[] = [];
 try { handlers.push(new svgTraceHandler()) } catch (_) { };
@@ -87,5 +88,6 @@ try { handlers.push(new batchHandler()) } catch (_) { };
 try { handlers.push(new bsorHandler()) } catch (_) { };
 try { handlers.push(new fontHandler()) } catch (_) { };
 try { handlers.push(new icnsHandler()) } catch (_) { };
+try { handlers.push(new asepriteHandler()) } catch (_) { };
 
 export default handlers;

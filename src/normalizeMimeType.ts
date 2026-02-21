@@ -6,6 +6,8 @@ function normalizeMimeType (mime: string) {
     case "image/x-icns": return "image/icns";
     case "image/x-icon": return "image/vnd.microsoft.icon";
     case "image/vtf": return "image/x-vtf";
+    case "image/aseprite": return "image/x-aseprite";
+    case "application/x-aseprite": return "image/x-aseprite";
     case "image/qoi": return "image/x-qoi";
     case "video/bink": return "video/vnd.radgamettools.bink";
     case "video/binka": return "audio/vnd.radgamettools.bink";
