@@ -280,6 +280,7 @@ export default function Conversion(props: ConversionPageProps | undefined) {
                     </div>
                 </aside>
             </main>
+            <Footer/>
         </div>
     );
 }
