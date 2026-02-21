@@ -132,7 +132,8 @@ class icnsHandler implements FormatHandler {
     ICNS_FORMAT.builder("icns")
       .allowFrom(true)
       .allowTo(true)
-      .markLossless(true)
+      // ICNS contains a finite icon set; conversions here are not guaranteed bit-exact round-trips.
+      .markLossless(false)
   ];
 
   #canvas?: HTMLCanvasElement;
