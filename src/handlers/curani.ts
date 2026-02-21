@@ -185,6 +185,10 @@ class curaniHandler implements FormatHandler {
                     throw new Error("Invalid output format.");
                 }
             }
+            else if (inputFormat.internal === "apng" && outputFormat.internal === "ani") {
+                // To be added!
+                throw new Error("Invalid input format.");
+            }
             else {
                 throw new Error("Invalid input format.");
             }
