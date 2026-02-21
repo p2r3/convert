@@ -110,6 +110,13 @@ const CommonFormats = {
         "text/windows-batch",
         ["text"]
     ),
+    PYTHON: new FormatDefinition(
+        "Python Script",
+        "py",
+        "py",
+        "text/x-python",
+        Category.TEXT
+    )
     SH: new FormatDefinition(
         "Shell Script",
         "sh",
