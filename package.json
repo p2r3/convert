@@ -1,8 +1,12 @@
 {
-  "name": "convert",
+  "name": "p2r3-convert",
+  "productName": "Convert to it!",
+  "author": "PortalRunner",
+  "description": "Truly universal browser-based file converter",
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "main": "src/electron.cjs",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -10,11 +14,38 @@
     "preview": "vite preview",
     "docker": "bun run docker:build && bun run docker:up",
     "docker:build": "docker compose -f docker/docker-compose.yml -f docker/docker-compose.override.yml build --build-arg VITE_COMMIT_SHA=$(git rev-parse HEAD)",
-    "docker:up": "docker compose -f docker/docker-compose.yml -f docker/docker-compose.override.yml up -d"
+    "docker:up": "docker compose -f docker/docker-compose.yml -f docker/docker-compose.override.yml up -d",
+    "desktop:build": "tsc && IS_DESKTOP=true vite build && bun run cache:build",
+    "desktop:preview": "electron .",
+    "desktop:start": "bun run desktop:build && bun run desktop:preview",
+    "desktop:dist:win": "bun run desktop:build && electron-builder --win --publish never",
+    "desktop:dist:mac": "bun run desktop:build && electron-builder --mac --publish never",
+    "desktop:dist:linux": "bun run desktop:build && electron-builder --linux --publish never"
+  },
+  "build": {
+    "appId": "com.p2r3.convert",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "src/electron.cjs"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
   },
   "devDependencies": {
     "@types/jszip": "^3.4.0",
     "@types/opentype.js": "^1.3.9",
+    "electron": "^40.6.0",
+    "electron-builder": "^26.8.1",
     "puppeteer": "^24.36.0",
     "typescript": "~5.9.3",
     "vite": "^7.2.4",
