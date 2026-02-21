@@ -22,6 +22,9 @@ function sfntToSvg(inputFile: FileData, encoder: TextEncoder) {
 
   const glyphElements: string[] = [];
 
+  // Second line of the demo text is the longest, calculating width of the image based on it
+  let alphabetStringWidth = 0;
+
   for (let i = 0; i < font.glyphs.length; i++) {
     const glyph = font.glyphs.get(i);
     if (!glyph || !glyph.unicode)
@@ -38,12 +41,16 @@ function sfntToSvg(inputFile: FileData, encoder: TextEncoder) {
         cmd.y2 = -cmd.y2;
     });
     const d = path.toPathData(5);
-    
     glyphElements.push(`<glyph unicode="${escapeHtml(String.fromCharCode(glyph.unicode))}" glyph-name="${glyph.name || ""}" horiz-adv-x="${glyph.advanceWidth}" d="${d}"/>`);
+
+    // alphabetStringWidth = width of "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz"
+    if (glyph.unicode === 32 || glyph.unicode >= 65 && glyph.unicode <= 90 || glyph.unicode >= 97 && glyph.unicode <= 122) {
+      alphabetStringWidth += glyph.advanceWidth ? glyph.advanceWidth : unitsPerEm;
+    }
   }
 
   // write svg font data & give a little demonstration of the font so that the SVG image isnt empty (and thus can [kind-of] be converted to things such as png, jpeg, etc)
-  const svgFont = `<svg xmlns="http://www.w3.org/2000/svg">
+  const svgFont = `<svg xmlns="http://www.w3.org/2000/svg" width="${alphabetStringWidth / unitsPerEm * 2 + 4}em" height="10em">
   <defs>
     <font id="${escapeHtml(font.names.fullName?.en || "ConvertedFont")}"
         horiz-adv-x="${unitsPerEm}">
