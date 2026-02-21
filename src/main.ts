@@ -15,10 +15,10 @@ let simpleMode: boolean = true;
 
 /** Handlers that support conversion from any formats. */
 const conversionsFromAnyInput: ConvertPathNode[] = handlers
-.filter(h => h.supportAnyInput && h.supportedFormats)
-.flatMap(h => h.supportedFormats!
-  .filter(f => f.to)
-  .map(f => ({ handler: h, format: f})))
+  .filter(h => h.supportAnyInput && h.supportedFormats)
+  .flatMap(h => h.supportedFormats!
+    .filter(f => f.to)
+    .map(f => ({ handler: h, format: f })))
 
 const ui = {
   fileInput: document.querySelector("#file-input") as HTMLInputElement,
@@ -191,7 +191,7 @@ window.printSupportedFormatCache = () => {
 }
 
 
-async function buildOptionList () {
+async function buildOptionList() {
 
   allOptions.length = 0;
   ui.inputList.innerHTML = "";
@@ -314,7 +314,7 @@ ui.modeToggleButton.addEventListener("click", () => {
 
 let deadEndAttempts: ConvertPathNode[][];
 
-async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
+async function attemptConvertPath(files: FileData[], path: ConvertPathNode[]) {
 
   const pathString = path.map(c => c.format.format).join(" → ");
 
@@ -336,7 +336,7 @@ async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
   ui.popupBox.innerHTML = `<h2>Finding conversion route...</h2>
     <p>Trying <b>${pathString}</b>...</p>`;
 
-  for (let i = 0; i < path.length - 1; i ++) {
+  for (let i = 0; i < path.length - 1; i++) {
     const handler = path[i + 1].handler;
     try {
       let supportedFormats = window.supportedFormatCache.get(handler.name);
@@ -400,7 +400,7 @@ window.tryConvertByTraversing = async function (
   return null;
 }
 
-function downloadFile (bytes: Uint8Array, name: string, mime: string) {
+function downloadFile(bytes: Uint8Array, name: string, mime: string) {
   const blob = new Blob([bytes as BlobPart], { type: mime });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
@@ -434,7 +434,7 @@ ui.convertButton.onclick = async function () {
     for (const inputFile of inputFiles) {
       const inputBuffer = await inputFile.arrayBuffer();
       const inputBytes = new Uint8Array(inputBuffer);
-      if (inputFormat.mime === outputFormat.mime) {
+      if (inputFormat.mime === outputFormat.mime && inputFormat.format === outputFormat.format) {
         downloadFile(inputBytes, inputFile.name, inputFormat.mime);
         continue;
       }
