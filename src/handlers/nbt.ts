@@ -82,18 +82,10 @@ class nbtHandler implements FormatHandler {
         const decoder = new TextDecoder()
         const encoder = new TextEncoder()
 
-        // nbt / schem / schematic / litematic -> json
-        if ((inputFormat.internal == "nbt" || inputFormat.internal == "schem" || inputFormat.internal == "schematic" || inputFormat.internal == "litematic") && outputFormat.internal == "json") {
+        // nbt -> json
+        if (inputFormat.internal == "nbt" && outputFormat.internal == "json") {
             for (const file of inputFiles) {
-                let unzipped = file.bytes;
-                try {
-                    // intermediate NBT from schematicConverter will NOT be zipped, but native schems will be
-                    if (inputFormat.internal == "schem" || inputFormat.internal == "schematic" || inputFormat.internal == "litematic") {
-                        unzipped = gunzipSync(file.bytes);
-                    }
-                } catch (e) {}
-
-                const nbt = await NBT.read(unzipped);
+                const nbt = await NBT.read(file.bytes);
                 const j = JSON.stringify(nbt.data, (key, value) =>
                     typeof value === 'bigint' ? value.toString() : value,
                 this.indent);
@@ -103,18 +95,13 @@ class nbtHandler implements FormatHandler {
                 });
             }
         }
-        // json -> nbt / schem / schematic / litematic
-        if (inputFormat.internal == "json" && (outputFormat.internal == "nbt" || outputFormat.internal == "schem" || outputFormat.internal == "schematic" || outputFormat.internal == "litematic")) {
+
+        // json -> nbt
+        if (inputFormat.internal == "json" && outputFormat.internal == "nbt") {
             for (const file of inputFiles) {
                 const text = decoder.decode(file.bytes)
                 const obj = JSON.parse(text)
-                let bd = await NBT.write(obj)
-                
-                if (outputFormat.internal == "schem" || outputFormat.internal == "schematic" || outputFormat.internal == "litematic") {
-                    // Schematics require gzipping
-                     bd = gzipSync(bd);
-                }
-
+                const bd = await NBT.write(obj)
                 outputFiles.push({
                     name: file.name.split(".")[0] + `.${outputFormat.extension}`,
                     bytes: bd
@@ -122,68 +109,28 @@ class nbtHandler implements FormatHandler {
             }
         }
 
-        // snbt -> nbt / schem / schematic
-        if (inputFormat.internal == "snbt" && (outputFormat.internal == "nbt" || outputFormat.internal == "schem" || outputFormat.internal == "schematic")) {
+        // snbt -> nbt
+        if (inputFormat.internal == "snbt" && outputFormat.internal == "nbt") {
             for (const file of inputFiles) {
                 const text = decoder.decode(file.bytes)
                 const nbt = NBT.parse(text)
-                let bd = await NBT.write(nbt)
-                
-                if (outputFormat.internal == "schem" || outputFormat.internal == "schematic") {
-                    // Schematics require gzipping
-                     bd = gzipSync(bd);
-                }
-
+                const bd = await NBT.write(nbt)
                 outputFiles.push({
                     name: file.name.split(".")[0] + `.${outputFormat.extension}`,
                     bytes: bd
                 })
             }
         }
-        if ((inputFormat.internal == "nbt" || inputFormat.internal == "schem" || inputFormat.internal == "schematic" || inputFormat.internal == "litematic") && outputFormat.internal == "snbt") {
+        // nbt -> snbt
+        if (inputFormat.internal == "nbt" && outputFormat.internal == "snbt") {
             for (const file of inputFiles) {
-                let unzipped = file.bytes;
-                try {
-                    if (inputFormat.internal == "schem" || inputFormat.internal == "schematic" || inputFormat.internal == "litematic") {
-                        unzipped = gunzipSync(file.bytes);
-                    }
-                } catch (e) {}
-
-                const nbt = await NBT.read(unzipped)
+                const nbt = await NBT.read(file.bytes)
                 const text = NBT.stringify(nbt, {
                     space: this.indent
                 })
                 outputFiles.push({
                     name: file.name.split(".")[0] + ".snbt",
                     bytes: encoder.encode(text)
-                })
-            }
-        }
-
-        // snbt <-> json
-        if (inputFormat.internal == "snbt" && outputFormat.internal == "json") {
-            for (const file of inputFiles) {
-                const snbt = decoder.decode(file.bytes)
-                const nbt = NBT.parse(snbt)
-                const text = JSON.stringify(nbt, (key, value) =>
-                    typeof value === 'bigint' ? value.toString() : value,
-                this.indent)
-                outputFiles.push({
-                    name: file.name.split(".")[0] + ".json",
-                    bytes: encoder.encode(text)
-                })
-            }
-        }
-        if (inputFormat.internal == "json" && outputFormat.internal == "snbt") {
-            for (const file of inputFiles) {
-                const text = decoder.decode(file.bytes)
-                const obj = JSON.parse(text)
-                const snbt = NBT.stringify(obj, {
-                    space: this.indent
-                })
-                outputFiles.push({
-                    name: file.name.split(".")[0] + ".snbt",
-                    bytes: encoder.encode(snbt)
                 })
             }
         }
