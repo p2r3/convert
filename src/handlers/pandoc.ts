@@ -51,6 +51,7 @@ class pandocHandler implements FormatHandler {
     ["markdown_strict", "original unextended Markdown"],
     ["markdown_github", "GitHub-Flavored Markdown"],
     ["markua", "Markua"],
+    ["mathml","MathML"]
     ["mdoc", "mdoc manual page markup"],
     ["mediawiki", "MediaWiki markup"],
     ["ms", "roff ms"],
@@ -145,6 +146,7 @@ class pandocHandler implements FormatHandler {
     ["fb2", "fb2"],
     ["opendocument", "xml"],
     ["vimdoc", "txt"]
+    ["mathml","mml"]
   ]);
 
   public name: string = "pandoc";
