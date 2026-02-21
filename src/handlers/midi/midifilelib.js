@@ -751,6 +751,11 @@ export function parseRtttl(text) {
   const events = [];
   let   tick   = 0;
 
+  // Set up Lead 1 (square) with instant envelope
+  events.push({ track: 0, tick: 0, absoluteSec: null, type: "program_change", channel: 0, program: 80 });
+  events.push({ track: 0, tick: 0, absoluteSec: null, type: "control_change", channel: 0, controller: 73, value: 0 }); // Attack Time
+  events.push({ track: 0, tick: 0, absoluteSec: null, type: "control_change", channel: 0, controller: 72, value: 0 }); // Release Time
+
   // Notes (part 3+; join remaining in case text has extra colons)
   for (const noteStr of parts.slice(2).join(":").split(",")) {
     const s = noteStr.trim();
@@ -817,6 +822,11 @@ export function parseGrubTune(text) {
 
   const events  = [];
   let   tick    = 0;
+
+  // Set up Lead 1 (square) with instant envelope
+  events.push({ track: 0, tick: 0, absoluteSec: null, type: "program_change", channel: 0, program: 80 });
+  events.push({ track: 0, tick: 0, absoluteSec: null, type: "control_change", channel: 0, controller: 73, value: 0 }); // Attack Time
+  events.push({ track: 0, tick: 0, absoluteSec: null, type: "control_change", channel: 0, controller: 72, value: 0 }); // Release Time
 
   for (let i = 1; i + 1 < nums.length; i += 2) {
     const freq          = nums[i];
