@@ -14,7 +14,7 @@ class nbtHandler implements FormatHandler {
         this.supportedFormats = [
             {
                 name: "Named Binary Tag",
-                format: "NBT",
+                format: "nbt",
                 extension: "nbt",
                 mime: "application/x-minecraft-nbt",
                 from: true,
@@ -23,43 +23,10 @@ class nbtHandler implements FormatHandler {
                 category: "data",
                 lossless: true
             },
-            {
-                name: "Minecraft Schematic",
-                format: "SCHEMATIC",
-                extension: "schematic",
-                mime: "application/x-minecraft-schematic",
-                from: true,
-                to: true,
-                internal: "schematic",
-                category: "data",
-                lossless: true
-            },
-            {
-                name: "Sponge Schematic",
-                format: "SCHEM",
-                extension: "schem",
-                mime: "application/x-minecraft-schem",
-                from: true,
-                to: true,
-                internal: "schem",
-                category: "data",
-                lossless: true
-            },
-            {
-                name: "Litematica Schematic",
-                format: "LITEMATIC",
-                extension: "litematic",
-                mime: "application/x-minecraft-litematic",
-                from: true,
-                to: false,
-                internal: "litematic",
-                category: "data",
-                lossless: true
-            },
             CommonFormats.JSON.supported("json", true, true, true),
             {
                 name: "String Named Binary Tag",
-                format: "SNBT",
+                format: "snbt",
                 extension: "snbt",
                 mime: "application/x-minecraft-snbt",
                 from: true,

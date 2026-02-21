@@ -11,7 +11,7 @@ class schematicConverter implements FormatHandler {
         this.supportedFormats = [
             {
                 name: "Minecraft Schematic",
-                format: "SCHEMATIC",
+                format: "schematic",
                 extension: "schematic",
                 mime: "application/x-minecraft-schematic",
                 from: true,
@@ -22,7 +22,7 @@ class schematicConverter implements FormatHandler {
             },
             {
                 name: "Sponge Schematic",
-                format: "SCHEM",
+                format: "schem",
                 extension: "schem",
                 mime: "application/x-minecraft-schem",
                 from: true,
@@ -33,7 +33,7 @@ class schematicConverter implements FormatHandler {
             },
             {
                 name: "Litematica Schematic",
-                format: "LITEMATIC",
+                format: "litematic",
                 extension: "litematic",
                 mime: "application/x-minecraft-litematic",
                 from: true,
@@ -45,7 +45,7 @@ class schematicConverter implements FormatHandler {
             // Target internal format for graph routing
             {
                 name: "Named Binary Tag",
-                format: "NBT",
+                format: "nbt",
                 extension: "nbt",
                 mime: "application/x-minecraft-nbt",
                 from: false,
