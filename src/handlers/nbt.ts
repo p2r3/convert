@@ -51,7 +51,7 @@ class nbtHandler implements FormatHandler {
                 extension: "litematic",
                 mime: "application/x-minecraft-litematic",
                 from: true,
-                to: true,
+                to: false,
                 internal: "litematic",
                 category: "data",
                 lossless: true
@@ -122,14 +122,14 @@ class nbtHandler implements FormatHandler {
             }
         }
 
-        // snbt -> nbt / schem / schematic / litematic
-        if (inputFormat.internal == "snbt" && (outputFormat.internal == "nbt" || outputFormat.internal == "schem" || outputFormat.internal == "schematic" || outputFormat.internal == "litematic")) {
+        // snbt -> nbt / schem / schematic
+        if (inputFormat.internal == "snbt" && (outputFormat.internal == "nbt" || outputFormat.internal == "schem" || outputFormat.internal == "schematic")) {
             for (const file of inputFiles) {
                 const text = decoder.decode(file.bytes)
                 const nbt = NBT.parse(text)
                 let bd = await NBT.write(nbt)
                 
-                if (outputFormat.internal == "schem" || outputFormat.internal == "schematic" || outputFormat.internal == "litematic") {
+                if (outputFormat.internal == "schem" || outputFormat.internal == "schematic") {
                     // Schematics require gzipping
                      bd = gzipSync(bd);
                 }
@@ -189,14 +189,18 @@ class nbtHandler implements FormatHandler {
         }
 
         
-        // nbt -> schem / schematic / litematic
-        if (inputFormat.internal == "nbt" && (outputFormat.internal == "schem" || outputFormat.internal == "schematic" || outputFormat.internal == "litematic")) {
+        // nbt -> schem / schematic
+        if (inputFormat.internal == "nbt" && (outputFormat.internal == "schem" || outputFormat.internal == "schematic")) {
             for (const file of inputFiles) {
                 outputFiles.push({
                     name: file.name.split(".")[0] + `.${outputFormat.extension}`,
                     bytes: gzipSync(file.bytes)
                 })
             }
+        }
+
+        if (outputFiles.length === 0) {
+            throw new Error(`nbtHandler does not support route: ${inputFormat.internal} -> ${outputFormat.internal}`);
         }
 
         return outputFiles
