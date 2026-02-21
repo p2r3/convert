@@ -2,6 +2,34 @@ body {
   margin: 0;
   font-family: sans-serif;
   --highlight-color: #1C77FF;
+  --page-text: #111;
+  --from-bg: lightgray;
+  --to-bg: rgb(184, 184, 184);
+  --panel-control-bg: white;
+  --panel-control-shadow: rgba(169, 169, 169, 0.4);
+  --search-shadow: darkgrey;
+  --list-bg: white;
+  --list-button-bg: lightgray;
+  --list-button-text: black;
+  --popup-bg: white;
+  --popup-button-bg: lightgray;
+  --popup-button-text: black;
+  color: var(--page-text);
+}
+
+body[data-theme="dark"] {
+  --page-text: #f1f1f1;
+  --from-bg: #1e2127;
+  --to-bg: #171a20;
+  --panel-control-bg: #20242c;
+  --panel-control-shadow: rgba(0, 0, 0, 0.45);
+  --search-shadow: #0f1218;
+  --list-bg: #262a33;
+  --list-button-bg: #333845;
+  --list-button-text: #f1f1f1;
+  --popup-bg: #20242c;
+  --popup-button-bg: #333845;
+  --popup-button-text: #f1f1f1;
 }
 
 #file-input {
@@ -42,16 +70,39 @@ body {
   padding: 10px 20px;
   border: 0;
   border-radius: 10px;
-  background-color: white;
+  background-color: var(--panel-control-bg);
   color: var(--highlight-color);
   font-weight: bold;
   cursor: pointer;
-  box-shadow: 0 5px 0 0 rgba(169, 169, 169, 0.4);
+  box-shadow: 0 5px 0 0 var(--panel-control-shadow);
   pointer-events: all;
 }
 #side-panel button:active {
   transform: translateY(5px);
   box-shadow: 0 0 0 0;
+}
+
+#theme-controls {
+  margin-top: 10px;
+  pointer-events: all;
+}
+
+#theme-controls label {
+  display: block;
+  margin-bottom: 5px;
+  color: white;
+  font-size: 0.9rem;
+}
+
+#theme-select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background-color: var(--panel-control-bg);
+  color: var(--list-button-text);
+  font-size: 0.95rem;
+  box-shadow: 0 5px 0 0 var(--panel-control-shadow);
 }
 
 #commit-id {
@@ -85,10 +136,10 @@ body {
 }
 
 #from-container {
-  background-color: lightgray;
+  background-color: var(--from-bg);
 }
 #to-container {
-  background-color: rgb(184, 184, 184);
+  background-color: var(--to-bg);
 }
 
 .search {
@@ -98,7 +149,9 @@ body {
   border: 0;
   border-radius: 5px;
   outline: none;
-  box-shadow: 0 5px 0 0 darkgrey;
+  box-shadow: 0 5px 0 0 var(--search-shadow);
+  background-color: var(--panel-control-bg);
+  color: var(--list-button-text);
 }
 
 .format-list {
@@ -106,7 +159,7 @@ body {
   flex-flow: column nowrap;
   width: 100%;
   align-items: center;
-  background-color: white;
+  background-color: var(--list-bg);
   border-radius: 10px;
   padding: 30px;
   margin-bottom: 5vw;
@@ -116,8 +169,8 @@ body {
   width: 80%;
   margin: 5px 0;
   padding: 10px;
-  color: black;
-  background-color: lightgray;
+  color: var(--list-button-text);
+  background-color: var(--list-button-bg);
   border: 0;
   border-radius: 10px;
   font-family: monospace;
@@ -164,7 +217,8 @@ button.selected {
   top: 50%;
   width: 20vw;
   transform: translate(-50%, -50%);
-  background-color: white;
+  background-color: var(--popup-bg);
+  color: var(--page-text);
   padding: 15px;
   border-radius: 10px;
   text-align: center;
@@ -175,8 +229,8 @@ button.selected {
   padding: 7px 20px;
   border: 0;
   border-radius: 10px;
-  background-color: lightgray;
-  color: black;
+  background-color: var(--popup-button-bg);
+  color: var(--popup-button-text);
   cursor: pointer;
 }
 

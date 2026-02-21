@@ -25,6 +25,7 @@ const ui = {
   fileSelectArea: document.querySelector("#file-area") as HTMLDivElement,
   convertButton: document.querySelector("#convert-button") as HTMLButtonElement,
   modeToggleButton: document.querySelector("#mode-button") as HTMLButtonElement,
+  themeSelect: document.querySelector("#theme-select") as HTMLSelectElement,
   inputList: document.querySelector("#from-list") as HTMLDivElement,
   outputList: document.querySelector("#to-list") as HTMLDivElement,
   inputSearch: document.querySelector("#search-from") as HTMLInputElement,
@@ -32,6 +33,50 @@ const ui = {
   popupBox: document.querySelector("#popup") as HTMLDivElement,
   popupBackground: document.querySelector("#popup-bg") as HTMLDivElement
 };
+
+type ThemePreference = "system" | "light" | "dark";
+
+const THEME_PREFERENCE_KEY = "themePreference";
+const systemThemeMediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+let themePreference: ThemePreference = "system";
+
+const resolveTheme = (preference: ThemePreference): "light" | "dark" => {
+  if (preference === "system") {
+    return systemThemeMediaQuery.matches ? "dark" : "light";
+  }
+  return preference;
+};
+
+const applyTheme = () => {
+  document.body.setAttribute("data-theme", resolveTheme(themePreference));
+  ui.themeSelect.value = themePreference;
+};
+
+{
+  const savedPreference = localStorage.getItem(THEME_PREFERENCE_KEY);
+  if (
+    savedPreference === "system" ||
+    savedPreference === "light" ||
+    savedPreference === "dark"
+  ) {
+    themePreference = savedPreference;
+  }
+  applyTheme();
+}
+
+ui.themeSelect.addEventListener("change", () => {
+  const selected = ui.themeSelect.value as ThemePreference;
+  if (!["system", "light", "dark"].includes(selected)) return;
+  themePreference = selected;
+  localStorage.setItem(THEME_PREFERENCE_KEY, selected);
+  applyTheme();
+});
+
+systemThemeMediaQuery.addEventListener("change", () => {
+  if (themePreference === "system") {
+    applyTheme();
+  }
+});
 
 /**
  * Filters a list of butttons to exclude those not matching a substring.
