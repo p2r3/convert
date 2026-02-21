@@ -1,9 +1,9 @@
-class PriorityQueue<T extends Object> {
+class PriorityQueue<T extends object> {
   private _queue: Array<T>;
   private _size: number = 0;
-  private _comparator: Function | null;
+  private _comparator: ((val: T, parent: T) => number) | null;
 
-  constructor(initialCapacity?: number, comparator?: Function) {
+  constructor(initialCapacity?: number, comparator?: (val: T, parent: T) => number) {
     const cap = initialCapacity ?? 11;
     const com = comparator ?? null;
     if (cap < 1) {
@@ -19,7 +19,7 @@ class PriorityQueue<T extends Object> {
     const newCapacity =
       oldCapacity + (oldCapacity < 64 ? oldCapacity + 2 : oldCapacity >> 1);
     if (!Number.isSafeInteger(newCapacity)) {
-      throw new Error('capacity out of range');
+      throw new Error('OOM: new capacity not a safe integer');
     }
     this._queue.length = newCapacity;
   }
@@ -38,8 +38,8 @@ class PriorityQueue<T extends Object> {
   private siftupUsingComparator(k: number, item: T): void {
     while (k > 0) {
       // find the parent
-      let parent = (k - 1) >>> 1;
-      let e = this._queue[parent] as T;
+      const parent = (k - 1) >>> 1;
+      const e = this._queue[parent] as T;
       // compare item with it parent, if item's priority less, break siftup and insert
       if (this._comparator!(item, e) >= 0) {
         break;
@@ -54,8 +54,8 @@ class PriorityQueue<T extends Object> {
 
   private siftupComparable(k: number, item: T): void {
     while (k > 0) {
-      let parent = (k - 1) >>> 1;
-      let e = this._queue[parent] as T;
+      const parent = (k - 1) >>> 1;
+      const e = this._queue[parent] as T;
       if (item.toString().localeCompare(e.toString()) >= 0) {
         break;
       }
@@ -74,19 +74,19 @@ class PriorityQueue<T extends Object> {
   }
 
   private sinkUsingComparator(k: number, item: T): void {
-    let half = this._size >>> 1;
+    const half = this._size >>> 1;
     while (k < half) {
       let child = (k << 1) + 1;
       let object = this._queue[child];
-      let right = child + 1;
-      // compare left right child, assgn child the bigger one
+      const right = child + 1;
+      // compare left right child, assign child the bigger one
       if (
         right < this._size &&
         this._comparator!(object, this._queue[right]) > 0
       ) {
         object = this._queue[(child = right)];
       }
-      //compare item and child if bigger is item, break
+      // compare item and child if bigger is item, break
       if (this._comparator!(item, object) <= 0) {
         break;
       }
@@ -97,11 +97,11 @@ class PriorityQueue<T extends Object> {
   }
 
   private sinkComparable(k: number, item: T): void {
-    let half = this._size >>> 1;
+    const half = this._size >>> 1;
     while (k < half) {
       let child = (k << 1) + 1;
       let object = this._queue[child];
-      let right = child + 1;
+      const right = child + 1;
 
       if (
         right < this._size &&
@@ -128,7 +128,7 @@ class PriorityQueue<T extends Object> {
   }
 
   public add(item: T): boolean {
-    let i = this._size;
+    const i = this._size;
     if (i >= this._queue.length) {
       this.grow();
     }
@@ -145,9 +145,9 @@ class PriorityQueue<T extends Object> {
     if (this._size === 0) {
       return null;
     }
-    let s = --this._size;
-    let result = <T>this._queue[0];
-    let x = <T>this._queue[s];
+    const s = --this._size;
+    const result = <T>this._queue[0];
+    const x = <T>this._queue[s];
     this._queue.slice(s, 1);
     if (s !== 0) {
       this.sink(0, x);
@@ -164,9 +164,7 @@ class PriorityQueue<T extends Object> {
   }
 
   public clear(): void {
-    for (let item of this._queue) {
-      (item as any) = null;
-    }
+    this._queue.fill(null as unknown as T);
     this._size = 0;
   }
 
@@ -179,7 +177,7 @@ class PriorityQueue<T extends Object> {
   }
 
   public toArray(): Array<T> {
-    return this._queue.filter(item => item);
+    return this._queue;
   }
 
   public toString(): string {

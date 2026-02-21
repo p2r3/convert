@@ -36,6 +36,26 @@ export default defineConfig({
         {
           src: "src/handlers/libopenmpt/libopenmpt.js",
           dest: "wasm"
+        },
+        {
+          src: "node_modules/js-synthesizer/externals/libfluidsynth-2.4.6.js",
+          dest: "wasm"
+        },
+        {
+          src: "node_modules/js-synthesizer/dist/js-synthesizer.js",
+          dest: "wasm"
+        },
+        {
+          src: "src/handlers/midi/TimGM6mb.sf2",
+          dest: "wasm"
+        },
+        {
+          src: "src/handlers/espeakng.js/js/espeakng.worker.js",
+          dest: "js"
+        },
+        {
+          src: "src/handlers/espeakng.js/js/espeakng.worker.data",
+          dest: "js"
         }
       ]
     }),

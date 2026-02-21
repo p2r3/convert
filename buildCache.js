@@ -3,7 +3,7 @@ import puppeteer from "puppeteer";
 const server = Bun.serve({
   async fetch (req) {
     const path = new URL(req.url).pathname.replace("/convert/", "") || "index.html";
-    const file = Bun.file(`${__dirname}/dist/${path}`);
+    const file = Bun.file(`${__dirname}/dist/${path}`.replaceAll("..", ""));
     if (!(await file.exists())) return new Response("Not Found", { status: 404 });
     return new Response(file);
   },

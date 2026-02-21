@@ -152,7 +152,7 @@ class cgbiToPngHandler implements FormatHandler {
       name: "iPhone optimized CgBI PNG",
       format: "cgbi-png",
       extension: "png",
-      mime: "image/png-cgbi", // Should include "image/png" in the name to appear in suggested formats 
+      mime: "image/png",
       from: true,
       to: false,
       internal: "cgbi-png", 

@@ -1,3 +1,4 @@
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 import type { FormatHandler, FileData, FileFormat } from "../FormatHandler.ts";
 
 function hasPrefix(bytes: Uint8Array, prefix: number[]) {
@@ -93,13 +94,13 @@ function decodeUsingTextDecoder(bytes: Uint8Array, label: string) {
 }
 
 const formats: FileFormat[] = [
-  { name: "Plain Text",             format: "text",                 extension: "txt", mime: "text/plain",                   from: true,  to: true, internal: "text/utf8", category: "text", lossless: true    }, // May or may not have BOM depending on browser
-  { name: "Plain Text (UTF-8)",     format: "txt-utf8 without BOM", extension: "txt", mime: "text/plain; charset=utf-8",    from: false, to: true, internal: "text/utf8NB", category: "text", lossless: true   }, // In case the broeser defaults to with BOM, we can choose to force BOMless UTF-8.
-  { name: "Plain Text (UTF-8 BOM)", format: "txt-utf8 with BOM",    extension: "txt", mime: "text/plain; charset=utf-8",    from: false, to: true, internal: "text/utf8WB", category: "text", lossless: true  }, // UTF8 with forced BOM.
-  { name: "Plain Text (UTF-16 LE)", format: "txt-utf16le",          extension: "txt", mime: "text/plain; charset=utf-16le", from: true,  to: true, internal: "text/utf16le", category:"text", lossless: true },
-  { name: "Plain Text (UTF-16 BE)", format: "txt-utf16be",          extension: "txt", mime: "text/plain; charset=utf-16be", from: true,  to: true, internal: "text/utf16be", category:"text", lossless: true },
-  { name: "Plain Text (UTF-32 LE)", format: "txt-utf32le",          extension: "txt", mime: "text/plain; charset=utf-32le", from: true,  to: true, internal: "text/utf32le", category:"text", lossless: true },
-  { name: "Plain Text (UTF-32 BE)", format: "txt-utf32be",          extension: "txt", mime: "text/plain; charset=utf-32be", from: true,  to: true, internal: "text/utf32be", category:"text", lossless: true },
+  CommonFormats.TEXT.supported("txt", true, true, true), // May or may not have BOM depending on browser
+  { name: "Plain Text (UTF-8 without BOM)", format: "UTF-8 without BOM", extension: "txt", mime: "text/plain; charset=UTF-8 without BOM", from: false, to: true, internal: "utf8NB",  category: Category.TEXT, lossless: true }, // In case the broeser defaults to with BOM, we can choose to force BOMless UTF-8.
+  { name: "Plain Text (UTF-8 with BOM)",    format: "UTF-8 with BOM",    extension: "txt", mime: "text/plain; charset=UTF-8 with BOM",    from: false, to: true, internal: "utf8WB",  category: Category.TEXT, lossless: true }, // UTF8 with forced BOM.
+  { name: "Plain Text (UTF-16 LE)",         format: "UTF-16 LE",         extension: "txt", mime: "text/plain; charset=UTF-16LE",          from: true,  to: true, internal: "utf16le", category: Category.TEXT, lossless: true },
+  { name: "Plain Text (UTF-16 BE)",         format: "UTF-16 BE",         extension: "txt", mime: "text/plain; charset=UTF-16BE",          from: true,  to: true, internal: "utf16be", category: Category.TEXT, lossless: true },
+  { name: "Plain Text (UTF-32 LE)",         format: "UTF-32 LE",         extension: "txt", mime: "text/plain; charset=UTF-32LE",          from: true,  to: true, internal: "utf32le", category: Category.TEXT, lossless: true },
+  { name: "Plain Text (UTF-32 BE)",         format: "UTF-32 BE",         extension: "txt", mime: "text/plain; charset=UTF-32BE",          from: true,  to: true, internal: "utf32be", category: Category.TEXT, lossless: true },
 ];
 
 export default class TextEncodingHandler implements FormatHandler {
@@ -115,18 +116,18 @@ export default class TextEncodingHandler implements FormatHandler {
       let text = "";
 
       // Determine input encoding: prefer inputFormat.internal when present
-      const inf = (inputFormat && inputFormat.internal) || "";
-      if (inf === "text/utf8" || inf === "text/utf8NB") {
+      const inf = inputFormat.internal;
+      if (inf === "txt" || inf === "utf8NB") {
         text = decodeUsingTextDecoder(inBytes, "utf-8");
-      } else if (inf === "text/utf8WB") {
+      } else if (inf === "utf8WB") {
         text = decodeUsingTextDecoder(inBytes.subarray(3), "utf-8");
-      } else if (inf === "text/utf16le") {
+      } else if (inf === "utf16le") {
         text = decodeUTF16(inBytes, true);
-      } else if (inf === "text/utf16be") {
+      } else if (inf === "utf16be") {
         text = decodeUTF16(inBytes, false);
-      } else if (inf === "text/utf32le") {
+      } else if (inf === "utf32le") {
         text = decodeUTF32(inBytes, true);
-      } else if (inf === "text/utf32be") {
+      } else if (inf === "utf32be") {
         text = decodeUTF32(inBytes, false);
       } else {
         // Try BOM detection
@@ -147,9 +148,9 @@ export default class TextEncodingHandler implements FormatHandler {
       }
 
       // Now encode to output format
-      const outf = (outputFormat && outputFormat.internal) || "text/utf8NB";
+      const outf = (outputFormat && outputFormat.internal) || "utf8NB";
       let outBytes: Uint8Array;
-      if (outf === "text/utf8NB") {
+      if (outf === "utf8NB") {
         const utf8Bytes = new TextEncoder().encode(text);
         if (utf8Bytes.length >= 3 && hasPrefix(utf8Bytes, [0xEF, 0xBB, 0xBF])) {
           // has BOM, remove it
@@ -158,7 +159,7 @@ export default class TextEncodingHandler implements FormatHandler {
           // Already without BOM, just use it as is
           outBytes = utf8Bytes;
         }
-      } else if (outf === "text/utf8WB") {
+      } else if (outf === "utf8WB") {
         const utf8Bytes = new TextEncoder().encode(text);
         if (utf8Bytes.length >= 3 && hasPrefix(utf8Bytes, [0xEF, 0xBB, 0xBF])) {
           // already has BOM, don't add another
@@ -169,13 +170,13 @@ export default class TextEncodingHandler implements FormatHandler {
           outBytes.set(bom, 0);
           outBytes.set(utf8Bytes, bom.length);
         }
-      } else if (outf === "text/utf16le") {
+      } else if (outf === "utf16le") {
         outBytes = encodeUTF16(text, true, true);
-      } else if (outf === "text/utf16be") {
+      } else if (outf === "utf16be") {
         outBytes = encodeUTF16(text, false, true);
-      } else if (outf === "text/utf32le") {
+      } else if (outf === "utf32le") {
         outBytes = encodeUTF32(text, true, true);
-      } else if (outf === "text/utf32be") {
+      } else if (outf === "utf32be") {
         outBytes = encodeUTF32(text, false, true);
       } else {
         outBytes = new TextEncoder().encode(text);

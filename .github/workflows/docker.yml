@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
 
@@ -42,6 +42,8 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
+          arguments: |
+            VITE_COMMIT_SHA=${{ github.sha }}
           file: docker/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}

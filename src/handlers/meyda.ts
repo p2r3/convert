@@ -41,7 +41,7 @@ class meydaHandler implements FormatHandler {
     dummy.remove();
 
     this.#audioContext = new AudioContext({
-      sampleRate: 44100
+      sampleRate: 34000
     });
 
     this.#canvas = document.createElement("canvas");

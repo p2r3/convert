@@ -54,6 +54,19 @@ body {
   box-shadow: 0 0 0 0;
 }
 
+#commit-id {
+  color: #fff9;
+  text-align: center;
+  display: block;
+  font-size: x-small;
+  position: absolute;
+  margin: 4px;
+  text-decoration: none;
+}
+#commit-id:hover {
+  text-decoration: underline;
+}
+
 #format-containers {
   display: flex;
 }

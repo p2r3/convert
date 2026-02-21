@@ -5,7 +5,10 @@
 export interface IFormatDefinition {
   /** Format description (long name) for displaying to the user. */
   name: string;
-  /** Short, "formal" name for displaying to the user. */
+  /** Short, "formal" name for displaying to the user, and for
+   * differentiating between files of identical MIME types.
+   * If your file is different from others of the same MIME type,
+   * then this string should be used to differentiate it. */
   format: string;
   /** File extension. */
   extension: string;
@@ -38,10 +41,10 @@ export class FormatDefinition implements IFormatDefinition {
   public readonly category?: string[] | string;
 
   constructor(
-    name: string, 
-    format: string, 
-    extension: string, 
-    mime: string, 
+    name: string,
+    format: string,
+    extension: string,
+    mime: string,
     category?: string[] | string
   ) {
     this.name = name
@@ -59,7 +62,7 @@ export class FormatDefinition implements IFormatDefinition {
    * @param to Whether conversion **to** this format is supported.
    * @param lossless (Optional) Whether the format is lossless in this context. Defaults to `false`.
    * @param override Format definition values to override
-   * @returns 
+   * @returns
    */
   supported(ref: string, from: boolean, to: boolean, lossless?: boolean, override: Partial<IFormatDefinition> = {}): FileFormat {
     return {
@@ -73,7 +76,7 @@ export class FormatDefinition implements IFormatDefinition {
   }
 
   /**
-   * Returns a builder to fluently create FileFormat.  
+   * Returns a builder to fluently create FileFormat.
    * Builder can be used to create FileFormat based on this format definition
    */
   builder(ref: string) {

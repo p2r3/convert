@@ -12,7 +12,7 @@ class canvasToBlobHandler implements FormatHandler {
     CommonFormats.WEBP.supported("webp", true, true),
     CommonFormats.GIF.supported("gif", true, false),
     CommonFormats.SVG.supported("svg", true, false),
-    CommonFormats.TEXT.supported("text", true, false)
+    CommonFormats.TEXT.supported("text", true, true)
   ];
 
   #canvas?: HTMLCanvasElement;
@@ -47,17 +47,18 @@ class canvasToBlobHandler implements FormatHandler {
         const string = new TextDecoder().decode(inputFile.bytes);
         const lines = string.split("\n");
 
+        this.#ctx.font = font;
+
         let maxLineWidth = 0;
         for (const line of lines) {
           const width = this.#ctx.measureText(line).width;
           if (width > maxLineWidth) maxLineWidth = width;
         }
 
-        this.#ctx.font = font;
         this.#canvas.width = maxLineWidth;
         this.#canvas.height = Math.floor(fontSize * lines.length + footerPadding);
 
-        if (outputFormat.mime === "image/jpeg") {
+        if (outputFormat.category === "image" || outputFormat.category?.includes("image")) {
           this.#ctx.fillStyle = "white";
           this.#ctx.fillRect(0, 0, this.#canvas.width, this.#canvas.height);
         }
@@ -77,7 +78,7 @@ class canvasToBlobHandler implements FormatHandler {
         // For SVG, convert to data URL to avoid "Tainted canvases may not be exported" error
         const url =
           inputFormat.mime === "image/svg+xml"
-            ? `data:${inputFormat.mime};base64,${btoa(String.fromCharCode(...inputFile.bytes))}`
+            ? `data:${inputFormat.mime};base64,${btoa(inputFile.bytes.reduce((str, byte) => str + String.fromCharCode(byte), ''))}`
             : URL.createObjectURL(blob);
 
         const image = new Image();
