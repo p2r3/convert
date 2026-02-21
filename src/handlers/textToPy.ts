@@ -8,7 +8,7 @@ class txtToPyHandler implements FormatHandler {
   
   public supportedFormats: FileFormat[] = [
     CommonFormats.TEXT.supported("txt", true, false),
-    CommonFormats.PYTHON.builder("py").markLossless(true).allowTo()
+    CommonFormats.PYTHON.supported("py", false, true, true)
   ];
 
   async init() {

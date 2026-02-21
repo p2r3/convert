@@ -34,7 +34,7 @@ class pyTurtleHandler implements FormatHandler {
 
   async init () {
     this.supportedFormats = [
-      CommonFormats.PYTHON.builder("py").markLossless(false).allowTo(),
+      CommonFormats.PYTHON.supported("py", false, true, false),
       CommonFormats.SVG.builder("svg").allowFrom()
     ];
     this.ready = true;
