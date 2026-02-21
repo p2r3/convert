@@ -30,7 +30,7 @@ const FORMAT_PRIORITY_COST : number = 0.05; // Cost multiplier for format priori
 const LOG_FREQUENCY = 1000;
 
 export interface Node {
-    mime: string;
+    identifier: string;
     edges: Array<number>;
 };
 
@@ -143,10 +143,14 @@ export class TraversionGraph {
             let fromIndices: Array<{format: FileFormat, index: number}> = [];
             let toIndices: Array<{format: FileFormat, index: number}> = [];
             formats.forEach(format => {
-                let index = this.nodes.findIndex(node => node.mime === format.mime);
+                const formatIdentifier = format.mime + `(${format.format})`;
+                let index = this.nodes.findIndex(node => node.identifier === formatIdentifier);
                 if (index === -1) {
                     index = this.nodes.length;
-                    this.nodes.push({ mime: format.mime, edges: [] });
+                    this.nodes.push({
+                        identifier: formatIdentifier,
+                        edges: []
+                    });
                 }
                 if (format.from) fromIndices.push({format, index});
                 if (format.to) toIndices.push({format, index});
@@ -242,7 +246,7 @@ export class TraversionGraph {
      */
     public getData() : {nodes: Node[], edges: Edge[], categoryChangeCosts: CategoryChangeCost[], categoryAdaptiveCosts: CategoryAdaptiveCost[]} {
         return {
-            nodes: this.nodes.map(node => ({mime: node.mime, edges: [...node.edges]})),
+            nodes: this.nodes.map(node => ({identifier: node.identifier, edges: [...node.edges]})),
             edges: this.edges.map(edge => ({
                 from: {format: {...edge.from.format}, index: edge.from.index},
                 to: {format: {...edge.to.format}, index: edge.to.index},
@@ -259,7 +263,7 @@ export class TraversionGraph {
     public print() {
         let output = "Nodes:\n";
         this.nodes.forEach((node, index) => {
-            output += `${index}: ${node.mime}\n`;
+            output += `${index}: ${node.identifier}\n`;
         });
         output += "Edges:\n";
         this.edges.forEach((edge, index) => {
@@ -285,8 +289,10 @@ export class TraversionGraph {
             (a: QueueNode, b: QueueNode) => a.cost - b.cost
         );
         let visited = new Array<number>();
-        let fromIndex = this.nodes.findIndex(node => node.mime === from.format.mime);
-        let toIndex = this.nodes.findIndex(node => node.mime === to.format.mime);
+        const fromIdentifier = from.format.mime + `(${from.format.format})`;
+        const toIdentifier = to.format.mime + `(${to.format.format})`;
+        let fromIndex = this.nodes.findIndex(node => node.identifier === fromIdentifier);
+        let toIndex = this.nodes.findIndex(node => node.identifier === toIdentifier);
         if (fromIndex === -1 || toIndex === -1) return []; // If either format is not in the graph, return empty array
         queue.add({index: fromIndex, cost: 0, path: [from], visitedBorder: visited.length });
         console.log(`Starting path search from ${from.format.mime}(${from.handler?.name}) to ${to.format.mime}(${to.handler?.name}) (simple mode: ${simpleMode})`);
