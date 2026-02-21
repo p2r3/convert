@@ -42,13 +42,13 @@ class mmlwrapHandler implements FormatHandler {
     const outputFiles: FileData[] = [];
     for (const file of inputFiles) {
       const intext = await file.text();
-      const out = `<math>${content}</math>`;
+      const wrap = `<math>${content}</math>`;
       const outputName =
         file.name.split(".").slice(0, -1).join(".") +
         ".html"
     outputFiles.push({
         name: outputName,
-        bytes: out,
+        bytes: new TextEncoder().encode(wrap),
       });
     }
     return outputFiles;
