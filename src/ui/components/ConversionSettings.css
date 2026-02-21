@@ -198,4 +198,34 @@
             border-radius: 10px;
         }
     }
+
+    .full-select {
+        width: 100%;
+        padding: 0.6rem;
+        border-radius: 8px;
+        color: var(--text-tertiary);
+        border: 1px solid var(--border-primary);
+        background-color: var(--bg-input);
+    }
+
+    .divider {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 1.5rem 0;
+
+        .line {
+            flex: 1;
+            height: 1px;
+            background: var(--border-light);
+        }
+
+        .divider-text {
+            font-size: 0.6rem;
+            font-weight: 800;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+    }
 }
