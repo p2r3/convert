@@ -206,6 +206,25 @@ class FFmpegHandler implements FormatHandler {
       internal: "mov"
     });
 
+    // Normalize Bink metadata to ensure ".bik" files are detected by extension.
+    const binkFormats = this.supportedFormats.filter(f =>
+      f.internal === "bink"
+      || f.format === "bink"
+      || f.extension === "bik"
+    );
+    if (binkFormats.length > 0) {
+      for (const binkFormat of binkFormats) {
+        binkFormat.name = "Bink Video";
+        binkFormat.format = "bik";
+        binkFormat.extension = "bik";
+        binkFormat.mime = "video/x-bink";
+        binkFormat.from = true;
+        binkFormat.to = false;
+        binkFormat.internal = "bink";
+        binkFormat.category = "video";
+      }
+    }
+
     // Add PNG input explicitly - FFmpeg otherwise treats both PNG and
     // APNG as the same thing.
     this.supportedFormats.push(CommonFormats.PNG.builder("png").allowFrom());
