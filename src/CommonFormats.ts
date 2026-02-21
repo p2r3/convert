@@ -40,6 +40,13 @@ const CommonFormats = {
         "image/webp",
         Category.IMAGE
     ),
+    ICNS: new FormatDefinition(
+        "Apple Icon Image",
+        "icns",
+        "icns",
+        "image/icns",
+        Category.IMAGE
+    ),
     GIF: new FormatDefinition(
         "CompuServe Graphics Interchange Format (GIF)",
         "gif",
