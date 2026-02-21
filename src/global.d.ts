@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import type { FileFormat, FileData, ConvertPathNode } from "./FormatHandler.js";
 import type { TraversionGraph } from "./TraversionGraph.js";
 

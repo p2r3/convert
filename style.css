@@ -131,6 +131,10 @@ button.selected {
   font-weight: bold;
 }
 
+.language-button {
+  margin-top: 20px;
+}
+
 #convert-button {
   position: fixed;
   left: 50%;

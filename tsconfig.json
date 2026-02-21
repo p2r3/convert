@@ -8,9 +8,7 @@
       "DOM",
       "DOM.Iterable"
     ],
-    "types": [
-      "vite/client"
-    ],
+    "types": [],
     "skipLibCheck": true,
     /* Bundler mode */
     "moduleResolution": "bundler",
@@ -34,6 +32,7 @@
      * away from the TS file.
      */
     "baseUrl": ".",
+    "ignoreDeprecations": "5.0",
     "paths": {
       "qoi-fu": ["./src/handlers/qoi-fu/transpiled/QOI.js"],
       "qoa-fu": ["./src/handlers/qoa-fu/transpiled/QOA.js"]
