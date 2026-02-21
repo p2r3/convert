@@ -22,7 +22,7 @@ class mmlwrapHandler implements FormatHandler {
       // Alternatively, if you need a custom format, define it like so:
       {
         name: "Mathematical Markup Language (MathML)",
-        format: "MathML",
+        format: "MathML (wrap)",
         extension: "mml",
         mime: "application/mathml+xml",
         from: true,
