@@ -166,4 +166,36 @@
             color: var(--primary);
         }
     }
+
+    .mobile-settings-header {
+        user-select: none;
+        cursor: pointer;
+        border-radius: 8px;
+        padding: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        h3 {
+            font-size: 0.9rem;
+        }
+
+        &:hover {
+            background: var(--bg-page);
+            color: var(--primary);
+        }
+    }
+
+    .scroller {
+        overflow-y: auto;
+
+        &::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+    }
 }
