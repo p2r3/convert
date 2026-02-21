@@ -341,9 +341,8 @@ async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
     try {
       let supportedFormats = window.supportedFormatCache.get(handler.name);
       if (!handler.ready) {
-        try {
-          await handler.init();
-        } catch (_) { return null; }
+        await handler.init();
+        if (!handler.ready) throw `Handler "${handler.name}" not ready after init.`;
         if (handler.supportedFormats) {
           window.supportedFormatCache.set(handler.name, handler.supportedFormats);
           supportedFormats = handler.supportedFormats;
@@ -434,7 +433,10 @@ ui.convertButton.onclick = async function () {
     for (const inputFile of inputFiles) {
       const inputBuffer = await inputFile.arrayBuffer();
       const inputBytes = new Uint8Array(inputBuffer);
-      if (inputFormat.mime === outputFormat.mime) {
+      if (
+        inputFormat.mime === outputFormat.mime
+        && inputFormat.format === outputFormat.format
+      ) {
         downloadFile(inputBytes, inputFile.name, inputFormat.mime);
         continue;
       }
