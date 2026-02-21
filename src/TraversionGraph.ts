@@ -311,10 +311,7 @@ export class TraversionGraph {
                 // Return the path of handlers and formats to get from the input format to the output format
                 const logString = `${iterations} with cost ${current.cost.toFixed(3)}: ${current.path.map(p => p.handler.name + "(" + p.format.mime + ")").join(" → ")}`;
                 const foundPathLast = current.path.at(-1);
-                if (
-                    to.format.format === foundPathLast?.format.format &&
-                    (simpleMode || !to.handler || to.handler.name === foundPathLast?.handler.name)
-                ) {
+                if (simpleMode || !to.handler || to.handler.name === foundPathLast?.handler.name) {
                     console.log(`Found path at iteration ${logString}`);
                     this.dispatchEvent("found", current.path);
                     yield current.path;
@@ -330,10 +327,6 @@ export class TraversionGraph {
             this.dispatchEvent("searching", current.path);
             this.nodes[current.index].edges.forEach(edgeIndex => {
                 let edge = this.edges[edgeIndex];
-                if ( // Always start paths from the exact format that the user selected
-                    current.path.length === 1
-                    && edge.from.format.format !== from.format.format
-                ) return;
                 const indexInVisited = visited.indexOf(edge.to.index);
                 if (indexInVisited >= 0 && indexInVisited < current.visitedBorder) return;
                 const handler = this.handlers.find(h => h.name === edge.handler);
