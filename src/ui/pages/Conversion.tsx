@@ -19,6 +19,7 @@ import faLinkSolid from '../img/fa-link-solid-full.svg';
 import { useState } from "preact/hooks";
 
 import SideNav, {type FormatCategory} from "../components/SideNav.tsx";
+import Footer from "../components/Footer.tsx";
 
 interface ConversionPageProps {
 
