@@ -3,4 +3,5 @@ package-lock.json
 node_modules
 start.sh
 dist
+release
 cache.json
