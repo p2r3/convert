@@ -434,7 +434,7 @@ ui.convertButton.onclick = async function () {
     for (const inputFile of inputFiles) {
       const inputBuffer = await inputFile.arrayBuffer();
       const inputBytes = new Uint8Array(inputBuffer);
-      if (inputFormat.mime === outputFormat.mime) {
+      if (inputFormat.mime === outputFormat.mime && inputFormat.format === outputFormat.format) {
         downloadFile(inputBytes, inputFile.name, inputFormat.mime);
         continue;
       }
