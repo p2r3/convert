@@ -279,6 +279,10 @@ class FFmpegHandler implements FormatHandler {
         if (typeof newSize !== "string") throw stdout;
         return this.doConvert(inputFiles, inputFormat, outputFormat, [...oldArgs, "-s", newSize]);
       }
+      if (stdout.includes("does not support that sample rate, choose from (") && !oldArgs.includes("-ar")) {
+        const acceptedBitrate = stdout.split("does not support that sample rate, choose from (")[1].split(", ")[0];
+        return this.doConvert(inputFiles, inputFormat, outputFormat, [...oldArgs, "-ar", acceptedBitrate]);
+      }
 
       throw stdout;
     }

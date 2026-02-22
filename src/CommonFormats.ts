@@ -10,7 +10,8 @@ export const Category = {
     AUDIO: "audio",
     ARCHIVE: "archive",
     SPREADSHEET: "spreadsheet",
-    PRESENTATION: "presentation"
+    PRESENTATION: "presentation",
+    FONT: "font"
     CODE: "code"
 }
 
@@ -199,6 +200,35 @@ const CommonFormats = {
         "pptx",
         "application/vnd.openxmlformats-officedocument.presentationml.presentation",
         [Category.PRESENTATION, Category.DOCUMENT]
+    ),
+    // fonts
+    TTF: new FormatDefinition(
+        "TrueType Font",
+        "ttf",
+        "ttf",
+        "font/ttf",
+        [Category.FONT]
+    ),
+    OTF: new FormatDefinition(
+        "OpenType Font",
+        "otf",
+        "otf",
+        "font/otf",
+        [Category.FONT]
+    ),
+    WOFF: new FormatDefinition(
+        "Web Open Font Format",
+        "woff",
+        "woff",
+        "font/woff",
+        [Category.FONT]
+    ),
+    WOFF2: new FormatDefinition(
+        "Web Open Font Format 2.0",
+        "woff2",
+        "woff2",
+        "font/woff2",
+        [Category.FONT]
     )
 }
 

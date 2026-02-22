@@ -39,7 +39,7 @@ jobs:
           bun run build
 
       - name: Generate cache
-        run: bun run buildCache.js dist/cache.json
+        run: bun run cache:build
 
       - name: Test traversion graph
         run: bun test test/TraversionGraph.test.ts

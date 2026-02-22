@@ -30,6 +30,8 @@ class ImageMagickHandler implements FormatHandler {
       const formatName = format.format.toLowerCase();
       if (formatName === "apng") return;
       if (formatName === "svg") return;
+      if (formatName === "ttf") return;
+      if (formatName === "otf") return;
       const mimeType = format.mimeType || mime.getType(formatName);
       if (
         !mimeType
