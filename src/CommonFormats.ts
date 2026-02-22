@@ -11,7 +11,8 @@ export const Category = {
     ARCHIVE: "archive",
     SPREADSHEET: "spreadsheet",
     PRESENTATION: "presentation",
-    FONT: "font"
+    FONT: "font",
+    CODE: "code"
 }
 
 /**
@@ -110,6 +111,13 @@ const CommonFormats = {
         "bat",
         "text/windows-batch",
         ["text"]
+    ),
+    PYTHON: new FormatDefinition(
+        "Python Script",
+        "py",
+        "py",
+        "text/x-python",
+        Category.CODE
     ),
     SH: new FormatDefinition(
         "Shell Script",

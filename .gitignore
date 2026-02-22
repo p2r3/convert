@@ -5,3 +5,4 @@ start.sh
 dist
 release
 cache.json
+nohup.out

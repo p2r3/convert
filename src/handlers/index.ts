@@ -40,6 +40,7 @@ import espeakngHandler from "./espeakng.js"
 import textToShellHandler from "./texttoshell.ts";
 import batchHandler from "./batch.ts";
 import bsorHandler from "./bsor.ts";
+import txtToPyHandler from './textToPy.ts';
 import fontHandler from "./font.ts";
 import asepriteHandler from "./aseprite.ts";
 
@@ -87,6 +88,7 @@ try { handlers.push(new espeakngHandler()) } catch (_) { };
 try { handlers.push(new textToShellHandler()) } catch (_) { };
 try { handlers.push(new batchHandler()) } catch (_) { };
 try { handlers.push(new bsorHandler()) } catch (_) { };
+try { handlers.push(new TxtToPyHandler()) } catch (_) { };
 try { handlers.push(new fontHandler()) } catch (_) { };
 try { handlers.push(new asepriteHandler()) } catch (_) { };
 
