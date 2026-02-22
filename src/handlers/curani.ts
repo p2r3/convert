@@ -1,7 +1,4 @@
 // file: curani.ts
-// todo:
-// • cur -> ani
-// • ani -> apng/gif
 
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import CommonFormats from "src/CommonFormats.ts";
@@ -57,7 +54,8 @@ class curaniHandler implements FormatHandler {
         outputFormat: FileFormat
     ): Promise<FileData[]> {
         const outputFiles: FileData[] = [];
-
+        const ani_separator_bytes = new Uint8Array([0x69,0x63,0x6F,0x6E,0xBE,0x10,0x00,0x00]);
+        
         for (const file of inputFiles) {
             let new_file_bytes = new Uint8Array(file.bytes);
 
@@ -81,13 +79,14 @@ class curaniHandler implements FormatHandler {
                     }
 
                     // Gets the real start of the ICO
-                    const ico_start_offset = 8;
+                    const ico_start_offset = ani_separator_bytes.length;
                     let ico_start = i+ico_start_offset;
 
                     // Finds the NEXT ICO header to determine file size
-                    let ico_distance = 0x10BE;
+                    let ico_distance = 0x00;
                     let header_hook_2 = 0;
                     i = header_hook+1;
+
                     while (true) {
                         if (new_file_bytes[i] == 0x69 && new_file_bytes[i+1] == 0x63 && new_file_bytes[i+2] == 0x6F && new_file_bytes[i+3] == 0x6E && new_file_bytes[i+4] == 0xBE) {
                             header_hook_2 = i;
@@ -95,13 +94,25 @@ class curaniHandler implements FormatHandler {
                             break;
                         }
 
+                        // Failsafe to prevent going OOB. If this happens, the source .ani probably only has one frame to begin with.
                         if (i+5 > new_file_bytes.length) {
                             break;
                         }
                         i += 1;
                     }
 
-                    new_file_bytes = new_file_bytes.subarray(ico_start,ico_start+ico_distance);
+                    // The code could not find another header. Simply read until the end of the file.
+                    if (ico_distance == 0x00) {
+                        new_file_bytes = new_file_bytes.subarray(ico_start,-1);
+                    }
+                    // The code could find another header, use the distance.
+                    else {
+                        new_file_bytes = new_file_bytes.subarray(ico_start,ico_start+ico_distance);
+                    }
+                }
+                else if (outputFormat.internal === "apng") {
+                    // To be added!
+                    throw new Error("Invalid output format.");
                 }
                 else if (outputFormat.internal === "ico") {
                     throw new Error("Refuse to convert from .ani directly to .ico; must use .cur as an intermediary.");
@@ -170,6 +181,10 @@ class curaniHandler implements FormatHandler {
                 else {
                     throw new Error("Invalid output format.");
                 }
+            }
+            else if (inputFormat.internal === "apng" && outputFormat.internal === "ani") {
+                // To be added!
+                throw new Error("Invalid input format.");
             }
             else {
                 throw new Error("Invalid input format.");
