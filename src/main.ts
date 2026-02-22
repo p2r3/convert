@@ -119,22 +119,34 @@ const fileSelectHandler = (event: Event) => {
   // Common MIME type adjustments (to match "mime" library)
   let mimeType = normalizeMimeType(files[0].type);
 
-  // Find a button matching the input MIME type.
-  const buttonMimeType = Array.from(ui.inputList.children).find(button => {
+  const fileExtension = files[0].name.split(".").pop()?.toLowerCase();
+
+  // Find all buttons matching the input MIME type.
+  const buttonsMatchingMime = Array.from(ui.inputList.children).filter(button => {
     if (!(button instanceof HTMLButtonElement)) return false;
     return button.getAttribute("mime-type") === mimeType;
-  });
+  }) as HTMLButtonElement[];
+  // If there are multiple, find one with a matching extension too
+  let inputFormatButton: HTMLButtonElement;
+  if (buttonsMatchingMime.length > 1) {
+    inputFormatButton = buttonsMatchingMime.find(button => {
+      const formatIndex = button.getAttribute("format-index");
+      if (!formatIndex) return;
+      const format = allOptions[parseInt(formatIndex)];
+      return format.format.extension === fileExtension;
+    }) || buttonsMatchingMime[0];
+  } else {
+    inputFormatButton = buttonsMatchingMime[0];
+  }
   // Click button with matching MIME type.
-  if (mimeType && buttonMimeType instanceof HTMLButtonElement) {
-    buttonMimeType.click();
+  if (mimeType && inputFormatButton instanceof HTMLButtonElement) {
+    inputFormatButton.click();
     ui.inputSearch.value = mimeType;
     filterButtonList(ui.inputList, ui.inputSearch.value);
     return;
   }
 
   // Fall back to matching format by file extension if MIME type wasn't found.
-  const fileExtension = files[0].name.split(".").pop()?.toLowerCase();
-
   const buttonExtension = Array.from(ui.inputList.children).find(button => {
     if (!(button instanceof HTMLButtonElement)) return false;
     const formatIndex = button.getAttribute("format-index");
@@ -349,7 +361,11 @@ async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
         }
       }
       if (!supportedFormats) throw `Handler "${handler.name}" doesn't support any formats.`;
-      const inputFormat = supportedFormats.find(c => c.mime === path[i].format.mime && c.from)!;
+      const inputFormat = supportedFormats.find(c =>
+        c.from
+        && c.mime === path[i].format.mime
+        && c.format === path[i].format.format
+      )!;
       files = (await Promise.all([
         handler.doConvert(files, inputFormat, path[i + 1].format),
         // Ensure that we wait long enough for the UI to update
@@ -399,8 +415,8 @@ window.tryConvertByTraversing = async function (
   return null;
 }
 
-function downloadFile (bytes: Uint8Array, name: string, mime: string) {
-  const blob = new Blob([bytes as BlobPart], { type: mime });
+function downloadFile (bytes: Uint8Array, name: string) {
+  const blob = new Blob([bytes as BlobPart], { type: "application/octet-stream" });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
   link.download = name;
@@ -437,7 +453,7 @@ ui.convertButton.onclick = async function () {
         inputFormat.mime === outputFormat.mime
         && inputFormat.format === outputFormat.format
       ) {
-        downloadFile(inputBytes, inputFile.name, inputFormat.mime);
+        downloadFile(inputBytes, inputFile.name);
         continue;
       }
       inputFileData.push({ name: inputFile.name, bytes: inputBytes });
@@ -455,7 +471,7 @@ ui.convertButton.onclick = async function () {
     }
 
     for (const file of output.files) {
-      downloadFile(file.bytes, file.name, outputFormat.mime);
+      downloadFile(file.bytes, file.name);
     }
 
     window.showPopup(
