@@ -65,7 +65,9 @@
     "@types/meyda": "^5.3.0",
     "@types/pako": "^2.0.4",
     "@types/three": "^0.182.0",
+    "bson": "^7.2.0",
     "imagetracer": "^0.2.2",
+    "js-synthesizer": "^1.11.0",
     "jszip": "^3.10.1",
     "meyda": "^5.6.3",
     "mime": "^4.1.0",
@@ -81,7 +83,6 @@
     "ts-flp": "^1.0.3",
     "vite-plugin-static-copy": "^3.1.6",
     "wavefile": "^11.0.0",
-    "woff2-encoder": "^2.0.0",
-    "js-synthesizer": "^1.11.0"
+    "woff2-encoder": "^2.0.0"
   }
 }
