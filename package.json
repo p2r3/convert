@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "cache:build": "bun run buildCache.js dist/cache.json",
+    "cache:build": "bun run buildCache.js dist/cache.json --minify",
     "cache:build:dev": "bun run buildCache.js dist/cache.json",
     "preview": "vite preview",
     "docker": "bun run docker:build && bun run docker:up",
