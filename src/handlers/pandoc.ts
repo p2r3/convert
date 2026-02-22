@@ -241,13 +241,22 @@ class pandocHandler implements FormatHandler {
         [inputFile.name]: new Blob([inputFile.bytes as BlobPart])
       };
 
-      const { stderr } = await this.convert({
+      let options = {
         from: inputFormat.internal,
         to: outputFormat.internal,
         "input-files": [inputFile.name],
         "output-file": "output",
-        "embed-resources": true
-      }, null, files);
+        "embed-resources": true,
+        "html-math-method": "mathjax",
+      }
+
+      // Set flag for outputting mathml
+      if (outputFormat.internal === "mathml") {
+        options.to = "html";
+        options["html-math-method"] = "mathml";
+      }
+
+      const { stderr } = await this.convert(options, null, files);
 
       if (stderr) throw stderr;
 
