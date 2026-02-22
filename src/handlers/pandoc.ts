@@ -84,7 +84,8 @@ class pandocHandler implements FormatHandler {
     ["xlsx", "Excel spreadsheet"],
     ["xml", "XML version of native AST"],
     ["xwiki", "XWiki markup"],
-    ["zimwiki", "ZimWiki markup"]
+    ["zimwiki", "ZimWiki markup"],
+    ["mathml", "Mathematical Markup Language"],
   ]);
 
   static formatExtensions: Map<string, string> = new Map([
@@ -144,7 +145,8 @@ class pandocHandler implements FormatHandler {
     ["djot", "dj"],
     ["fb2", "fb2"],
     ["opendocument", "xml"],
-    ["vimdoc", "txt"]
+    ["vimdoc", "txt"],
+    ["mathml", "mml"],
   ]);
 
   public name: string = "pandoc";
@@ -165,6 +167,9 @@ class pandocHandler implements FormatHandler {
 
     const inputFormats: string[] = await query({ query: "input-formats" });
     const outputFormats: string[] = await query({ query: "output-formats" });
+
+    // Pandoc supports MathML natively but doesn't expose as a format
+    outputFormats.push("mathml");
 
     const allFormats = new Set(inputFormats);
     outputFormats.forEach(format => allFormats.add(format));

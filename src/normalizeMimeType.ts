@@ -27,6 +27,7 @@ function normalizeMimeType (mime: string) {
     case "application/x-font-woff": return "font/woff";
     case "application/font-woff2": return "font/woff2";
     case "application/x-font-woff2": return "font/woff2";
+    case "text/mathml": return "application/mathml+xml";
   }
   return mime;
 }
