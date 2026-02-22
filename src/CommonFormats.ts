@@ -11,7 +11,7 @@ export const Category = {
     ARCHIVE: "archive",
     SPREADSHEET: "spreadsheet",
     PRESENTATION: "presentation",
-    FONT: "font"
+    FONT: "font",
     CODE: "code"
 }
 
