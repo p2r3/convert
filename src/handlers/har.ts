@@ -50,7 +50,7 @@ class harHandler implements FormatHandler {
 
       const url = new URL(entry.request.url);
       let pathName = url.host + url.pathname;
-      const fileName = pathName.split("/").at(-1);
+      const fileName = pathName.split("/").at(-1)!;
       if (entry.response.content.mimeType?.includes("text/html") && !fileName.endsWith(".html")) {
         if (pathName[pathName.length-1] !== "/") pathName += "/";
         pathName += "index.html";
