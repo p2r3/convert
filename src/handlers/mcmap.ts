@@ -259,7 +259,7 @@ class mcMapHandler implements FormatHandler {
                         });
 
                         outputFiles.push({
-                            name: file.name,
+                            name: file.name.split(".").slice(0, -1).join(".") + "." + outputFormat.extension,
                             bytes: bytes
                         });
                     }
@@ -281,7 +281,7 @@ class mcMapHandler implements FormatHandler {
                             const colors = NBT.isTag<NBT.ByteArrayTag>(mapdata["colors"]) ? new Uint8Array(mapdata["colors"]) : new Uint8Array([]);
                             const bytes = map2rgb(colors, width, height);
                             outputFiles.push({
-                                name: file.name,
+                                name: file.name.split(".").slice(0, -1).join(".") + "." + outputFormat.extension,
                                 bytes: new Uint8Array(bytes)
                             })
                         }

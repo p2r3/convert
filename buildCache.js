@@ -1,5 +1,14 @@
 import puppeteer from "puppeteer";
 
+const minify = (process.argv[3] === "--minify");
+
+const outputPath = process.argv[2] || "cache.json";
+// delete previous cache.json so regeneration is forced to happen
+const outputFile = Bun.file(outputPath);
+if (await outputFile.exists()) {
+  await outputFile.delete();
+}
+
 const server = Bun.serve({
   async fetch (req) {
     const path = new URL(req.url).pathname.replace("/convert/", "") || "index.html";
@@ -27,10 +36,17 @@ await Promise.all([
   page.goto("http://localhost:8080/convert/index.html")
 ]);
 
-const cacheJSON = await page.evaluate(() => {
+const cacheJSON = await page.evaluate((minify) => {
+  if (minify === true) {
+    return JSON.stringify(
+      JSON.parse(
+        window.printSupportedFormatCache()
+      )
+    );
+  }
   return window.printSupportedFormatCache();
-});
-const outputPath = process.argv[2] || "cache.json";
+}, minify);
+
 await Bun.write(outputPath, cacheJSON);
 
 await browser.close();

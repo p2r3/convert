@@ -1,0 +1,83 @@
+name: Build Electron Distributions
+
+on:
+  push:
+    branches: ["master"]
+    tags: ["*"]
+  pull_request:
+
+jobs:
+  build-electron:
+    runs-on: ${{ matrix.os }}
+
+    env:
+      VITE_COMMIT_SHA: ${{ github.sha }}
+
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            platform: linux
+          - os: windows-2025
+            platform: win
+          - os: macos-15
+            platform: mac
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "latest"
+          cache: true
+
+      - name: Install dependencies
+        run: bun i --frozen-lockfile
+
+      # Test (Linux only)
+      - name: Build (for testing)
+        if: matrix.platform == 'linux'
+        run:  bun run build
+      - name: Generate cache (for testing)
+        if: matrix.platform == 'linux'
+        run: bun run cache:build
+      - name: Test traversion graph
+        if: matrix.platform == 'linux'
+        run: bun test test/TraversionGraph.test.ts
+      - name: Test common conversion routes
+        if: matrix.platform == 'linux'
+        run: bun test test/commonFormats.test.ts
+
+      - name: Build Distribution for ${{ matrix.platform }}
+        run: bun run desktop:dist:${{ matrix.platform }}
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: convert-desktop-${{ matrix.platform }}
+          path: |
+            release/*.exe
+            release/*.dmg
+            release/*.AppImage
+            release/*.zip
+            release/*.snap
+            release/*.deb
+          retention-days: 7
+      
+      - name: Publish GitHub Release (if new tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release/*.exe
+            release/*.dmg
+            release/*.AppImage
+            release/*.zip
+            release/*.snap
+            release/*.deb
+          generate_release_notes: true
+          draft: true
