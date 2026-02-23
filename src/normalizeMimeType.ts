@@ -19,6 +19,7 @@ function normalizeMimeType (mime: string) {
     case "application/x-lha": return "application/x-lzh-compressed";
     case "application/x-lzh": return "application/x-lzh-compressed";
     case "application/x-mtga": return "application/vnd.sqlite3";
+    case "application/x-itunes-itdb": return "application/vnd.sqlite3"; // Not required, but just in case
     case "audio/x-flac": return "audio/flac";
     case "application/font-sfnt": return "font/ttf";
     case "application/x-font-ttf": return "font/ttf"; // both TTF & OTF
