@@ -43,7 +43,7 @@ class langHandler implements FormatHandler {
         let resultText: string;
 
         // JSON → LANG
-        if (inputFormat.format === "json" && outputFormat.format === "lang") {
+        if (inputFormat.format === "json" && outputFormat.format === "minecraft-lang") {
         const obj = JSON.parse(text);
 
         if (typeof obj !== "object" || Array.isArray(obj)) {
@@ -56,7 +56,7 @@ class langHandler implements FormatHandler {
         }
 
         // LANG → JSON
-        else if (inputFormat.format === "lang" && outputFormat.format === "json") {
+        else if (inputFormat.format === "minecraft-lang" && outputFormat.format === "json") {
         const result: Record<string, string> = {};
 
         const lines = text.split(/\r?\n/);
