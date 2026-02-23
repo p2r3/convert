@@ -45,6 +45,7 @@ import fontHandler from "./font.ts";
 import asepriteHandler from "./aseprite.ts";
 import vexflowHandler from "./vexflow.ts";
 import toonHandler from "./toon.ts";
+import txt2mmlHandler from "./txt2mml.ts";
 
 const handlers: FormatHandler[] = [];
 try { handlers.push(new svgTraceHandler()) } catch (_) { };
@@ -86,6 +87,7 @@ try { handlers.push(new midiSynthHandler()) } catch (_) { };
 try { handlers.push(new lzhHandler()) } catch (_) { };
 try { handlers.push(new wadHandler()) } catch (_) { };
 try { handlers.push(new pandocHandler()) } catch (_) { };
+try { handlers.push(new txt2mmlHandler()) } catch (_) { };
 try { handlers.push(new txtToInfiniteCraftHandler()) } catch (_) { };
 try { handlers.push(new espeakngHandler()) } catch (_) { };
 try { handlers.push(new textToShellHandler()) } catch (_) { };
