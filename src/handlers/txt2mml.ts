@@ -1,7 +1,7 @@
 // file: txt2mml.ts
 
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-import CommonFormats from "src/CommonFormats.ts"; // 6
+import CommonFormats from "src/CommonFormats.ts";
 
 class txt2mmlHandler implements FormatHandler {
 
@@ -11,12 +11,9 @@ class txt2mmlHandler implements FormatHandler {
 
   async init () {
     this.supportedFormats = [
-      // Example PNG format, with both input and output disabled
       CommonFormats.TEXT.builder("txt")
         .allowFrom(true)
         .allowTo(false),
-
-      // Alternatively, if you need a custom format, define it like so:
       {
         name: "Mathematical Markup Language (MathML)",
         format: "mathml",
@@ -38,10 +35,10 @@ class txt2mmlHandler implements FormatHandler {
   ): Promise<FileData[]> {
     const outputFiles: FileData[] = [];
     for (const file of inputFiles) {
-    const intext = await file.text();
-    const wraptext = `<mtext>${intext}</mtext>`;
-    const outname = file.name.split(".").slice(0, -1).join(".") + ".mml";
-    outputFiles.push({name: outname, bytes: new TextEncoder().encode(wraptext)})
+      const intext = await file.text();
+      const wraptext = `<mtext>${intext}</mtext>`;
+      const outname = file.name.split(".").slice(0, -1).join(".") + ".mml";
+      outputFiles.push({name: outname, bytes: new TextEncoder().encode(wraptext)})
     }
     return outputFiles;
   }
