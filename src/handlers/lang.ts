@@ -3,24 +3,26 @@ import CommonFormats from "src/CommonFormats.ts";
 
 class langHandler implements FormatHandler {
 
-  public name: string = "lang";
+  public name: string = "minecraft-lang";
   public supportedFormats?: FileFormat[];
   public ready: boolean = false;
 
   async init () {
     this.supportedFormats = [
       CommonFormats.JSON.builder("json")
+        .markLossless(true)
         .allowFrom(true)
         .allowTo(true),
 
         {
             name: "Minecraft Language Localization File",
-            format: "lang",
+            format: "minecraft-lang",
             extension: "lang",
             mime: "text/plain",
             from: true,
             to: true,
-            internal: "lang",
+            internal: "minecraft-lang",
+            lossless: true,
         }
     ];
     this.ready = true;
