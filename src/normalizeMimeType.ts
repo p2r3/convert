@@ -3,6 +3,7 @@ function normalizeMimeType (mime: string) {
     case "audio/x-wav": return "audio/wav";
     case "audio/vnd.wave": return "audio/wav";
     case "application/x-gzip": return "application/gzip";
+    case "image/x-icns": return "image/icns";
     case "image/x-icon": return "image/vnd.microsoft.icon";
     case "image/vtf": return "image/x-vtf";
     case "image/aseprite": return "image/x-aseprite";
@@ -19,6 +20,7 @@ function normalizeMimeType (mime: string) {
     case "application/x-lha": return "application/x-lzh-compressed";
     case "application/x-lzh": return "application/x-lzh-compressed";
     case "application/x-mtga": return "application/vnd.sqlite3";
+    case "application/x-itunes-itdb": return "application/vnd.sqlite3"; // Not required, but just in case
     case "audio/x-flac": return "audio/flac";
     case "application/font-sfnt": return "font/ttf";
     case "application/x-font-ttf": return "font/ttf"; // both TTF & OTF

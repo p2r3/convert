@@ -30,6 +30,16 @@ class sqlite3Handler implements FormatHandler {
         internal: "sqlite3",
         category: "database"
       },
+      {
+        name: "iTunes Database",
+        format: "itdb",
+        extension: "itdb",
+        mime: "application/vnd.sqlite3",
+        from: true,
+        to: false,
+        internal: "sqlite3",
+        category: "database"
+      },
       // Lossy because extracts only tables  
       CommonFormats.CSV.builder("csv").allowTo()
     ];
