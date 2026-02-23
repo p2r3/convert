@@ -78,6 +78,7 @@
     "pako": "^2.1.0",
     "pdftoimg-js": "^0.2.5",
     "pe-library": "^2.0.1",
+    "smol-toml": "^1.6.0",
     "svg-pathdata": "^8.0.0",
     "three": "^0.182.0",
     "three-bvh-csg": "^0.0.17",
