@@ -84,7 +84,8 @@ class pandocHandler implements FormatHandler {
     ["xlsx", "Excel spreadsheet"],
     ["xml", "XML version of native AST"],
     ["xwiki", "XWiki markup"],
-    ["zimwiki", "ZimWiki markup"]
+    ["zimwiki", "ZimWiki markup"],
+    ["mathml", "Mathematical Markup Language"],
   ]);
 
   static formatExtensions: Map<string, string> = new Map([
@@ -144,7 +145,8 @@ class pandocHandler implements FormatHandler {
     ["djot", "dj"],
     ["fb2", "fb2"],
     ["opendocument", "xml"],
-    ["vimdoc", "txt"]
+    ["vimdoc", "txt"],
+    ["mathml", "mml"],
   ]);
 
   public name: string = "pandoc";
@@ -165,6 +167,9 @@ class pandocHandler implements FormatHandler {
 
     const inputFormats: string[] = await query({ query: "input-formats" });
     const outputFormats: string[] = await query({ query: "output-formats" });
+
+    // Pandoc supports MathML natively but doesn't expose as a format
+    outputFormats.push("mathml");
 
     const allFormats = new Set(inputFormats);
     outputFormats.forEach(format => allFormats.add(format));
@@ -236,13 +241,22 @@ class pandocHandler implements FormatHandler {
         [inputFile.name]: new Blob([inputFile.bytes as BlobPart])
       };
 
-      const { stderr } = await this.convert({
+      let options = {
         from: inputFormat.internal,
         to: outputFormat.internal,
         "input-files": [inputFile.name],
         "output-file": "output",
-        "embed-resources": true
-      }, null, files);
+        "embed-resources": true,
+        "html-math-method": "mathjax",
+      }
+
+      // Set flag for outputting mathml
+      if (outputFormat.internal === "mathml") {
+        options.to = "html";
+        options["html-math-method"] = "mathml";
+      }
+
+      const { stderr } = await this.convert(options, null, files);
 
       if (stderr) throw stderr;
 
