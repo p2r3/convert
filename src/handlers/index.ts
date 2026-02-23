@@ -47,6 +47,7 @@ import bsonHandler from "./bson.ts";
 import asepriteHandler from "./aseprite.ts";
 import vexflowHandler from "./vexflow.ts";
 import toonHandler from "./toon.ts";
+import langHandler from "./lang.ts";
 
 const handlers: FormatHandler[] = [];
 try { handlers.push(new svgTraceHandler()) } catch (_) { };
@@ -99,5 +100,6 @@ try { handlers.push(new bsonHandler()) } catch (_) { };
 try { handlers.push(new asepriteHandler()) } catch (_) { };
 try { handlers.push(new vexflowHandler()) } catch (_) { };
 try { handlers.push(new toonHandler()) } catch (_) { };
+try { handlers.push(new langHandler()) } catch (_) { };
 
 export default handlers;
