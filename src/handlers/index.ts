@@ -36,7 +36,7 @@ import libopenmptHandler from "./libopenmpt.ts";
 import { midiCodecHandler, midiSynthHandler } from "./midi.ts";
 import lzhHandler from "./lzh.ts";
 import textToGoHandler from "./textToGo.ts";
-import txtToInfiniteCraftHandler from "./txtToInfiniteCraft.ts";
+import infiniteCraftHandler from "./infiniteCraft.ts";
 import wadHandler from "./wad.ts";
 import espeakngHandler from "./espeakng.js"
 import textToShellHandler from "./texttoshell.ts";
@@ -94,7 +94,7 @@ try { handlers.push(new lzhHandler()) } catch (_) { };
 try { handlers.push(new wadHandler()) } catch (_) { };
 try { handlers.push(new pandocHandler()) } catch (_) { };
 try { handlers.push(new textToGoHandler()) } catch (_) { };
-try { handlers.push(new txtToInfiniteCraftHandler()) } catch (_) { };
+try { handlers.push(new infiniteCraftHandler()) } catch (_) { };
 try { handlers.push(new espeakngHandler()) } catch (_) { };
 try { handlers.push(new textToShellHandler()) } catch (_) { };
 try { handlers.push(new batchHandler()) } catch (_) { };
