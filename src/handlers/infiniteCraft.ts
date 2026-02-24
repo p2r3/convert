@@ -10,7 +10,7 @@ class infiniteCraftHandler implements FormatHandler {
 
     async init() {
         this.supportedFormats = [
-            CommonFormats.JSON.supported("json", false, true),
+            CommonFormats.JSON.supported("json", true, true),
             CommonFormats.TEXT.supported("text", true, false),
             {
                 name: "Infinite Craft Game Save",
@@ -21,17 +21,6 @@ class infiniteCraftHandler implements FormatHandler {
                 to: true,
                 internal: "ic",
                 category: "archive",
-                lossless: false,
-            },
-            {
-                name: "Infinite Craft Helper Save",
-                format: "json",
-                extension: "json",
-                mime: "application/x-infinite-craft-helper",
-                from: false,
-                to: true,
-                internal: "json",
-                category: "data",
                 lossless: false,
             },
         ];
@@ -51,6 +40,17 @@ class infiniteCraftHandler implements FormatHandler {
                 const bytes = pako.ungzip(file.bytes);
                 outputFiles.push({
                     name: file.name.replace(/\.ic$/i, ".json"),
+                    bytes: bytes,
+                });
+            }
+        }
+
+        // json -> ic
+        if (inputFormat.internal === "json" && outputFormat.internal === "ic") {
+            for (const file of inputFiles) {
+                const bytes = pako.gzip(file.bytes);
+                outputFiles.push({
+                    name: file.name.replace(/\.json$/i, ".ic"),
                     bytes: bytes,
                 });
             }
