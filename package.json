@@ -68,6 +68,7 @@
     "@types/pako": "^2.0.4",
     "@types/three": "^0.182.0",
     "bson": "^7.2.0",
+    "heic2any": "^0.0.4",
     "imagetracer": "^0.2.2",
     "js-synthesizer": "^1.11.0",
     "jszip": "^3.10.1",

@@ -244,6 +244,21 @@ const CommonFormats = {
         "mxl",
         "application/vnd.recordare.musicxml",
         Category.DOCUMENT
+    ),
+    // high efficiency image
+    HEIC: new FormatDefinition(
+        "High Efficiency Image Container",
+        "heic",
+        "heic",
+        "image/heic",
+        Category.IMAGE
+    ),
+    HEIF: new FormatDefinition(
+        "High Efficiency Image File Format",
+        "heif",
+        "heif",
+        "image/heif",
+        Category.IMAGE
     )
 }
 
