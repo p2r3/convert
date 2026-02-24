@@ -35,7 +35,7 @@ class txt2mmlHandler implements FormatHandler {
   ): Promise<FileData[]> {
     const outputFiles: FileData[] = [];
     for (const file of inputFiles) {
-      const intext = await (file as File).text();
+      const intext = await (file as unknown as File).text();
       const wraptext = `<mtext>${intext}</mtext>`;
       const outname = file.name.split(".").slice(0, -1).join(".")+".mml";
       outputFiles.push({name: outname, bytes: new TextEncoder().encode(wraptext)})
