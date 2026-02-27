@@ -1,7 +1,7 @@
 import CommonFormats from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import parseXML from "./envelope/parseXML.js";
-import * as yaml from "@std/yaml";
+import * as yaml from "yaml";
 
 /// Converts things to JSON
 export class toJsonHandler implements FormatHandler {
