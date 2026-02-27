@@ -87,14 +87,13 @@ ui.fileSelectArea.onclick = () => {
  * or a "drop" event.
  */
 const fileSelectHandler = (event: Event) => {
-
-  let inputFiles;
+  let inputFiles: FileList | null = null;
 
   if (event instanceof DragEvent) {
-    inputFiles = event.dataTransfer?.files;
+    inputFiles = event.dataTransfer?.files || null;
     if (inputFiles) event.preventDefault();
   } else if (event instanceof ClipboardEvent) {
-    inputFiles = event.clipboardData?.files;
+    inputFiles = event.clipboardData?.files || null;
   } else {
     const target = event.target;
     if (!(target instanceof HTMLInputElement)) return;
@@ -105,56 +104,63 @@ const fileSelectHandler = (event: Event) => {
   const files = Array.from(inputFiles);
   if (files.length === 0) return;
 
-  if (files.some(c => c.type !== files[0].type)) {
+  // Require same type for all files
+  const firstType = files[0].type;
+  if (files.some(f => f.type !== firstType)) {
     return alert("All input files must be of the same type.");
   }
-  files.sort((a, b) => a.name === b.name ? 0 : (a.name < b.name ? -1 : 1));
+
+  // Sort alphabetically
+  files.sort((a, b) => a.name.localeCompare(b.name));
   selectedFiles = files;
 
-  ui.fileSelectArea.innerHTML = `<h2>
-    ${files[0].name}
-    ${files.length > 1 ? `<br>... and ${files.length - 1} more` : ""}
-  </h2>`;
+  // Show all file names instead of just one
+  ui.fileSelectArea.innerHTML = `
+    <h2>Selected files:</h2>
+    <ul>
+      ${files.map(f => `${f.name}<br>`).join("")}
+    </ul>
+  `;
 
-  // Common MIME type adjustments (to match "mime" library)
-  let mimeType = normalizeMimeType(files[0].type);
-
+  // MIME type normalization
+  let mimeType = normalizeMimeType(firstType);
   const fileExtension = files[0].name.split(".").pop()?.toLowerCase();
 
-  // Find all buttons matching the input MIME type.
+  // Match buttons by MIME type
   const buttonsMatchingMime = Array.from(ui.inputList.children).filter(button => {
-    if (!(button instanceof HTMLButtonElement)) return false;
-    return button.getAttribute("mime-type") === mimeType;
+    return button instanceof HTMLButtonElement &&
+           button.getAttribute("mime-type") === mimeType;
   }) as HTMLButtonElement[];
-  // If there are multiple, find one with a matching extension too
-  let inputFormatButton: HTMLButtonElement;
+
+  let inputFormatButton: HTMLButtonElement | undefined;
   if (buttonsMatchingMime.length > 1) {
     inputFormatButton = buttonsMatchingMime.find(button => {
       const formatIndex = button.getAttribute("format-index");
-      if (!formatIndex) return;
+      if (!formatIndex) return false;
       const format = allOptions[parseInt(formatIndex)];
       return format.format.extension === fileExtension;
     }) || buttonsMatchingMime[0];
   } else {
     inputFormatButton = buttonsMatchingMime[0];
   }
-  // Click button with matching MIME type.
-  if (mimeType && inputFormatButton instanceof HTMLButtonElement) {
+
+  if (mimeType && inputFormatButton) {
     inputFormatButton.click();
     ui.inputSearch.value = mimeType;
     filterButtonList(ui.inputList, ui.inputSearch.value);
     return;
   }
 
-  // Fall back to matching format by file extension if MIME type wasn't found.
+  // Fallback: match by extension
   const buttonExtension = Array.from(ui.inputList.children).find(button => {
     if (!(button instanceof HTMLButtonElement)) return false;
     const formatIndex = button.getAttribute("format-index");
-    if (!formatIndex) return;
+    if (!formatIndex) return false;
     const format = allOptions[parseInt(formatIndex)];
     return format.format.extension.toLowerCase() === fileExtension;
-  });
-  if (buttonExtension instanceof HTMLButtonElement) {
+  }) as HTMLButtonElement | undefined;
+
+  if (buttonExtension) {
     buttonExtension.click();
     ui.inputSearch.value = buttonExtension.getAttribute("mime-type") || "";
   } else {
@@ -162,7 +168,6 @@ const fileSelectHandler = (event: Event) => {
   }
 
   filterButtonList(ui.inputList, ui.inputSearch.value);
-
 };
 
 // Add the file selection handler to both the file input element and to
