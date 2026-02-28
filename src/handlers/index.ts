@@ -53,6 +53,7 @@ import n64romHandler from "./n64rom.ts";
 import vexflowHandler from "./vexflow.ts";
 import toonHandler from "./toon.ts";
 import txt2mmlHandler from "./txt2mml.ts";
+import rpgmvpHandler from "./rpgmvp.ts";
 
 const handlers: FormatHandler[] = [];
 try { handlers.push(new svgTraceHandler()) } catch (_) { };
@@ -111,5 +112,6 @@ try { handlers.push(new csharpHandler()) } catch (_) { };
 try { handlers.push(new n64romHandler()) } catch (_) { };
 try { handlers.push(new vexflowHandler()) } catch (_) { };
 try { handlers.push(new toonHandler()) } catch (_) { };
+try { handlers.push(new rpgmvpHandler()) } catch (_) { };
 
 export default handlers;
