@@ -73,6 +73,8 @@ export const renameZipHandler = renameHandler("renamezip", [
     .withFormat("osz").withExt("osz").named("osu! Beatmap"),
   CommonFormats.ZIP.builder("osk").allowFrom()
     .withFormat("osk").withExt("osk").named("osu! Skin"),
+  CommonFormats.ZIP.builder("apworld").allowFrom()
+    .withFormat("apworld").withExt("apworld").named("Archipelago World"),
   {
     name: "Java Archive",
     format: "jar",

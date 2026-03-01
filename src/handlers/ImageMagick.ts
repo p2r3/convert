@@ -3,7 +3,8 @@ import {
   Magick,
   MagickFormat,
   MagickImageCollection,
-  MagickReadSettings
+  MagickReadSettings,
+  MagickGeometry
 } from "@imagemagick/magick-wasm";
 
 import mime from "mime";
@@ -22,7 +23,8 @@ class ImageMagickHandler implements FormatHandler {
   async init () {
 
     const wasmLocation = "/convert/wasm/magick.wasm";
-    const wasmBytes = await fetch(wasmLocation).then(r => r.bytes());
+    const wasmBuffer = await fetch(wasmLocation).then(r => r.arrayBuffer());
+    const wasmBytes = new Uint8Array(wasmBuffer);
 
     await initializeImageMagick(wasmBytes);
 
@@ -92,6 +94,12 @@ class ImageMagickHandler implements FormatHandler {
             while (fileCollection.length > 0) {
               const image = fileCollection.shift();
               if (!image) break;
+
+              if(outputFormat.format == "ico" && (image.width > 256 || image.height > 256)) {
+                const geometry = new MagickGeometry(256, 256);
+                image.resize(geometry);
+              }
+
               outputCollection.push(image);
             }
           });
