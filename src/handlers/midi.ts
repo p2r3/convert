@@ -91,7 +91,7 @@ export class midiCodecHandler implements FormatHandler {
       CommonFormats.TEXT.builder("txt").allowFrom().allowTo().markLossless(),
       // PNG spectrogram -> MIDI (matches meyda's internal="image" so routing picks
       // up the audio->png->mid path automatically)
-      { name: "PNG",           format: "png",    extension: "png",    mime: "image/png",    from: true,  to: true,  internal: "image", category: "image", lossless: false },
+      CommonFormats.PNG.builder("png").allowFrom().allowTo()
     );
     this.ready = true;
   }
