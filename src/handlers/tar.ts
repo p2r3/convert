@@ -57,9 +57,18 @@ class tarHandler implements FormatHandler {
       } else if (inputFormat.internal === "zip" && outputFormat.internal === "tar") {
         const zip = await JSZip.loadAsync(inputFile.bytes);
 
-        const entries: { name: string; data: Uint8Array }[] = [];
+        const entries: Array<{
+          name: string;
+          data?: Uint8Array;
+          attrs?: { mtime?: number };
+        }> = [];
         for (const [filename, zipEntry] of Object.entries(zip.files)) {
-          if (!zipEntry.dir) {
+          if (zipEntry.dir) {
+            entries.push({
+              name: filename.endsWith("/") ? filename : `${filename}/`,
+              attrs: { mtime: zipEntry.date?.getTime() }
+            });
+          } else {
             entries.push({
               name: filename,
               data: await zipEntry.async("uint8array"),
