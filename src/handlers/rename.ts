@@ -94,7 +94,7 @@ export const renameZipHandler = renameHandler("renamezip", [
     internal: "apk"
   },
   CommonFormats.ZIP.builder("sb3").allowFrom()
-    .withFormat("sb3").withExt("sb3").named("Scratch 3 Project"),
+    .withFormat("sb3").withExt("sb3").named("Scratch 3 Project").withMime("application/x.scratch.sb3"),
   CommonFormats.ZIP.builder("ipa").allowFrom()
     .withFormat("ipa").withExt("ipa").named("iOS Application"),
   CommonFormats.ZIP.builder("app").allowFrom()
