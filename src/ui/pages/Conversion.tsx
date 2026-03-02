@@ -1,4 +1,3 @@
-import logoImage from '../img/logo.svg';
 import faImageRegular from '../img/fa-image-regular-full.svg';
 import faBoxArchiveSolid from '../img/fa-box-archive-solid-full.svg';
 import faFileLinesRegular from '../img/fa-file-lines-regular-full.svg';
@@ -7,13 +6,11 @@ import faMusicSolid from '../img/fa-music-solid-full.svg';
 
 import './Conversion.css'
 
-import { Icon } from "../components/Icon";
-
-import DarkModeToggle from '../components/DarkModeToggle';
 import { type FormatCategory } from "../components/Conversion/SideNav";
 import Footer from "../components/Footer";
 import ConversionSettings from "../components/Conversion/ConversionSettings";
 import SelectedFileInfo from "../components/Conversion/SelectedFileInfo";
+import ConversionHeader from "../components/Conversion/ConversionHeader";
 import { AllOptions } from 'src/main.new';
 
 import FormatExplorer, {type FormatTypeCard} from "../components/Conversion/FormatExplorer.tsx";
@@ -54,22 +51,7 @@ export default function Conversion(props: ConversionPageProps | undefined) {
 
     return (
         <div className="conversion-body">
-            <header className="conversion-header">
-                <div className="header-left">
-                    <Icon
-                        src={ logoImage }
-                        size={ 40 }
-                        color="var(--primary)"
-                    />
-                    <h1 className="conversion-title">Convert to it!</h1>
-                </div>
-
-                <div className="header-right">
-                    {/* Desktop File Info */ }
-                    <SelectedFileInfo className="desktop-only" />
-                    <DarkModeToggle />
-                </div>
-            </header>
+            <ConversionHeader />
 
             {/* Mobile File Info */ }
             <SelectedFileInfo className="mobile-only" />
