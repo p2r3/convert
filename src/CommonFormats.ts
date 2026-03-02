@@ -78,7 +78,7 @@ const CommonFormats = {
         Category.DATA
     ),
     CSV: new FormatDefinition(
-        "Comma Seperated Values",
+        "Comma Separated Values",
         "csv",
         "csv",
         "text/csv",
