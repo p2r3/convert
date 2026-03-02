@@ -207,7 +207,7 @@ export class midiSynthHandler implements FormatHandler {
 
     this.supportedFormats.push(
       { name: "MIDI",           format: "mid", extension: "mid", mime: "audio/midi", from: true,  to: false, internal: "mid", category: "audio", lossless: true },
-      { name: "Waveform Audio", format: "wav", extension: "wav", mime: "audio/wav",  from: false, to: true,  internal: "wav", category: "audio", lossless: true },
+      CommonFormats.WAV.builder("wav").allowTo().markLossless()
     );
 
     this.ready = true;
