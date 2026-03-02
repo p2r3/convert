@@ -2,6 +2,7 @@ import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import { LZHDecoder } from "./lzh/decoder.ts";
 import { LZHEncoder, type LHAFileInput } from "./lzh/encoder.ts";
 import JSZip from "jszip";
+import CommonFormats from "src/CommonFormats.ts";
 import normalizeMimeType from "../normalizeMimeType.ts";
 import mime from "mime";
 
@@ -29,28 +30,9 @@ class LZHHandler implements FormatHandler {
       category: "archive",
       lossless: true
     },
-    {
-      name: "ZIP Archive",
-      format: "zip",
-      extension: "zip",
-      mime: "application/zip",
-      from: true,
-      to: true,
-      internal: "zip",
-      category: "archive",
-      lossless: true
-    },
-    {
-      name: "JavaScript Object Notation",
-      format: "json",
-      extension: "json",
-      mime: "application/json",
-      from: false,
-      to: true,
-      internal: "json",
-      category: "data",
-      lossless: false
-    }
+    CommonFormats.ZIP.builder("zip").allowFrom()
+      .allowTo().markLossless(),
+    CommonFormats.JSON.builder("json").allowTo()
   ];
 
   public supportAnyInput: boolean = true;
