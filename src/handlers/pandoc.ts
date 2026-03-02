@@ -82,7 +82,7 @@ class pandocHandler implements FormatHandler {
     ["vimdoc", "Vimdoc"],
     ["vimwiki", "Vimwiki"],
     ["xlsx", "Excel spreadsheet"],
-    ["xml", "XML version of native AST"],
+    ["xml", CommonFormats.XML.name],
     ["xwiki", "XWiki markup"],
     ["zimwiki", "ZimWiki markup"],
     ["mathml", "Mathematical Markup Language"],
