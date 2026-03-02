@@ -244,6 +244,13 @@ const CommonFormats = {
         "mxl",
         "application/vnd.recordare.musicxml",
         Category.DOCUMENT
+    ),
+    EXE: new FormatDefinition(
+        "Windows Portable Executable",
+        "exe",
+        "exe",
+        "application/vnd.microsoft.portable-executable",
+        Category.CODE
     )
 }
 

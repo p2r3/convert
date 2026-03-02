@@ -8,7 +8,7 @@ class batToExeHandler implements FormatHandler {
   public name = "batToExe";
   public supportedFormats = [
     CommonFormats.BATCH.supported("bat", true, false),
-    { name: "Windows 64bit Executable", format: "executable", extension: "exe", mime: "binary/exe-win64", from: false, to: true, internal: "exe", category: "binary", lossless: true } // Tecnically it lossless because stores bat inside
+    CommonFormats.EXE.supported("exe", false, true, true) // Lossless because it stores exact input side
   ];
   public ready = false;
 
