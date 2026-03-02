@@ -181,21 +181,21 @@ const CommonFormats = {
     ),
     // documents - Microsoft Office
     DOCX: new FormatDefinition(
-        "Microsoft Office 365 Word Document",
+        "WordprocessingML Document",
         "docx",
         "docx",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         Category.DOCUMENT
     ),
     XLSX: new FormatDefinition(
-        "Microsoft Office 365 Workbook",
+        "SpreadsheetML Workbook",
         "xlsx",
         "xlsx",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         [Category.SPREADSHEET, Category.DOCUMENT]
     ),
     PPTX: new FormatDefinition(
-        "Microsoft Office 365 Presentation",
+        "PresentationML Presentation",
         "pptx",
         "pptx",
         "application/vnd.openxmlformats-officedocument.presentationml.presentation",
