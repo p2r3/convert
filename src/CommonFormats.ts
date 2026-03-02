@@ -171,13 +171,6 @@ const CommonFormats = {
         "application/zip",
         Category.ARCHIVE
     ),
-    TAR: new FormatDefinition(
-        "Tape Archive",
-        "tar",
-        "tar",
-        "application/x-tar",
-        Category.ARCHIVE
-    ),
     // documents
     PDF: new FormatDefinition(
         "Portable Document Format",
