@@ -45,7 +45,9 @@ class tarHandler implements FormatHandler {
         const entries = parseTar(inputFile.bytes);
 
         const zip = new JSZip();
-        for (const entry of entries) zip.file(entry.name, entry.data!);
+        for (const entry of entries) zip.file(entry.name, entry.data!, {
+          date: entry.attrs?.mtime ? new Date(entry.attrs.mtime * 1000) : undefined
+        });
 
         const zipData = await zip.generateAsync({ type: "uint8array" });
         const baseName = inputFile.name.replace(/\.tar$/i, "");
@@ -58,7 +60,11 @@ class tarHandler implements FormatHandler {
         const entries: { name: string; data: Uint8Array }[] = [];
         for (const [filename, zipEntry] of Object.entries(zip.files)) {
           if (!zipEntry.dir) {
-            entries.push({ name: filename, data: await zipEntry.async("uint8array") });
+            entries.push({
+              name: filename,
+              data: await zipEntry.async("uint8array"),
+              attrs: { mtime: zipEntry.date?.getTime() }
+            });
           }
         }
 
