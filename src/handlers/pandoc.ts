@@ -1,5 +1,5 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-
+import CommonFormats from "src/CommonFormats.ts";
 import mime from "mime";
 import normalizeMimeType from "../normalizeMimeType.ts";
 
@@ -61,7 +61,7 @@ class pandocHandler implements FormatHandler {
     ["opml", "OPML"],
     ["org", "Emacs Org mode"],
     ["pdf", "PDF via Typst"],
-    ["text", "plain text"],
+    ["text", CommonFormats.TEXT.name],
     ["pod", "Perl POD"],
     ["pptx", "PowerPoint"],
     ["revealjs", "reveal.js HTML slides"],

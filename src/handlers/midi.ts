@@ -1,5 +1,6 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import { extractEvents, tableToString, stringToTable, buildMidi, parseRtttl, parseGrubTune, tableToRtttl, tableToGrubTune, pngToMidi, midiToPng } from "./midi/midifilelib.js";
+import CommonFormats from "src/CommonFormats.ts";
 
 const SAMPLE_RATE = 44100;
 const BUFFER_FRAMES = 4096;
@@ -87,7 +88,7 @@ export class midiCodecHandler implements FormatHandler {
       { name: "RTTTL",         format: "rtttl",  extension: "rtttl",  mime: "audio/rtttl",  from: true,  to: true,  internal: "rtttl", category: "text",  lossless: false },
       { name: "NokRing",       format: "rtttl",  extension: "nokring",mime: "audio/rtttl",  from: true,  to: false, internal: "rtttl", category: "text",  lossless: false },
       { name: "GRUB Init Tune",format: "grub",   extension: "grub",   mime: "text/plain",   from: true,  to: true,  internal: "grub",  category: "text",  lossless: false },
-      { name: "Plain Text",    format: "text",    extension: "txt",    mime: "text/plain",   from: true,  to: true,  internal: "txt",   category: "text",  lossless: true },
+      CommonFormats.TEXT.builder("txt").allowFrom().allowTo().markLossless(),
       // PNG spectrogram -> MIDI (matches meyda's internal="image" so routing picks
       // up the audio->png->mid path automatically)
       { name: "PNG",           format: "png",    extension: "png",    mime: "image/png",    from: true,  to: true,  internal: "image", category: "image", lossless: false },
