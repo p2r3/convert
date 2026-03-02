@@ -115,7 +115,7 @@ export default function UploadField({ disabled = false }: UploadFieldComponentPr
 				</div>
 
 				<div className="upload-card-buttons">
-					<AdvancedModeToggle />
+					<AdvancedModeToggle compact={ false } />
 					<HelpButton />
 				</div>
 

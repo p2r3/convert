@@ -4,6 +4,7 @@ import DarkModeToggle from '../DarkModeToggle';
 import SelectedFileInfo from './SelectedFileInfo';
 
 import "./ConversionHeader.css";
+import AdvancedModeToggle from '../AdvancedModeToggle';
 
 export default function ConversionHeader() {
     return (
@@ -20,6 +21,7 @@ export default function ConversionHeader() {
             <div className="header-right">
                 {/* Desktop File Info */ }
                 <SelectedFileInfo className="desktop-only" />
+                <AdvancedModeToggle compact={ true } />
                 <DarkModeToggle />
             </div>
         </header>
