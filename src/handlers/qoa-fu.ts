@@ -1,5 +1,5 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-
+import CommonFormats from "src/CommonFormats.ts";
 import { QOAEncoder, QOADecoder, QOABase } from "qoa-fu";
 import { WaveFile } from "wavefile";
 
@@ -64,42 +64,14 @@ class qoaFuHandler implements FormatHandler {
 
   async init() {
     const dummy = document.createElement("audio");
-    this.supportedFormats.push({
-      name: "Waveform Audio File Format",
-      format: "wav",
-      extension: "wav",
-      mime: "audio/wav",
-      from: dummy.canPlayType("audio/wav") !== "",
-      to: true,
-      internal: "wav"
-    });
-    if (dummy.canPlayType("audio/mpeg")) this.supportedFormats.push({
-      name: "MP3 Audio",
-      format: "mp3",
-      extension: "mp3",
-      mime: "audio/mpeg",
-      from: true,
-      to: false,
-      internal: "mp3"
-    });
-    if (dummy.canPlayType("audio/ogg")) this.supportedFormats.push({
-      name: "Ogg Audio",
-      format: "ogg",
-      extension: "ogg",
-      mime: "audio/ogg",
-      from: true,
-      to: false,
-      internal: "ogg"
-    });
-    if (dummy.canPlayType("audio/flac")) this.supportedFormats.push({
-      name: "Free Lossless Audio Codec",
-      format: "flac",
-      extension: "flac",
-      mime: "audio/flac",
-      from: true,
-      to: false,
-      internal: "flac"
-    });
+if (dummy.canPlayType("audio/wav"))
+    this.supportedFormats.push(CommonFormats.WAV.builder("wav").allowFrom(true).allowTo(true));
+    if (dummy.canPlayType("audio/mpeg"))
+this.supportedFormats.push(CommonFormats.MP3.builder("mp3").allowFrom(true).allowTo(false));
+    if (dummy.canPlayType("audio/ogg"))
+this.supportedFormats.push(CommonFormats.OGG.builder("ogg").allowFrom(true).allowTo(false));
+    if (dummy.canPlayType("audio/flac"))
+this.supportedFormats.push(CommonFormats.FLAC.builder("flac").allowFrom(true).allowTo(false));
     dummy.remove();
 
     this.#audioContext = new AudioContext();
