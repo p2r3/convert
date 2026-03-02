@@ -50,7 +50,7 @@ class ImageMagickHandler implements FormatHandler {
         to: format.supportsWriting,
         internal: format.format,
         category: mimeType.split("/")[0],
-        lossless: ["png", "bmp", "tiff"].includes(formatName)
+        lossless: ["png", "bmp", "tiff", "tga", "pbm", "pgm", "ppm", "pam"].includes(formatName)
       });
     });
 

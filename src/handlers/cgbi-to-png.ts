@@ -155,8 +155,9 @@ class cgbiToPngHandler implements FormatHandler {
       mime: "image/png",
       from: true,
       to: false,
-      internal: "cgbi-png", 
-      category: "image"
+      internal: "cgbi-png",
+      category: "image",
+      lossless: true
     },
     CommonFormats.PNG.supported("png", false, true, true),
   ];

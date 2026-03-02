@@ -28,6 +28,7 @@ class bunburrowsHandler implements FormatHandler {
                 from: true,
                 to: false,
                 internal: "bunlevel",
+                category: "data",
             },
         ];
 

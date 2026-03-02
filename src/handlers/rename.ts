@@ -24,10 +24,10 @@ function renameHandler(name: string, formats: FileFormat[]): FormatHandler {
 }
 /// handler for renaming various aliased zip files
 export const renameZipHandler = renameHandler("renamezip", [
-  CommonFormats.ZIP.builder("zip").allowTo(),
-  CommonFormats.DOCX.builder("docx").allowFrom(),
-  CommonFormats.XLSX.builder("xlsx").allowFrom(),
-  CommonFormats.PPTX.builder("pptx").allowFrom(),
+  CommonFormats.ZIP.builder("zip").allowTo().markLossless(),
+  CommonFormats.DOCX.builder("docx").allowFrom().markLossless(),
+  CommonFormats.XLSX.builder("xlsx").allowFrom().markLossless(),
+  CommonFormats.PPTX.builder("pptx").allowFrom().markLossless(),
   {
     name: "OpenDocument Text",
     format: "odt",
@@ -36,7 +36,8 @@ export const renameZipHandler = renameHandler("renamezip", [
     from: true,
     to: false,
     internal: "odt",
-    category: "document"
+    category: "document",
+    lossless: true
   },
   {
     name: "OpenDocument Presentation",
@@ -46,7 +47,8 @@ export const renameZipHandler = renameHandler("renamezip", [
     from: true,
     to: false,
     internal: "odp",
-    category: "presentation"
+    category: "presentation",
+    lossless: true
   },
   {
     name: "OpenDocument Spreadsheet",
@@ -56,7 +58,8 @@ export const renameZipHandler = renameHandler("renamezip", [
     from: true,
     to: false,
     internal: "ods",
-    category: "spreadsheet"
+    category: "spreadsheet",
+    lossless: true
   },
   {
     name: "Firefox Plugin",
@@ -65,15 +68,17 @@ export const renameZipHandler = renameHandler("renamezip", [
     mime: "application/x-xpinstall",
     from: true,
     to: false,
-    internal: "xpi"
+    internal: "xpi",
+    category: "archive",
+    lossless: true
   },
-  CommonFormats.ZIP.builder("love").allowFrom()
+  CommonFormats.ZIP.builder("love").allowFrom().markLossless()
     .withFormat("love").withExt("love").named("LÖVE Game Package"),
-  CommonFormats.ZIP.builder("osz").allowFrom()
+  CommonFormats.ZIP.builder("osz").allowFrom().markLossless()
     .withFormat("osz").withExt("osz").named("osu! Beatmap"),
-  CommonFormats.ZIP.builder("osk").allowFrom()
+  CommonFormats.ZIP.builder("osk").allowFrom().markLossless()
     .withFormat("osk").withExt("osk").named("osu! Skin"),
-  CommonFormats.ZIP.builder("apworld").allowFrom()
+  CommonFormats.ZIP.builder("apworld").allowFrom().markLossless()
     .withFormat("apworld").withExt("apworld").named("Archipelago World"),
   {
     name: "Java Archive",
@@ -82,7 +87,9 @@ export const renameZipHandler = renameHandler("renamezip", [
     mime: "application/x-java-archive",
     from: true,
     to: false,
-    internal: "jar"
+    internal: "jar",
+    category: "archive",
+    lossless: true
   },
   {
     name: "Android Package Archive",
@@ -91,19 +98,21 @@ export const renameZipHandler = renameHandler("renamezip", [
     mime: "application/vnd.android.package-archive",
     from: true,
     to: false,
-    internal: "apk"
+    internal: "apk",
+    category: "archive",
+    lossless: true
   },
-  CommonFormats.ZIP.builder("sb3").allowFrom()
+  CommonFormats.ZIP.builder("sb3").allowFrom().markLossless()
     .withFormat("sb3").withExt("sb3").named("Scratch 3 Project"),
-  CommonFormats.ZIP.builder("ipa").allowFrom()
+  CommonFormats.ZIP.builder("ipa").allowFrom().markLossless()
     .withFormat("ipa").withExt("ipa").named("iOS Application"),
-  CommonFormats.ZIP.builder("app").allowFrom()
+  CommonFormats.ZIP.builder("app").allowFrom().markLossless()
     .withFormat("app").withExt("app").named("macOS Application Bundle")
 ]);
 /// handler for renaming text-based formats
 export const renameTxtHandler = renameHandler("renametxt", [
-  CommonFormats.TEXT.builder("text").allowTo(),
-  CommonFormats.JSON.builder("json").allowFrom(),
-  CommonFormats.XML.builder("xml").allowFrom(),
-  CommonFormats.YML.builder("yaml").allowFrom()
+  CommonFormats.TEXT.builder("text").allowTo().markLossless(),
+  CommonFormats.JSON.builder("json").allowFrom().markLossless(),
+  CommonFormats.XML.builder("xml").allowFrom().markLossless(),
+  CommonFormats.YML.builder("yaml").allowFrom().markLossless()
 ])

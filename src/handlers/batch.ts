@@ -4,7 +4,7 @@ import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 class batchHandler implements FormatHandler {
   public name = "batch";
   public supportedFormats = [
-    CommonFormats.TEXT.supported("txt", true, false),
+    CommonFormats.TEXT.supported("txt", true, false, true),
     CommonFormats.BATCH.supported("bat", false, true, true),
   ];
   public ready = false;

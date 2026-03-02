@@ -7,7 +7,7 @@ class jszipHandler implements FormatHandler {
   public name: string = "jszip";
 
   public supportedFormats: FileFormat[] = [
-    CommonFormats.ZIP.builder("zip").allowTo()
+    CommonFormats.ZIP.builder("zip").allowTo().markLossless()
   ];
 
   public supportAnyInput: boolean = true;

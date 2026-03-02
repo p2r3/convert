@@ -7,7 +7,7 @@ class txtToPyHandler implements FormatHandler {
   public ready: boolean = true;
   
   public supportedFormats: FileFormat[] = [
-    CommonFormats.TEXT.supported("txt", true, false),
+    CommonFormats.TEXT.supported("txt", true, false, true),
     CommonFormats.PYTHON.supported("py", false, true, true)
   ];
 

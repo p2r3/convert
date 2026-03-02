@@ -170,7 +170,7 @@ class FFmpegHandler implements FormatHandler {
           to: flags.includes("E"),
           internal: format,
           category,
-          lossless: ["png", "bmp", "tiff"].includes(format)
+          lossless: ["png", "bmp", "tiff", "wav", "flac", "aiff"].includes(format)
         });
 
       }
@@ -203,7 +203,8 @@ class FFmpegHandler implements FormatHandler {
       mime: "video/quicktime",
       from: true,
       to: true,
-      internal: "mov"
+      internal: "mov",
+      category: "audio"
     });
 
     // Normalize Bink metadata to ensure ".bik" files are detected by extension.
@@ -227,7 +228,7 @@ class FFmpegHandler implements FormatHandler {
 
     // Add PNG input explicitly - FFmpeg otherwise treats both PNG and
     // APNG as the same thing.
-    this.supportedFormats.push(CommonFormats.PNG.builder("png").allowFrom());
+    this.supportedFormats.push(CommonFormats.PNG.builder("png").allowFrom().markLossless());
 
     this.#ffmpeg.terminate();
 

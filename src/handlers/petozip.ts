@@ -23,7 +23,8 @@ class peToZipHandler implements FormatHandler {
       mime: "application/vnd.microsoft.portable-executable",
       from: true,
       to: false,
-      internal: "exe"
+      internal: "exe",
+      category: "data"
     },
     {
       name: "Dynamic-Link Library",
@@ -32,7 +33,8 @@ class peToZipHandler implements FormatHandler {
       mime: "application/vnd.microsoft.portable-executable",
       from: true,
       to: false,
-      internal: "dll"
+      internal: "dll",
+      category: "data"
     },
     CommonFormats.ZIP.builder("zip").allowTo().markLossless()
   ];

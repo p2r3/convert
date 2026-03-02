@@ -106,6 +106,7 @@ class mcMapHandler implements FormatHandler {
                 from: true,
                 to: true,
                 internal: "mcmap",
+                category: "data",
             },
             {
                 name: "Minecraft Map File (Grid)",
@@ -115,6 +116,7 @@ class mcMapHandler implements FormatHandler {
                 from: false,
                 to: true,
                 internal: "mcmap_grid",
+                category: "data",
                 lossless: false
             }
         ];

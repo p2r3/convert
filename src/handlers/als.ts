@@ -12,7 +12,8 @@ class alsHandler implements FormatHandler {
       mime: "application/gzip",
       from: true,
       to: false,
-      internal: "als"
+      internal: "als",
+      category: "audio"
     },
     {
       name: "XML Document",
@@ -21,7 +22,9 @@ class alsHandler implements FormatHandler {
       mime: "application/xml",
       from: false,
       to: true,
-      internal: "xml"
+      internal: "xml",
+      category: "data",
+      lossless: true
     }
   ];
 
