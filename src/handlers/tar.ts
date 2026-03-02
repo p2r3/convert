@@ -30,17 +30,18 @@ class tarHandler implements FormatHandler {
     this.ready = true;
   }
 
-  async doConvert(
+  async doConvert (
     inputFiles: FileData[],
     inputFormat: FileFormat,
     outputFormat: FileFormat
   ): Promise<FileData[]> {
 
-    // TAR to ZIP
-    if (inputFormat.internal === "tar" && outputFormat.internal === "zip") {
-      const outputFiles: FileData[] = [];
+    const outputFiles: FileData[] = [];
 
-      for (const inputFile of inputFiles) {
+    for (const inputFile of inputFiles) {
+
+      // TAR to ZIP
+      if (inputFormat.internal === "tar" && outputFormat.internal === "zip") {
         const entries = parseTar(inputFile.bytes);
 
         const zip = new JSZip();
@@ -49,16 +50,9 @@ class tarHandler implements FormatHandler {
         const zipData = await zip.generateAsync({ type: "uint8array" });
         const baseName = inputFile.name.replace(/\.tar$/i, "");
         outputFiles.push({ name: baseName + ".zip", bytes: zipData });
-      }
 
-      return outputFiles;
-    }
-
-    // ZIP to TAR
-    if (inputFormat.internal === "zip" && outputFormat.internal === "tar") {
-      const outputFiles: FileData[] = [];
-
-      for (const inputFile of inputFiles) {
+      // ZIP to TAR
+      } else if (inputFormat.internal === "zip" && outputFormat.internal === "tar") {
         const zip = await JSZip.loadAsync(inputFile.bytes);
 
         const entries: { name: string; data: Uint8Array }[] = [];
@@ -71,18 +65,20 @@ class tarHandler implements FormatHandler {
         const tarData = createTar(entries);
         const baseName = inputFile.name.replace(/\.zip$/i, "");
         outputFiles.push({ name: baseName + ".tar", bytes: new Uint8Array(tarData) });
+
+      // Any files to TAR
+      } else if (outputFormat.internal === "tar") {
+        const entries = inputFiles.map(f => ({ name: f.name, data: f.bytes }));
+        outputFiles.push({ name: "archive.tar", bytes: new Uint8Array(createTar(entries)) });
+        break;
+
+      } else {
+        throw "Unsupported conversion.";
       }
 
-      return outputFiles;
     }
 
-    // Any files to TAR
-    if (outputFormat.internal === "tar") {
-      const entries = inputFiles.map(f => ({ name: f.name, data: f.bytes }));
-      return [{ name: "archive.tar", bytes: new Uint8Array(createTar(entries)) }];
-    }
-
-    throw new Error(`Unsupported conversion: ${inputFormat.format} to ${outputFormat.format}`);
+    return outputFiles;
   }
 }
 
