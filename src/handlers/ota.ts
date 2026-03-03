@@ -91,7 +91,77 @@ class otaHandler implements FormatHandler {
                 })
             }
         }
+        else if (inputFormat.mime == CommonFormats.PNG.mime && outputFormat.internal === "ota") {
+            for (const file of inputFiles) {
+                let writer_array: number[] = [];
+                
+                // Some code copied from mcmap.ts
+                const blob = new Blob([file.bytes as BlobPart], { type: inputFormat.mime });
 
+                const image = new Image();
+                await new Promise((resolve, reject) => {
+                    image.addEventListener("load", resolve);
+                    image.addEventListener("error", reject);
+                    image.src = URL.createObjectURL(blob);
+                });
+
+                if (image.naturalWidth > 255) {
+                    this.#canvas.width = 255;
+                }
+                else {
+                    this.#canvas.width = image.width;
+                }
+                if (image.naturalHeight > 255) {
+                    this.#canvas.height = 255;
+                }
+                else {
+                    this.#canvas.height = image.height;
+                }
+                this.#ctx.drawImage(image, 0, 0, this.#canvas.width, this.#canvas.height);
+
+                const pixels = this.#ctx.getImageData(0, 0, this.#canvas.width, this.#canvas.height);
+                console.log(pixels.data);
+
+                // Start writing our .otb file, first with the header
+                writer_array.push(0, this.#canvas.width, this.#canvas.height, 1);
+                let bits = [];
+                
+                // Then iterate through image data
+                for (let i = 0; i < pixels.data.length; i = i + 4) {
+                    // Determine the "perceived" lightness of a pixel by the human eye.
+                    let luminance = pixels.data[i]*0.2126 + pixels.data[i+1]*0.7152 + pixels.data[i+2]*0.0722;
+                    
+                    if (luminance > 0.5*255) {
+                        bits.push("1");
+                    }
+                    else {
+                        bits.push("0");
+                    }
+                }
+                console.log(bits);
+                
+                // Pad bits
+                while (bits.length % 8 !== 0) {
+                    bits.push("0");
+                }
+                
+                // Finally, use the bits to write to our file's bytes
+                for (let i = 0; i < bits.length; i = i + 8) {
+                    let result: string = bits[i+0].concat(bits[i+1],bits[i+2],bits[i+3],bits[i+4],bits[i+5],bits[i+6],bits[i+7]);
+                    
+                    writer_array.push( parseInt(result,2) );
+                }
+                
+                outputFiles.push({
+                    name: file.name.split(".").slice(0, -1).join(".") + "." + outputFormat.extension,
+                    bytes: new Uint8Array(writer_array)
+                })
+            }
+        }
+        else {
+            throw new Error("Invalid input-output.");
+        }
+    
         return outputFiles;
     }
 }
