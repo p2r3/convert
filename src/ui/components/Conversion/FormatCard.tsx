@@ -3,8 +3,10 @@ import { Icon } from "../Icon";
 import "./FormatCard.css";
 import { SimpleMode } from "src/main.new";
 
+
+
 export type FormatType = {
-    format: string
+    formatName: string
     fullName: string
     mime: string
     icon: string
@@ -29,7 +31,7 @@ export default function FormatCard(props: FormatCardProps) {
             <div className="card-mobile-header mobile-only">
                 <div className="card-title-group">
                     <span className={ props.selected ? "badge" : "badge gray" }>
-                        { formatData.format }
+                        { formatData.formatName }
                     </span>
                     <h3>{ formatData.fullName }</h3>
                     <p className="mime-type">({ formatData.mime })</p>
@@ -46,7 +48,7 @@ export default function FormatCard(props: FormatCardProps) {
                         <Icon src={ formatData.icon } size={ 32 } />
                     </div>
                     <span className="badge">
-                        { formatData.format }
+                        { formatData.formatName }
                     </span>
                     {
                         (!SimpleMode) && (<span className="badge gray">

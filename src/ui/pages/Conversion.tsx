@@ -11,7 +11,7 @@ import Footer from "../components/Footer";
 import ConversionSettings from "../components/Conversion/ConversionSettings";
 import SelectedFileInfo from "../components/Conversion/SelectedFileInfo";
 import ConversionHeader from "../components/Conversion/ConversionHeader";
-import { AllOptions } from 'src/main.new';
+import { ConversionOptions } from 'src/main.new';
 
 import FormatExplorer, { type FormatTypeCard } from "../components/Conversion/FormatExplorer.tsx";
 import { useState } from "preact/hooks";
@@ -34,18 +34,24 @@ export default function Conversion({ }: ConversionPageProps) {
     const [selectedFormat, setSelectedFormat] = useState<FormatTypeCard | null>(null);
 
     /**
+     * ! remove, pass direct format instead
      * Maps all supported formats into UI format cards
      */
     function getConversionFormats(): FormatTypeCard[] {
-        if (AllOptions) {
-            return AllOptions.map((oldFormat) => ({
-                format: oldFormat.format.format,
-                fullName: oldFormat.format.name,
-                icon: faImageRegular, // placeholder
-                mime: oldFormat.format.mime,
-                handlerName: oldFormat.handler.name,
-                id: `${oldFormat.format.name}-${oldFormat.format.mime}-${oldFormat.handler.name}`
-            }))
+        if (ConversionOptions.size) {
+            const formats: FormatTypeCard[] = [];
+            for (const [format, handler] of ConversionOptions.entries()) {
+                if (format.to || handler.supportAnyInput) formats.push({
+                    fullName: format.name, // e.g. "Scalable Vector Graphics"
+                    formatName: format.format, // e.g. "svg"
+                    handlerName: handler.name, // e.g. "svgTrace"
+                    mime: format.mime, // e.g. "image/svg+xml"
+                    id: `${format.name}-${handler.name}-${format.mime}`, // e.g. Scalable Vector Graphics-svgTrace-image/svg+xml
+                    icon: faImageRegular,
+                })
+            }
+            console.debug("Conversion formats:", formats);
+            return formats;
         } else throw new Error("Can't build format list! Failed to get global format list");
     }
 

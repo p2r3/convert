@@ -6,7 +6,13 @@ import { PopupData } from "./ui/index.js";
 import { closePopup, openPopup } from "./ui/PopupStore.js";
 import { signal } from "@preact/signals";
 
+/** KV pairs of files */
 type FileRecord = Record<`${string}-${string}`, File>
+
+/** Map of available formats and its handler */
+type ConversionOptionsMap = Map<FileFormat, FormatHandler>;
+
+export const ConversionOptions: ConversionOptionsMap = new Map();
 
 /**
  * Files currently selected for conversion
@@ -36,11 +42,6 @@ export const ConversionsFromAnyInput: ConvertPathNode[] =
 			.filter(f => f.to)
 			.map(f => ({ handler: h, format: f })));
 
-/**
- * All available conversion options
- */
-export const AllOptions: Array<{ format: FileFormat, handler: FormatHandler }> = [];
-
 window.supportedFormatCache = new Map();
 window.traversionGraph = new TraversionGraph();
 
@@ -52,7 +53,7 @@ window.printSupportedFormatCache = () => {
 }
 
 async function buildOptionList() {
-	AllOptions.length = 0;
+	ConversionOptions.clear();
 
 	for (const handler of handlers) {
 		if (!window.supportedFormatCache.has(handler.name)) {
@@ -77,7 +78,7 @@ async function buildOptionList() {
 
 		for (const format of supportedFormats) {
 			if (!format.mime) continue;
-			AllOptions.push({ format, handler });
+			ConversionOptions.set(format, handler);
 		}
 	}
 
@@ -169,4 +170,4 @@ try {
 	console.log("Built initial format list.");
 }
 
-console.debug(AllOptions);
+console.debug(ConversionOptions);
