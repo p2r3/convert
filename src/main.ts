@@ -359,6 +359,7 @@ async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
         && c.mime === path[i].format.mime
         && c.format === path[i].format.format
       ) || (handler.supportAnyInput ? path[i].format : undefined);
+      if (!inputFormat) throw `Handler "${handler.name}" doesn't support the "${path[i].format.format}" format.`;
       files = (await Promise.all([
         handler.doConvert(files, inputFormat, path[i + 1].format),
         // Ensure that we wait long enough for the UI to update
