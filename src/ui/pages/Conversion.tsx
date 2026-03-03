@@ -8,7 +8,7 @@ import './Conversion.css'
 
 import { type FormatCategory } from "../components/Conversion/SideNav";
 import Footer from "../components/Footer";
-import ConversionSettings from "../components/Conversion/ConversionSettings";
+import ConversionSidebar from "../components/Conversion/ConversionSidebar";
 import SelectedFileInfo from "../components/Conversion/SelectedFileInfo";
 import ConversionHeader from "../components/Conversion/ConversionHeader";
 import { ConversionOptions } from 'src/main.new';
@@ -30,9 +30,9 @@ const sidebarItems: FormatCategory[] = [ // Placeholder categories
 ];
 
 /**
-     * ! remove, pass direct format instead
-     * Maps all supported formats into UI format cards
-     */
+ * ! remove, pass direct format instead
+ * Maps all supported formats into UI format cards
+ */
 function getConversionFormats(): FormatTypeCard[] {
     if (ConversionOptions.size) {
         const formats: FormatTypeCard[] = [];
@@ -66,13 +66,7 @@ export default function Conversion({ }: ConversionPageProps) {
                 <FormatExplorer categories={ sidebarItems } conversionFormats={ AvailableConversionFormats } onSelect={ setSelectedFormat } />
 
                 {/* Right Settings Sidebar / Bottom Settings Accordion */ }
-                <aside className="settings-sidebar">
-                    <ConversionSettings />
-                    <div className="spacer"></div>
-                    <div className="action-footer">
-                        <button className="btn-convert">Convert!</button>
-                    </div>
-                </aside>
+                <ConversionSidebar conversionData={ selectedFormat } />
             </main>
             <Footer visible={ false } />
         </div>
