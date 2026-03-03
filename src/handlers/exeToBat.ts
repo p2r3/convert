@@ -9,16 +9,7 @@ const EXE_MIME = "application/vnd.microsoft.portable-executable";
 export default class ExeToBatHandler implements FormatHandler {
   name = "exe2bat";
   supportedFormats: FileFormat[] = [
-    {
-      name: "Windows Executable",
-      format: "exe",
-      extension: "exe",
-      mime: EXE_MIME,
-      from: true,
-      to: false,
-      internal: "exe",
-      category: "application"
-    },
+    CommonFormats.EXE.builder("exe").allowFrom(),
     CommonFormats.BATCH.builder("bat").allowTo().markLossless()
   ];
 

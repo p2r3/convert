@@ -9,7 +9,7 @@ import {
 
 import mime from "mime";
 import normalizeMimeType from "../normalizeMimeType.ts";
-
+import CommonFormats from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 
 class ImageMagickHandler implements FormatHandler {
@@ -34,18 +34,30 @@ class ImageMagickHandler implements FormatHandler {
       if (formatName === "svg") return;
       if (formatName === "ttf") return;
       if (formatName === "otf") return;
-      const mimeType = format.mimeType || mime.getType(formatName);
+      let mimeType = format.mimeType || mime.getType(formatName);
       if (
         !mimeType
         || mimeType.startsWith("text/")
         || mimeType.startsWith("video/")
         || mimeType === "application/json"
       ) return;
+
+      mimeType = normalizeMimeType(mimeType);
+
+      // ImageMagick _really_ likes mislabeling formats
+      let description = format.description;
+      if (mimeType === "image/jpeg") description = CommonFormats.JPEG.name;
+      if (mimeType === "image/gif") description = CommonFormats.GIF.name;
+      if (mimeType === "image/webp") description = CommonFormats.WEBP.name;
+      if (formatName === "ico") description = "Microsoft Windows ICO";
+      if (formatName === "mpo") description = "Multi-Picture Object";
+      if (formatName === "vst") description = "Microsoft Visio Template";
+
       this.supportedFormats.push({
-        name: format.description,
+        name: description,
         format: formatName === "jpg" ? "jpeg" : formatName,
         extension: formatName,
-        mime: normalizeMimeType(mimeType),
+        mime: mimeType,
         from: mimeType === "application/pdf" ? false : format.supportsReading,
         to: format.supportsWriting,
         internal: format.format,

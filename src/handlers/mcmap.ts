@@ -88,7 +88,7 @@ class mcMapHandler implements FormatHandler {
         this.supportedFormats = [
             CommonFormats.PNG.supported("png", true, true, false),
             {
-                name: "RGB",
+                name: "Raw red, green, and blue samples",
                 format: "rgb",
                 extension: "rgb",
                 mime: "image/x-rgb",
