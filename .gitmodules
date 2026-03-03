@@ -19,3 +19,6 @@
 [submodule "src/handlers/rpgmvp-decrypter"]
 	path = src/handlers/rpgmvp-decrypter
 	url = https://github.com/ConnorTippets/RPG-Maker-MV-Decrypter.git
+[submodule "src/handlers/terraria-wld-parser"]
+	path = src/handlers/terraria-wld-parser
+	url = https://github.com/ConnorTippets/terraria-world-file-ts.git
