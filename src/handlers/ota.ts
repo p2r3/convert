@@ -18,7 +18,7 @@ class otaHandler implements FormatHandler {
             {
                 name: "Over The Air bitmap",
                 format: "ota",
-                extension: "ota",
+                extension: "otb",
                 mime: "image/x-ota",
                 from: true,
                 to: true,
