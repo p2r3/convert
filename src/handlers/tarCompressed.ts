@@ -3,11 +3,11 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import CommonFormats from "src/CommonFormats.ts";
 import { gzipSync as gzip, gunzipSync as gunzip } from "fflate";
-import { decompress as unzstd } from "fzstd";
+import { compress as zstd, decompress as unzstd, init as zstd_init } from "@bokuweb/zstd-wasm";
 
-class tarCompressedHandler implements FormatHandler {
+class tarGzHandler implements FormatHandler {
 
-  public name: string = "tarCompressed";
+  public name: string = "tarGz";
   public supportedFormats?: FileFormat[] = [
     CommonFormats.TAR.builder("tar").allowFrom().allowTo().markLossless(),
     {
@@ -18,17 +18,6 @@ class tarCompressedHandler implements FormatHandler {
       from: true,
       to: true,
       internal: "tar.gz",
-      category: "archive",
-      lossless: true
-    },
-    {
-      name: "Zstd compressed Tape Archive",
-      format: "tar.zst",
-      extension: "zst",
-      mime: "application/zstd",
-      from: true, 
-      to: false,
-      internal: "tar.zst",
       category: "archive",
       lossless: true
     },
@@ -45,32 +34,17 @@ class tarCompressedHandler implements FormatHandler {
     outputFormat: FileFormat
   ): Promise<FileData[]> {
     const outputFiles: FileData[] = [];
-    if (inputFormat.internal === "tar") {
-      switch (outputFormat.internal) {
-        case "tar.gz":
-          for (const inputFile of inputFiles) { 
-            const gzipped = gzip(inputFile.bytes);
-            outputFiles.push({ bytes: gzipped, name: inputFile.name + ".gz" });
-          }
-          break;
+
+    for (const inputFile of inputFiles) { 
+      if (inputFormat.internal === "tar") {
+        const bytes = gzip(inputFile.bytes);
+        outputFiles.push({ bytes, name: inputFile.name + ".gz" });
+      } else if (outputFormat.internal === "tar") {
+        const bytes = gunzip(inputFile.bytes);
+        outputFiles.push({ bytes, name: inputFile.name.replace(/\.gz$/i, "") });
+      } else {
+        throw "tarGzHandler cannot process this conversion";
       }
-    } else if (outputFormat.internal === "tar") {
-      switch (inputFormat.internal) {
-        case "tar.gz":
-          for (const inputFile of inputFiles) { 
-            const tar = gunzip(inputFile.bytes);
-            outputFiles.push({ bytes: tar, name: inputFile.name.replace(/\.gz$/i, "") });
-          }
-          break;
-        case "tar.zst":
-          for (const inputFile of inputFiles) { 
-            const tar = unzstd(inputFile.bytes);
-            outputFiles.push({ bytes: tar, name: inputFile.name.replace(/\.zst$/i, "") });
-          }
-          break;
-      }
-    } else {
-      throw "tarCompressedHandler cannot process this conversion";
     }
 
     return outputFiles;
@@ -78,4 +52,52 @@ class tarCompressedHandler implements FormatHandler {
 
 }
 
-export default tarCompressedHandler;
+class tarZstdHandler implements FormatHandler {
+
+  public name: string = "tarZstd";
+  public supportedFormats?: FileFormat[] = [
+    CommonFormats.TAR.builder("tar").allowFrom().allowTo().markLossless(),
+    {
+      name: "Zstd compressed Tape Archive",
+      format: "tar.zst",
+      extension: "zst",
+      mime: "application/zstd",
+      from: true, 
+      to: true,
+      internal: "tar.zst",
+      category: "archive",
+      lossless: true
+    },
+  ];
+  public ready: boolean = false;
+
+  async init () {
+    zstd_init();
+    this.ready = true;
+  }
+
+  async doConvert (
+    inputFiles: FileData[],
+    inputFormat: FileFormat,
+    outputFormat: FileFormat
+  ): Promise<FileData[]> {
+    const outputFiles: FileData[] = [];
+
+    for (const inputFile of inputFiles) { 
+      if (inputFormat.internal === "tar") {
+        const bytes = zstd(inputFile.bytes);
+        outputFiles.push({ bytes, name: inputFile.name + ".zst" });
+      } else if (outputFormat.internal === "tar") {
+        const bytes = unzstd(inputFile.bytes);
+        outputFiles.push({ bytes, name: inputFile.name.replace(/\.zst$/i, "") });
+      } else {
+        throw "tarZstdHandler cannot process this conversion";
+      }
+    }
+
+    return outputFiles;
+  }
+
+}
+
+export { tarGzHandler, tarZstdHandler };

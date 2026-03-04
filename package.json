@@ -54,6 +54,7 @@
   },
   "dependencies": {
     "@bjorn3/browser_wasi_shim": "^0.4.2",
+    "@bokuweb/zstd-wasm": "^0.0.27",
     "@ffmpeg/core": "^0.12.10",
     "@ffmpeg/ffmpeg": "^0.12.15",
     "@ffmpeg/util": "^0.12.2",
@@ -68,7 +69,6 @@
     "@types/papaparse": "^5.5.2",
     "@types/three": "^0.182.0",
     "bson": "^7.2.0",
-    "fzstd": "^0.1.1",
     "imagetracer": "^0.2.2",
     "js-synthesizer": "^1.11.0",
     "jszip": "^3.10.1",
