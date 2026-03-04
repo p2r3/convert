@@ -132,10 +132,10 @@ class otaHandler implements FormatHandler {
                     let luminance = pixels.data[i]*0.2126 + pixels.data[i+1]*0.7152 + pixels.data[i+2]*0.0722;
                     
                     if (luminance > 0.5*255) {
-                        bits.push("1");
+                        bits.push("0");
                     }
                     else {
-                        bits.push("0");
+                        bits.push("1");
                     }
                 }
                 console.log(bits);
