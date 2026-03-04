@@ -59,7 +59,7 @@ import tarHandler from "./tar.ts";
 import otaHandler from "./ota.ts";
 import comicsHandler from "./comics.ts";
 import terrariaWldHandler from "./terrariawld.ts";
-import { tarGzHandler, tarZstdHandler } from "./tarCompressed.ts";
+import { tarGzHandler, tarZstdHandler, tarXzHandler } from "./tarCompressed.ts";
 
 const handlers: FormatHandler[] = [];
 try { handlers.push(new svgTraceHandler()) } catch (_) { };
@@ -126,5 +126,6 @@ try { handlers.push(new comicsHandler()) } catch (_) { };
 try { handlers.push(new terrariaWldHandler()) } catch (_) { };
 try { handlers.push(new tarGzHandler()) } catch (_) { };
 try { handlers.push(new tarZstdHandler()) } catch (_) { };
+try { handlers.push(new tarXzHandler()) } catch (_) { };
 
 export default handlers;

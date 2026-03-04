@@ -4,6 +4,7 @@ import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import CommonFormats from "src/CommonFormats.ts";
 import { gzipSync as gzip, gunzipSync as gunzip } from "fflate";
 import { compress as zstd, decompress as unzstd, init as zstd_init } from "@bokuweb/zstd-wasm";
+import { XzReadableStream } from "xz-decompress";
 
 class tarGzHandler implements FormatHandler {
 
@@ -100,4 +101,50 @@ class tarZstdHandler implements FormatHandler {
 
 }
 
-export { tarGzHandler, tarZstdHandler };
+class tarXzHandler implements FormatHandler {
+
+  public name: string = "tarXz";
+  public supportedFormats?: FileFormat[] = [
+    CommonFormats.TAR.builder("tar").allowFrom().allowTo().markLossless(),
+    {
+      name: "XZ compressed Tape Archive",
+      format: "tar.xz",
+      extension: "xz",
+      mime: "application/x-xz",
+      from: true, 
+      to: false,
+      internal: "tar.xz",
+      category: "archive",
+      lossless: true
+    },
+  ];
+  public ready: boolean = false;
+
+  async init () {
+    this.ready = true;
+  }
+
+  async doConvert (
+    inputFiles: FileData[],
+    inputFormat: FileFormat,
+    outputFormat: FileFormat
+  ): Promise<FileData[]> {
+    const outputFiles: FileData[] = [];
+
+    for (const inputFile of inputFiles) { 
+      if (outputFormat.internal === "tar") {
+        const stream = new Blob([new Uint8Array(inputFile.bytes)]).stream();
+        const buf = await new Response(new XzReadableStream(stream)).arrayBuffer();
+        const bytes = new Uint8Array(buf);
+        outputFiles.push({ bytes, name: inputFile.name.replace(/\.xz$/i, "") });
+      } else {
+        throw "tarXzHandler cannot process this conversion";
+      }
+    }
+
+    return outputFiles;
+  }
+
+}
+
+export { tarGzHandler, tarZstdHandler, tarXzHandler };
