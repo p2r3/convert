@@ -95,7 +95,7 @@ class tarHandler implements FormatHandler {
       const name = inputFiles.length == 1 ? inputFiles[0].name + ".tar" : "archive.tar";
       outputFiles.push({ bytes, name })
     } else {
-      throw "tarHandler cannot process this conversion";
+      throw new Error("tarHandler cannot process this conversion");
     }
 
     return outputFiles;

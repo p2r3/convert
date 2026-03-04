@@ -124,8 +124,8 @@ try { handlers.push(new tarHandler()) } catch (_) { };
 try { handlers.push(new otaHandler()) } catch (_) { };
 try { handlers.push(new comicsHandler()) } catch (_) { };
 try { handlers.push(new terrariaWldHandler()) } catch (_) { };
-try { handlers.push(new tarGzHandler()) } catch (_) { };
-try { handlers.push(new tarZstdHandler()) } catch (_) { };
-try { handlers.push(new tarXzHandler()) } catch (_) { };
+try { handlers.push(tarGzHandler) } catch (_) { };
+try { handlers.push(tarZstdHandler) } catch (_) { };
+try { handlers.push(tarXzHandler) } catch (_) { };
 
 export default handlers;
