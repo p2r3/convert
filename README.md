@@ -155,3 +155,7 @@ If your tool requires an external dependency (which it likely does), there are c
 **Please try to avoid CDNs (Content Delivery Networks).** They're really cool on paper, but they don't work well with TypeScript, and each one introduces a tiny bit of instability. For a project that leans heavily on external dependencies, those bits of instability can add up fast.
 
 - If you need to load a WebAssembly binary (or similar), add its path to [vite.config.js](vite.config.js) and target it under `/convert/wasm/`. **Do not link to node_modules**.
+
+### LLM Use
+
+A small, but not insignificant, number of PRs have arrived that are completely or partially vibe-coded. While I agree that vibe-coding is a tool in the right circumstances, walking into a community and submitting an entirely LLM-prompted PR (especially one that could've been implemented by hand) will, very fairly, raise some eyebrows. However, that doesn't mean I won't accept a partially vibe-coded PR.
