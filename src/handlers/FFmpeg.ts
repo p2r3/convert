@@ -218,7 +218,9 @@ class FFmpegHandler implements FormatHandler {
       mime: "video/quicktime",
       from: true,
       to: true,
-      internal: "mov"
+      internal: "mov",
+      category: "audio",
+      lossless: false
     });
 
     // Normalize Bink metadata to ensure ".bik" files are detected by extension.

@@ -19,7 +19,8 @@ class sqlite3Handler implements FormatHandler {
         from: true,
         to: true,
         internal: "sqlite3",
-        category: "database"
+        category: "database",
+        lossless: false
       },
       {
         name: "iTunes Database",
@@ -29,7 +30,8 @@ class sqlite3Handler implements FormatHandler {
         from: true,
         to: false,
         internal: "sqlite3",
-        category: "database"
+        category: "database",
+        lossless: false
       },
       // Lossy because extracts only tables  
       CommonFormats.CSV.builder("csv").allowTo().allowFrom()

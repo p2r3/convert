@@ -30,6 +30,8 @@ class comicsHandler implements FormatHandler {
                 from: true,
                 to: true,
                 internal: "cbz",
+                category: "archive",
+                lossless: true,
             },
         ];
 

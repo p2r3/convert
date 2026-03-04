@@ -888,6 +888,8 @@ class terrariaWldHandler implements FormatHandler {
                 from: true,
                 to: false,
                 internal: "wld",
+                category: "data",
+                lossless: false,
             },
 
             CommonFormats.PNG.builder("png")

@@ -24,7 +24,9 @@ class peToZipHandler implements FormatHandler {
       mime: "application/vnd.microsoft.portable-executable",
       from: true,
       to: false,
-      internal: "dll"
+      internal: "dll",
+      category: "code",
+      lossless: false
     },
     CommonFormats.ZIP.builder("zip").allowTo().markLossless()
   ];
