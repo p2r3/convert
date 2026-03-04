@@ -177,6 +177,13 @@ const CommonFormats = {
         "video/mp4",
         Category.VIDEO
     ),
+    WMV: new FormatDefinition(
+        "Windows Media Video",
+        "wmv",
+        "wmv",
+        "video/x-ms-asf",
+        Category.VIDEO
+    ),
     // archive
     ZIP: new FormatDefinition(
         "ZIP Archive",
