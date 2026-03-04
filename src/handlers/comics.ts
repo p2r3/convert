@@ -134,7 +134,7 @@ class comicsHandler implements FormatHandler {
             }
         }
         // Compiling a CBT file with code from tar.ts
-        else if (image_list.includes(inputFormat.internal) && outputFormat.internal == "cbt") {
+        else if (image_list.includes(inputFormat.internal) && outputFormat.internal === "cbt") {
             const bytes = createTar(
                 inputFiles.map(file => ({ name: "Page "+inputFiles.indexOf(file)+"."+inputFormat.extension, data: file.bytes })),
                 {},
