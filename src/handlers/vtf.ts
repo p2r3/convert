@@ -809,7 +809,8 @@ class vtfHandler implements FormatHandler {
       from: true,
       to: false,
       internal: "vtf",
-      category: "image"
+      category: "image",
+      lossless: false
     },
     CommonFormats.PNG.supported("png", false, true, true),
     CommonFormats.JPEG.supported("jpeg", false, true),
