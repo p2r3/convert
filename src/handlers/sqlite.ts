@@ -60,7 +60,7 @@ class sqlite3Handler implements FormatHandler {
 
     const sqlite3 = await sqlite3InitModule();
 
-    if (inputFormat.internal == "sqlite3" && outputFormat.internal == "csv") {
+    if (inputFormat.internal === "sqlite3" && outputFormat.internal === "csv") {
         for (const file of inputFiles) {
             const p = sqlite3.wasm.allocFromTypedArray(file.bytes);
 
@@ -100,7 +100,7 @@ class sqlite3Handler implements FormatHandler {
             }
          }
     }
-    if (inputFormat.internal == "csv" && outputFormat.internal == "sqlite3") {
+    if (inputFormat.internal === "csv" && outputFormat.internal === "sqlite3") {
         const db = new sqlite3.oo1.DB();
         if (!db.pointer) {
             throw new Error("Database pointer is undefined")

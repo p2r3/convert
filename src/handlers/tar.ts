@@ -46,7 +46,7 @@ class tarHandler implements FormatHandler {
   ): Promise<FileData[]> {
     const outputFiles: FileData[] = [];
 
-    if (inputFormat.internal == "zip" && outputFormat.internal == "tar") {
+    if (inputFormat.internal === "zip" && outputFormat.internal === "tar") {
       for (const inputFile of inputFiles) {
         const zip = new JSZip();
         await zip.loadAsync(inputFile.bytes);
@@ -78,7 +78,7 @@ class tarHandler implements FormatHandler {
 
         outputFiles.push({ bytes, name });
       }
-    } else if (inputFormat.internal == "tar" && outputFormat.internal == "zip") {
+    } else if (inputFormat.internal === "tar" && outputFormat.internal === "zip") {
       for (const inputFile of inputFiles) {
         const files = parseTar(inputFile.bytes);
 
@@ -100,12 +100,12 @@ class tarHandler implements FormatHandler {
         const name = inputFile.name.replace(/\.tar$/i, ".zip");
         outputFiles.push({ bytes, name });
       }
-    } else if (outputFormat.internal == "tar") {
+    } else if (outputFormat.internal === "tar") {
       const bytes = createTar(
         inputFiles.map(file => ({ name: file.name, data: file.bytes })),
         {},
       );
-      const name = inputFiles.length == 1 ? inputFiles[0].name + ".tar" : "archive.tar";
+      const name = inputFiles.length === 1 ? inputFiles[0].name + ".tar" : "archive.tar";
       outputFiles.push({ bytes, name })
     } else {
       throw "tarHandler cannot process this conversion";

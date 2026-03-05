@@ -227,7 +227,7 @@ export class Replay {
 		}
 
 		function bool(): boolean {
-			return byte() != 0;
+			return byte() !== 0;
 		}
 
 		function string(): string {
@@ -242,11 +242,11 @@ export class Replay {
 			return new Quaternion(float(), float(), float(), float());
 		}
 		// magic number
-		if(int() != 0x442D3D69)
+		if(int() !== 0x442D3D69)
 			raise("Invalid magic number");
-		if(byte() != 1)
+		if(byte() !== 1)
 			raise("Unknown BSOR version");
-		if(byte() != 0)
+		if(byte() !== 0)
 			raise("Expected info structure start");
 		this.version = {
 			mod: string(),
@@ -284,7 +284,7 @@ export class Replay {
 			speed: float()
 		};
 		this.frames = [];
-		if(byte() != 1)
+		if(byte() !== 1)
 			raise("Expected frame array start");
 		const frameCount = int();
 		for(let i = 0; i < frameCount; i++) {
@@ -305,7 +305,7 @@ export class Replay {
 				}
 			});
 		}
-		if(byte() != 2)
+		if(byte() !== 2)
 			raise("Expected note array start");
 		this.notes = [];
 		const noteCount = int();
@@ -372,7 +372,7 @@ export class Replay {
 			}
 		}
 		this.walls = [];
-		if(byte() != 3)
+		if(byte() !== 3)
 			raise("Expected wall array start");
 		const wallCount = int();
 		for(let i = 0; i < wallCount; i++) {
@@ -387,7 +387,7 @@ export class Replay {
 			})
 		}
 		this.height = [];
-		if(byte() != 4)
+		if(byte() !== 4)
 			raise("Expected height array start");
 		const heightCount = int();
 		for(let i = 0; i < heightCount; i++) {
@@ -397,7 +397,7 @@ export class Replay {
 			})
 		}
 		this.pause = [];
-		if(byte() != 5)
+		if(byte() !== 5)
 			raise("Expected pause array start");
 		const pauseCount = int();
 		for(let i = 0; i < pauseCount; i++) {

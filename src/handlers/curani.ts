@@ -67,7 +67,7 @@ class curaniHandler implements FormatHandler {
 
                     // Finds where the first ICO header is
                     while (true) {
-                        if (new_file_bytes[i] == 0x69 && new_file_bytes[i+1] == 0x63 && new_file_bytes[i+2] == 0x6F && new_file_bytes[i+3] == 0x6E && new_file_bytes[i+4] == 0xBE) {
+                        if (new_file_bytes[i] === 0x69 && new_file_bytes[i+1] === 0x63 && new_file_bytes[i+2] === 0x6F && new_file_bytes[i+3] === 0x6E && new_file_bytes[i+4] === 0xBE) {
                             header_hook = i;
                             break;
                         }
@@ -88,7 +88,7 @@ class curaniHandler implements FormatHandler {
                     i = header_hook+1;
 
                     while (true) {
-                        if (new_file_bytes[i] == 0x69 && new_file_bytes[i+1] == 0x63 && new_file_bytes[i+2] == 0x6F && new_file_bytes[i+3] == 0x6E && new_file_bytes[i+4] == 0xBE) {
+                        if (new_file_bytes[i] === 0x69 && new_file_bytes[i+1] === 0x63 && new_file_bytes[i+2] === 0x6F && new_file_bytes[i+3] === 0x6E && new_file_bytes[i+4] === 0xBE) {
                             header_hook_2 = i;
                             ico_distance = header_hook_2 - header_hook - ico_start_offset;
                             break;
@@ -102,7 +102,7 @@ class curaniHandler implements FormatHandler {
                     }
 
                     // The code could not find another header. Simply read until the end of the file.
-                    if (ico_distance == 0x00) {
+                    if (ico_distance === 0x00) {
                         new_file_bytes = new_file_bytes.subarray(ico_start,-1);
                     }
                     // The code could find another header, use the distance.

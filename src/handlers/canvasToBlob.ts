@@ -95,7 +95,7 @@ class canvasToBlobHandler implements FormatHandler {
       }
 
       let bytes: Uint8Array;
-      if(outputFormat.mime == "text/plain") {
+      if(outputFormat.mime === "text/plain") {
         const pixels = this.#ctx.getImageData(0, 0, this.#canvas.width, this.#canvas.height);
         bytes = new TextEncoder().encode(imageToText({
           width() { return pixels.width; },

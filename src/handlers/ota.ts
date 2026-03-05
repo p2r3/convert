@@ -43,7 +43,7 @@ class otaHandler implements FormatHandler {
             throw "Handler not initialized.";
         }
         
-        if (inputFormat.internal === "ota" && outputFormat.mime == CommonFormats.PNG.mime) {
+        if (inputFormat.internal === "ota" && outputFormat.mime === CommonFormats.PNG.mime) {
             for (const file of inputFiles) {
                 let new_file_bytes = new Uint8Array(file.bytes);
             
@@ -91,7 +91,7 @@ class otaHandler implements FormatHandler {
                 })
             }
         }
-        else if (inputFormat.mime == CommonFormats.PNG.mime && outputFormat.internal === "ota") {
+        else if (inputFormat.mime === CommonFormats.PNG.mime && outputFormat.internal === "ota") {
             for (const file of inputFiles) {
                 let writer_array: number[] = [];
                 

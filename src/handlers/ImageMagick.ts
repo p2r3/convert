@@ -96,7 +96,7 @@ class ImageMagickHandler implements FormatHandler {
     const bytes: Uint8Array = await new Promise(resolve => {
       MagickImageCollection.use(outputCollection => {
         for (const inputFile of inputFiles) {
-           if (inputFormat.format == "rgb") {
+           if (inputFormat.format === "rgb") {
              // Guess how big the Image should be
              inputSettings.width = Math.sqrt(inputFile.bytes.length / 3);
              inputSettings.height = inputSettings.width;
@@ -107,7 +107,7 @@ class ImageMagickHandler implements FormatHandler {
               const image = fileCollection.shift();
               if (!image) break;
 
-              if(outputFormat.format == "ico" && (image.width > 256 || image.height > 256)) {
+              if(outputFormat.format === "ico" && (image.width > 256 || image.height > 256)) {
                 const geometry = new MagickGeometry(256, 256);
                 image.resize(geometry);
               }
