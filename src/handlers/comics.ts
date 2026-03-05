@@ -153,6 +153,9 @@ class comicsHandler implements FormatHandler {
                     else if (file.name.endsWith("."+outputFormat.extension) === false) {
                         throw new Error("Archive contains multiple file types; abort.");
                     }
+                    else if (!file.data) {
+                        throw new Error("Undefined data type; abort.");
+                    }
                     else {
                         outputFiles.push({
                             name: file.name,
