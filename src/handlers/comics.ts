@@ -37,7 +37,7 @@ class comicsHandler implements FormatHandler {
                 format: "tar",
                 extension: "tar",
                 mime: "application/x-tar",
-                from: false,
+                from: true,
                 to: true,
                 internal: "tar",
                 category: ["archive"],
