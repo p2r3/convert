@@ -9,6 +9,19 @@ import CommonFormats from "src/CommonFormats.ts";
 
 class FFmpegHandler implements FormatHandler {
 
+  static formatNames: Map<string, string> = new Map([
+    ["mp4", CommonFormats.MP4.name],
+    ["m4a", "MPEG-4 Audio"],
+    ["flac", CommonFormats.FLAC.name],
+    ["wav", CommonFormats.WAV.name],
+    ["mp3", CommonFormats.MP3.name],
+    ["ogg", CommonFormats.OGG.name],
+    ["matroska", "Matroska / WebM"],
+    ["mov", "QuickTime / MOV"],
+    ["3gp", "3GPP Multimedia Container"],
+    ["3g2", "3GPP2 Multimedia Container"]
+  ]);
+
   public name: string = "FFmpeg";
   public supportedFormats: FileFormat[] = [];
   public ready: boolean = false;
@@ -161,8 +174,10 @@ class FFmpegHandler implements FormatHandler {
           else category = "video";
         }
 
+        const name = FFmpegHandler.formatNames.get(format) || (description + (formats.length > 1 ? (" / " + format) : ""));
+
         this.supportedFormats.push({
-          name: description + (formats.length > 1 ? (" / " + format) : ""),
+          name: name,
           format,
           extension,
           mime: mimeType,
