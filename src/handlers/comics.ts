@@ -83,7 +83,7 @@ class comicsHandler implements FormatHandler {
             throw new Error("User probably intends for an archive of video/gif frames; abort.");
         }
         
-        // Some code copied from wad.ts
+        // Pack a zip/cbz with code copied from wad.ts
         if ((image_list.includes(inputFormat.internal)) && (outputFormat.internal === "cbz" || outputFormat.internal === "zip")) {
             const zip = new JSZip();
         
@@ -102,7 +102,7 @@ class comicsHandler implements FormatHandler {
             const output = await zip.generateAsync({ type: "uint8array" });
             outputFiles.push({ bytes: output, name: baseName + "." + outputFormat.extension });
         }
-        // Some code copied from lzh.ts
+        // Unpack a zip/cbz with code copied from lzh.ts
         else if ((inputFormat.internal === "cbz" || inputFormat.internal === "zip") && (image_list.includes(outputFormat.internal))) {
             for (const file of inputFiles) {
                 const zip = new JSZip();
@@ -111,18 +111,18 @@ class comicsHandler implements FormatHandler {
                 // Extract all files from ZIP
                 for (const [filename, zipEntry] of Object.entries(zip.files)) {
                     if (!zipEntry.dir) {
-                        if (filename.endsWith(outputFormat.extension)) {
+                        if (inputFormat.internal === "cbz" && filename.endsWith(".xml")) {
+                            // Ignore .xml files in comic book archives.
+                        }
+                        else if (filename.endsWith("."+outputFormat.extension === false)) {
+                            throw new Error("Archive contains multiple file types; abort.");
+                        }
+                        else {
                             const data = await zipEntry.async("uint8array");
                             outputFiles.push({
                                 name: filename,
-                                bytes: data,
+                                bytes: data
                             });
-                        }
-                        else if (inputFormat.internal === "cbz" && filename.endsWith(".xml")) {
-                            // Do nothing. This is an exception to the rule.
-                        }
-                        else {
-                            throw new Error("Archive contains multiple file types; abort.");
                         }
                     }
                 }
@@ -133,13 +133,39 @@ class comicsHandler implements FormatHandler {
                 throw new Error("No applicable files to unzip found.");
             }
         }
-        // Compiling a CBT file with code from tar.ts
+        // Pack a cbt with code from tar.ts
         else if (image_list.includes(inputFormat.internal) && outputFormat.internal === "cbt") {
             const bytes = createTar(
                 inputFiles.map(file => ({ name: "Page "+inputFiles.indexOf(file)+"."+inputFormat.extension, data: file.bytes })),
                 {},
             );
             outputFiles.push({ bytes: bytes, name: baseName + "." + outputFormat.extension });
+        }
+        // Unpack a tar/cbt with code from tar.ts
+        else if ((inputFormat.internal === "tar" || inputFormat.internal === "cbt") && image_list.includes(outputFormat.internal)) {
+            for (const inputFile of inputFiles) {
+                const files = parseTar(inputFile.bytes);
+                
+                for (const file of files) {
+                    if (inputFormat.internal === "cbt" && file.name.endsWith(".xml")) {
+                        // Ignore .xml files in comic book archives.
+                    }
+                    else if (file.name.endsWith("."+outputFormat.extension) === false) {
+                        throw new Error("Archive contains multiple file types; abort.");
+                    }
+                    else {
+                        outputFiles.push({
+                            name: file.name,
+                            bytes: file.data
+                        });
+                    }
+                }
+            }
+            
+            // Throw error if empty
+            if (outputFiles.length === 0) {
+                throw new Error("No applicable files to unpack found.");
+            }
         }
         // Renaming interchangeable formats. Note that any valid "comic book" archive can be guaranteed as a valid standard archive, but not every valid archive can be a valid comic book archive. Thus, we only allow renaming from comic book to non-comic book formats.
         else if ((inputFormat.internal === "cbz" && outputFormat.internal === "zip") || (inputFormat.internal === "cbt" && outputFormat.internal === "tar")) {
