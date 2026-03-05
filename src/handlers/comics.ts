@@ -114,7 +114,7 @@ class comicsHandler implements FormatHandler {
                         if (inputFormat.internal === "cbz" && filename.endsWith(".xml")) {
                             // Ignore .xml files in comic book archives.
                         }
-                        else if (filename.endsWith("."+outputFormat.extension === false)) {
+                        else if (filename.endsWith("."+outputFormat.extension) === false) {
                             throw new Error("Archive contains multiple file types; abort.");
                         }
                         else {
