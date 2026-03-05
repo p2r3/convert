@@ -7,7 +7,7 @@ export default class jsonToCHandler implements FormatHandler {
     /* Class to handle conversion between JSON and C  */
     /**************************************************/
 
-    public name: string = "c";
+    public name: string = "jsonToC";
     public supportedFormats?: FileFormat[] = [
         {
             name: "C Source File",
