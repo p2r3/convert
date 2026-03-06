@@ -142,7 +142,7 @@ class comicsHandler implements FormatHandler {
             outputFiles.push({ bytes: bytes, name: baseName + "." + outputFormat.extension });
         }
         // Unpack a tar/cbt with code from tar.ts
-        else if ((inputFormat.internal === "tar" || inputFormat.internal === "cbt") && image_list.includes(outputFormat.internal)) {
+        else if ((inputFormat.internal === "cbt" || inputFormat.internal === "tar") && image_list.includes(outputFormat.internal)) {
             for (const inputFile of inputFiles) {
                 const files = parseTar(inputFile.bytes);
                 
