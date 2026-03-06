@@ -56,7 +56,11 @@ export default defineConfig({
         {
           src: "src/handlers/espeakng.js/js/espeakng.worker.data",
           dest: "js"
-        }
+        },
+        {
+          src: "node_modules/pdf-parse/dist/pdf-parse/web/pdf.worker.mjs",
+          dest: "js"
+        },
       ]
     }),
     tsconfigPaths()
