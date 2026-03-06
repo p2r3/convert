@@ -14,6 +14,7 @@ class rgbaHandler implements FormatHandler {
 
     async init () {
         this.supportedFormats = [
+            CommonFormats.EXE.builder("exe").allowFrom(),
             CommonFormats.PNG.supported("png", true, true, true),
             {
                 name: "Raw red, green, and blue samples",
@@ -179,6 +180,18 @@ class rgbaHandler implements FormatHandler {
                 else {
                     throw new Error("Invalid input-output.");
                 }
+            }
+            // Support outputting certain files as raw RGB(A) to create a "binary waterfall"-like effect when no other good route to convert to image exists.
+            else if (inputFormat.internal == "exe" && (outputFormat.internal == "rgb" || outputFormat.internal == "rgba")) {
+                let bytes = 3;
+                
+                if (outputFormat.internal == "rgba") {
+                    bytes = 4;
+                }
+            
+                let writer_array = new Uint8Array(Math.ceil(new_file_bytes.length/bytes)*bytes);
+                writer_array.set(new_file_bytes);
+                new_file_bytes = new Uint8Array(writer_array);
             }
             else {
                 throw new Error("Invalid input.");
