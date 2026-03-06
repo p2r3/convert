@@ -34,7 +34,7 @@ class bsorHandler implements FormatHandler {
     let frameIndex = 0;
     return (await Promise.all(inputFiles.map(async(file) => {
       const replay = new Replay(file.bytes);
-      if(outputFormat.internal == "json") {
+      if(outputFormat.internal === "json") {
         return [{
           name: file.name.split(".")[0] + ".json",
           bytes: new TextEncoder().encode(JSON.stringify(replay))

@@ -107,7 +107,7 @@ export class fromJsonHandler {
             // turn into array
             let newObject: any = [];
             for(const [k, v] of Object.entries(object)) {
-              if(v != null && typeof v == "object" && !Array.isArray(v)) {
+              if(v != null && typeof v === "object" && !Array.isArray(v)) {
                 (v as any)._key = k;
                 newObject.push(v);
               }
@@ -119,7 +119,7 @@ export class fromJsonHandler {
           }
           const keySet = new Set<string>();
           for(const value of object) {
-            if(typeof value != "object" || Array.isArray(value)) {
+            if(typeof value !== "object" || Array.isArray(value)) {
               keySet.add("_value");
               continue;
             }
@@ -132,10 +132,10 @@ export class fromJsonHandler {
           text += keys.map(x => csvEscape(x)).join(",")+"\n";
           for(const value of object) {
             text += keys.map(key => {
-              if(key == "_value" && (typeof value != "object" || Array.isArray(value)))
+              if(key === "_value" && (typeof value !== "object" || Array.isArray(value)))
                 return value;
               return value[key] ?? "";
-            }).map(x => csvEscape(typeof x == "string" ? x : JSON.stringify(x))).join(",")+"\n";
+            }).map(x => csvEscape(typeof x === "string" ? x : JSON.stringify(x))).join(",")+"\n";
           }
           break;
         }
@@ -151,8 +151,8 @@ export class fromJsonHandler {
           function write(value: any, tagName: string | null = null) {
             if(tagName != null)
               tagName = xmlEscape(tagName);
-            if(typeof value != "object") {
-              const str = xmlEscape(typeof value == "string" ? value : JSON.stringify(value));
+            if(typeof value !== "object") {
+              const str = xmlEscape(typeof value === "string" ? value : JSON.stringify(value));
               if(tagName != null)
                 text += `<${tagName}>${str}</${tagName}>`;
               else
@@ -168,13 +168,13 @@ export class fromJsonHandler {
               text += `</${tagName}>`;
               return;
             }
-            const isXMLTag = typeof value._tag == "string" && Array.isArray(value._children); // is serialized XML tag
+            const isXMLTag = typeof value._tag === "string" && Array.isArray(value._children); // is serialized XML tag
             if(isXMLTag)
               tagName ??= value._tag;
             tagName ??= "Object";
             text += `<${tagName}>`
             for(const [k, v] of Object.entries(value)) {
-              if(isXMLTag && (k == "_tag" || k == "_children"))
+              if(isXMLTag && (k === "_tag" || k === "_children"))
                 continue;
               write(v, k);
             }

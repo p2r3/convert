@@ -57,13 +57,13 @@ export async function render(replay: BSOR.Replay, width: number, height: number,
 		removalQueued: boolean;
 
 		constructor(data: BSOR.Note) {
-			if(data.type == BSOR.CutType.BOMB) {
+			if(data.type === BSOR.CutType.BOMB) {
 				this.bloq = new Mesh(bombGeometry, bombMaterial);
 			}
 			else {
-				this.bloq = new Mesh(noteGeometry, data.color == BSOR.NoteColor.LEFT ? leftMaterial : rightMaterial);
+				this.bloq = new Mesh(noteGeometry, data.color === BSOR.NoteColor.LEFT ? leftMaterial : rightMaterial);
 			}
-			if(data.cutDirection == BSOR.CutDirection.ANY) {
+			if(data.cutDirection === BSOR.CutDirection.ANY) {
 				this.arrow = new Mesh(dotGeometry, arrowMaterial);
 			}
 			else {
@@ -113,7 +113,7 @@ export async function render(replay: BSOR.Replay, width: number, height: number,
 			}
 		}
 		shouldRemove(time: number): boolean {
-			if(this.data.type != BSOR.CutType.MISS) {
+			if(this.data.type !== BSOR.CutType.MISS) {
 				return time >= this.data.time;
 			}
 			return this.data.spawnTime >= time-REACTION_TIME;
