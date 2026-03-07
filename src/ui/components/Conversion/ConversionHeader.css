@@ -1,0 +1,31 @@
+.conversion-header {
+	height: 64px;
+	background: var(--bg-card);
+	border-block-end: 1px solid var(--border-primary);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0 1.5rem;
+	z-index: 20;
+	flex-shrink: 0;
+	position: sticky;
+	top: 0;
+
+	.header-left {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+
+		.conversion-title {
+			font-size: 1.25rem;
+			font-weight: 900;
+			color: var(--text-primary);
+		}
+	}
+
+	.header-right {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+	}
+}

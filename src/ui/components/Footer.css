@@ -1,0 +1,34 @@
+footer {
+	&[aria-hidden="true"] {
+		display: none;
+	}
+
+	display: flex;
+	width: 100vw;
+	gap: 1em;
+	justify-content: end;
+	margin-block: auto 0;
+
+	color: gray;
+	padding-block: .25em;
+	padding-inline: 1em;
+	background-color: var(--bg-section);
+
+	.footer-item {
+		display: flex;
+		align-items: center;
+		gap: .1em;
+		color: gray;
+		text-underline-offset: .25em;
+
+		&.footer-copyright {
+			margin-inline-end: auto;
+		}
+
+		img {
+			width: 25px;
+			color: gray;
+			filter: contrast(0);
+		}
+	}
+}

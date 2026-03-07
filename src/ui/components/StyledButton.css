@@ -1,0 +1,73 @@
+.styled-button {
+    appearance: none;
+    border: .1rem solid var(--btn-border);
+    border-radius: 8px;
+    padding: .75em;
+    color: var(--btn-text-secondary);
+    background: var(--btn-bg-secondary);
+    transition: color 150ms, background 150ms;
+    cursor: pointer;
+    user-select: none;
+
+    &:hover,
+    &:focus-visible {
+        color: var(--text-primary);
+        background: var(--btn-bg-secondary-hover);
+    }
+
+    /* Compact variant for smaller buttons */
+    &.compact {
+        padding: 0;
+        border-radius: 1rem;
+        width: 41px;
+        height: 41px;
+        font-weight: bold;
+        font-size: 1.5rem;
+    }
+
+    /* Primary button variant */
+    &.primary {
+        background: var(--btn-bg-primary);
+        color: var(--btn-text-primary);
+        border-color: transparent;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+
+        &:hover,
+        &:focus-visible {
+            background: var(--btn-bg-primary-hover);
+        }
+    }
+
+    /* Icon button variant */
+    &.icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 41px;
+        height: 41px;
+        padding: 0;
+        border-radius: 1rem;
+        background: var(--btn-bg-secondary);
+        border-color: var(--border-primary);
+        
+        img {
+            width: 24px;
+            height: 24px;
+            filter: contrast(0);
+        }
+
+        &:hover,
+        &:focus-visible {
+            background: var(--btn-bg-secondary-hover);
+            border-color: var(--border-secondary);
+            box-shadow: 0 6px 6px rgba(0, 0, 0, 0.07);
+        }
+    }
+
+    /* Disabled state */
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+}

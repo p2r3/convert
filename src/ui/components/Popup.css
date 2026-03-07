@@ -1,0 +1,45 @@
+#popup {
+	max-width: 50rem;
+	padding: 1.5em 1.75em;
+
+	background-color: var(--bg-card-alt);
+	color: var(--text-primary);
+
+	border: 0;
+	border-radius: 8px;
+
+	&[open] {
+		display: flex;
+	}
+
+	flex-direction: column;
+	gap: 1rem;
+
+	/* position: absolute has unbelievable quirks */
+	margin: auto;
+
+	button {
+		appearance: none;
+		border: .1rem solid var(--btn-border);
+		border-radius: 8px;
+		padding: .5em;
+		margin-top: .5em;
+		align-self: center;
+		min-width: 25%;
+		color: var(--text-on-primary);
+		background: var(--btn-bg-primary);
+		transition: color 150ms, background 150ms;
+		font-weight: bold;
+
+		&:hover,
+		&:focus-visible {
+			color: var(--text-primary);
+			background: var(--btn-bg-secondary-hover);
+		}
+	}
+
+	&::backdrop {
+		backdrop-filter: brightness(0.7) blur(4px);
+		background: rgba(0 0 0 / 0.4);
+	}
+}
