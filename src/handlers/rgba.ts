@@ -36,7 +36,7 @@ class rgbaHandler implements FormatHandler {
                 to: true,
                 internal: "rgba",
                 category: "image",
-                lossless: true
+                lossless: false
             },
         ];
 
