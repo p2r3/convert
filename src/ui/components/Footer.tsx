@@ -13,11 +13,11 @@ export default function Footer({ visible = true }: FooterComponentProps) {
 			<div class="footer-item footer-copyright">
 				<span class="footer-link-text">&copy; 2026, p2r3</span>
 			</div>
-			<a href="https://github.com/p2r3/convert" class="footer-item">
+			<a href="https://github.com/p2r3/convert" target="_blank" class="footer-item">
 				<img class="footer-link-img" src={ githubImg } alt="Source" />
 				<span class="footer-link-text">Source</span>
 			</a>
-			<a href="https://p2r3.com/discord" class="footer-item">
+			<a href="https://p2r3.com/discord" target="_blank" class="footer-item">
 				<img class="footer-link-img" src={ discordImg } alt="Discord" />
 				<span class="footer-link-text">Discord</span>
 			</a>
