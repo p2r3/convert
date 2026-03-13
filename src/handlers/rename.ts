@@ -1,6 +1,6 @@
 import CommonFormats, { Category } from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-
+ 
 // base class for handling renames
 function renameHandler(name: string, formats: FileFormat[]): FormatHandler {
   return {
@@ -114,5 +114,150 @@ export const renameTxtHandler = renameHandler("renametxt", [
   CommonFormats.TEXT.builder("text").allowTo(),
   CommonFormats.JSON.builder("json").allowFrom(),
   CommonFormats.XML.builder("xml").allowFrom(),
-  CommonFormats.YML.builder("yaml").allowFrom()
+  CommonFormats.YML.builder("yaml").allowFrom(),
+  // ---- NEW CODE FORMATS ADDED BELOW ----
+  {
+    name: "Cascading Style Sheets",
+    format: "css",
+    extension: "css",
+    mime: "text/css",
+    from: true,
+    to: true,
+    internal: "css",
+    category: "code",
+    lossless: true
+  },
+  {
+    name: "Arduino Sketch",
+    format: "ino",
+    extension: "ino",
+    mime: "text/plain",
+    from: true,
+    to: true,
+    internal: "ino",
+    category: "code",
+    lossless: true
+  },
+  {
+    name: "JavaScript",
+    format: "js",
+    extension: "js",
+    mime: "text/javascript",
+    from: true,
+    to: true,
+    internal: "js",
+    category: "code",
+    lossless: true
+  },
+  {
+    name: "TypeScript",
+    format: "ts",
+    extension: "ts",
+    mime: "text/typescript",
+    from: true,
+    to: true,
+    internal: "ts",
+    category: "code",
+    lossless: true
+  },
+  {
+    name: "C++ Source File",
+    format: "cpp",
+    extension: "cpp",
+    mime: "text/x-c++src",
+    from: true,
+    to: true,
+    internal: "cpp",
+    category: "code",
+    lossless: true
+  },
+  {
+    name: "C Source File",
+    format: "c",
+    extension: "c",
+    mime: "text/x-csrc",
+    from: true,
+    to: true,
+    internal: "c",
+    category: "code",
+    lossless: true
+  },
+  {
+    name: "C Header File",
+    format: "h",
+    extension: "h",
+    mime: "text/x-chdr",
+    from: true,
+    to: true,
+    internal: "h",
+    category: "code",
+    lossless: true
+  },
+  {
+    name: "Java",
+    format: "java",
+    extension: "java",
+    mime: "text/x-java-source",
+    from: true,
+    to: true,
+    internal: "java",
+    category: "code",
+    lossless: true
+  },
+  {
+    name: "PHP",
+    format: "php",
+    extension: "php",
+    mime: "application/x-httpd-php",
+    from: true,
+    to: true,
+    internal: "php",
+    category: "code",
+    lossless: true
+  },
+  {
+    name: "Ruby",
+    format: "rb",
+    extension: "rb",
+    mime: "text/x-ruby",
+    from: true,
+    to: true,
+    internal: "rb",
+    category: "code",
+    lossless: true
+  },
+  {
+    name: "Rust",
+    format: "rs",
+    extension: "rs",
+    mime: "text/x-rustsrc",
+    from: true,
+    to: true,
+    internal: "rs",
+    category: "code",
+    lossless: true
+  },
+  {
+    name: "Go",
+    format: "go",
+    extension: "go",
+    mime: "text/x-go",
+    from: true,
+    to: true,
+    internal: "go",
+    category: "code",
+    lossless: true
+  },
+  {
+    name: "Lua",
+    format: "lua",
+    extension: "lua",
+    mime: "text/x-lua",
+    from: true,
+    to: true,
+    internal: "lua",
+    category: "code",
+    lossless: true
+  }
 ])
+ 
