@@ -119,6 +119,11 @@ function renderMolecule(molecule: OM_Molecule): Uint8Array {
     // Draw the atoms
     let largest_coordinate = 0;
     for (let i = 0; i < molecule.primes.length; i++) {
+        // Validate primes
+        if (molecule.primes[i].element > 16) {
+            throw "Error, invalid prime ("+molecule.primes[i].element+")";
+        }
+    
         // Convert hex-based coordinates to Cartesian
         let cartesian_x = twoComplement(molecule.primes[i].x);
         let cartesian_y = twoComplement(molecule.primes[i].y);
