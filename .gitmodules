@@ -22,3 +22,6 @@
 [submodule "src/handlers/terraria-wld-parser"]
 	path = src/handlers/terraria-wld-parser
 	url = https://github.com/ConnorTippets/terraria-world-file-ts.git
+[submodule "src/handlers/gimper"]
+	path = src/handlers/gimper
+	url = https://github.com/ConnorTippets/gimper.git

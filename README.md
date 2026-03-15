@@ -29,7 +29,7 @@ There are thousands of file formats out there. It can take hours to add support 
 
 When suggesting a file format, you must _at minimum_:
 - Make sure that there isn't already an issue about the same thing, and that we don't already support the format.
-- Explain what you expect the conversion to be like (what medium is it converting to/from). It's important to note here that simply parsing the underlying data is _not sufficient_. Imagine if we only treated SVG images as raw XML data and didn't support converting them to raster images - that would defeat the point.
+- Explain what you expect the conversion to be like (what medium is it converting to/from). It's important to note here that simply parsing the underlying data is _not sufficient_. Imagine if we only treated SVG images as raw XML data and didn't support converting them to raster images - that would defeat the point. In other words, try to avoid crude "binary waterfalls".
 - Provide links to existing browser-based solutions if possible, or at the very least a reference for implementing the format, and make sure the license is compatible with GPL-2.0.
 
 If this seems like a lot, please remember - a developer will have to do 100x more work to actually implement the format. Doing a bit of research not only saves them precious time, it also weeds out "unserious" proposals that would only bloat our to-do list.
@@ -52,6 +52,8 @@ _The following steps are optional, but recommended for performance:_
 When you first open the page, it'll take a while to generate the list of supported formats for each tool. If you open the console, you'll see it complaining a bunch about missing caches.
 
 After this is done (indicated by a `Built initial format list` message in the console), use `printSupportedFormatCache()` to get a JSON string with the cache data. You can then save this string to `cache.json` to skip that loading screen on startup.
+
+If you run into issues where your changes seem to not be applying, try disabling this cache.
 
 ### Docker (prebuilt image)
 
@@ -77,7 +79,9 @@ The first Docker build is expected to be slow because Chromium and related syste
 
 ## Contributing
 
-The best way to contribute is by adding support for new file formats (duh). Here's how that works:
+The best way to contribute is by adding support for new file formats (duh). If you don't have a format to add but are eager to help, take a look at our issues. There are plenty of suggestions there.
+
+Here's how adding a format works works:
 
 ### Creating a handler
 
@@ -143,7 +147,7 @@ There are a few additional things that I want to point out in particular:
 - The handler is responsible for setting the output file's name. This is done to allow for flexibility in rare cases where the _full_ file name matters. Of course, in most cases, you'll only have to swap the file extension.
 - The handler is also responsible for ensuring that any byte buffers that enter or exit the handler _do not get mutated_. If necessary, clone the buffer by wrapping it in `new Uint8Array()`.
 - When handling MIME types, run them through [normalizeMimeType](src/normalizeMimeType.ts) first. One file can have multiple valid MIME types, which isn't great when you're trying to match them algorithmically.
-- When implementing a new file format, please treat the file as the media that it represents, not the data that it contains. For example, if you were making an SVG handler, you should treat the file as an _image_, not as XML.
+- When implementing/suggesting a new file format, please treat the file as the media that it represents, not the data that it contains. For example, if you were making an SVG handler, you should treat the file as an _image_, not as XML. In other words, avoid simple "binary waterfalls", as they're not semantically meaningful.
 
 ### Adding dependencies
 
@@ -151,6 +155,7 @@ If your tool requires an external dependency (which it likely does), there are c
 
 - If it's an `npm` package, just install it to the project like you normally would.
 - If it's a Git repository, add it as a submodule to [src/handlers](src/handlers).
+- If neither of the above are available, then **as a last resort**, you may create a folder with the required assets under `src/handlers/handlerName`.
 
 **Please try to avoid CDNs (Content Delivery Networks).** They're really cool on paper, but they don't work well with TypeScript, and each one introduces a tiny bit of instability. For a project that leans heavily on external dependencies, those bits of instability can add up fast.
 

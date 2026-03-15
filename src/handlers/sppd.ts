@@ -185,7 +185,9 @@ class sppdHandler implements FormatHandler {
       mime: "application/x-portal2-demo",
       from: true,
       to: false,
-      internal: "dem"
+      internal: "dem",
+      category: "data",
+      lossless: false
     },
     CommonFormats.PNG.supported("png", false, true),
     CommonFormats.JPEG.supported("jpeg", false, true),

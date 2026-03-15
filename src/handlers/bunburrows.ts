@@ -28,6 +28,8 @@ class bunburrowsHandler implements FormatHandler {
                 from: true,
                 to: false,
                 internal: "bunlevel",
+                category: "data",
+                lossless: false,
             },
         ];
 
@@ -52,7 +54,7 @@ class bunburrowsHandler implements FormatHandler {
             let new_file_bytes = new Uint8Array(file.bytes);
 
             // Code here based on mcmap.ts
-            if (inputFormat.internal == "bunlevel" && outputFormat.mime == CommonFormats.PNG.mime) {
+            if (inputFormat.internal === "bunlevel" && outputFormat.mime === CommonFormats.PNG.mime) {
                 // Read .level as text
                 let level_string = new TextDecoder().decode(new_file_bytes);
                 let level_data_array = level_string.split(/[\s,;:]+/);
@@ -100,30 +102,30 @@ class bunburrowsHandler implements FormatHandler {
 
                         // Burning tile
                         if (current_tile_data.includes("B",2)) {
-                            if (tile_pixel_x + tile_pixel_y % 2 == 0) {
+                            if (tile_pixel_x + tile_pixel_y % 2 === 0) {
                                 color = COLOR_UNBREAKABLE;
                             }
                         }
                         else {
                             // Undiggable tile
                             if (current_tile_data.includes("K",2)) {
-                                if ((tile_pixel_x == 1 && tile_pixel_y == 0) || (tile_pixel_x == 0 && tile_pixel_y == 1) || (tile_pixel_x == 4 && tile_pixel_y == 2) || (tile_pixel_x == 3 && tile_pixel_y == 3) || (tile_pixel_x == 2 && tile_pixel_y == 4)) {
+                                if ((tile_pixel_x === 1 && tile_pixel_y === 0) || (tile_pixel_x === 0 && tile_pixel_y === 1) || (tile_pixel_x === 4 && tile_pixel_y === 2) || (tile_pixel_x === 3 && tile_pixel_y === 3) || (tile_pixel_x === 2 && tile_pixel_y === 4)) {
                                     color = COLOR_UNBREAKABLE;
                                 }
                             }
                             
                             // Trap tile
                             if (current_tile_data.includes("T",2)) {
-                                if ((tile_pixel_x == 1 && tile_pixel_y == 0) || (tile_pixel_x == 0 && tile_pixel_y == 1) || (tile_pixel_x == 4 && tile_pixel_y == 2) || (tile_pixel_x == 3 && tile_pixel_y == 3) || (tile_pixel_x == 2 && tile_pixel_y == 4)) {
+                                if ((tile_pixel_x === 1 && tile_pixel_y === 0) || (tile_pixel_x === 0 && tile_pixel_y === 1) || (tile_pixel_x === 4 && tile_pixel_y === 2) || (tile_pixel_x === 3 && tile_pixel_y === 3) || (tile_pixel_x === 2 && tile_pixel_y === 4)) {
                                     color = COLOR_UNBREAKABLE;
                                 }
                             }
                             // Carrot tile
                             else if (current_tile_data.includes("C",2)) {
-                                if (tile_pixel_x == 3 && tile_pixel_y == 1) {
+                                if (tile_pixel_x === 3 && tile_pixel_y === 1) {
                                     color = COLOR_UNBREAKABLE;
                                 }
-                                if ((tile_pixel_x == 2 && tile_pixel_y == 2) || (tile_pixel_x == 1 && tile_pixel_y == 3)) {
+                                if ((tile_pixel_x === 2 && tile_pixel_y === 2) || (tile_pixel_x === 1 && tile_pixel_y === 3)) {
                                     color = COLOR_BUNNY;
                                 }
                             }
@@ -134,16 +136,16 @@ class bunburrowsHandler implements FormatHandler {
                         color = COLOR_BREAKABLE;
 
                         // Tunnels
-                        if (current_tile_data.includes("U",2) && (tile_pixel_x == 2 && (tile_pixel_y == 0 || tile_pixel_y == 1 || tile_pixel_y == 2))) {
+                        if (current_tile_data.includes("U",2) && (tile_pixel_x === 2 && (tile_pixel_y === 0 || tile_pixel_y === 1 || tile_pixel_y === 2))) {
                             color = COLOR_WALKABLE;
                         }
-                        if (current_tile_data.includes("D",2) && (tile_pixel_x == 2 && (tile_pixel_y == 2 || tile_pixel_y == 3 || tile_pixel_y == 4))) {
+                        if (current_tile_data.includes("D",2) && (tile_pixel_x === 2 && (tile_pixel_y === 2 || tile_pixel_y === 3 || tile_pixel_y === 4))) {
                             color = COLOR_WALKABLE;
                         }
-                        if (current_tile_data.includes("L",2) && (tile_pixel_y == 2 && (tile_pixel_x == 0 || tile_pixel_x == 1 || tile_pixel_x == 2))) {
+                        if (current_tile_data.includes("L",2) && (tile_pixel_y === 2 && (tile_pixel_x === 0 || tile_pixel_x === 1 || tile_pixel_x === 2))) {
                             color = COLOR_WALKABLE;
                         }
-                        if (current_tile_data.includes("R",2) && (tile_pixel_y == 2 && (tile_pixel_x == 2 || tile_pixel_x == 3 || tile_pixel_x == 4))) {
+                        if (current_tile_data.includes("R",2) && (tile_pixel_y === 2 && (tile_pixel_x === 2 || tile_pixel_x === 3 || tile_pixel_x === 4))) {
                             color = COLOR_WALKABLE;
                         }
                     }
@@ -153,18 +155,18 @@ class bunburrowsHandler implements FormatHandler {
     
                         // Undiggable tile
                         if (current_tile_data.includes("K",2)) {
-                            if ((tile_pixel_x == 1 && tile_pixel_y == 0) || (tile_pixel_x == 0 && tile_pixel_y == 1) || (tile_pixel_x == 4 && tile_pixel_y == 2) || (tile_pixel_x == 3 && tile_pixel_y == 3) || (tile_pixel_x == 2 && tile_pixel_y == 4)) {
+                            if ((tile_pixel_x === 1 && tile_pixel_y === 0) || (tile_pixel_x === 0 && tile_pixel_y === 1) || (tile_pixel_x === 4 && tile_pixel_y === 2) || (tile_pixel_x === 3 && tile_pixel_y === 3) || (tile_pixel_x === 2 && tile_pixel_y === 4)) {
                                 color = COLOR_UNBREAKABLE;
                             }
                         }
                         if (current_tile_data.includes("B",2)) {
-                            if (tile_pixel_x + tile_pixel_y % 2 == 0) {
+                            if (tile_pixel_x + tile_pixel_y % 2 === 0) {
                                 color = COLOR_UNBREAKABLE;
                             }
                         }
                     
                         // Draw the bunny.
-                        if (tile_pixel_x != 0 && tile_pixel_x != 4 && tile_pixel_y != 0 && tile_pixel_y != 4 && !(tile_pixel_x == 2 && tile_pixel_y == 1)) {
+                        if (tile_pixel_x !== 0 && tile_pixel_x !== 4 && tile_pixel_y !== 0 && tile_pixel_y !== 4 && !(tile_pixel_x === 2 && tile_pixel_y === 1)) {
                             color = COLOR_BUNNY;
                         }
                     }
@@ -173,16 +175,16 @@ class bunburrowsHandler implements FormatHandler {
                         color = COLOR_UNBREAKABLE;
 
                         // Tunnels
-                        if (current_tile_data.includes("U",2) && (tile_pixel_x == 2 && (tile_pixel_y == 0 || tile_pixel_y == 1 || tile_pixel_y == 2))) {
+                        if (current_tile_data.includes("U",2) && (tile_pixel_x === 2 && (tile_pixel_y === 0 || tile_pixel_y === 1 || tile_pixel_y === 2))) {
                             color = COLOR_WALKABLE;
                         }
-                        if (current_tile_data.includes("D",2) && (tile_pixel_x == 2 && (tile_pixel_y == 2 || tile_pixel_y == 3 || tile_pixel_y == 4))) {
+                        if (current_tile_data.includes("D",2) && (tile_pixel_x === 2 && (tile_pixel_y === 2 || tile_pixel_y === 3 || tile_pixel_y === 4))) {
                             color = COLOR_WALKABLE;
                         }
-                        if (current_tile_data.includes("L",2) && (tile_pixel_y == 2 && (tile_pixel_x == 0 || tile_pixel_x == 1 || tile_pixel_x == 2))) {
+                        if (current_tile_data.includes("L",2) && (tile_pixel_y === 2 && (tile_pixel_x === 0 || tile_pixel_x === 1 || tile_pixel_x === 2))) {
                             color = COLOR_WALKABLE;
                         }
-                        if (current_tile_data.includes("R",1) && (tile_pixel_y == 2 && (tile_pixel_x == 2 || tile_pixel_x == 3 || tile_pixel_x == 4))) {
+                        if (current_tile_data.includes("R",1) && (tile_pixel_y === 2 && (tile_pixel_x === 2 || tile_pixel_x === 3 || tile_pixel_x === 4))) {
                             color = COLOR_WALKABLE;
                         }
                     }
@@ -190,7 +192,7 @@ class bunburrowsHandler implements FormatHandler {
                     else if (current_tile_data.startsWith("E")) {
                         color = COLOR_WALKABLE;
                         
-                        if (((tile_pixel_y == 1 || tile_pixel_y == 3) && (tile_pixel_x == 1 || tile_pixel_x == 2 || tile_pixel_x == 3)) || (tile_pixel_y == 2 && (tile_pixel_x == 0 || tile_pixel_x == 4))) {
+                        if (((tile_pixel_y === 1 || tile_pixel_y === 3) && (tile_pixel_x === 1 || tile_pixel_x === 2 || tile_pixel_x === 3)) || (tile_pixel_y === 2 && (tile_pixel_x === 0 || tile_pixel_x === 4))) {
                             color = COLOR_BUNNY;
                         }
                     }
@@ -200,19 +202,19 @@ class bunburrowsHandler implements FormatHandler {
                         
                         // Burning tile
                         if (current_tile_data.includes("B",2)) {
-                            if (tile_pixel_x + tile_pixel_y % 2 == 0) {
+                            if (tile_pixel_x + tile_pixel_y % 2 === 0) {
                                 color = COLOR_UNBREAKABLE;
                             }
                         }
                         // Undiggable tile
                         else if (current_tile_data.includes("K",2)) {
-                            if ((tile_pixel_x == 1 && tile_pixel_y == 0) || (tile_pixel_x == 0 && tile_pixel_y == 1) || (tile_pixel_x == 4 && tile_pixel_y == 2) || (tile_pixel_x == 3 && tile_pixel_y == 3) || (tile_pixel_x == 2 && tile_pixel_y == 4)) {
+                            if ((tile_pixel_x === 1 && tile_pixel_y === 0) || (tile_pixel_x === 0 && tile_pixel_y === 1) || (tile_pixel_x === 4 && tile_pixel_y === 2) || (tile_pixel_x === 3 && tile_pixel_y === 3) || (tile_pixel_x === 2 && tile_pixel_y === 4)) {
                                 color = COLOR_UNBREAKABLE;
                             }
                         }
 
                         // Draw the entrance
-                        if (((tile_pixel_y == 1 || tile_pixel_y == 3) && (tile_pixel_x == 1 || tile_pixel_x == 3)) || (tile_pixel_y == 2 && (tile_pixel_x == 0 || tile_pixel_x == 2 || tile_pixel_x == 4))) {
+                        if (((tile_pixel_y === 1 || tile_pixel_y === 3) && (tile_pixel_x === 1 || tile_pixel_x === 3)) || (tile_pixel_y === 2 && (tile_pixel_x === 0 || tile_pixel_x === 2 || tile_pixel_x === 4))) {
                             color = COLOR_BUNNY;
                         }
                     }
@@ -220,10 +222,10 @@ class bunburrowsHandler implements FormatHandler {
                     else if (current_tile_data.startsWith("!")) {
                         color = COLOR_BUNNY;
                         
-                        if (tile_pixel_y == 0 && (tile_pixel_x == 0 || tile_pixel_x == 4)) {
+                        if (tile_pixel_y === 0 && (tile_pixel_x === 0 || tile_pixel_x === 4)) {
                             color = COLOR_WALKABLE;
                         }
-                        if ((tile_pixel_x == 1 || tile_pixel_x == 3) || (tile_pixel_y == 2 || tile_pixel_y == 3 || tile_pixel_y == 4)) {
+                        if ((tile_pixel_x === 1 || tile_pixel_x === 3) || (tile_pixel_y === 2 || tile_pixel_y === 3 || tile_pixel_y === 4)) {
                             color = COLOR_UNBREAKABLE;
                         }
                     }

@@ -19,7 +19,8 @@ class sqlite3Handler implements FormatHandler {
         from: true,
         to: true,
         internal: "sqlite3",
-        category: "database"
+        category: "database",
+        lossless: false
       },
       {
         name: "iTunes Database",
@@ -29,7 +30,8 @@ class sqlite3Handler implements FormatHandler {
         from: true,
         to: false,
         internal: "sqlite3",
-        category: "database"
+        category: "database",
+        lossless: false
       },
       // Lossy because extracts only tables  
       CommonFormats.CSV.builder("csv").allowTo().allowFrom()
@@ -60,7 +62,7 @@ class sqlite3Handler implements FormatHandler {
 
     const sqlite3 = await sqlite3InitModule();
 
-    if (inputFormat.internal == "sqlite3" && outputFormat.internal == "csv") {
+    if (inputFormat.internal === "sqlite3" && outputFormat.internal === "csv") {
         for (const file of inputFiles) {
             const p = sqlite3.wasm.allocFromTypedArray(file.bytes);
 
@@ -100,7 +102,7 @@ class sqlite3Handler implements FormatHandler {
             }
          }
     }
-    if (inputFormat.internal == "csv" && outputFormat.internal == "sqlite3") {
+    if (inputFormat.internal === "csv" && outputFormat.internal === "sqlite3") {
         const db = new sqlite3.oo1.DB();
         if (!db.pointer) {
             throw new Error("Database pointer is undefined")

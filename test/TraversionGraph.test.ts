@@ -22,6 +22,9 @@ const handlers : FormatHandler[] = [
     CommonFormats.WAV.supported("wav", true, true, true),
     CommonFormats.MP4.supported("mp4", true, true, true)
   ], false),
+  new MockedHandler("archiver", [
+    CommonFormats.ZIP.builder("zip").allowTo().markLossless().withCategory("archive"),
+  ], true),
 ]
 
 let supportedFormatCache = new Map<string, FileFormat[]>();
@@ -193,4 +196,22 @@ test('remove adaptive category costs should affect pathfinding\n', async () => {
   expect(extractedPaths.length).toBeGreaterThan(0);
   expect(extractedNewPaths.length).toBeGreaterThan(0);
   expect(extractedNewPaths[0]).not.toEqual(extractedPaths[0]);
+});
+
+test('should find path from image to archive via anyinput\n', async () => {
+  const graph = new TraversionGraph();
+  graph.init(supportedFormatCache, handlers);
+
+  const paths = graph.searchPath(
+    new ConvertPathNode(handlers.find(h => h.name === "canvasToBlob")!, CommonFormats.PNG.supported("png", true, true, true)),
+    new ConvertPathNode(handlers.find(h => h.name === "archiver")!, CommonFormats.ZIP.supported("zip", false, true, true)),
+    true
+  );
+  let extractedPaths = [];
+  for await (const path of paths)
+    extractedPaths.push(path);
+  expect(extractedPaths.length).toBeGreaterThan(0);
+  expect(extractedPaths[0][0].format.format).toBe("png");
+  expect(extractedPaths[0][extractedPaths[0].length - 1].format.format).toBe("zip");
+  expect(extractedPaths[0][extractedPaths[0].length - 1].handler.name).toBe("archiver");
 });

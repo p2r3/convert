@@ -33,6 +33,8 @@ class sb3ToHtmlHandler implements FormatHandler {
                 from: true,
                 to: false,
                 internal: "sb3",
+                category: "archive",
+                lossless: false,
             },
             CommonFormats.HTML.builder("html")
                 .allowTo()
