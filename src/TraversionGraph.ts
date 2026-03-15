@@ -26,11 +26,13 @@ const DEFAULT_CATEGORY_CHANGE_COST : number = 0.6; // Default cost for category 
 const LOSSY_COST_MULTIPLIER : number = 1.4; // Cost multiplier for lossy conversions. Higher values will make the algorithm prefer lossless conversions more strongly.
 const HANDLER_PRIORITY_COST : number = 0.02; // Cost multiplier for handler priority. Higher values will make the algorithm prefer handlers with higher priority more strongly.
 const FORMAT_PRIORITY_COST : number = 0.05; // Cost multiplier for format priority. Higher values will make the algorithm prefer formats with higher priority more strongly.
+const ANY_INPUT_COST : number = 2; // Extra cost for edges created via supportAnyInput. Discourages generic "pack" conversions so the algorithm prefers more specific conversion paths (e.g. rename-then-convert over wrapping a file as-is).
 
 const LOG_FREQUENCY = 1000;
 
 export interface Node {
     identifier: string;
+    format: FileFormat;
     edges: Array<number>;
 };
 
@@ -138,6 +140,7 @@ export class TraversionGraph {
 
         console.log("Initializing traversion graph...");
         const startTime = performance.now();
+
         let handlerIndex = 0;
         supportedFormatCache.forEach((formats, handler) => {
             let fromIndices: Array<{format: FileFormat, index: number}> = [];
@@ -149,6 +152,7 @@ export class TraversionGraph {
                     index = this.nodes.length;
                     this.nodes.push({
                         identifier: formatIdentifier,
+                        format: format,
                         edges: []
                     });
                 }
@@ -175,6 +179,52 @@ export class TraversionGraph {
             });
             handlerIndex++;
         });
+
+        // Add edges for handlers with supportAnyInput.
+        // These handlers can accept any format as input, so we create edges
+        // from every known format node to their output formats.
+        handlers.forEach((handler, hIndex) => {
+            if (!handler.supportAnyInput) return;
+            const formats = supportedFormatCache.get(handler.name);
+            if (!formats) return;
+
+            // Collect output format node indices for this handler
+            const toEntries: Array<{format: FileFormat, index: number}> = [];
+            for (const f of formats) {
+                if (!f.to) continue;
+                const id = f.mime + `(${f.format})`;
+                const idx = this.nodes.findIndex(n => n.identifier === id);
+                if (idx !== -1) toEntries.push({ format: f, index: idx });
+            }
+
+            // Create edges from every known format node to each output format
+            this.nodes.forEach((fromNode, fromIndex) => {
+                for (const to of toEntries) {
+                    if (fromIndex === to.index) continue;
+                    // Skip if an edge already exists from this node to this target via this handler
+                    const alreadyExists = fromNode.edges.some(eIdx =>
+                        this.edges[eIdx].to.index === to.index && this.edges[eIdx].handler === handler.name
+                    );
+                    if (alreadyExists) continue;
+
+                    const cost = this.costFunction(
+                        { format: fromNode.format, index: fromIndex },
+                        { format: to.format, index: to.index },
+                        strictCategories,
+                        handler.name,
+                        hIndex
+                    ) + ANY_INPUT_COST;
+                    this.edges.push({
+                        from: { format: fromNode.format, index: fromIndex },
+                        to: { format: to.format, index: to.index },
+                        handler: handler.name,
+                        cost
+                    });
+                    this.nodes[fromIndex].edges.push(this.edges.length - 1);
+                }
+            });
+        });
+
         const endTime = performance.now();
         console.log(`Traversion graph initialized in ${(endTime - startTime).toFixed(2)} ms with ${this.nodes.length} nodes and ${this.edges.length} edges.`);
     }
@@ -246,7 +296,7 @@ export class TraversionGraph {
      */
     public getData() : {nodes: Node[], edges: Edge[], categoryChangeCosts: CategoryChangeCost[], categoryAdaptiveCosts: CategoryAdaptiveCost[]} {
         return {
-            nodes: this.nodes.map(node => ({identifier: node.identifier, edges: [...node.edges]})),
+            nodes: this.nodes.map(node => ({identifier: node.identifier, format: {...node.format}, edges: [...node.edges]})),
             edges: this.edges.map(edge => ({
                 from: {format: {...edge.from.format}, index: edge.from.index},
                 to: {format: {...edge.to.format}, index: edge.to.index},

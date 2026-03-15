@@ -23,7 +23,8 @@ class envelopeHandler implements FormatHandler {
       from: true,
       to: false,
       internal: "odt",
-      category: "document"
+      category: "document",
+      lossless: false
     },
     {
       name: "OpenDocument Presentation",
@@ -33,7 +34,8 @@ class envelopeHandler implements FormatHandler {
       from: true,
       to: false,
       internal: "odp",
-      category: "presentation"
+      category: "presentation",
+      lossless: false
     },
     {
       name: "OpenDocument Spreadsheet",
@@ -43,7 +45,8 @@ class envelopeHandler implements FormatHandler {
       from: true,
       to: false,
       internal: "ods",
-      category: "spreadsheet"
+      category: "spreadsheet",
+      lossless: false
     },
     // Technically not "lossless", but it's about as close as we'll ever get
     CommonFormats.HTML.supported("html", false, true, true)

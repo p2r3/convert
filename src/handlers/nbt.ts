@@ -50,7 +50,7 @@ class nbtHandler implements FormatHandler {
         const encoder = new TextEncoder()
 
         // nbt -> json
-        if (inputFormat.internal == "nbt" && outputFormat.internal == "json") {
+        if (inputFormat.internal === "nbt" && outputFormat.internal === "json") {
             for (const file of inputFiles) {
                 const nbt = await NBT.read(file.bytes);
                 const j = JSON.stringify(nbt.data, (key, value) =>
@@ -64,7 +64,7 @@ class nbtHandler implements FormatHandler {
         }
 
         // json -> nbt
-        if (inputFormat.internal == "json" && outputFormat.internal == "nbt") {
+        if (inputFormat.internal === "json" && outputFormat.internal === "nbt") {
             for (const file of inputFiles) {
                 const text = decoder.decode(file.bytes)
                 const obj = JSON.parse(text)
@@ -77,7 +77,7 @@ class nbtHandler implements FormatHandler {
         }
 
         // snbt -> nbt
-        if (inputFormat.internal == "snbt" && outputFormat.internal == "nbt") {
+        if (inputFormat.internal === "snbt" && outputFormat.internal === "nbt") {
             for (const file of inputFiles) {
                 const text = decoder.decode(file.bytes)
                 const nbt = NBT.parse(text)
@@ -89,7 +89,7 @@ class nbtHandler implements FormatHandler {
             }
         }
         // nbt -> snbt
-        if (inputFormat.internal == "nbt" && outputFormat.internal == "snbt") {
+        if (inputFormat.internal === "nbt" && outputFormat.internal === "snbt") {
             for (const file of inputFiles) {
                 const nbt = await NBT.read(file.bytes)
                 const text = NBT.stringify(nbt, {
@@ -104,7 +104,7 @@ class nbtHandler implements FormatHandler {
 
         
         // nbt -> schem / schematic
-        if (inputFormat.internal == "nbt" && (outputFormat.internal == "schem" || outputFormat.internal == "schematic")) {
+        if (inputFormat.internal === "nbt" && (outputFormat.internal === "schem" || outputFormat.internal === "schematic")) {
             for (const file of inputFiles) {
                 outputFiles.push({
                     name: file.name.split(".")[0] + `.${outputFormat.extension}`,

@@ -59,8 +59,8 @@ class rgbaHandler implements FormatHandler {
         for (const file of inputFiles) {
             let new_file_bytes = new Uint8Array(file.bytes);
 
-            if (inputFormat.mime == CommonFormats.PNG.mime) {
-                if (outputFormat.internal == "rgba") {
+            if (inputFormat.mime === CommonFormats.PNG.mime) {
+                if (outputFormat.internal === "rgba") {
                     // Some code copied from mcmap.ts
                     const blob = new Blob([file.bytes as BlobPart], { type: inputFormat.mime });
 
@@ -79,24 +79,24 @@ class rgbaHandler implements FormatHandler {
 
                     new_file_bytes = new Uint8Array(pixels.data);
                 }
-                else if (outputFormat.internal == "rgb") {
+                else if (outputFormat.internal === "rgb") {
                     throw new Error("This handler doesn't need to convert png to rgb, let ImageMagik do that.");
                 }
                 else {
                     throw new Error("Invalid input-output.");
                 }
             }
-            else if (inputFormat.internal == "rgb") {
-                if (new_file_bytes.length % 3 != 0) {
+            else if (inputFormat.internal === "rgb") {
+                if (new_file_bytes.length % 3 !== 0) {
                     throw new Error("Invalid RGB file size; not a whole number of samples.");
                 }
 
-                if (outputFormat.internal == "rgba") {
+                if (outputFormat.internal === "rgba") {
                     // Fill in with 255 in alpha channel
                     let writer_array = new Uint8Array(new_file_bytes.length + Math.floor(new_file_bytes.length / 3));
                     let writer_counter = 0;
                     for (let i = 0; i < new_file_bytes.length; i++) {
-                        if (i % 3 == 2) {
+                        if (i % 3 === 2) {
                             writer_array.set(new Uint8Array([new_file_bytes[i]]),writer_counter);
                             writer_counter += 1;
                             writer_array.set(new Uint8Array([0xFF]),writer_counter);
@@ -109,31 +109,31 @@ class rgbaHandler implements FormatHandler {
                     }
                     new_file_bytes = new Uint8Array(writer_array);
                 }
-                else if (outputFormat.mime == CommonFormats.PNG.mime) {
+                else if (outputFormat.mime === CommonFormats.PNG.mime) {
                     throw new Error("This handler doesn't need to convert rgb to png, let ImageMagik do that.");
                 }
                 else {
                     throw new Error("Invalid input-output.");
                 }
             }
-            else if (inputFormat.internal == "rgba") {
-                if (new_file_bytes.length % 4 != 0) {
+            else if (inputFormat.internal === "rgba") {
+                if (new_file_bytes.length % 4 !== 0) {
                     throw new Error("Invalid RGBA file size; not a whole number of samples.");
                 }
 
-                if (outputFormat.internal == "rgb") {
+                if (outputFormat.internal === "rgb") {
                     // Remove every fourth, byte! Every fourth, byte!
                     let writer_array = new Uint8Array(new_file_bytes.length - Math.floor(new_file_bytes.length / 4));
                     let writer_counter = 0;
                     for (let i = 0; i < new_file_bytes.length; i++) {
-                        if (i % 4 != 3) {
+                        if (i % 4 !== 3) {
                             writer_array.set(new Uint8Array([new_file_bytes[i]]),writer_counter);
                             writer_counter += 1;
                         }
                     }
                     new_file_bytes = new Uint8Array(writer_array);
                 }
-                else if (outputFormat.mime == CommonFormats.PNG.mime) {
+                else if (outputFormat.mime === CommonFormats.PNG.mime) {
                     // Determine image dimensions: smallest number x such that x^2 is >= total samples                    
                     const total_samples = new_file_bytes.length/4;
                     let image_sw = 0;

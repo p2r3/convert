@@ -18,7 +18,8 @@ class threejsHandler implements FormatHandler {
       from: true,
       to: false,
       internal: "glb",
-      category: "model"
+      category: "model",
+      lossless: false
     },
     {
       name: "GL Transmission Format",
@@ -28,7 +29,8 @@ class threejsHandler implements FormatHandler {
       from: true,
       to: false,
       internal: "glb",
-      category: "model"
+      category: "model",
+      lossless: false
     },
     {
       name: "Waveform OBJ",
@@ -39,6 +41,7 @@ class threejsHandler implements FormatHandler {
       to: false,
       internal: "obj",
       category: "model",
+      lossless: false,
     },
     CommonFormats.PNG.supported("png", false, true),
     CommonFormats.JPEG.supported("jpeg", false, true),

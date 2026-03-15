@@ -13,13 +13,6 @@ let selectedFiles: File[] = [];
  */
 let simpleMode: boolean = true;
 
-/** Handlers that support conversion from any formats. */
-const conversionsFromAnyInput: ConvertPathNode[] = handlers
-.filter(h => h.supportAnyInput && h.supportedFormats)
-.flatMap(h => h.supportedFormats!
-  .filter(f => f.to)
-  .map(f => ({ handler: h, format: f})))
-
 const ui = {
   fileInput: document.querySelector("#file-input") as HTMLInputElement,
   fileSelectArea: document.querySelector("#file-area") as HTMLDivElement,
@@ -365,7 +358,8 @@ async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
         c.from
         && c.mime === path[i].format.mime
         && c.format === path[i].format.format
-      )!;
+      ) || (handler.supportAnyInput ? path[i].format : undefined);
+      if (!inputFormat) throw `Handler "${handler.name}" doesn't support the "${path[i].format.format}" format.`;
       files = (await Promise.all([
         handler.doConvert(files, inputFormat, path[i + 1].format),
         // Ensure that we wait long enough for the UI to update

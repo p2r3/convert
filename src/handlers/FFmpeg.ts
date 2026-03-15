@@ -19,7 +19,8 @@ class FFmpegHandler implements FormatHandler {
     ["matroska", "Matroska / WebM"],
     ["mov", "QuickTime / MOV"],
     ["3gp", "3GPP Multimedia Container"],
-    ["3g2", "3GPP2 Multimedia Container"]
+    ["3g2", "3GPP2 Multimedia Container"],
+    ["asf", "Windows Media Video (WMV)"]
   ]);
 
   public name: string = "FFmpeg";
@@ -218,7 +219,21 @@ class FFmpegHandler implements FormatHandler {
       mime: "video/quicktime",
       from: true,
       to: true,
-      internal: "mov"
+      internal: "mov",
+      category: "audio",
+      lossless: false
+    });
+
+    // Add .wmv (Windows Media Video) support - uses ASF container
+    this.supportedFormats.push({
+      name: "Windows Media Video",
+      format: "wmv",
+      extension: "wmv",
+      mime: "video/x-ms-asf",
+      from: true,
+      to: true,
+      internal: "asf",
+      category: "video"
     });
 
     // Normalize Bink metadata to ensure ".bik" files are detected by extension.
@@ -284,6 +299,8 @@ class FFmpegHandler implements FormatHandler {
       command.push("-vf", "setsar=1", "-target", "ntsc-dvd", "-pix_fmt", "rgb24");
     } else if (outputFormat.internal === "vcd") {
       command.push("-vf", "scale=352:288,setsar=1", "-target", "pal-vcd", "-pix_fmt", "rgb24");
+    } else if (outputFormat.internal === "asf") {
+      command.push("-b:v", "15M", "-b:a", "192k");
     }
     if (args) command.push(...args);
     command.push("output");

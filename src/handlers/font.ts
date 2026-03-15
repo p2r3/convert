@@ -253,11 +253,11 @@ class fontHandler implements FormatHandler {
     for (const inputFile of inputFiles) {
       const nFile = { ...inputFile, bytes: await normalizeToSfnt(inputFile, inputFormat, decoder) };
 
-      if (outputFormat.internal == "svg")
+      if (outputFormat.internal === "svg")
         outputFiles.push(sfntToSvg(nFile, encoder));
-      else if (outputFormat.internal == "otf")
+      else if (outputFormat.internal === "otf")
         outputFiles.push(sfntToOtf(nFile));
-      else if (outputFormat.internal == "woff2")
+      else if (outputFormat.internal === "woff2")
         outputFiles.push(await sfntToWoff2(nFile));
     }
     return outputFiles;

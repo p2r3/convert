@@ -36,7 +36,8 @@ export const renameZipHandler = renameHandler("renamezip", [
     from: true,
     to: false,
     internal: "odt",
-    category: "document"
+    category: "document",
+    lossless: true
   },
   {
     name: "OpenDocument Presentation",
@@ -46,7 +47,8 @@ export const renameZipHandler = renameHandler("renamezip", [
     from: true,
     to: false,
     internal: "odp",
-    category: "presentation"
+    category: "presentation",
+    lossless: true
   },
   {
     name: "OpenDocument Spreadsheet",
@@ -56,7 +58,8 @@ export const renameZipHandler = renameHandler("renamezip", [
     from: true,
     to: false,
     internal: "ods",
-    category: "spreadsheet"
+    category: "spreadsheet",
+    lossless: true
   },
   {
     name: "Firefox Plugin",
@@ -65,7 +68,9 @@ export const renameZipHandler = renameHandler("renamezip", [
     mime: "application/x-xpinstall",
     from: true,
     to: false,
-    internal: "xpi"
+    internal: "xpi",
+    category: "archive",
+    lossless: true
   },
   CommonFormats.ZIP.builder("love").allowFrom()
     .withFormat("love").withExt("love").named("LÖVE Game Package"),
@@ -82,7 +87,9 @@ export const renameZipHandler = renameHandler("renamezip", [
     mime: "application/x-java-archive",
     from: true,
     to: false,
-    internal: "jar"
+    internal: "jar",
+    category: "archive",
+    lossless: true
   },
   {
     name: "Android Package Archive",
@@ -91,7 +98,9 @@ export const renameZipHandler = renameHandler("renamezip", [
     mime: "application/vnd.android.package-archive",
     from: true,
     to: false,
-    internal: "apk"
+    internal: "apk",
+    category: "archive",
+    lossless: true
   },
   CommonFormats.ZIP.builder("sb3").allowFrom()
     .withFormat("sb3").withExt("sb3").named("Scratch 3 Project").withMime("application/x.scratch.sb3"),
@@ -107,6 +116,8 @@ export const renameZipHandler = renameHandler("renamezip", [
     from: true,
     to: false,
     internal: "cbz",
+    category: "archive",
+    lossless: true
   },
 ]);
 /// handler for renaming text-based formats
@@ -115,4 +126,18 @@ export const renameTxtHandler = renameHandler("renametxt", [
   CommonFormats.JSON.builder("json").allowFrom(),
   CommonFormats.XML.builder("xml").allowFrom(),
   CommonFormats.YML.builder("yaml").allowFrom()
-])
+]);
+/// handler for renaming json-based formats
+export const renameJsonHandler = renameHandler("renamejson", [
+  CommonFormats.JSON.builder("json").allowTo(),
+  {
+    name: "HTTP Archive",
+    format: "har",
+    extension: "har",
+    mime: "application/har+json",
+    from: true,
+    to: false,
+    category: "archive",
+    internal: "har"
+  }
+]);

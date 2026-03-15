@@ -13,7 +13,9 @@ class alsHandler implements FormatHandler {
       mime: "application/gzip",
       from: true,
       to: false,
-      internal: "als"
+      internal: "als",
+      category: "data",
+      lossless: true
     },
     CommonFormats.XML.builder("xml").allowTo(),
   ];
