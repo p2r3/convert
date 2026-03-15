@@ -15,7 +15,27 @@ class tarHandler implements FormatHandler {
   public name: string = "tar";
   public supportedFormats?: FileFormat[] = [
     CommonFormats.TAR.builder("tar").allowFrom().allowTo().markLossless(),
-    CommonFormats.ZIP.builder("zip").allowFrom().allowTo().markLossless()
+    CommonFormats.ZIP.builder("zip").allowFrom().allowTo().markLossless()  
+    {
+      name: "Comic Book Archive (ZIP)",
+      format: "cbz",
+      extension: "cbz",
+      mime: "application/vnd.comicbook+zip",
+      from: true,
+      to: true,
+      internal: "cbz",
+      category: ["archive"],
+    },
+    {
+      name: "Comic Book Archive (TAR)",
+      format: "cbt",
+      extension: "cbt",
+      mime: "application/vnd.comicbook+tar",
+      from: true,
+      to: true,
+      internal: "cbt",
+      category: ["archive"],
+    }
   ];
 
   public supportAnyInput: boolean = true;
@@ -33,7 +53,7 @@ class tarHandler implements FormatHandler {
   ): Promise<FileData[]> {
     const outputFiles: FileData[] = [];
 
-    if (inputFormat.internal == "zip" && outputFormat.internal == "tar") {
+    if ((inputFormat.internal === "zip" && outputFormat.internal === "tar") || (inputFormat.internal === "cbz" && outputFormat.internal === "cbt")) {
       for (const inputFile of inputFiles) {
         const zip = new JSZip();
         await zip.loadAsync(inputFile.bytes);
@@ -57,7 +77,7 @@ class tarHandler implements FormatHandler {
           });
         }
 
-        const name = inputFile.name.replace(/\.zip$/i, ".tar");
+        const name = inputFile.name.replace(/\.zip$/i, ".tar").replace(/\.cbz$/i, ".cbt");
         const bytes = createTar(
           archiveFiles,
           {},
@@ -65,7 +85,7 @@ class tarHandler implements FormatHandler {
 
         outputFiles.push({ bytes, name });
       }
-    } else if (inputFormat.internal == "tar" && outputFormat.internal == "zip") {
+    } else if ((inputFormat.internal === "tar" && outputFormat.internal === "zip") || (inputFormat.internal === "cbt" && outputFormat.internal === "cbz")) {
       for (const inputFile of inputFiles) {
         const files = parseTar(inputFile.bytes);
 
@@ -84,10 +104,10 @@ class tarHandler implements FormatHandler {
 
         const bytes = await zip.generateAsync({ type: "uint8array" });
 
-        const name = inputFile.name.replace(/\.tar$/i, ".zip");
+        const name = inputFile.name.replace(/\.tar$/i, ".zip").replace(/\.cbt$/i, ".cbz");
         outputFiles.push({ bytes, name });
       }
-    } else if (outputFormat.internal == "tar") {
+    } else if (outputFormat.internal === "tar") {
       const bytes = createTar(
         inputFiles.map(file => ({ name: file.name, data: file.bytes })),
         {},
