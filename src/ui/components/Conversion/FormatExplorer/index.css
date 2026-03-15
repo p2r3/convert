@@ -1,0 +1,83 @@
+.format-explorer.content-wrapper {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+}
+
+.format-explorer {
+    .format-browser {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: var(--bg-page);
+
+        .search-container {
+            padding: 1.5rem;
+
+            .search-input-wrapper {
+                position: relative;
+                max-width: 600px;
+
+                .icon {
+                    position: absolute;
+                    left: 1rem;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    color: var(--text-muted);
+                }
+
+                input {
+                    width: 100%;
+                    padding: 0.75rem 1rem 0.75rem 2.5rem;
+                    border-radius: 12px;
+                    border: 1px solid var(--border-primary);
+                    color: var(--text-tertiary);
+                    background-color: var(--bg-input);
+                    outline: none;
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+
+                    &:focus {
+                        border-color: var(--primary);
+                        box-shadow: 0 0 0 4px rgba(28, 119, 255, 0.1);
+                    }
+                }
+            }
+        }
+
+        .format-list-container {
+            flex: 1;
+            padding: 0 1.5rem 1.5rem;
+
+            .list-header {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 1rem;
+
+                h2 {
+                    font-size: 0.75rem;
+                    font-weight: 800;
+                    color: var(--text-muted);
+                    text-transform: uppercase;
+                }
+
+                span {
+                    font-size: 0.75rem;
+                    color: var(--text-muted);
+                }
+            }
+
+            @media (max-width: 1024px) {
+                padding: 0;
+            }
+        }
+    }
+
+    .format-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 1rem;
+        overflow: hidden;
+        padding: .5rem;
+    }
+}

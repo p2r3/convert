@@ -1,0 +1,89 @@
+.format-card {
+    appearance: none;
+    background: var(--bg-card);
+    border: 1px solid var(--border-primary);
+    border-radius: 12px;
+    padding: 1rem;
+
+    display: block;
+    text-align: left;
+    font: inherit;
+
+    /* This ruins repaint metrics, especially with a lot of cards */
+    /* transition: all 0.2s; */
+
+    .icon {
+        background-color: var(--text-muted);
+    }
+
+    &:hover {
+        border-color: var(--primary);
+        /* box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); */
+    }
+
+    &.active {
+        outline: 4px solid var(--primary);
+        /* box-shadow: 0 4px 12px rgba(28, 119, 255, 0.1); */
+
+        .icon {
+            background-color: var(--primary);
+        }
+    }
+
+    .card-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+    }
+
+    .card-icon-lg {
+        width: 40px;
+        height: 40px;
+        background: var(--bg-card-alt);
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        font-size: 1.2rem;
+    }
+
+    .badge {
+        background: var(--primary);
+        color: var(--text-on-primary);
+        font-size: 0.7rem;
+        font-weight: 800;
+        padding: 2px 6px;
+        border-radius: 4px;
+
+        &.gray {
+            background: #e5e7eb;
+            color: #4b5563;
+        }
+    }
+
+    .card-mobile-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .card-title-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    h3 {
+        font-size: 0.95rem;
+        color: var(--text-primary);
+        font-weight: 700;
+    }
+
+    .mime-type {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin-top: 4px;
+    }
+}

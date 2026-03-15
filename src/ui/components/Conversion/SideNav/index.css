@@ -1,0 +1,85 @@
+.side-nav {
+    min-width: 150px;
+    width: 250px;
+    background: var(--bg-card);
+    border-inline-end: 1px solid var(--border-primary);
+    display: flex;
+    flex-direction: column;
+
+    @media (max-width: 1024px) {
+        width: 25% !important;
+    }
+
+    .nav-header {
+        padding: 1rem;
+        border-bottom: 1px solid var(--border-primary);
+
+        span {
+            font-size: 0.9rem;
+            font-weight: 800;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+    }
+
+    .nav-list ul {
+        list-style: none;
+        padding: 0.5rem 0;
+        margin: 0;
+
+        li {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition:
+                    background 0.2s,
+                    color 0.2s,
+                    background-color 0.2s,
+                    border-color 0.2s;
+
+            cursor: pointer;
+
+            .icon {
+                background-color: var(--text-primary);
+            }
+
+            i {
+                width: 20px;
+            }
+
+            &:hover, &:focus-visible {
+                background: var(--bg-page);
+                color: var(--primary);
+                outline: none;
+            }
+
+            &.active {
+                background: var(--bg-card-alt);
+                color: var(--primary);
+                border-right: 4px solid var(--primary);
+                font-weight: 700;
+
+                .icon {
+                    background-color: var(--primary);
+                }
+            }
+        }
+    }
+
+    .scroller {
+        overflow-y: auto;
+
+        &::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+    }
+}

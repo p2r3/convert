@@ -13,7 +13,7 @@ export const Category = {
     PRESENTATION: "presentation",
     FONT: "font",
     CODE: "code"
-}
+} as const
 
 /**
  * Common format definitions which can be used to reduce boilerplate definitions

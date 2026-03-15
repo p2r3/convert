@@ -4,7 +4,7 @@ import handlers from "./handlers";
 import { TraversionGraph } from "./TraversionGraph.js";
 
 /** Files currently selected for conversion */
-let selectedFiles: File[] = [];
+export let selectedFiles: File[] = [];
 /**
  * Whether to use "simple" mode.
  * - In **simple** mode, the input/output lists are grouped by file format.
@@ -309,10 +309,10 @@ ui.modeToggleButton.addEventListener("click", () => {
   simpleMode = !simpleMode;
   if (simpleMode) {
     ui.modeToggleButton.textContent = "Advanced mode";
-    document.body.style.setProperty("--highlight-color", "#1C77FF");
+    document.body.style.setProperty("--primary", "#1C77FF");
   } else {
     ui.modeToggleButton.textContent = "Simple mode";
-    document.body.style.setProperty("--highlight-color", "#FF6F1C");
+    document.body.style.setProperty("--primary", "#FF6F1C");
   }
   buildOptionList();
 });
