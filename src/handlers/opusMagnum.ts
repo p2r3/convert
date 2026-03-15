@@ -170,7 +170,7 @@ function renderMolecule(molecule: OM_Molecule): Uint8Array {
     svg += "\n</svg>"
     
     // Replace placeholders with actual size. smallx/smally are half size - molecular center
-    svg = svg.replace(/bigx/g,(rightmost-leftmost)).replace(/bigy/g,(downmost-upmost)).replace(/smallx/g,(rightmost+leftmost)/2 - (rightmost-leftmost)/2).replace(/smally/g,(downmost+upmost)/2 - (downmost-upmost)/2);
+    svg = svg.replace(/bigx/g,String((rightmost-leftmost))).replace(/bigy/g,String((downmost-upmost))).replace(/smallx/g,String((rightmost+leftmost)/2 - (rightmost-leftmost)/2)).replace(/smally/g,String((downmost+upmost)/2 - (downmost-upmost)/2));
     
     return encoder.encode(svg);
 }
