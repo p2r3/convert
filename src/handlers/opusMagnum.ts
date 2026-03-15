@@ -22,6 +22,10 @@ interface OM_Bonds {
   destination_y: number;
 }
 
+interface Dictionary<T> {
+    [key: string]: T;
+}
+
 const elementSymbols: Dictionary<string> = {
     1: "🜔",
     2: "🜁",
