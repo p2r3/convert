@@ -125,7 +125,7 @@ function renderMolecule(molecule: OM_Molecule): Uint8Array {
     
     for (let i = 0; i < molecule.primes.length; i++) {
         // Validate primes
-        if (molecule.primes[i].element > 16) {
+        if (molecule.primes[i].element > 16 || molecule.primes[i].element < 1 || Math.floor(molecule.primes[i].element) !== molecule.primes[i].element) {
             throw "Error, invalid prime ("+molecule.primes[i].element+")";
         }
     
