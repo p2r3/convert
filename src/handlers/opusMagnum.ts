@@ -37,8 +37,8 @@ const elementSymbols = {
     12: "♄",
     13: "🜍",
     14: "🜞",
-    15: "🜹",
-    16: "🜹",
+    15: "...",
+    16: "✶",
 }
 
 const elementColors = {
@@ -105,11 +105,11 @@ function renderMolecule(molecule: OM_Molecule): Uint8Array {
             svg += "    <line stroke='black' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.2+"'/>"
         }
         else if (molecule.bonds[i].bond_type === 14) {
-            svg += "    <line stroke='red' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.1+"'/>"
+            svg += "    <line stroke='red' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.4+"'/>"
             svg += "\n"
             svg += "    <line stroke='black' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.2+"'/>"
             svg += "\n"
-            svg += "    <line stroke='yellow' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.4+"'/>"
+            svg += "    <line stroke='yellow' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.1+"'/>"
         }
         else {
             throw "Error, invalid bond ("+molecule.bonds[i].bond_type+")";
