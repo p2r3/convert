@@ -22,7 +22,7 @@ interface OM_Bonds {
   destination_y: number;
 }
 
-const elementSymbols = {
+const elementSymbols: Dictionary<string> = {
     1: "🜔",
     2: "🜁",
     3: "🜃",
@@ -41,7 +41,7 @@ const elementSymbols = {
     16: "✶",
 }
 
-const elementColors = {
+const elementColors: Dictionary<string> = {
     1: "#A39770",
     2: "#B3F2F4",
     3: "#AFDC02",
@@ -75,7 +75,7 @@ function twoComplement(input: number): number {
 function renderMolecule(molecule: OM_Molecule): Uint8Array {
     // Begin building our SVG
     const encoder = new TextEncoder();
-    let svg = "<svg xmlns='http://www.w3.org/2000/svg\' height='big' width='big' viewBox='-small -small big big'>"
+    let svg = "<svg xmlns='http://www.w3.org/2000/svg\' width='bigx' height='bigy' viewBox='smallx smally bigx bigy'>"
     
     const radius = 50;
     if (molecule.primes.length === 0) {
@@ -117,7 +117,12 @@ function renderMolecule(molecule: OM_Molecule): Uint8Array {
     }
     
     // Draw the atoms
-    let largest_coordinate = 0;
+    let leftmost = 99999;
+    let upmost = 99999;
+    
+    let rightmost = -99999;
+    let downmost = -99999;
+    
     for (let i = 0; i < molecule.primes.length; i++) {
         // Validate primes
         if (molecule.primes[i].element > 16) {
@@ -144,30 +149,24 @@ function renderMolecule(molecule: OM_Molecule): Uint8Array {
         svg += "    <text x='"+cartesian_x+"' y='"+cartesian_y+"' fill='white' text-anchor='middle' dominant-baseline='central' font-size='"+radius+"'>"+elementSymbols[molecule.primes[i].element]+"</text>"
         
         // Record largest coordinates
-        if (Math.abs(cartesian_x) > largest_coordinate) {
-            largest_coordinate = Math.abs(cartesian_x);
+        if ((cartesian_x+radius) > rightmost) {
+            rightmost = (cartesian_x+radius);
         }
-        if (Math.abs(cartesian_y) > largest_coordinate) {
-            largest_coordinate = Math.abs(cartesian_y);
+        if ((cartesian_y+radius) > downmost) {
+            downmost = (cartesian_y+radius);
         }
-        if (Math.abs(cartesian_x+radius) > largest_coordinate) {
-            largest_coordinate = Math.abs(cartesian_x+radius);
+        if ((cartesian_x-radius) < leftmost) {
+            leftmost = (cartesian_x-radius);
         }
-        if (Math.abs(cartesian_y+radius) > largest_coordinate) {
-            largest_coordinate = Math.abs(cartesian_y+radius);
-        }
-        if (Math.abs(cartesian_x-radius) > largest_coordinate) {
-            largest_coordinate = Math.abs(cartesian_x-radius);
-        }
-        if (Math.abs(cartesian_y-radius) > largest_coordinate) {
-            largest_coordinate = Math.abs(cartesian_y-radius);
+        if ((cartesian_y-radius) < upmost) {
+            upmost = (cartesian_y-radius);
         }
     }
     
     svg += "\n</svg>"
     
-    // Replace placeholders with actual size
-    svg = svg.replace(/big/g,(largest_coordinate*2)).replace(/small/g,(largest_coordinate*2)/2);
+    // Replace placeholders with actual size. smallx/smally are half size - molecular center
+    svg = svg.replace(/bigx/g,(rightmost-leftmost)).replace(/bigy/g,(downmost-upmost)).replace(/smallx/g,(rightmost+leftmost)/2 - (rightmost-leftmost)/2).replace(/smally/g,(downmost+upmost)/2 - (downmost-upmost)/2);
     
     return encoder.encode(svg);
 }
