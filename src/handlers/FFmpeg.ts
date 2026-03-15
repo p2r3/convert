@@ -9,6 +9,19 @@ import CommonFormats from "src/CommonFormats.ts";
 
 class FFmpegHandler implements FormatHandler {
 
+  static formatNames: Map<string, string> = new Map([
+    ["mp4", CommonFormats.MP4.name],
+    ["m4a", "MPEG-4 Audio"],
+    ["flac", CommonFormats.FLAC.name],
+    ["wav", CommonFormats.WAV.name],
+    ["mp3", CommonFormats.MP3.name],
+    ["ogg", CommonFormats.OGG.name],
+    ["matroska", "Matroska / WebM"],
+    ["mov", "QuickTime / MOV"],
+    ["3gp", "3GPP Multimedia Container"],
+    ["3g2", "3GPP2 Multimedia Container"]
+  ]);
+
   public name: string = "FFmpeg";
   public supportedFormats: FileFormat[] = [];
   public ready: boolean = false;
@@ -161,8 +174,10 @@ class FFmpegHandler implements FormatHandler {
           else category = "video";
         }
 
+        const name = FFmpegHandler.formatNames.get(format) || (description + (formats.length > 1 ? (" / " + format) : ""));
+
         this.supportedFormats.push({
-          name: description + (formats.length > 1 ? (" / " + format) : ""),
+          name: name,
           format,
           extension,
           mime: mimeType,
@@ -205,6 +220,25 @@ class FFmpegHandler implements FormatHandler {
       to: true,
       internal: "mov"
     });
+
+    // Normalize Bink metadata to ensure ".bik" files are detected by extension.
+    const binkFormats = this.supportedFormats.filter(f =>
+      f.internal === "bink"
+      || f.format === "bink"
+      || f.extension === "bik"
+    );
+    if (binkFormats.length > 0) {
+      for (const binkFormat of binkFormats) {
+        binkFormat.name = "Bink Video";
+        binkFormat.format = "bik";
+        binkFormat.extension = "bik";
+        binkFormat.mime = "video/x-bink";
+        binkFormat.from = true;
+        binkFormat.to = false;
+        binkFormat.internal = "bink";
+        binkFormat.category = "video";
+      }
+    }
 
     // Add PNG input explicitly - FFmpeg otherwise treats both PNG and
     // APNG as the same thing.

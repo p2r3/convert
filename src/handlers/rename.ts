@@ -73,6 +73,8 @@ export const renameZipHandler = renameHandler("renamezip", [
     .withFormat("osz").withExt("osz").named("osu! Beatmap"),
   CommonFormats.ZIP.builder("osk").allowFrom()
     .withFormat("osk").withExt("osk").named("osu! Skin"),
+  CommonFormats.ZIP.builder("apworld").allowFrom()
+    .withFormat("apworld").withExt("apworld").named("Archipelago World"),
   {
     name: "Java Archive",
     format: "jar",
@@ -92,7 +94,20 @@ export const renameZipHandler = renameHandler("renamezip", [
     internal: "apk"
   },
   CommonFormats.ZIP.builder("sb3").allowFrom()
-    .withFormat("sb3").withExt("sb3").named("Scratch 3 Project")
+    .withFormat("sb3").withExt("sb3").named("Scratch 3 Project").withMime("application/x.scratch.sb3"),
+  CommonFormats.ZIP.builder("ipa").allowFrom()
+    .withFormat("ipa").withExt("ipa").named("iOS Application"),
+  CommonFormats.ZIP.builder("app").allowFrom()
+    .withFormat("app").withExt("app").named("macOS Application Bundle"),
+  {
+    name: "Comic Book Archive (ZIP)",
+    format: "cbz",
+    extension: "cbz",
+    mime: "application/vnd.comicbook+zip",
+    from: true,
+    to: false,
+    internal: "cbz",
+  },
 ]);
 /// handler for renaming text-based formats
 export const renameTxtHandler = renameHandler("renametxt", [

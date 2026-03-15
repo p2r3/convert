@@ -41,6 +41,20 @@ const CommonFormats = {
         "image/webp",
         Category.IMAGE
     ),
+    TIFF: new FormatDefinition(
+        "Tagged Image File Format",
+        "tiff",
+        "tiff",
+        "image/tiff",
+        Category.IMAGE
+    ),
+    BMP: new FormatDefinition(
+        "Microsoft Windows bitmap image",
+        "bmp",
+        "bmp",
+        "image/bmp",
+        Category.IMAGE
+    ),
     GIF: new FormatDefinition(
         "CompuServe Graphics Interchange Format (GIF)",
         "gif",
@@ -78,7 +92,7 @@ const CommonFormats = {
         Category.DATA
     ),
     CSV: new FormatDefinition(
-        "Comma Seperated Values",
+        "Comma Separated Values",
         "csv",
         "csv",
         "text/csv",
@@ -103,14 +117,14 @@ const CommonFormats = {
         "markdown",
         "markdown",
         "text/markdown",
-        ["document", "text"]
+        [Category.DOCUMENT, Category.TEXT]
     ),
     BATCH: new FormatDefinition(
         "Windows Batch file",
         "batch",
         "bat",
         "text/windows-batch",
-        ["text"]
+        Category.TEXT
     ),
     PYTHON: new FormatDefinition(
         "Python Script",
@@ -181,21 +195,21 @@ const CommonFormats = {
     ),
     // documents - Microsoft Office
     DOCX: new FormatDefinition(
-        "Microsoft Office 365 Word Document",
+        "WordprocessingML Document",
         "docx",
         "docx",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         Category.DOCUMENT
     ),
     XLSX: new FormatDefinition(
-        "Microsoft Office 365 Workbook",
+        "SpreadsheetML Workbook",
         "xlsx",
         "xlsx",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         [Category.SPREADSHEET, Category.DOCUMENT]
     ),
     PPTX: new FormatDefinition(
-        "Microsoft Office 365 Presentation",
+        "PresentationML Presentation",
         "pptx",
         "pptx",
         "application/vnd.openxmlformats-officedocument.presentationml.presentation",
@@ -244,6 +258,13 @@ const CommonFormats = {
         "mxl",
         "application/vnd.recordare.musicxml",
         Category.DOCUMENT
+    ),
+    EXE: new FormatDefinition(
+        "Windows Portable Executable",
+        "exe",
+        "exe",
+        "application/vnd.microsoft.portable-executable",
+        Category.CODE
     )
 }
 

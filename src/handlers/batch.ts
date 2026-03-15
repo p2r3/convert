@@ -40,7 +40,6 @@ class batchHandler implements FormatHandler {
               case "|": buf.push("^|"); break;
               case "<": buf.push("^<"); break;
               case ">": buf.push("^>"); break;
-              case "!": buf.push("^^!"); break;
               default:  buf.push(ch);
             }
           }
@@ -52,7 +51,8 @@ class batchHandler implements FormatHandler {
         out = "@echo off\r\n";
 
         for (const line of lines) {
-          if (line === "") {
+          // Handles lines with only whitespace characters (which are trimmed by Command Prompt)
+          if (line.trim() === "") {
             out += "echo.\r\n";
           } else {
             out += `echo ${escapeBat(line)}\r\n`;
