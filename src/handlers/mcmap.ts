@@ -106,6 +106,8 @@ class mcMapHandler implements FormatHandler {
                 from: true,
                 to: true,
                 internal: "mcmap",
+                category: "data",
+                lossless: false
             },
             {
                 name: "Minecraft Map File (Grid)",
@@ -115,6 +117,7 @@ class mcMapHandler implements FormatHandler {
                 from: false,
                 to: true,
                 internal: "mcmap_grid",
+                category: "data",
                 lossless: false
             }
         ];
@@ -229,7 +232,7 @@ class mcMapHandler implements FormatHandler {
             }
         }
 
-        if (inputFormat.internal === 'mcmap' && outputFormat.mime === CommonFormats.PNG.mime) {
+        else if (inputFormat.internal === 'mcmap' && outputFormat.mime === CommonFormats.PNG.mime) {
 
             for (const file of inputFiles) {
 
@@ -267,7 +270,7 @@ class mcMapHandler implements FormatHandler {
             }
         }
 
-        if (inputFormat.internal === "mcmap" && outputFormat.internal === "rgb") {
+        else if (inputFormat.internal === "mcmap" && outputFormat.internal === "rgb") {
             for (const file of inputFiles) {
                 try {
                     const result = pako.ungzip(file.bytes);
@@ -291,7 +294,7 @@ class mcMapHandler implements FormatHandler {
                 }
             }
         }
-        if (inputFormat.internal === "rgb" && outputFormat.internal === "mcmap") {
+        else {
             throw new Error("Not Implemented")
         }
         return outputFiles;

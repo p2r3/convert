@@ -23,6 +23,8 @@ class otaHandler implements FormatHandler {
                 from: true,
                 to: true,
                 internal: "ota",
+                category: "image",
+                lossless: false,
             },
         ];
 

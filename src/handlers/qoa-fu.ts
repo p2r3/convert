@@ -55,7 +55,9 @@ class qoaFuHandler implements FormatHandler {
       mime: "audio/x-qoa", // I have to put something here
       from: true,
       to: true,
-      internal: "qoa"
+      internal: "qoa",
+      category: "audio",
+      lossless: false
     }
   ];
   public ready: boolean = false;

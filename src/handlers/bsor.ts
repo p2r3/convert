@@ -13,7 +13,9 @@ class bsorHandler implements FormatHandler {
       mime: "application/x-bsor",
       from: true,
       to: false,
-      internal: "bsor"
+      internal: "bsor",
+      category: "data",
+      lossless: false
     },
     CommonFormats.PNG.supported("png", false, true),
     CommonFormats.JPEG.supported("jpeg", false, true),
