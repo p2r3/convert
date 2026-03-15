@@ -1,6 +1,7 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import {JsonType} from "./jsonToC/JsonType.ts";
 import JsonTypeFactory from "./jsonToC/JsonTypeFactory.ts";
+import CommonFormats from "src/CommonFormats.ts";
 
 export default class jsonToCHandler implements FormatHandler {
     /**************************************************/
@@ -16,17 +17,10 @@ export default class jsonToCHandler implements FormatHandler {
             mime: "text/x-c",
             from: true,
             to: true,
-            internal: "c"
+            internal: "c",
+            category: "code"
         },
-        {
-            name: "JavaScript Object Notation",
-            format: "json",
-            extension: "json",
-            mime: "application/json",
-            from: true,
-            to: true,
-            internal: "json"
-        }
+        CommonFormats.JSON.supported("json", true, true)
     ];
 
     public ready: boolean = false;
