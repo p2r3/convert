@@ -4,7 +4,7 @@ import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import CommonFormats from "src/CommonFormats.ts";
 import { gzipSync as gzip, gunzipSync as gunzip } from "fflate";
 import { compress as zstd, decompress as unzstd, init as zstd_init } from "@bokuweb/zstd-wasm";
-import { XzReadableStream } from "xz-decompress";
+import { compress as xz, decompress as unxz, init as xz_init } from "./tarCompressed/xz.ts";
 
 function tarCompressedHandler(
   name: string, 
@@ -106,19 +106,20 @@ export const tarXzHandler = tarCompressedHandler(
     extension: "xz",
     mime: "application/x-xz",
     from: true, 
-    to: false,
+    to: true,
     internal: "tar.xz",
     category: "archive",
     lossless: true
   },
-  async () => {},
-  async (inputFile, outputFiles) => {
-    throw new Error("unimplemented");
+  async () => {
+    await xz_init();
   },
   async (inputFile, outputFiles) => {
-    const stream = new Blob([new Uint8Array(inputFile.bytes)]).stream();
-    const buf = await new Response(new XzReadableStream(stream)).arrayBuffer();
-    const bytes = new Uint8Array(buf);
+    const bytes = xz(inputFile.bytes);
+    outputFiles.push({ bytes, name: inputFile.name + ".xz" });
+  },
+  async (inputFile, outputFiles) => {
+    const bytes = unxz(inputFile.bytes);
     outputFiles.push({ bytes, name: inputFile.name.replace(/\.xz$/i, "") });
   },
 );
