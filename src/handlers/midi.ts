@@ -110,7 +110,7 @@ export class midiCodecHandler implements FormatHandler {
 
       let table: any[];
 
-      if (inputFormat.internal === "image") {
+      if (inputFormat.category === "image") {
         // PNG spectrogram: decode pixels then extract notes
         const blob   = new Blob([inputFile.bytes as BlobPart], { type: inputFormat.mime });
         const url    = URL.createObjectURL(blob);
@@ -129,10 +129,10 @@ export class midiCodecHandler implements FormatHandler {
         const { data, width, height } = ctx.getImageData(0, 0, canvas.width, canvas.height);
         table = pngToMidi(data, width, height);
 
-      } else if (inputFormat.internal === "mid" || inputFormat.internal === "midi") {
+      } else if (inputFormat.internal === "mid") {
         table = extractEvents(inputFile.bytes);
 
-      } else {
+      } else if (inputFormat.internal === "txt" || inputFormat.internal === "rtttl" || inputFormat.internal === "grub") {
         // Text input: MIDI-text, RTTTL, or GRUB tune
         const text    = new TextDecoder().decode(inputFile.bytes);
         const trimmed = text.trimStart();
@@ -142,6 +142,9 @@ export class midiCodecHandler implements FormatHandler {
             : /^[^\s:]+\s*:(?:\s*[a-zA-Z]=\d+\s*,?\s*)+:/.test(trimmed)
               ? parseRtttl(text)
               : parseGrubTune(text);
+      }
+      else {
+        throw new Error("Invalid input.");
       }
 
       // Step 2: event table -> output format
