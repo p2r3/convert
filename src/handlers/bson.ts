@@ -47,7 +47,7 @@ class bsonHandler implements FormatHandler {
           }
 
           const bsonResult = BSON.serialize(jsonData);
-          const name = file.name.split(".")[0] + ".bson";
+          const name = file.name.split(".").slice(0, -1).join(".") + ".bson";
 
           return {
             name,
@@ -64,7 +64,7 @@ class bsonHandler implements FormatHandler {
           const bsonData = BSON.deserialize(file.bytes);
           const text = JSON.stringify(bsonData);
 
-          const name = file.name.split(".")[0] + ".json";
+          const name = file.name.split(".").slice(0, -1).join(".") + ".json";
 
           return {
             name,

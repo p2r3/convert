@@ -108,7 +108,7 @@ class flptojsonHandler implements FormatHandler {
         const encoder = new TextEncoder();
         const outputBytes = encoder.encode(jsonString);
 
-        const baseName = inputFile.name.split(".")[0];
+        const baseName = inputFile.name.split(".").slice(0, -1).join(".");
         const newName = `${baseName}.json`;
 
         outputFiles.push({

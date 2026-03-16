@@ -161,7 +161,7 @@ class meydaHandler implements FormatHandler {
         wav.fromScratch(1, sampleRate, "32f", audioData);
 
         const bytes = wav.toBuffer();
-        const name = inputFile.name.split(".")[0] + "." + outputFormat.extension;
+        const name = inputFile.name.split(".").slice(0, -1).join(".") + "." + outputFormat.extension;
         outputFiles.push({ bytes, name });
 
       }
@@ -220,7 +220,7 @@ class meydaHandler implements FormatHandler {
             blob.arrayBuffer().then(buf => resolve(new Uint8Array(buf)));
           }, outputFormat.mime);
         });
-        const name = inputFile.name.split(".")[0] + "." + outputFormat.extension;
+        const name = inputFile.name.split(".").slice(0, -1).join(".") + "." + outputFormat.extension;
         outputFiles.push({ bytes, name });
 
       }

@@ -211,7 +211,7 @@ class icnsHandler implements FormatHandler {
     const outputFiles: FileData[] = [];
 
     for (const inputFile of inputFiles) {
-      const baseName = inputFile.name.split(".")[0];
+      const baseName = inputFile.name.split(".").slice(0, -1).join(".");
       let bytes: Uint8Array;
 
       if (inputFormat.internal === "icns" && outputFormat.internal === "png") {

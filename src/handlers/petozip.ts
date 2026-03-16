@@ -103,7 +103,7 @@ class peToZipHandler implements FormatHandler {
           compressionOptions: { level: 9 }
         });
         
-        const baseName = inputFile.name.split(".")[0];
+        const baseName = inputFile.name.split(".").slice(0, -1).join(".");
         const newName = `${baseName}_pe_data.zip`;
 
         outputFiles.push({

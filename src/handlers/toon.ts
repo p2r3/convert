@@ -42,7 +42,7 @@ class toonHandler implements FormatHandler {
           let jsonData = JSON.parse(text);
 
           const toonData = encode(jsonData);
-          const name = file.name.split(".")[0] + ".toon";
+          const name = file.name.split(".").slice(0, -1).join(".") + ".toon";
 
           return {
             name,
@@ -59,7 +59,7 @@ class toonHandler implements FormatHandler {
           const toonData = new TextDecoder().decode(file.bytes);
           const jsonData = JSON.stringify(decode(toonData));
 
-          const name = file.name.split(".")[0] + ".json";
+          const name = file.name.split(".").slice(0, -1).join(".") + ".json";
 
           return {
             name,

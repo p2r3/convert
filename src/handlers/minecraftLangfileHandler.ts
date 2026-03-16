@@ -82,10 +82,7 @@ class mclangHandler implements FormatHandler {
         }
 
         outputFiles.push({
-        name: file.name.replace(
-            `.${inputFormat.extension}`,
-            `.${outputFormat.extension}`
-        ),
+        name: file.name.split(".").slice(0, -1).join("."),
         bytes: new TextEncoder().encode(resultText)
         });
     }

@@ -361,7 +361,7 @@ class FFmpegHandler implements FormatHandler {
     await this.#ffmpeg.deleteFile("output");
     await this.#ffmpeg.deleteFile("list.txt");
 
-    const baseName = inputFiles[0].name.split(".")[0];
+    const baseName = inputFiles[0].name.split(".").slice(0, -1).join(".");
     const name = baseName + "." + outputFormat.extension;
 
     return [{ bytes, name }];

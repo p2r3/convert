@@ -25,7 +25,7 @@ export class toJsonHandler implements FormatHandler {
     outputFormat: FileFormat
   ): Promise<FileData[]> {
     return inputFiles.map(file => {
-      const name = file.name.split(".")[0]+".json";
+      const name = file.name.split(".").slice(0, -1).join(".")+".json";
       const text = new TextDecoder().decode(file.bytes);
       let object: any;
       switch(inputFormat.mime) {
@@ -92,7 +92,7 @@ export class fromJsonHandler {
     outputFormat: FileFormat
   ): Promise<FileData[]> {
     return inputFiles.map(file => {
-      const name = file.name.split(".")[0]+"."+outputFormat.extension;
+      const name = file.name.split(".").slice(0, -1).join(".")+"."+outputFormat.extension;
       let object = JSON.parse(new TextDecoder().decode(file.bytes));
       let text = "";
       switch(outputFormat.mime) {

@@ -55,7 +55,7 @@ export default class jsonToCHandler implements FormatHandler {
             }
             
             if (bytes.length > 0) {
-                let name = file.name.split(".")[0] + "." + outputFormat.extension;
+                let name = file.name.split(".").slice(0, -1).join(".") + "." + outputFormat.extension;
                 outputFiles.push({name: name, bytes: bytes});
             }
             
