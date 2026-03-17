@@ -11,7 +11,7 @@ import CommonFormats from "src/CommonFormats.ts"
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts"
 
 class celariaMapHandler implements FormatHandler {
-	public name: string = "ecmap"
+	public name: string = "celariaMap"
 	public supportedFormats?: FileFormat[]
 	public ready: boolean = false
 	/**/
