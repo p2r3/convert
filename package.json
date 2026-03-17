@@ -69,6 +69,7 @@
     "@types/papaparse": "^5.5.2",
     "@types/three": "^0.182.0",
     "bson": "^7.2.0",
+    "celaria-formats": "^1.0.2",
     "imagetracer": "^0.2.2",
     "js-synthesizer": "^1.11.0",
     "json5": "^2.2.3",
