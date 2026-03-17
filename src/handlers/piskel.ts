@@ -15,11 +15,11 @@ class piskelHandler implements FormatHandler {
         this.supportedFormats = [
             CommonFormats.PNG.builder("png")
                 .markLossless()
-                .allowFrom(true)
+                .allowFrom(false)
                 .allowTo(true),
             CommonFormats.ZIP.builder("zip")
                 .markLossless()
-                .allowFrom(true)
+                .allowFrom(false)
                 .allowTo(true),
             {
                 name: "Piskel Sprite Save File",
@@ -27,7 +27,7 @@ class piskelHandler implements FormatHandler {
                 extension: "piskel",
                 mime: "image/png+json",
                 from: true,
-                to: true,
+                to: false,
                 category: "image",
                 internal: "piskel",
                 lossless: true
