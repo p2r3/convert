@@ -812,8 +812,11 @@ export function parseGrubTune(text) {
     : text.split("\n").filter(l => !l.trim().startsWith("#")).join(" ");
 
   const nums = raw.trim().split(/\s+/).map(Number);
-  if (nums.length < 3 || nums.some(isNaN)) {
-    throw new Error("Invalid GRUB init tune: expected 'tempo freq dur [freq dur ...]'");
+  if (nums.some(isNaN)) {
+    throw new Error("Invalid GRUB init tune: expected 'tempo freq dur [freq dur ...]', but nums was NaN.");
+  }
+  else if (nums.length < 3) {
+    throw new Error("Invalid GRUB init tune: expected 'tempo freq dur [freq dur ...]', but nums was less than 3. ("+nums.length+")");
   }
 
   const TICKS   = 480;

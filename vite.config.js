@@ -62,6 +62,10 @@ export default defineConfig({
           src: "node_modules/pdf-parse/dist/pdf-parse/web/pdf.worker.mjs",
           dest: "js"
         },
+        {
+          src: "src/handlers/tarCompressed/liblzma.wasm",
+          dest: "wasm"
+        },
       ]
     }),
     tsconfigPaths()

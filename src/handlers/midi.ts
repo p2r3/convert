@@ -110,7 +110,7 @@ export class midiCodecHandler implements FormatHandler {
 
       let table: any[];
 
-      if (inputFormat.internal === "image") {
+      if (inputFormat.internal === "png") {
         // PNG spectrogram: decode pixels then extract notes
         const blob   = new Blob([inputFile.bytes as BlobPart], { type: inputFormat.mime });
         const url    = URL.createObjectURL(blob);
@@ -129,10 +129,10 @@ export class midiCodecHandler implements FormatHandler {
         const { data, width, height } = ctx.getImageData(0, 0, canvas.width, canvas.height);
         table = pngToMidi(data, width, height);
 
-      } else if (inputFormat.internal === "mid" || inputFormat.internal === "midi") {
+      } else if (inputFormat.internal === "mid") {
         table = extractEvents(inputFile.bytes);
 
-      } else {
+      } else if (inputFormat.internal === "txt" || inputFormat.internal === "rtttl" || inputFormat.internal === "grub") {
         // Text input: MIDI-text, RTTTL, or GRUB tune
         const text    = new TextDecoder().decode(inputFile.bytes);
         const trimmed = text.trimStart();
@@ -143,26 +143,29 @@ export class midiCodecHandler implements FormatHandler {
               ? parseRtttl(text)
               : parseGrubTune(text);
       }
+      else {
+        throw new Error("Unsupported input format.");
+      }
 
       // Step 2: event table -> output format
 
       if (outputFormat.internal === "txt") {
         const text = tableToString(table);
-        outputFiles.push({ bytes: new TextEncoder().encode(text), name: baseName + ".txt" });
+        outputFiles.push({ bytes: new TextEncoder().encode(text), name: baseName + "." + outputFormat.extension });
 
       } else if (outputFormat.internal === "rtttl") {
         const text = tableToRtttl(table, baseName);
-        outputFiles.push({ bytes: new TextEncoder().encode(text), name: baseName + ".rtttl" });
+        outputFiles.push({ bytes: new TextEncoder().encode(text), name: baseName + "." + outputFormat.extension });
 
       } else if (outputFormat.internal === "grub") {
         const text = tableToGrubTune(table);
-        outputFiles.push({ bytes: new TextEncoder().encode(text), name: baseName + ".grub" });
+        outputFiles.push({ bytes: new TextEncoder().encode(text), name: baseName + "." + outputFormat.extension });
 
-      } else if (outputFormat.internal === "mid" || outputFormat.internal === "midi") {
+      } else if (outputFormat.internal === "mid") {
         const bytes = buildMidi(table);
         outputFiles.push({ bytes, name: baseName + "." + outputFormat.extension });
 
-      } else if (outputFormat.internal === "image") {
+      } else if (outputFormat.internal === "png") {
         // Render piano roll onto a PNG using the same frequency->row mapping as pngToMidi
         const { pixels, width, height } = midiToPng(table);
         const canvas = document.createElement("canvas");
@@ -176,10 +179,10 @@ export class midiCodecHandler implements FormatHandler {
             b.arrayBuffer().then(buf => res(new Uint8Array(buf)));
           }, "image/png");
         });
-        outputFiles.push({ bytes, name: baseName + ".png" });
+        outputFiles.push({ bytes, name: baseName + "." + outputFormat.extension });
 
       } else {
-        throw "Unsupported output format";
+        throw new Error("Unsupported output format.");
       }
     }
 
