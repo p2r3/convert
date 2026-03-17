@@ -33,7 +33,7 @@ class threejsHandler implements FormatHandler {
       lossless: false
     },
     {
-      name: "Waveform OBJ",
+      name: "Wavefront OBJ",
       format: "obj",
       extension: "obj",
       mime: "model/obj",
