@@ -3,6 +3,10 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import CommonFormats from "src/CommonFormats.ts";
 
+function read_lendian(x : number, y: number): number {
+    return x + (y * 16 * 16);
+}
+
 class curaniHandler implements FormatHandler {
 
     public name: string = "curani";
@@ -142,10 +146,10 @@ class curaniHandler implements FormatHandler {
 
                     // Editing fields of all ICONDIRECTORYs
                     while (counter < images_present) {
-                        // color planes
+                        // horizontal coordinate of hotspot becomes color planes field
                         new_file_bytes[10+(counter*16)] = 1;
                         new_file_bytes[11+(counter*16)] = 0;
-                        // bits per pixel
+                        // vertical coordinate of hotspot becomes bits per pixel field
                         new_file_bytes[12+(counter*16)] = 0;
                         new_file_bytes[13+(counter*16)] = 0;
                         counter += 1;
@@ -164,15 +168,15 @@ class curaniHandler implements FormatHandler {
                     // 1 for ICO, 2 for CUR
                     new_file_bytes[2] = 2;
 
-                    const images_present = new_file_bytes[4];
+                    const images_present = read_lendian(new_file_bytes[4],new_file_bytes[5]);
                     let counter = 0;
 
                     // Editing fields of all ICONDIRECTORYs
                     while (counter < images_present) {
-                        // color planes
+                        // color planes field becomes horizontal coordinate of hotspot
                         new_file_bytes[10+(counter*16)] = 0;
                         new_file_bytes[11+(counter*16)] = 0;
-                        // bits per pixel
+                        // bits per pixel field becomes vertical coordinate of hotspot
                         new_file_bytes[12+(counter*16)] = 0;
                         new_file_bytes[13+(counter*16)] = 0;
                         counter += 1;
