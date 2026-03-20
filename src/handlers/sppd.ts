@@ -537,7 +537,7 @@ class sppdHandler implements FormatHandler {
         const encoder = new TextEncoder();
         const string = JSON.stringify(demo, getJsonReplacer(), 2);
         const bytes = encoder.encode(string);
-        const name = inputFile.name.split(".")[0] + ".json";
+        const name = inputFile.name.split(".").slice(0, -1).join(".") + ".json";
         outputFiles.push({ bytes, name });
         continue;
       }
@@ -557,7 +557,7 @@ class sppdHandler implements FormatHandler {
                 blob.arrayBuffer().then(buf => resolve(new Uint8Array(buf)));
               }, outputFormat.mime);
             });
-            const name = inputFile.name.split(".")[0] + "_" + frameIndex + "." + outputFormat.extension;
+            const name = inputFile.name.split(".").slice(0, -1).join(".") + "_" + frameIndex + "." + outputFormat.extension;
             outputFiles.push({ bytes, name });
 
             frameIndex ++;

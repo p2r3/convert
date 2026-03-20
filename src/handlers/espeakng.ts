@@ -53,7 +53,7 @@ export class espeakngHandler implements FormatHandler {
       // decrease playback rate and increase playback sample rate
       wav.fromScratch(1, tts.sampleRate * 1.4, "32f", samples);
       return {
-        name: file.name.split(".")[0]+".wav",
+        name: file.name.split(".").slice(0, -1).join(".")+".wav",
         bytes: wav.toBuffer()
       }
     }))

@@ -63,9 +63,11 @@ import xcfHandler from "./xcf.ts";
 import pdfparseHandler from "./pdfparse.ts";
 import { tarGzHandler, tarZstdHandler, tarXzHandler } from "./tarCompressed.ts";
 import mclangHandler from "./minecraftLangfileHandler.ts";
+import celariaMapHandler from "./celariaMap.ts";
 import cybergrindHandler from "./cybergrindHandler.ts";
 import textToSourceHandler from "./textToSource.ts";
 import piskelHandler from "./piskel.ts";
+import xcursorHandler from "./xcursor.ts";
 
 const handlers: FormatHandler[] = [];
 try { handlers.push(new svgTraceHandler()) } catch (_) { };
@@ -137,8 +139,10 @@ try { handlers.push(tarGzHandler) } catch (_) { };
 try { handlers.push(tarZstdHandler) } catch (_) { };
 try { handlers.push(tarXzHandler) } catch (_) { };
 try { handlers.push(new mclangHandler()) } catch (_) { };
+try { handlers.push(new celariaMapHandler()) } catch (_) { };
 try { handlers.push(new cybergrindHandler()) } catch (_) { };
 try { handlers.push(new textToSourceHandler()) } catch (_) { };
 try { handlers.push(new piskelHandler()) } catch (_) { };
+try { handlers.push(new xcursorHandler()) } catch (_) { };
 
 export default handlers;

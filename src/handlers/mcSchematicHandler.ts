@@ -99,13 +99,13 @@ class mcSchematicHandler implements FormatHandler {
             if (outputFormat.internal === "litematic" || outputFormat.internal === "schem" || outputFormat.internal === "schematic") {
                 outBytes = gzipSync(outBytes);
                 outputFiles.push({
-                    name: file.name.split(".")[0] + "." + outputFormat.extension,
+                    name: file.name.split(".").slice(0, -1).join(".") + "." + outputFormat.extension,
                     bytes: outBytes
                 });
             } else {
                 // Not a native out-format (e.g., routing to JSON). Fallback to NBT extension for graph bridges.
                 outputFiles.push({
-                    name: file.name.split(".")[0] + ".nbt",
+                    name: file.name.split(".").slice(0, -1).join(".") + ".nbt",
                     bytes: outBytes
                 });
             }

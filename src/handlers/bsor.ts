@@ -38,7 +38,7 @@ class bsorHandler implements FormatHandler {
       const replay = new Replay(file.bytes);
       if(outputFormat.internal === "json") {
         return [{
-          name: file.name.split(".")[0] + ".json",
+          name: file.name.split(".").slice(0, -1).join(".") + ".json",
           bytes: new TextEncoder().encode(JSON.stringify(replay))
         }];
       }

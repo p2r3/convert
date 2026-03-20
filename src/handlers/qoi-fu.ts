@@ -120,7 +120,7 @@ class qoiFuHandler implements FormatHandler {
         const bytesSize = qoiEncoder.getEncodedSize();
         const bytes = new Uint8Array(qoiEncoder.getEncoded().slice(0, bytesSize));
 
-        const name = inputFile.name.split(".")[0] + "." + outputFormat.extension;
+        const name = inputFile.name.split(".").slice(0, -1).join(".") + "." + outputFormat.extension;
         outputFiles.push({ bytes, name });
 
       }
@@ -150,7 +150,7 @@ class qoiFuHandler implements FormatHandler {
             blob.arrayBuffer().then(buf => resolve(new Uint8Array(buf)));
           }, outputFormat.mime);
         });
-        const name = inputFile.name.split(".")[0] + "." + outputFormat.extension;
+        const name = inputFile.name.split(".").slice(0, -1).join(".") + "." + outputFormat.extension;
         outputFiles.push({ bytes, name });
 
       }

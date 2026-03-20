@@ -82,7 +82,7 @@ class pyTurtleHandler implements FormatHandler {
 
 
       const outputBytes = encoder.encode(python_code);
-      const newName = name.split(".")[0] + ".py";
+      const newName = name.split(".").slice(0, -1).join(".") + ".py";
       outputFiles.push({ name: newName, bytes: outputBytes });
     }
 

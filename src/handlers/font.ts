@@ -84,7 +84,7 @@ function sfntToSvg(inputFile: FileData, encoder: TextEncoder) {
   </text>
 </svg>`;
       
-  const name = inputFile.name.split(".")[0] + ".svg";
+  const name = inputFile.name.split(".").slice(0, -1).join(".") + ".svg";
   const bytes = encoder.encode(svgFont);
 
   return { bytes, name };
@@ -186,7 +186,7 @@ function svgToOtf(inputFile: FileData, decoder: TextDecoder) {
   });
 
   const bytes = new Uint8Array(font.toArrayBuffer());
-  const name = inputFile.name.split(".")[0] + ".otf";
+  const name = inputFile.name.split(".").slice(0, -1).join(".") + ".otf";
 
   return { bytes, name };
 }
@@ -197,7 +197,7 @@ function svgToOtf(inputFile: FileData, decoder: TextDecoder) {
 function sfntToOtf(inputFile: FileData) {
   const font = parse(inputFile.bytes.buffer);
   const bytes = new Uint8Array(font.toArrayBuffer());
-  const name = inputFile.name.split(".")[0] + ".otf";
+  const name = inputFile.name.split(".").slice(0, -1).join(".") + ".otf";
 
   return { bytes, name };
 }
@@ -208,7 +208,7 @@ async function sfntToWoff2(inputFile: FileData): Promise<FileData> {
 
   const bytes = await compress(sfnt);
 
-  const name =inputFile.name.split(".")[0] + ".woff2";
+  const name =inputFile.name.split(".").slice(0, -1).join(".") + ".woff2";
 
   return { bytes, name };
 }

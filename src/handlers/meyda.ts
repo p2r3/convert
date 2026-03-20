@@ -27,9 +27,9 @@ class meydaHandler implements FormatHandler {
         .allowFrom(dummy.canPlayType("audio/wav") !== "")
         .allowTo()
     );
-    
+
     if (dummy.canPlayType("audio/mpeg")) this.supportedFormats.push(
-      // lossless=false, lossy reconstruction 
+      // lossless=false, lossy reconstruction
       CommonFormats.MP3.supported("audio", true, false)
     );
     if (dummy.canPlayType("audio/ogg")) this.supportedFormats.push(
@@ -52,7 +52,7 @@ class meydaHandler implements FormatHandler {
     this.ready = true;
 
   }
-  
+
   async doConvert (
     inputFiles: FileData[],
     inputFormat: FileFormat,
@@ -93,12 +93,18 @@ class meydaHandler implements FormatHandler {
           image.src = url;
         });
 
-        const imageWidth = image.naturalWidth;
+        /**
+         * After an image-audio-image round-trip, the output height gets
+         * constrained to hopSize. To prevent distorting the image, we
+         * stretch the image width here to maintain the aspect ratio.
+         * For normal audio files, this shouldn't change anything.
+         */
         const imageHeight = image.naturalHeight;
+        const imageWidth = Math.round(image.naturalWidth * (hopSize / imageHeight));
 
         this.#canvas.width = imageWidth;
         this.#canvas.height = imageHeight;
-        this.#ctx.drawImage(image, 0, 0);
+        this.#ctx.drawImage(image, 0, 0, imageWidth, imageHeight);
 
         const imageData = this.#ctx.getImageData(0, 0, imageWidth, imageHeight);
         const pixelBuffer = imageData.data as Uint8ClampedArray;
@@ -147,7 +153,21 @@ class meydaHandler implements FormatHandler {
           }
         }
 
-        // Normalize output
+        /**
+         * It makes absolutely zero sense to normalize the output here.
+         * This undermines the entire color encoding system, and as a
+         * result nearly always produces a dark, noisy blue-red image.
+         * Just removing this step would fix the color accuracy of
+         * image-audio-image round-trips.
+         *
+         * However:
+         * - For some reason, audio quality is far better when normalized.
+         * - If converting from a normal image, the user's ears would get
+         *   blown out without normalization.
+         *
+         * For those reasons, I'm keeping it in. I pray that one day
+         * someone smarter than me comes along with a solution.
+         */
         let max = 0;
         for (let i = 0; i < imageWidth * bufferSize; i ++) {
           const magnitude = Math.abs(audioData[i]);
@@ -161,7 +181,7 @@ class meydaHandler implements FormatHandler {
         wav.fromScratch(1, sampleRate, "32f", audioData);
 
         const bytes = wav.toBuffer();
-        const name = inputFile.name.split(".")[0] + "." + outputFormat.extension;
+        const name = inputFile.name.split(".").slice(0, -1).join(".") + "." + outputFormat.extension;
         outputFiles.push({ bytes, name });
 
       }
@@ -220,7 +240,7 @@ class meydaHandler implements FormatHandler {
             blob.arrayBuffer().then(buf => resolve(new Uint8Array(buf)));
           }, outputFormat.mime);
         });
-        const name = inputFile.name.split(".")[0] + "." + outputFormat.extension;
+        const name = inputFile.name.split(".").slice(0, -1).join(".") + "." + outputFormat.extension;
         outputFiles.push({ bytes, name });
 
       }

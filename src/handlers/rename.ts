@@ -16,7 +16,7 @@ function renameHandler(name: string, formats: FileFormat[]): FormatHandler {
       outputFormat: FileFormat
     ): Promise<FileData[]> {
       return inputFiles.map(file => {
-        file.name = file.name.split(".")[0] + "." + outputFormat.extension;
+        file.name = file.name.split(".").slice(0, -1).join(".") + "." + outputFormat.extension;
         return file;
       });
     }

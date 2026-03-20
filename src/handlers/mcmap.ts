@@ -143,7 +143,7 @@ class mcMapHandler implements FormatHandler {
 
             for (const file of inputFiles) {
 
-                const fileName = file.name.split('.')[0]
+                const fileName = file.name.split(".").slice(0, -1).join(".")
 
                 let startDigit = 0
 

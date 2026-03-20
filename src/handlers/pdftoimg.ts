@@ -53,7 +53,7 @@ class pdftoimgHandler implements FormatHandler {
         pages: "all"
       });
 
-      const baseName = inputFile.name.split(".")[0];
+      const baseName = inputFile.name.split(".").slice(0, -1).join(".");
 
       for (let i = 0; i < images.length; i++) {
         const base64 = images[i].slice(images[i].indexOf(";base64,") + 8);

@@ -57,7 +57,7 @@ class nbtHandler implements FormatHandler {
                     typeof value === 'bigint' ? value.toString() : value,
                 this.indent);
                 outputFiles.push({
-                    name: file.name.split(".")[0] + ".json",
+                    name: file.name.split(".").slice(0, -1).join(".") + ".json",
                     bytes: encoder.encode(j)
                 });
             }
@@ -70,7 +70,7 @@ class nbtHandler implements FormatHandler {
                 const obj = JSON.parse(text)
                 const bd = await NBT.write(obj)
                 outputFiles.push({
-                    name: file.name.split(".")[0] + `.${outputFormat.extension}`,
+                    name: file.name.split(".").slice(0, -1).join(".") + `.${outputFormat.extension}`,
                     bytes: bd
                 })
             }
@@ -83,7 +83,7 @@ class nbtHandler implements FormatHandler {
                 const nbt = NBT.parse(text)
                 const bd = await NBT.write(nbt)
                 outputFiles.push({
-                    name: file.name.split(".")[0] + `.${outputFormat.extension}`,
+                    name: file.name.split(".").slice(0, -1).join(".") + `.${outputFormat.extension}`,
                     bytes: bd
                 })
             }
@@ -96,7 +96,7 @@ class nbtHandler implements FormatHandler {
                     space: this.indent
                 })
                 outputFiles.push({
-                    name: file.name.split(".")[0] + ".snbt",
+                    name: file.name.split(".").slice(0, -1).join(".") + ".snbt",
                     bytes: encoder.encode(text)
                 })
             }
@@ -107,7 +107,7 @@ class nbtHandler implements FormatHandler {
         if (inputFormat.internal === "nbt" && (outputFormat.internal === "schem" || outputFormat.internal === "schematic")) {
             for (const file of inputFiles) {
                 outputFiles.push({
-                    name: file.name.split(".")[0] + `.${outputFormat.extension}`,
+                    name: file.name.split(".").slice(0, -1).join(".") + `.${outputFormat.extension}`,
                     bytes: gzipSync(file.bytes)
                 })
             }

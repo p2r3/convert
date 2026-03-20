@@ -122,7 +122,7 @@ class ImageMagickHandler implements FormatHandler {
       });
     });
 
-    const baseName = inputFiles[0].name.split(".")[0];
+    const baseName = inputFiles[0].name.split(".").slice(0, -1).join(".");
     const name = baseName + "." + outputFormat.extension;
     return [{ bytes, name }];
 
