@@ -18,14 +18,14 @@ class sevenZipHandler implements FormatHandler {
 
   public supportAnyInput: boolean = true;
   
-  public zipTo = false;
-  public rarTo = false;
-  public tarTo = false;
-  public szTo = false;
-
   #tarCompressedFormats: string[] = [];
 
   async init () {
+    const zipTo = false;
+    const rarTo = false;
+    const tarTo = false;
+    const szTo = false;
+  
     this.supportedFormats = [];
     this.#tarCompressedFormats = [];
 
