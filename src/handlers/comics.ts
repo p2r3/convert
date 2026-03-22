@@ -14,10 +14,9 @@ import {
 import JSZip from "jszip";
 
 const image_list = ["png","jpg","webp","bmp","tiff","gif"];
-const archives_list = ["zip","cbz","tar","cbt"];
+const archives_list = ["zip","cbz","tar","cbt","rar","cbr","7z","cb7"];
 
 class comicsHandler implements FormatHandler {
-
     public name: string = "comics";
     public supportedFormats?: FileFormat[];
     public ready: boolean = false;
@@ -32,16 +31,7 @@ class comicsHandler implements FormatHandler {
             CommonFormats.GIF.supported("gif", true, true),
             
             CommonFormats.ZIP.supported("zip", true, true),
-            {
-                name: "Tape Archive",
-                format: "tar",
-                extension: "tar",
-                mime: "application/x-tar",
-                from: true,
-                to: true,
-                internal: "tar",
-                category: ["archive"],
-            },
+            CommonFormats.TAR.supported("tar", true, true),
             
             {
                 name: "Comic Book Archive (ZIP)",
@@ -51,7 +41,7 @@ class comicsHandler implements FormatHandler {
                 from: true,
                 to: true,
                 internal: "cbz",
-                category: ["archive"],
+                category: Category.ARCHIVE,
                 lossless: true,
             },
             {
@@ -62,7 +52,7 @@ class comicsHandler implements FormatHandler {
                 from: true,
                 to: true,
                 internal: "cbt",
-                category: ["archive"],
+                category: Category.ARCHIVE,
                 lossless: true,
             },
         ];
@@ -170,12 +160,6 @@ class comicsHandler implements FormatHandler {
             // Throw error if empty
             if (outputFiles.length === 0) {
                 throw new Error("No applicable files to unpack found.");
-            }
-        }
-        // Renaming interchangeable formats. Note that any valid "comic book" archive can be guaranteed as a valid standard archive, but not every valid archive can be a valid comic book archive. Thus, we only allow renaming from comic book to non-comic book formats.
-        else if ((inputFormat.internal === "cbz" && outputFormat.internal === "zip") || (inputFormat.internal === "cbt" && outputFormat.internal === "tar")) {
-            for (const file of inputFiles) {
-                outputFiles.push({ bytes: file.bytes, name: file.name.split(".").slice(0, -1).join(".") + "." + outputFormat.extension });
             }
         }
         else {

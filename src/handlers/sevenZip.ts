@@ -17,6 +17,11 @@ class sevenZipHandler implements FormatHandler {
   public ready: boolean = false;
 
   public supportAnyInput: boolean = true;
+  
+  public zipTo = false;
+  public rarTo = false;
+  public tarTo = false;
+  public szTo = false;
 
   #tarCompressedFormats: string[] = [];
 
@@ -48,6 +53,20 @@ class sevenZipHandler implements FormatHandler {
       // also we cant faithfully parse more than 1 extension because there is no
       // way to know where extensions stop and weird signature stuff begins
       const [flags, name, extension, ...extra] = formatLine.trim().split(/ +/);
+      
+      // Comic flags
+      if (extension === "zip") {
+        this.zipTo = flags.includes("C");
+      }
+      if (extension === "rar") {
+        this.rarTo = flags.includes("C");
+      }
+      if (extension === "tar") {
+        this.tarTo = flags.includes("C");
+      }
+      if (extension === "7z") {
+        this.szTo = flags.includes("C");
+      }
 
       if (name === "Hash") continue;
       const mimeType = normalizeMimeType(mime.getType(extension) || `application/${extension}`);
@@ -73,6 +92,54 @@ class sevenZipHandler implements FormatHandler {
         lossless: false, // archive metadata is too complicated
       });
     }
+
+    // Comic book support
+    this.supportedFormats.push(
+        {
+            name: "Comic Book Archive (ZIP)",
+            format: "cbz",
+            extension: "cbz",
+            mime: "application/vnd.comicbook+zip",
+            from: true,
+            to: zipTo,
+            internal: "cbz",
+            category: Category.ARCHIVE,
+            lossless: false,
+        },
+        {
+            name: "Comic Book Archive (RAR)",
+            format: "cbr",
+            extension: "cbr",
+            mime: "application/vnd.comicbook+rar",
+            from: true,
+            to: rarTo,
+            internal: "cbr",
+            category: Category.ARCHIVE,
+            lossless: false,
+        },
+        {
+            name: "Comic Book Archive (TAR)",
+            format: "cbt",
+            extension: "cbt",
+            mime: "application/vnd.comicbook+tar",
+            from: true,
+            to: tarTo,
+            internal: "cbt",
+            category: Category.ARCHIVE,
+            lossless: false,
+        },
+        {
+            name: "Comic Book Archive (7-ZIP)",
+            format: "cb7",
+            extension: "cb7",
+            mime: "application/vnd.comicbook+7z",
+            from: true,
+            to: szTo,
+            internal: "cb7",
+            category: Category.ARCHIVE,
+            lossless: false,
+        }
+    )
 
     // push zip and tar up the list 
     const priority = ["tar", "zip"];
@@ -152,8 +219,13 @@ class sevenZipHandler implements FormatHandler {
 
       sevenZip.FS.mkdir("data");
       sevenZip.FS.chdir("data");
-      for (const inputFile of inputFiles) {
-        sevenZip.FS.writeFile(inputFile.name, inputFile.bytes);
+      for (let i = 0; i < inputFiles.length; i++) {
+        if (inputFormat.mime.includes("comicbook")) {
+            sevenZip.FS.writeFile("Page "+String(i)+inputFormat.extension, inputFiles[i].bytes);
+        }
+        else {
+            sevenZip.FS.writeFile(inputFiles[i].name, inputFiles[i].bytes);
+        }
       }
 
       const name = inputFiles.length === 1 ? 

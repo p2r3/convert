@@ -199,6 +199,20 @@ const CommonFormats = {
         "application/x-tar",
         Category.ARCHIVE
     ),
+    RAR: new FormatDefinition(
+        "Rar Archive",
+        "rar",
+        "rar",
+        "application/vnd.rar",
+        Category.ARCHIVE
+    ),
+    SZ: new FormatDefinition(
+        "7z Archive",
+        "7z",
+        "7z",
+        "application/x-7z-compressed",
+        Category.ARCHIVE
+    ),
     // documents
     PDF: new FormatDefinition(
         "Portable Document Format",

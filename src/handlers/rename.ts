@@ -36,7 +36,7 @@ export const renameZipHandler = renameHandler("renamezip", [
     from: true,
     to: false,
     internal: "odt",
-    category: "document",
+    category: Category.DOCUMENT,
     lossless: true
   },
   {
@@ -47,7 +47,7 @@ export const renameZipHandler = renameHandler("renamezip", [
     from: true,
     to: false,
     internal: "odp",
-    category: "presentation",
+    category: Category.PRESENTATION,
     lossless: true
   },
   {
@@ -58,7 +58,7 @@ export const renameZipHandler = renameHandler("renamezip", [
     from: true,
     to: false,
     internal: "ods",
-    category: "spreadsheet",
+    category: Category.SPREADSHEET,
     lossless: true
   },
   {
@@ -69,7 +69,7 @@ export const renameZipHandler = renameHandler("renamezip", [
     from: true,
     to: false,
     internal: "xpi",
-    category: "archive",
+    category: Category.ARCHIVE,
     lossless: true
   },
   CommonFormats.ZIP.builder("love").allowFrom()
@@ -88,7 +88,7 @@ export const renameZipHandler = renameHandler("renamezip", [
     from: true,
     to: false,
     internal: "jar",
-    category: "archive",
+    category: Category.ARCHIVE,
     lossless: true
   },
   {
@@ -99,7 +99,7 @@ export const renameZipHandler = renameHandler("renamezip", [
     from: true,
     to: false,
     internal: "apk",
-    category: "archive",
+    category: Category.ARCHIVE,
     lossless: true
   },
   CommonFormats.ZIP.builder("sb3").allowFrom()
@@ -116,7 +116,7 @@ export const renameZipHandler = renameHandler("renamezip", [
     from: true,
     to: false,
     internal: "cbz",
-    category: "archive",
+    category: Category.ARCHIVE,
     lossless: true
   },
 ]);
@@ -137,7 +137,7 @@ export const renameJsonHandler = renameHandler("renamejson", [
     mime: "application/har+json",
     from: true,
     to: false,
-    category: "archive",
+    category: Category.ARCHIVE,
     internal: "har"
   },
   {
@@ -147,8 +147,53 @@ export const renameJsonHandler = renameHandler("renamejson", [
     mime: "image/png+json",
     from: true,
     to: false,
-    category: "image",
+    category: Category.IMAGE,
     internal: "piskel",
     lossless: true
   }
+]);
+/// handler for renaming tar-based formats
+export const renameTarHandler = renameHandler("renametar", [
+  CommonFormats.TAR.builder("tar").allowTo(),
+  {
+    name: "Comic Book Archive (TAR)",
+    format: "cbt",
+    extension: "cbt",
+    mime: "application/vnd.comicbook+tar",
+    from: true,
+    to: false,
+    internal: "cbt",
+    category: Category.ARCHIVE,
+    lossless: true
+  },
+]);
+/// handler for renaming rar-based formats
+export const renameRarHandler = renameHandler("renamerar", [
+  CommonFormats.RAR.builder("rar").allowTo(),
+  {
+    name: "Comic Book Archive (RAR)",
+    format: "cbr",
+    extension: "cbr",
+    mime: "application/vnd.comicbook+rar",
+    from: true,
+    to: false,
+    internal: "cbr",
+    category: Category.ARCHIVE,
+    lossless: true
+  },
+]);
+/// handler for renaming 7z-based formats
+export const rename7zHandler = renameHandler("rename7z", [
+  CommonFormats.SZ.builder("7z").allowTo(),
+  {
+    name: "Comic Book Archive (7Z)",
+    format: "cb7",
+    extension: "cb7",
+    mime: "application/vnd.comicbook+7z",
+    from: true,
+    to: false,
+    internal: "cb7",
+    category: Category.ARCHIVE,
+    lossless: true
+  },
 ]);
