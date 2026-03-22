@@ -85,6 +85,7 @@ class ImageMagickHandler implements FormatHandler {
     inputFormat: FileFormat,
     outputFormat: FileFormat
   ): Promise<FileData[]> {
+    const outputFiles: FileData[] = [];
 
     const inputMagickFormat = inputFormat.internal as MagickFormat;
     const outputMagickFormat = outputFormat.internal as MagickFormat;
@@ -92,17 +93,17 @@ class ImageMagickHandler implements FormatHandler {
     const inputSettings = new MagickReadSettings();
     inputSettings.format = inputMagickFormat;
 
-
-    const bytes: Uint8Array = await new Promise(resolve => {
-      MagickImageCollection.use(outputCollection => {
-        for (const inputFile of inputFiles) {
-           if (inputFormat.format === "rgb") {
+    for (let i = 0; i < inputFiles.length; i++) {
+      const bytes: Uint8Array = await new Promise(resolve => {
+        MagickImageCollection.use(outputCollection => {
+          if (inputFormat.format === "rgb") {
              // Guess how big the Image should be
-             inputSettings.width = Math.sqrt(inputFile.bytes.length / 3);
+             inputSettings.width = Math.sqrt(inputFiles[i].bytes.length / 3);
              inputSettings.height = inputSettings.width;
-           }
+          }
+            
           MagickImageCollection.use(fileCollection => {
-            fileCollection.read(inputFile.bytes, inputSettings);
+            fileCollection.read(inputFiles[i].bytes, inputSettings);
             while (fileCollection.length > 0) {
               const image = fileCollection.shift();
               if (!image) break;
@@ -115,17 +116,19 @@ class ImageMagickHandler implements FormatHandler {
               outputCollection.push(image);
             }
           });
-        }
-        outputCollection.write(outputMagickFormat, (bytes) => {
-          resolve(new Uint8Array(bytes));
+              
+          outputCollection.write(outputMagickFormat, (bytes) => {
+            resolve(new Uint8Array(bytes));
+          });
         });
       });
-    });
 
-    const baseName = inputFiles[0].name.split(".").slice(0, -1).join(".");
-    const name = baseName + "." + outputFormat.extension;
-    return [{ bytes, name }];
+      const baseName = inputFiles[i].name.split(".")[0];
+      const name = baseName + "." + outputFormat.extension;
+      outputFiles.push({ bytes, name });
+    }
 
+    return outputFiles
   }
 
 }
