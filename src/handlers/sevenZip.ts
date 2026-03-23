@@ -200,6 +200,11 @@ class sevenZipHandler implements FormatHandler {
     // Archive-to-archive conversion
     if (this.supportedFormats.some(format => format.internal === inputFormat.internal)) {
       for (const inputFile of inputFiles) {
+        // This converter cannot validate that a non-comic archive is a valid comic archive, so we disallow those conversions.
+        if (!inputFormat.mime.includes("comicbook") && outputFormat.mime.includes("comicbook")) {
+          throw new Error("Cannot convert from non-comic archive to comic archive directly.");
+        }
+      
         const sevenZip = await SevenZip(defaultSevenZipOptions);
 
         sevenZip.FS.writeFile(inputFile.name, inputFile.bytes);
