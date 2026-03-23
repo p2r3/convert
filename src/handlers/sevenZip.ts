@@ -226,8 +226,9 @@ class sevenZipHandler implements FormatHandler {
         }
       }
 
+      const baseName = inputFiles[0].name.replace("_0."+inputFormat.extension,"."+inputFormat.extension).split(".").slice(0, -1).join(".");
       const name = inputFiles.length === 1 || outputFormat.mime.includes("comicbook") ? 
-        inputFiles[0].name + `.${outputFormat.extension}`
+        baseName + `.${outputFormat.extension}`
         : `archive.${outputFormat.extension}`;
       sevenZip.callMain(["a", "../" + name]);
       sevenZip.FS.chdir("..");
