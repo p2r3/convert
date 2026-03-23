@@ -55,7 +55,6 @@ class sevenZipHandler implements FormatHandler {
       const [flags, name, extension, ...extra] = formatLine.trim().split(/ +/);
       
       // Comic flags
-      console.log("eggplant "+String(extension)+" "+String(flags.includes("C")));
       if (extension === "zip") {
         zipTo = flags.includes("C");
       }
