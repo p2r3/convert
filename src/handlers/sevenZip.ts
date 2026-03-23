@@ -214,6 +214,11 @@ class sevenZipHandler implements FormatHandler {
       }
     } else {
       const sevenZip = await SevenZip(defaultSevenZipOptions);
+      
+      // Single-gif catching
+      if (inputFormat.internal === "gif" && outputFormat.mime.includes("comicbook") && inputFiles.length === 1) {
+        throw new Error("User probably intends for an archive of video/gif frames; abort.");
+      }
 
       sevenZip.FS.mkdir("data");
       sevenZip.FS.chdir("data");
