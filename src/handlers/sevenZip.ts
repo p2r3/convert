@@ -219,14 +219,14 @@ class sevenZipHandler implements FormatHandler {
       sevenZip.FS.chdir("data");
       for (let i = 0; i < inputFiles.length; i++) {
         if (outputFormat.mime.includes("comicbook")) {
-            sevenZip.FS.writeFile("Page "+String(i)+inputFormat.extension, inputFiles[i].bytes);
+            sevenZip.FS.writeFile("Page "+String(i)+"."+inputFormat.extension, inputFiles[i].bytes);
         }
         else {
             sevenZip.FS.writeFile(inputFiles[i].name, inputFiles[i].bytes);
         }
       }
 
-      const name = inputFiles.length === 1 ? 
+      const name = inputFiles.length === 1 || outputFormat.mime.includes("comicbook") ? 
         inputFiles[0].name + `.${outputFormat.extension}`
         : `archive.${outputFormat.extension}`;
       sevenZip.callMain(["a", "../" + name]);
