@@ -95,48 +95,48 @@ class sevenZipHandler implements FormatHandler {
 
     // Comic book support
     this.supportedFormats.push({
-        name: "Comic Book Archive (ZIP)",
-        format: "cbz",
-        extension: "cbz",
-        mime: "application/vnd.comicbook+zip",
-        from: true,
-        to: zipTo,
-        internal: "cbz",
-        category: Category.ARCHIVE,
-        lossless: false,
+      name: "Comic Book Archive (ZIP)",
+      format: "cbz",
+      extension: "cbz",
+      mime: "application/vnd.comicbook+zip",
+      from: true,
+      to: zipTo,
+      internal: "cbz",
+      category: Category.ARCHIVE,
+      lossless: false,
     });
     this.supportedFormats.push({
-        name: "Comic Book Archive (TAR)",
-        format: "cbt",
-        extension: "cbt",
-        mime: "application/vnd.comicbook+tar",
-        from: true,
-        to: tarTo,
-        internal: "cbt",
-        category: Category.ARCHIVE,
-        lossless: false,
+      name: "Comic Book Archive (TAR)",
+      format: "cbt",
+      extension: "cbt",
+      mime: "application/vnd.comicbook+tar",
+      from: true,
+      to: tarTo,
+      internal: "cbt",
+      category: Category.ARCHIVE,
+      lossless: false,
     });
     this.supportedFormats.push({
-        name: "Comic Book Archive (RAR)",
-        format: "cbr",
-        extension: "cbr",
-        mime: "application/vnd.comicbook+rar",
-        from: true,
-        to: rarTo,
-        internal: "cbr",
-        category: Category.ARCHIVE,
-        lossless: false,
+      name: "Comic Book Archive (RAR)",
+      format: "cbr",
+      extension: "cbr",
+      mime: "application/vnd.comicbook+rar",
+      from: true,
+      to: rarTo,
+      internal: "cbr",
+      category: Category.ARCHIVE,
+      lossless: false,
     });
     this.supportedFormats.push({
-        name: "Comic Book Archive (7Z)",
-        format: "cb7",
-        extension: "cb7",
-        mime: "application/vnd.comicbook+7z",
-        from: true,
-        to: szTo,
-        internal: "cb7",
-        category: Category.ARCHIVE,
-        lossless: false,
+      name: "Comic Book Archive (7Z)",
+      format: "cb7",
+      extension: "cb7",
+      mime: "application/vnd.comicbook+7z",
+      from: true,
+      to: szTo,
+      internal: "cb7",
+      category: Category.ARCHIVE,
+      lossless: false,
     });
 
     // push zip and tar up the list 
@@ -197,6 +197,7 @@ class sevenZipHandler implements FormatHandler {
       return outputFiles;
     }
 
+    // Archive-to-archive conversion
     if (this.supportedFormats.some(format => format.internal === inputFormat.internal)) {
       for (const inputFile of inputFiles) {
         const sevenZip = await SevenZip(defaultSevenZipOptions);
@@ -212,7 +213,7 @@ class sevenZipHandler implements FormatHandler {
         const bytes = sevenZip.FS.readFile(name);
         outputFiles.push({ bytes, name });
       }
-    } else {
+    } else { // anything-to-archive conversion
       const sevenZip = await SevenZip(defaultSevenZipOptions);
       
       // Single-gif catching
@@ -224,10 +225,10 @@ class sevenZipHandler implements FormatHandler {
       sevenZip.FS.chdir("data");
       for (let i = 0; i < inputFiles.length; i++) {
         if (outputFormat.mime.includes("comicbook")) {
-            sevenZip.FS.writeFile("Page "+String(i)+"."+inputFormat.extension, inputFiles[i].bytes);
+          sevenZip.FS.writeFile("Page "+String(i)+"."+inputFormat.extension, inputFiles[i].bytes);
         }
         else {
-            sevenZip.FS.writeFile(inputFiles[i].name, inputFiles[i].bytes);
+          sevenZip.FS.writeFile(inputFiles[i].name, inputFiles[i].bytes);
         }
       }
 
