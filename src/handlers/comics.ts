@@ -14,7 +14,6 @@ import {
 import JSZip from "jszip";
 
 const image_list = ["png","jpg","webp","bmp","tiff","gif"];
-const archives_list = ["zip","cbz","tar","cbt","rar","cbr","7z","cb7"];
 
 export class comicsZipHandler implements FormatHandler {
     public name: string = "comicsZip";
