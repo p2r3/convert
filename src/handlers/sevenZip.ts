@@ -58,13 +58,13 @@ class sevenZipHandler implements FormatHandler {
       if (extension === "zip") {
         zipTo = flags.includes("C");
       }
-      if (extension === "rar") {
+      else if (extension === "rar") {
         rarTo = flags.includes("C");
       }
-      if (extension === "tar") {
+      else if (extension === "tar") {
         tarTo = flags.includes("C");
       }
-      if (extension === "7z") {
+      else if (extension === "7z") {
         szTo = flags.includes("C");
       }
 
