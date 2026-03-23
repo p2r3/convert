@@ -216,9 +216,16 @@ class sevenZipHandler implements FormatHandler {
     } else { // anything-to-archive conversion
       const sevenZip = await SevenZip(defaultSevenZipOptions);
       
-      // Single-gif catching
-      if (inputFormat.internal === "gif" && outputFormat.mime.includes("comicbook") && inputFiles.length === 1) {
-        throw new Error("User probably intends for an archive of video/gif frames; abort.");
+      const image_list = ["png","jpg","webp","bmp","tiff","gif"];
+      if (outputFormat.mime.includes("comicbook")) {
+        // Single-gif catching
+        if (inputFormat.internal === "gif" && inputFiles.length === 1) {
+          throw new Error("User probably intends for an archive of video/gif frames; abort.");
+        }
+        // PDF catching
+        else if (!image_list.includes(inputFormat.internal)) {
+          throw new Error("Invalid input for a CBX.");
+        }
       }
 
       sevenZip.FS.mkdir("data");
