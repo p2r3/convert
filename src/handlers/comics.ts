@@ -16,8 +16,8 @@ import JSZip from "jszip";
 const image_list = ["png","jpg","webp","bmp","tiff","gif"];
 const archives_list = ["zip","cbz","tar","cbt","rar","cbr","7z","cb7"];
 
-class comicsHandler implements FormatHandler {
-    public name: string = "comics";
+export class comicsZipHandler implements FormatHandler {
+    public name: string = "comicsZip";
     public supportedFormats?: FileFormat[];
     public ready: boolean = false;
 
@@ -31,8 +31,6 @@ class comicsHandler implements FormatHandler {
             CommonFormats.GIF.supported("gif", true, true),
             
             CommonFormats.ZIP.supported("zip", true, true),
-            CommonFormats.TAR.supported("tar", true, true),
-            
             {
                 name: "Comic Book Archive (ZIP)",
                 format: "cbz",
@@ -42,18 +40,7 @@ class comicsHandler implements FormatHandler {
                 to: true,
                 internal: "cbz",
                 category: Category.ARCHIVE,
-                lossless: true,
-            },
-            {
-                name: "Comic Book Archive (TAR)",
-                format: "cbt",
-                extension: "cbt",
-                mime: "application/vnd.comicbook+tar",
-                from: true,
-                to: true,
-                internal: "cbt",
-                category: Category.ARCHIVE,
-                lossless: true,
+                lossless: false,
             },
         ];
 
@@ -125,13 +112,76 @@ class comicsHandler implements FormatHandler {
                 throw new Error("No applicable files to unzip found.");
             }
         }
-        // Pack a cbt with code from tar.ts
-        else if (image_list.includes(inputFormat.internal) && outputFormat.internal === "cbt") {
-            const bytes = createTar(
-                inputFiles.map(file => ({ name: "Page "+inputFiles.indexOf(file)+"."+inputFormat.extension, data: file.bytes })),
-                {},
-            );
-            outputFiles.push({ bytes: bytes, name: baseName + "." + outputFormat.extension });
+        else {
+            throw new Error("Invalid input-output.");
+        }
+        
+        return outputFiles;
+    }
+}
+
+export class comicsTarHandler implements FormatHandler {
+    public name: string = "comicsTar";
+    public supportedFormats?: FileFormat[];
+    public ready: boolean = false;
+
+    async init () {
+        this.supportedFormats = [
+            CommonFormats.PNG.supported("png", true, true),
+            CommonFormats.JPEG.supported("jpg", true, true),
+            CommonFormats.WEBP.supported("webp", true, true),
+            CommonFormats.BMP.supported("bmp", true, true),
+            CommonFormats.TIFF.supported("tiff", true, true),
+            CommonFormats.GIF.supported("gif", true, true),
+            
+            CommonFormats.TAR.supported("tar", true, true),
+            {
+                name: "Comic Book Archive (TAR)",
+                format: "cbt",
+                extension: "cbt",
+                mime: "application/vnd.comicbook+tar",
+                from: true,
+                to: true,
+                internal: "cbt",
+                category: Category.ARCHIVE,
+                lossless: false,
+            },
+        ];
+
+        this.ready = true;
+    }
+
+    async doConvert (
+        inputFiles: FileData[],
+        inputFormat: FileFormat,
+        outputFormat: FileFormat
+    ): Promise<FileData[]> {
+        const outputFiles: FileData[] = [];
+        
+        // Base name for imgs -> archive
+        const baseName = inputFiles[0].name.replace("_0."+inputFormat.extension,"."+inputFormat.extension).split(".").slice(0, -1).join(".");
+        
+        // Single-gif catching
+        if (inputFormat.internal === "gif" && (archives_list.includes(outputFormat.internal)) && inputFiles.length === 1) {
+            throw new Error("User probably intends for an archive of video/gif frames; abort.");
+        }
+        
+        // Pack a tar/cbt with code from tar.ts
+        if (image_list.includes(inputFormat.internal) && (outputFormat.internal === "cbt" || outputFormat.internal === "tar")) {
+            if (outputFormat.internal === "cbt") {
+                const bytes = createTar(
+                    inputFiles.map(file => ({ name: "Page "+inputFiles.indexOf(file)+"."+inputFormat.extension, data: file.bytes })),
+                    {},
+                );
+                outputFiles.push({ bytes: bytes, name: baseName + "." + outputFormat.extension });
+            }
+            else {
+                const bytes = createTar(
+                    inputFiles.map(file => ({ name: file.name, data: file.bytes })),
+                    {},
+                );
+                outputFiles.push({ bytes: bytes, name: baseName + "." + outputFormat.extension });
+            }
         }
         // Unpack a tar/cbt with code from tar.ts
         else if ((inputFormat.internal === "cbt" || inputFormat.internal === "tar") && image_list.includes(outputFormat.internal)) {
@@ -169,5 +219,3 @@ class comicsHandler implements FormatHandler {
         return outputFiles;
     }
 }
-
-export default comicsHandler;
