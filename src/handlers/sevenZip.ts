@@ -205,12 +205,24 @@ class sevenZipHandler implements FormatHandler {
         sevenZip.FS.writeFile(inputFile.name, inputFile.bytes);
         sevenZip.callMain(["x", inputFile.name, `-odata`]);
 
-        const name = inputFile.name.replace(/\.[^.]+$/, "") + `.${outputFormat.extension}`;
+        let name = inputFile.name.replace(/\.[^.]+$/, "") + `.${outputFormat.extension}`;
         sevenZip.FS.chdir("data"); // we need to preserve the structure of the input archive
+        
+        // Correct the file extension so the converter recognizes it.
+        if (outputFormat.mime.includes("comicbook")) {
+          name = name.replace(".cbz",".zip").replace(".cbt",".tar").replace(".cbr",".rar").replace(".cb7",".7z");
+        }
+        
         sevenZip.callMain(["a", "../" + name]);
         sevenZip.FS.chdir("..");
 
         const bytes = sevenZip.FS.readFile(name);
+        
+        // Change it back
+        if (outputFormat.mime.includes("comicbook")) {
+          name = name.replace(".zip",".cbz").replace(".tar",".cbt").replace(".rar",".cbr").replace(".7z",".cb7");
+        }
+      
         outputFiles.push({ bytes, name });
       }
     } else { // anything-to-archive conversion
@@ -238,15 +250,26 @@ class sevenZipHandler implements FormatHandler {
           sevenZip.FS.writeFile(inputFiles[i].name, inputFiles[i].bytes);
         }
       }
-
+      
       const baseName = inputFiles[0].name.replace("_0."+inputFormat.extension,"."+inputFormat.extension).split(".").slice(0, -1).join(".");
-      const name = inputFiles.length === 1 || outputFormat.mime.includes("comicbook") ? 
+      let name = inputFiles.length === 1 || outputFormat.mime.includes("comicbook") ? 
         baseName + `.${outputFormat.extension}`
         : `archive.${outputFormat.extension}`;
+        
+      // Correct the file extension so the converter recognizes it.
+      if (outputFormat.mime.includes("comicbook")) {
+        name = name.replace(".cbz",".zip").replace(".cbt",".tar").replace(".cbr",".rar").replace(".cb7",".7z");
+      }
+        
       sevenZip.callMain(["a", "../" + name]);
       sevenZip.FS.chdir("..");
 
       const bytes = sevenZip.FS.readFile(name);
+      
+      // Change it back
+      if (outputFormat.mime.includes("comicbook")) {
+        name = name.replace(".zip",".cbz").replace(".tar",".cbt").replace(".rar",".cbr").replace(".7z",".cb7");
+      }
       
       outputFiles.push({ bytes, name });
     }
@@ -258,6 +281,9 @@ class sevenZipHandler implements FormatHandler {
       }
       else if ((outputFormat.internal === "zip" || outputFormat.internal === "cbz") && !(file.bytes[0] === 0x50 && file.bytes[1] === 0x4B)) {
         throw new Error("Error while compiling zip/cbz, final file failed to have magic word beginning.")
+      }
+      else if ((outputFormat.internal === "tar" || outputFormat.internal === "cbt") && !(file.bytes[0x101] === 0x75 && file.bytes[0x102] === 0x73 && file.bytes[0x103] === 0x74 && file.bytes[0x104] === 0x61 && file.bytes[0x105] === 0x72)) {
+        throw new Error("Error while compiling tar/cbt, final file failed to have magic word.")
       }
     }
 
