@@ -9,6 +9,7 @@ export const Category = {
     TEXT: "text",
     AUDIO: "audio",
     ARCHIVE: "archive",
+    IMAGE_ARCHIVE: "image archive",
     SPREADSHEET: "spreadsheet",
     PRESENTATION: "presentation",
     FONT: "font",

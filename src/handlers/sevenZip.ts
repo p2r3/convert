@@ -102,7 +102,7 @@ class sevenZipHandler implements FormatHandler {
       from: true,
       to: zipTo,
       internal: "cbz",
-      category: Category.ARCHIVE,
+      category: [Category.ARCHIVE,Category.IMAGE_ARCHIVE],
       lossless: false,
     });
     this.supportedFormats.push({
@@ -113,7 +113,7 @@ class sevenZipHandler implements FormatHandler {
       from: true,
       to: tarTo,
       internal: "cbt",
-      category: Category.ARCHIVE,
+      category: [Category.ARCHIVE,Category.IMAGE_ARCHIVE],
       lossless: false,
     });
     this.supportedFormats.push({
@@ -124,7 +124,7 @@ class sevenZipHandler implements FormatHandler {
       from: true,
       to: rarTo,
       internal: "cbr",
-      category: Category.ARCHIVE,
+      category: [Category.ARCHIVE,Category.IMAGE_ARCHIVE],
       lossless: false,
     });
     this.supportedFormats.push({
@@ -135,7 +135,7 @@ class sevenZipHandler implements FormatHandler {
       from: true,
       to: szTo,
       internal: "cb7",
-      category: Category.ARCHIVE,
+      category: [Category.ARCHIVE,Category.IMAGE_ARCHIVE],
       lossless: false,
     });
 
@@ -221,15 +221,15 @@ class sevenZipHandler implements FormatHandler {
     } else { // anything-to-archive conversion
       const sevenZip = await SevenZip(defaultSevenZipOptions);
       
-      const image_list = ["png","jpg","webp","bmp","tiff","gif"];
+      const image_list = ["png","jpg","jpeg","webp","bmp","tiff","gif"];
       if (outputFormat.mime.includes("comicbook")) {
         // Single-gif catching
         if (inputFormat.internal === "gif" && inputFiles.length === 1) {
           throw new Error("User probably intends for an archive of video/gif frames; abort.");
         }
         // PDF catching
-        else if (!image_list.includes(inputFormat.internal)) {
-          throw new Error("Invalid input for a CBX.");
+        else if (!image_list.includes(inputFormat.extension)) {
+          throw new Error("Invalid input for a CBX: "+inputFormat.internal);
         }
       }
 

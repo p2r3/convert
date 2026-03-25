@@ -62,6 +62,7 @@ export class TraversionGraph {
         {from: "image", to: "text", cost: 0.5}, // Depends on the content and method, but can be relatively efficient for simple images
         {from: "text", to: "audio", cost: 0.6}, // Somewhat lossy for anything that isn't speakable text
         {from: "document", to: "text", cost: 1}, // Often very lossy, loses rich formatting
+        {from: "image", to: "image archive", cost: -100}, // Prioritize immensely
     ];
     private categoryAdaptiveCosts: CategoryAdaptiveCost[] = [
         { categories: ["text", "image", "audio"], cost: 15 }, // Text to audio through an image is likely not what the user wants

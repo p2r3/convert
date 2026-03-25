@@ -116,7 +116,7 @@ export const renameZipHandler = renameHandler("renamezip", [
     from: true,
     to: false,
     internal: "cbz",
-    category: Category.ARCHIVE,
+    category: [Category.ARCHIVE,Category.IMAGE_ARCHIVE],
     lossless: true
   },
 ]);
@@ -163,7 +163,7 @@ export const renameTarHandler = renameHandler("renametar", [
     from: true,
     to: false,
     internal: "cbt",
-    category: Category.ARCHIVE,
+    category: [Category.ARCHIVE,Category.IMAGE_ARCHIVE],
     lossless: true
   },
 ]);
@@ -178,7 +178,7 @@ export const renameRarHandler = renameHandler("renamerar", [
     from: true,
     to: false,
     internal: "cbr",
-    category: Category.ARCHIVE,
+    category: [Category.ARCHIVE,Category.IMAGE_ARCHIVE],
     lossless: true
   },
 ]);
@@ -193,7 +193,7 @@ export const rename7zHandler = renameHandler("rename7z", [
     from: true,
     to: false,
     internal: "cb7",
-    category: Category.ARCHIVE,
+    category: [Category.ARCHIVE,Category.IMAGE_ARCHIVE],
     lossless: true
   },
 ]);
