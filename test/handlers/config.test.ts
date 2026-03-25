@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test';
 import CommonFormats from '../../src/CommonFormats.js';
 import { FormatDefinition } from '../../src/FormatHandler.js';
-import json5Handler from '../../src/handlers/json5.js';
+import configHandler from '../../src/handlers/config.ts';
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -13,8 +13,8 @@ const json5Format = new FormatDefinition(
     'data'
 ).supported('json5', true, true, true);
 
-test('json5 handler parses JSON5 input and writes JSON output', async () => {
-    const handler = new json5Handler();
+test('config handler parses JSON5 input and writes JSON output', async () => {
+    const handler = new configHandler();
     const [output] = await handler.doConvert(
         [
             {
@@ -37,8 +37,8 @@ test('json5 handler parses JSON5 input and writes JSON output', async () => {
     });
 });
 
-test('json5 handler writes JSON5 output that round-trips through the parser', async () => {
-    const handler = new json5Handler();
+test('config handler writes JSON5 output that round-trips through the parser', async () => {
+    const handler = new configHandler();
     const [output] = await handler.doConvert(
         [
             {
@@ -57,7 +57,7 @@ test('json5 handler writes JSON5 output that round-trips through the parser', as
 
     expect(output.name).toBe('config.json5');
     const outputText = decoder.decode(output.bytes);
-    expect(outputText).toContain('enabled: true');
+    expect(outputText).toContain('enabled:true');
     expect(outputText).toContain('nested:');
 
     const reparsed = await handler.doConvert(

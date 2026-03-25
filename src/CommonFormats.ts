@@ -133,6 +133,13 @@ const CommonFormats = {
         "text/x-python",
         Category.CODE
     ),
+    CSS: new FormatDefinition(
+        "CSS Stylesheet",
+        "css",
+        "css",
+        "text/css",
+        Category.CODE
+    ),
     SH: new FormatDefinition(
         "Shell Script",
         "sh",
@@ -279,6 +286,13 @@ const CommonFormats = {
         "exe",
         "application/vnd.microsoft.portable-executable",
         Category.CODE
+    ),
+    TYPST: new FormatDefinition(
+        "Typst Document",
+        "typst",
+        "typ",
+        "text/typst",
+        [Category.DOCUMENT, Category.TEXT]
     )
 }
 

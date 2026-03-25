@@ -10,7 +10,7 @@ function renameHandler(name: string, formats: FileFormat[]): FormatHandler {
     async init() {
       this.ready = true
     },
-    async doConvert (
+    async doConvert(
       inputFiles: FileData[],
       inputFormat: FileFormat,
       outputFormat: FileFormat
@@ -139,5 +139,16 @@ export const renameJsonHandler = renameHandler("renamejson", [
     to: false,
     category: "archive",
     internal: "har"
+  },
+  {
+    name: "Piskel Sprite Save File",
+    format: "piskel",
+    extension: "piskel",
+    mime: "image/png+json",
+    from: true,
+    to: false,
+    category: "image",
+    internal: "piskel",
+    lossless: true
   }
 ]);

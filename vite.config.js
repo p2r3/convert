@@ -66,6 +66,22 @@ export default defineConfig({
           src: "src/handlers/tarCompressed/liblzma.wasm",
           dest: "wasm"
         },
+        {
+          src: "node_modules/turbowarp-packager-browser/dist/scaffolding/*",
+          dest: "js/turbowarp-scaffolding"
+        },
+        {
+          src: "node_modules/7z-wasm/7zz.wasm",
+          dest: "wasm"
+        },
+        {
+          src: "node_modules/@myriaddreamin/typst-ts-web-compiler/pkg/typst_ts_web_compiler_bg.wasm",
+          dest: "wasm"
+        },
+        {
+          src: "node_modules/@myriaddreamin/typst-ts-renderer/pkg/typst_ts_renderer_bg.wasm",
+          dest: "wasm"
+        }
       ]
     }),
     tsconfigPaths()
