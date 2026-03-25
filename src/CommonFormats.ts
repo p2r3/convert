@@ -287,6 +287,13 @@ const CommonFormats = {
         "application/vnd.microsoft.portable-executable",
         Category.CODE
     ),
+    EPUB: new FormatDefinition(
+        "EPUB Document",
+        "epub",
+        "epub",
+        "application/epub+zip",
+        [Category.DOCUMENT]
+    ),
     TYPST: new FormatDefinition(
         "Typst Document",
         "typst",

@@ -51,7 +51,9 @@
     "puppeteer": "^24.36.0",
     "typescript": "~5.9.3",
     "vite": "^7.2.4",
-    "vite-tsconfig-paths": "^6.0.5"
+    "vite-tsconfig-paths": "^6.0.5",
+    "@happy-dom/global-registrator": "^20.8.7",
+    "happy-dom": "^20.8.7"
   },
   "dependencies": {
     "7z-wasm": "^1.2.0",
@@ -105,6 +107,7 @@
     "wabt": "^1.0.39",
     "wavefile": "^11.0.0",
     "woff2-encoder": "^2.0.0",
-    "yaml": "^2.8.2"
+    "yaml": "^2.8.2",
+    "epubjs": "^0.3.93"
   }
 }

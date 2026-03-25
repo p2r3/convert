@@ -1,4 +1,4 @@
-import CommonFormats from "src/CommonFormats.ts";
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 
 class svgForeignObjectHandler implements FormatHandler {
@@ -7,8 +7,10 @@ class svgForeignObjectHandler implements FormatHandler {
 
   public supportedFormats: FileFormat[] = [
     CommonFormats.HTML.supported("html", true, false),
-    // Identical to the input HTML, just wrapped in an SVG foreignObject, so it's lossless
-    CommonFormats.SVG.supported("svg", false, true, true)
+    // This preserves rendered appearance well, but it turns a document into an image-like artifact.
+    CommonFormats.SVG.supported("svg", false, true, false, {
+      category: [Category.IMAGE, Category.VECTOR],
+    })
   ];
 
   public ready: boolean = true;
