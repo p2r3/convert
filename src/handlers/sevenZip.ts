@@ -193,12 +193,7 @@ class sevenZipHandler implements FormatHandler {
       } else {
         throw new Error(`sevenZipHandler cannot convert from ${inputFormat.mime} to ${outputFormat.mime}`);
       }
-      
-      return outputFiles;
-    }
-
-    // Archive-to-archive conversion
-    if (this.supportedFormats.some(format => format.internal === inputFormat.internal)) {
+    } else if (this.supportedFormats.some(format => format.internal === inputFormat.internal)) { // Archive-to-archive conversion
       for (const inputFile of inputFiles) {
         // This converter cannot validate that a non-comic archive is a valid comic archive, so we disallow those conversions.
         if (!inputFormat.mime.includes("comicbook") && outputFormat.mime.includes("comicbook")) {
@@ -252,7 +247,18 @@ class sevenZipHandler implements FormatHandler {
       sevenZip.FS.chdir("..");
 
       const bytes = sevenZip.FS.readFile(name);
+      
       outputFiles.push({ bytes, name });
+    }
+    
+    // Last validation
+    for (const file of outputFiles) {
+      if ((outputFormat.internal === "7z" || outputFormat.internal === "cb7") && !(file.bytes[0] === 0x37 && file.bytes[1] === 0x7A)) {
+        throw new Error("Error while compiling 7z/cb7, final file failed to have magic word beginning.")
+      }
+      else if ((outputFormat.internal === "zip" || outputFormat.internal === "cbz") && !(file.bytes[0] === 0x50 && file.bytes[1] === 0x4B)) {
+        throw new Error("Error while compiling zip/cbz, final file failed to have magic word beginning.")
+      }
     }
 
     return outputFiles;

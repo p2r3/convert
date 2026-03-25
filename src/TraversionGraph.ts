@@ -62,13 +62,18 @@ export class TraversionGraph {
         {from: "image", to: "text", cost: 0.5}, // Depends on the content and method, but can be relatively efficient for simple images
         {from: "text", to: "audio", cost: 0.6}, // Somewhat lossy for anything that isn't speakable text
         {from: "document", to: "text", cost: 1}, // Often very lossy, loses rich formatting
-        {from: "image", to: "image archive", cost: -100}, // Prioritize immensely
+        {from: "image", to: "image archive", cost: -1}, // Prioritize immensely
+        {from: "image archive", to: "image archive", cost: -2}, // Prioritize more
     ];
     private categoryAdaptiveCosts: CategoryAdaptiveCost[] = [
         { categories: ["text", "image", "audio"], cost: 15 }, // Text to audio through an image is likely not what the user wants
         { categories: ["image", "video", "audio"], cost: 10000 }, // Converting from image to audio through video is especially lossy
         { categories: ["audio", "video", "image"], cost: 10000 }, // Converting from audio to image through video is especially lossy
+        
         { categories: ["archive", "image", "archive"], cost: 10000 }, // If archive -> archive is possible directly, it should be prioritized pretty much always.
+        { categories: ["image archive", "image", "image archive"], cost: 10000 }, // As above
+        { categories: ["archive", "image", "image archive"], cost: 10000 }, // As above
+        { categories: ["image archive", "image", "archive"], cost: 10000 }, // As above
     ];
     // Keeps track of path segments that have failed when attempted during the last run
     private temporaryDeadEnds: ConvertPathNode[][] = [];
