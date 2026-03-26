@@ -214,6 +214,13 @@ const CommonFormats = {
         "application/pdf",
         Category.DOCUMENT
     ),
+    MRPACK: new FormatDefinition(
+        "Modrinth Modpack",
+        "mrpack",
+        "mrpack",
+        "application/x-modrinth-modpack+zip",
+        Category.ARCHIVE
+    ),
     // documents - Microsoft Office
     DOCX: new FormatDefinition(
         "WordprocessingML Document",
