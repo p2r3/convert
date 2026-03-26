@@ -214,6 +214,27 @@ const CommonFormats = {
         "application/pdf",
         Category.DOCUMENT
     ),
+    EPUB: new FormatDefinition(
+        "Electronic Publication",
+        "epub",
+        "epub",
+        "application/epub+zip",
+        Category.DOCUMENT
+    ),
+    AZW3: new FormatDefinition(
+        "Amazon Kindle Format 8",
+        "azw3",
+        "azw3",
+        "application/vnd.amazon.mobi8-ebook",
+        Category.DOCUMENT
+    ),
+    MOBI: new FormatDefinition(
+        "Mobipocket e-book",
+        "mobi",
+        "mobi",
+        "application/x-mobipocket-ebook",
+        Category.DOCUMENT
+    ),
     // documents - Microsoft Office
     DOCX: new FormatDefinition(
         "WordprocessingML Document",
