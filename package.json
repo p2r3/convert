@@ -30,7 +30,8 @@
     },
     "files": [
       "dist/**/*",
-      "src/electron.cjs"
+      "src/electron.cjs",
+      "!node_modules/**/*"
     ],
     "win": {
       "target": "nsis"
