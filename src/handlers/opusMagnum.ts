@@ -60,11 +60,30 @@ const elementColors: Dictionary<string> = {
     12: "#95A7A8",
     13: "#C5AD9A",
     14: "#3A3829",
-    15: "#0A0911",
+    15: "#888888",
     16: "#0A0911",
 }
 
-function twoComplement(input: number): number {
+function read_lendian_4(a: number, b: number, c: number, d: number): number {
+    return a + (b * Math.pow(16,2)) + (c * Math.pow(16,4)) + (d * Math.pow(16,6));
+}
+
+function write_lendian_4(x: number): number[] {
+    let num_string = x.toString(16);
+    
+    while (num_string.length < 8) {
+        num_string = "0"+num_string;
+    }
+    
+    console.log("write_lendian_4: "+"("+x+")"+" ("+num_string+")");
+    
+    const array = [parseInt(num_string.substring(6,8),16),parseInt(num_string.substring(4,6),16),parseInt(num_string.substring(2,4),16),parseInt(num_string.substring(0,2),16)];
+    console.log("write_lendian_4: "+array);
+    return array
+}
+
+// Takes a two's complement byte and reads it as regular number.
+function read_twoComplement(input: number): number {
     if (input > 255) {
         throw "Error, coordinate over 255.";
     }
@@ -76,103 +95,185 @@ function twoComplement(input: number): number {
     }
 }
 
-function renderMolecule(molecule: OM_Molecule): Uint8Array {
-    // Begin building our SVG
-    const encoder = new TextEncoder();
-    let svg = "<svg xmlns='http://www.w3.org/2000/svg\' width='bigx' height='bigy' viewBox='smallx smally bigx bigy'>"
+// Takes a regular number and writes it as a two's complement byte
+function write_twoComplement(input: number): number {
+    let output = 0xFF;
+
+    if (input < 0) {
+        output = 0xFF - Math.abs(-1 - input);
+    }
+    else {
+        output = input;
+    }
     
-    const radius = 50;
+    // Validate
+    if (output > 0xFF || output < 0x00) {
+        throw "Invalid input for write_twoComplement: "+input;
+    }
+    
+    return input
+}
+
+function renderMolecule(molecule: OM_Molecule, format: string): Uint8Array {
     if (molecule.primes.length === 0) {
         throw "Error, empty molecule.";
     }
     
-    // Draw the bonds
-    for (let i = 0; i < molecule.bonds.length; i++) {
-        // Convert hex-based coordinates to Cartesian
-        let cartesian_source_x = twoComplement(molecule.bonds[i].source_x);
-        let cartesian_source_y = twoComplement(molecule.bonds[i].source_y);
-        let cartesian_destination_x = twoComplement(molecule.bonds[i].destination_x);
-        let cartesian_destination_y = twoComplement(molecule.bonds[i].destination_y);
+    if (format === "molecule") {
+        let working_bytes: number[] = [];
         
-        // Hexagonal offset
-        cartesian_source_x += 0.5*cartesian_source_y;
-        cartesian_destination_x += 0.5*cartesian_destination_y;
+        // Push runlength for primes
+        working_bytes = working_bytes.concat(write_lendian_4(molecule.primes.length));
         
-        // Multiply coordinates for spacing
-        cartesian_source_x *= radius*2.25;
-        cartesian_source_y *= radius*2.25;
-        cartesian_destination_x *= radius*2.25;
-        cartesian_destination_y *= radius*2.25;
+        // Push prime data
+        for (let i = 0; i < molecule.primes.length; i++) {
+            if (molecule.primes[i].element > 16 || molecule.primes[i].element < 1 || Math.floor(molecule.primes[i].element) !== molecule.primes[i].element) {
+                throw "Error, invalid prime ("+molecule.primes[i].element+")";
+            }
+            working_bytes.push(molecule.primes[i].element);
+            
+            working_bytes.push(molecule.primes[i].x);
+            working_bytes.push(molecule.primes[i].y);
+        }
         
-        svg += "\n"
-        if (molecule.bonds[i].bond_type === 1) {
-            svg += "    <line stroke='black' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.2+"'/>"
+        // Push runlength for bonds
+        working_bytes = working_bytes.concat(write_lendian_4(molecule.bonds.length));
+
+        // Push bonds data
+        for (let i = 0; i < molecule.bonds.length; i++) {
+            if (molecule.bonds[i].bond_type !== 0x01 && molecule.bonds[i].bond_type !== 0x0e) {
+                throw "Error, invalid bond type ("+molecule.bonds[i].bond_type+")";
+            }
+            working_bytes.push(molecule.bonds[i].bond_type);
+            
+            if (molecule.bonds[i].source_x > 0xFF || molecule.bonds[i].source_x < 0x00) {
+                throw "Error, invalid source_x ("+molecule.bonds[i].source_x+")";
+            }
+            if (molecule.bonds[i].source_y > 0xFF || molecule.bonds[i].source_y < 0x00) {
+                throw "Error, invalid source_y ("+molecule.bonds[i].source_y+")";
+            }
+            if (molecule.bonds[i].destination_x > 0xFF || molecule.bonds[i].destination_x < 0x00) {
+                throw "Error, invalid destination_x ("+molecule.bonds[i].destination_x+")";
+            }
+            if (molecule.bonds[i].destination_y > 0xFF || molecule.bonds[i].destination_y < 0x00) {
+                throw "Error, invalid destination_y ("+molecule.bonds[i].destination_y+")";
+            }
+            
+            
+            working_bytes.push(molecule.bonds[i].source_x);
+            working_bytes.push(molecule.bonds[i].source_y);
+            working_bytes.push(molecule.bonds[i].destination_x);
+            working_bytes.push(molecule.bonds[i].destination_y);
         }
-        else if (molecule.bonds[i].bond_type === 14) {
-            svg += "    <line stroke='red' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.4+"'/>"
-            svg += "\n"
-            svg += "    <line stroke='black' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.2+"'/>"
-            svg += "\n"
-            svg += "    <line stroke='yellow' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.1+"'/>"
-        }
-        else {
-            throw "Error, invalid bond ("+molecule.bonds[i].bond_type+")";
-        }
+        
+        console.log(working_bytes);
+        return new Uint8Array(working_bytes);
     }
-    
-    // Draw the atoms
-    let leftmost = 99999;
-    let upmost = 99999;
-    
-    let rightmost = -99999;
-    let downmost = -99999;
-    
-    for (let i = 0; i < molecule.primes.length; i++) {
-        // Validate primes
-        if (molecule.primes[i].element > 16 || molecule.primes[i].element < 1 || Math.floor(molecule.primes[i].element) !== molecule.primes[i].element) {
-            throw "Error, invalid prime ("+molecule.primes[i].element+")";
-        }
-    
-        // Convert hex-based coordinates to Cartesian
-        let cartesian_x = twoComplement(molecule.primes[i].x);
-        let cartesian_y = twoComplement(molecule.primes[i].y);
+    else if (format === "svg") {
+        // Begin building our SVG
+        const encoder = new TextEncoder();
+        let svg = "<svg xmlns='http://www.w3.org/2000/svg\' width='bigx' height='bigy' viewBox='smallx smally bigx bigy'>"
         
-        // Hexagonal offset
-        cartesian_x += 0.5*cartesian_y;
+        const radius = 50;
+        const spacing_factor = 2.25;
         
-        // Multiply coordinates for spacing
-        cartesian_x *= radius*2.25;
-        cartesian_y *= radius*2.25;
-    
-        // Render the atom
-        svg += "\n"
-        svg += "    <circle cx='"+cartesian_x+"' cy='"+cartesian_y+"' fill='black' r='"+radius+"'/>"
-        svg += "\n"
-        svg += "    <circle cx='"+cartesian_x+"' cy='"+cartesian_y+"' fill='"+elementColors[molecule.primes[i].element]+"' r='"+radius*0.9+"'/>"
-        svg += "\n"
-        svg += "    <text x='"+cartesian_x+"' y='"+cartesian_y+"' fill='white' text-anchor='middle' dominant-baseline='central' font-size='"+radius+"'>"+elementSymbols[molecule.primes[i].element]+"</text>"
+        // Draw the bonds
+        for (let i = 0; i < molecule.bonds.length; i++) {
+            // Convert hex-based coordinates to Cartesian
+            let cartesian_source_x = read_twoComplement(molecule.bonds[i].source_x);
+            let cartesian_source_y = read_twoComplement(molecule.bonds[i].source_y);
+            let cartesian_destination_x = read_twoComplement(molecule.bonds[i].destination_x);
+            let cartesian_destination_y = read_twoComplement(molecule.bonds[i].destination_y);
+            
+            // Hexagonal offset
+            cartesian_source_x += 0.5*cartesian_source_y;
+            cartesian_destination_x += 0.5*cartesian_destination_y;
+            
+            // Multiply coordinates for spacing
+            cartesian_source_x *= radius*spacing_factor;
+            cartesian_source_y *= radius*spacing_factor;
+            cartesian_destination_x *= radius*spacing_factor;
+            cartesian_destination_y *= radius*spacing_factor;
+            
+            svg += "\n"
+            if (molecule.bonds[i].bond_type === 0x01) {
+                svg += "    <line stroke='black' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.2+"'/>"
+            }
+            else if (molecule.bonds[i].bond_type === 0x0e) {
+                svg += "    <line stroke='red' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.4+"'/>"
+                svg += "\n"
+                svg += "    <line stroke='black' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.2+"'/>"
+                svg += "\n"
+                svg += "    <line stroke='yellow' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.1+"'/>"
+            }
+            else {
+                throw "Error, invalid bond ("+molecule.bonds[i].bond_type+")";
+            }
+        }
         
-        // Record largest coordinates
-        if ((cartesian_x+radius) > rightmost) {
-            rightmost = (cartesian_x+radius);
+        // Draw the atoms
+        let leftmost = 99999;
+        let upmost = 99999;
+        
+        let rightmost = -99999;
+        let downmost = -99999;
+        
+        for (let i = 0; i < molecule.primes.length; i++) {
+            // Validate primes
+            if (molecule.primes[i].element > 16 || molecule.primes[i].element < 1 || Math.floor(molecule.primes[i].element) !== molecule.primes[i].element) {
+                throw "Error, invalid prime ("+molecule.primes[i].element+")";
+            }
+        
+            // Convert hex-based coordinates to Cartesian
+            let cartesian_x = read_twoComplement(molecule.primes[i].x);
+            let cartesian_y = read_twoComplement(molecule.primes[i].y);
+            
+            // Hexagonal offset
+            cartesian_x += 0.5*cartesian_y;
+            
+            // Multiply coordinates for spacing
+            cartesian_x *= radius*spacing_factor;
+            cartesian_y *= radius*spacing_factor;
+        
+            // Render the atom
+            svg += "\n"
+            svg += "    <circle cx='"+cartesian_x+"' cy='"+cartesian_y+"' fill='black' r='"+radius+"'/>"
+            svg += "\n"
+            svg += "    <circle cx='"+cartesian_x+"' cy='"+cartesian_y+"' fill='"+elementColors[molecule.primes[i].element]+"' r='"+radius*0.9+"'/>"
+            svg += "\n"
+            if (molecule.primes[i].element === 16) {
+                svg += "    <text x='"+cartesian_x+"' y='"+(cartesian_y-5)+"' fill='white' text-anchor='middle' dominant-baseline='central' font-size='"+radius+"'>"+elementSymbols[4]+"</text>"
+                svg += "    <text x='"+cartesian_x+"' y='"+(cartesian_y+5)+"' fill='white' text-anchor='middle' dominant-baseline='central' font-size='"+radius+"'>"+elementSymbols[5]+"</text>"
+            }
+            else {
+                svg += "    <text x='"+cartesian_x+"' y='"+cartesian_y+"' fill='white' text-anchor='middle' dominant-baseline='central' font-size='"+radius+"'>"+elementSymbols[molecule.primes[i].element]+"</text>"
+            }
+            
+            // Record largest coordinates
+            if ((cartesian_x+radius) > rightmost) {
+                rightmost = (cartesian_x+radius);
+            }
+            if ((cartesian_y+radius) > downmost) {
+                downmost = (cartesian_y+radius);
+            }
+            if ((cartesian_x-radius) < leftmost) {
+                leftmost = (cartesian_x-radius);
+            }
+            if ((cartesian_y-radius) < upmost) {
+                upmost = (cartesian_y-radius);
+            }
         }
-        if ((cartesian_y+radius) > downmost) {
-            downmost = (cartesian_y+radius);
-        }
-        if ((cartesian_x-radius) < leftmost) {
-            leftmost = (cartesian_x-radius);
-        }
-        if ((cartesian_y-radius) < upmost) {
-            upmost = (cartesian_y-radius);
-        }
+        
+        svg += "\n</svg>"
+        
+        // Replace placeholders with actual size. smallx/smally are half size - molecular center
+        svg = svg.replace(/bigx/g,String((rightmost-leftmost))).replace(/bigy/g,String((downmost-upmost))).replace(/smallx/g,String((rightmost+leftmost)/2 - (rightmost-leftmost)/2)).replace(/smally/g,String((downmost+upmost)/2 - (downmost-upmost)/2));
+        
+        return encoder.encode(svg);
     }
-    
-    svg += "\n</svg>"
-    
-    // Replace placeholders with actual size. smallx/smally are half size - molecular center
-    svg = svg.replace(/bigx/g,String((rightmost-leftmost))).replace(/bigy/g,String((downmost-upmost))).replace(/smallx/g,String((rightmost+leftmost)/2 - (rightmost-leftmost)/2)).replace(/smally/g,String((downmost+upmost)/2 - (downmost-upmost)/2));
-    
-    return encoder.encode(svg);
+    else {
+        throw new Error("Opus Magnum molecule renderer given invalid output format: "+format)
+    }
 }
 
 class opusMagnumHandler implements FormatHandler {
@@ -197,6 +298,16 @@ class opusMagnumHandler implements FormatHandler {
                 internal: "puzzle",
                 lossless: false,
             },
+            {
+                name: "Opus Magnum molecule",
+                format: "molecule",
+                extension: "molecule",
+                mime: "application/x-opus-magnum-molecule",
+                from: true,
+                to: true,
+                internal: "molecule",
+                lossless: false,
+            },
         ];
 
         this.#canvas = document.createElement("canvas");
@@ -216,7 +327,7 @@ class opusMagnumHandler implements FormatHandler {
             throw "Handler not initialized.";
         }
         
-        if (inputFormat.internal === "puzzle" && outputFormat.internal === "svg") {
+        if (inputFormat.internal === "puzzle" && (outputFormat.internal === "svg" || outputFormat.internal === "molecule")) {
             for (const file of inputFiles) {
                 // Begin reading file
                 let byte_cusror = 0;
@@ -234,7 +345,7 @@ class opusMagnumHandler implements FormatHandler {
                 
                 // Parse reagents data
                 byte_cusror += name_rl+16;
-                const reagents_rl = file.bytes[byte_cusror];
+                const reagents_rl = read_lendian_4(file.bytes[byte_cusror],file.bytes[byte_cusror+1],file.bytes[byte_cusror+2],file.bytes[byte_cusror+3]);;
                 const reagents : OM_Molecule[] = [];
                 
                 byte_cusror += 4;
@@ -244,7 +355,7 @@ class opusMagnumHandler implements FormatHandler {
                     let working_molecule : OM_Molecule = {primes: [], bonds: []};
                     
                     // Start of loop, read primes run length
-                    const primes_rl = file.bytes[byte_cusror];
+                    const primes_rl = read_lendian_4(file.bytes[byte_cusror],file.bytes[byte_cusror+1],file.bytes[byte_cusror+2],file.bytes[byte_cusror+3]);
                     
                     // Increment cursor by 4 due to padding.
                     byte_cusror += 4;
@@ -256,7 +367,7 @@ class opusMagnumHandler implements FormatHandler {
                     }
                     
                     // Arrive at bonds data.
-                    const bonds_rl = file.bytes[byte_cusror];
+                    const bonds_rl = read_lendian_4(file.bytes[byte_cusror],file.bytes[byte_cusror+1],file.bytes[byte_cusror+2],file.bytes[byte_cusror+3]);;
                     
                     // Increment cursor by 4 due to padding.
                     byte_cusror += 4;
@@ -272,7 +383,7 @@ class opusMagnumHandler implements FormatHandler {
                 }
                 
                 // Parse the products data, which follows immediately after.
-                const products_rl = file.bytes[byte_cusror];
+                const products_rl = read_lendian_4(file.bytes[byte_cusror],file.bytes[byte_cusror+1],file.bytes[byte_cusror+2],file.bytes[byte_cusror+3]);;
                 const products : OM_Molecule[] = [];
                 
                 byte_cusror += 4;
@@ -282,7 +393,7 @@ class opusMagnumHandler implements FormatHandler {
                     let working_molecule : OM_Molecule = {primes: [], bonds: []};
                     
                     // Start of loop, read primes run length
-                    const primes_rl = file.bytes[byte_cusror];
+                    const primes_rl = read_lendian_4(file.bytes[byte_cusror],file.bytes[byte_cusror+1],file.bytes[byte_cusror+2],file.bytes[byte_cusror+3]);;
                     
                     // Increment cursor by 4 due to padding.
                     byte_cusror += 4;
@@ -294,7 +405,8 @@ class opusMagnumHandler implements FormatHandler {
                     }
                     
                     // Arrive at bonds data.
-                    const bonds_rl = file.bytes[byte_cusror];
+                    const bonds_rl = read_lendian_4(file.bytes[byte_cusror],file.bytes[byte_cusror+1],file.bytes[byte_cusror+2],file.bytes[byte_cusror+3]);;
+                    console.log("brl: "+bonds_rl);
                     
                     // Increment cursor by 4 due to padding.
                     byte_cusror += 4;
@@ -309,16 +421,53 @@ class opusMagnumHandler implements FormatHandler {
                     products.push(working_molecule);
                 }
                 
+                console.log("V"+version+" - Remaining file: "+String(file.bytes.subarray(byte_cusror,file.bytes.length)));
                 console.log(reagents);
                 console.log(products);
                 
                 // Render each molecule as a separate file.
                 for (let i = 0; i < reagents.length; i++) {
-                    outputFiles.push({ bytes: renderMolecule(reagents[i]), name: puzzle_name + "_reagent_" + i + "." + outputFormat.extension });
+                    outputFiles.push({ bytes: renderMolecule(reagents[i], outputFormat.internal), name: puzzle_name + "_reagent_" + i + "." + outputFormat.extension });
                 }
                 for (let i = 0; i < products.length; i++) {
-                    outputFiles.push({ bytes: renderMolecule(products[i]), name: puzzle_name + "_product_" + i + "." + outputFormat.extension });
+                    outputFiles.push({ bytes: renderMolecule(products[i], outputFormat.internal), name: puzzle_name + "_product_" + i + "." + outputFormat.extension });
                 }
+            }
+        }
+        else if (inputFormat.internal === "molecule" && outputFormat.internal === "svg") {
+            for (const file of inputFiles) {
+                // Start reading file
+                let byte_cusror = 0;
+                
+                // Establish working module
+                let working_molecule : OM_Molecule = {primes: [], bonds: []};
+                
+                // Start of loop, read primes run length
+                const primes_rl = read_lendian_4(file.bytes[byte_cusror],file.bytes[byte_cusror+1],file.bytes[byte_cusror+2],file.bytes[byte_cusror+3]);
+                
+                // Increment cursor by 4 due to padding.
+                byte_cusror += 4;
+                
+                // Parse primes data.
+                while (working_molecule.primes.length < primes_rl) {
+                    working_molecule.primes.push({element: file.bytes[byte_cusror], x: file.bytes[byte_cusror+1], y: file.bytes[byte_cusror+2]});
+                    byte_cusror += 3;
+                }
+                
+                // Arrive at bonds data.
+                const bonds_rl = read_lendian_4(file.bytes[byte_cusror],file.bytes[byte_cusror+1],file.bytes[byte_cusror+2],file.bytes[byte_cusror+3]);;
+                
+                // Increment cursor by 4 due to padding.
+                byte_cusror += 4;
+                
+                // Parse bonds data.
+                while (working_molecule.bonds.length < bonds_rl) {
+                    working_molecule.bonds.push({bond_type: file.bytes[byte_cusror], source_x: file.bytes[byte_cusror+1], source_y: file.bytes[byte_cusror+2], destination_x: file.bytes[byte_cusror+3], destination_y: file.bytes[byte_cusror+4]});
+                    byte_cusror += 5;
+                }
+                
+                // Push molecule
+                outputFiles.push({ bytes: renderMolecule(working_molecule, outputFormat.internal), name: file.name.split(".").slice(0, -1).join(".") + "." + outputFormat.extension });
             }
         }
         else {
