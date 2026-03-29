@@ -319,7 +319,7 @@ class opusMagnumHandler implements FormatHandler {
                 extension: "puzzle",
                 mime: "application/x-opus-magnum-puzzle",
                 from: true,
-                to: false,
+                to: true,
                 internal: "puzzle",
                 lossless: false,
             },
@@ -494,6 +494,89 @@ class opusMagnumHandler implements FormatHandler {
                 // Push molecule
                 outputFiles.push({ bytes: renderMolecule(working_molecule, outputFormat.internal), name: file.name.split(".").slice(0, -1).join(".") + "." + outputFormat.extension });
             }
+        }
+        else if (inputFormat.internal === "molecule" && outputFormat.internal === "puzzle") {
+            // Iterate through inputs to see if their names indicate them being reagents or products
+            let reagents: Uint8Array[] = [];
+            let products: Uint8Array[] = [];
+            try {
+                for (const file of inputFiles) {
+                    if (file.name.includes("reagent") || file.name.includes("REAGENT")) {
+                        reagents.push(file.bytes);
+                    }
+                    else if (file.name.includes("product") || file.name.includes("PRODUCT")) {
+                        products.push(file.bytes);
+                    }
+                }
+            }
+            // Otherwise, split down the middle.
+            catch (_) {
+                reagents.length = 0;
+                products.length = 0;
+            
+                for (let i = 0; i < inputFiles.length; i++) {
+                    if (i+1 > inputFiles.length / 2) {
+                        products.push(file.bytes);
+                    }
+                    else {
+                        reagents.push(file.bytes);
+                    }
+                }
+            }
+            
+            // Find puzzle name
+            let puzzle_name = inputFiles[0].name.substring(0, 1);
+            while (true) {
+                let break_flag = false;
+                for (const file of inputFiles) {
+                    if (!file.name.startsWith(puzzle_name) || puzzle_name.endsWith("_")) {
+                        puzzle_name = puzzle_name.substring(0,puzzle_name.length-1);
+                        break_flag = true;
+                        break;
+                    }
+                }
+                
+                if (break_flag) {
+                    break;
+                }
+                
+                puzzle_name = inputFiles[0].name.substring(0, puzzle_name.length+1);
+            }
+            
+            // Default puzzle name
+            if (puzzle_name === "" || puzzle_name.length > 0xFF) {
+                puzzle_name = "Unnamed puzzle";
+            }
+            
+            console.log("Found puzzle name: "+puzzle_name);
+            
+            // Finally, write the file
+            const working_bytes: number[] = [];
+            
+            working_bytes.push(0x02,0x00,0x00,0x00);
+            working_bytes.push(puzzle_name.length);
+            
+            const encoder = new TextEncoder();
+            working_bytes.push(...encoder.encode(puzzle_name));
+            
+            working_bytes.push(0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00);
+            working_bytes.push(0x0f,0x17,0xc0,0x07,0x00,0x00,0x00,0x00);
+            
+            working_bytes.push(...write_lendian_4(reagents.length));
+            
+            for (const reagent of reagents) {
+                working_bytes.push(...reagent);
+            }
+            
+            working_bytes.push(...write_lendian_4(products.length));
+            
+            for (const product of products) {
+                working_bytes.push(...product);
+            }
+            
+            // Return the combined file
+            console.log(working_bytes);
+            outputFiles.push({ bytes: new Uint8Array(working_bytes), name: puzzle_name + "." + outputFormat.extension });
         }
         else {
             throw new Error("Invalid input-output.");
