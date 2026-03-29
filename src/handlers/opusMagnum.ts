@@ -141,8 +141,17 @@ function renderMolecule(molecule: OM_Molecule, format: string): Uint8Array {
 
         // Push bonds data
         for (let i = 0; i < molecule.bonds.length; i++) {
-            if (molecule.bonds[i].bond_type !== 0x01 && molecule.bonds[i].bond_type !== 0x0e) {
-                throw "Error, invalid bond type ("+molecule.bonds[i].bond_type+")";
+            let bonds_bitfield = (molecule.bonds[i].bond_type.toString(2));
+            while (bonds_bitfield.length < 4) {
+                bonds_bitfield = "0"+bonds_bitfield;
+            }
+            bonds_bitfield = bonds_bitfield.split("");
+        
+            if (bonds_bitfield[0] == 0 && bonds_bitfield[1] == 0 && bonds_bitfield[2] == 0 && bonds_bitfield[3] == 0) {
+                throw "Error, null bond.";
+            }
+            if (bonds_bitfield[3] == 1 && (bonds_bitfield[2] != 0 || bonds_bitfield[1] != 0 || bonds_bitfield[0] != 0)) {
+                throw "Error, normal bond and triplex bond cannot coexist.";
             }
             working_bytes.push(molecule.bonds[i].bond_type);
             
@@ -196,18 +205,34 @@ function renderMolecule(molecule: OM_Molecule, format: string): Uint8Array {
             cartesian_destination_y *= radius*spacing_factor;
             
             svg += "\n"
-            if (molecule.bonds[i].bond_type === 0x01) {
+            
+            let bonds_bitfield = (molecule.bonds[i].bond_type.toString(2));
+            while (bonds_bitfield.length < 4) {
+                bonds_bitfield = "0"+bonds_bitfield;
+            }
+            bonds_bitfield = bonds_bitfield.split("");
+            
+            if (bonds_bitfield[3] == 1) {
+                if (bonds_bitfield[0] == 1 || bonds_bitfield[1] == 1 || bonds_bitfield[2] == 1) {
+                    throw "Error, triplex bond and normal bond cannot coexist.";
+                }
+            
                 svg += "    <line stroke='black' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.2+"'/>"
             }
-            else if (molecule.bonds[i].bond_type === 0x0e) {
+            if (bonds_bitfield[2] == 1) {
                 svg += "    <line stroke='red' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.4+"'/>"
                 svg += "\n"
+            }
+            if (bonds_bitfield[1] == 1) {
                 svg += "    <line stroke='black' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.2+"'/>"
                 svg += "\n"
+            }
+            if (bonds_bitfield[0] == 1) {
                 svg += "    <line stroke='yellow' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.1+"'/>"
             }
-            else {
-                throw "Error, invalid bond ("+molecule.bonds[i].bond_type+")";
+            
+            if (bonds_bitfield[0] == 0 && bonds_bitfield[1] == 0 && bonds_bitfield[2] == 0 && bonds_bitfield[3] == 0) {
+                throw "Error, null bond.";
             }
         }
         
