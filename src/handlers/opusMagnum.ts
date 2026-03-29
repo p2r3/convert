@@ -299,7 +299,7 @@ function renderMolecule(molecule: OM_Molecule, format: string): Uint8Array {
     }
 }
 
-import class opusMagnumHandler implements FormatHandler {
+export class opusMagnumHandler implements FormatHandler {
 
     public name: string = "opusMagnum";
     public supportedFormats?: FileFormat[];
@@ -574,7 +574,7 @@ import class opusMagnumHandler implements FormatHandler {
     }
 }
 
-import class opusMagnumTTMHandler implements FormatHandler {
+export class opusMagnumTTMHandler implements FormatHandler {
     public name: string = "opusMagnum";
     public supportedFormats?: FileFormat[];
     public ready: boolean = false;
