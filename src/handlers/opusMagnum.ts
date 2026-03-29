@@ -301,14 +301,11 @@ function renderMolecule(molecule: OM_Molecule, format: string): Uint8Array {
     }
 }
 
-class opusMagnumHandler implements FormatHandler {
+import class opusMagnumHandler implements FormatHandler {
 
     public name: string = "opusMagnum";
     public supportedFormats?: FileFormat[];
     public ready: boolean = false;
-
-    #canvas?: HTMLCanvasElement;
-    #ctx?: CanvasRenderingContext2D;
     
     async init () {
         this.supportedFormats = [
@@ -334,10 +331,7 @@ class opusMagnumHandler implements FormatHandler {
                 lossless: false,
             },
         ];
-
-        this.#canvas = document.createElement("canvas");
-        this.#ctx = this.#canvas.getContext("2d") || undefined;
-
+        
         this.ready = true;
     }
 
@@ -347,10 +341,6 @@ class opusMagnumHandler implements FormatHandler {
         outputFormat: FileFormat
     ): Promise<FileData[]> {
         const outputFiles: FileData[] = [];
-        
-        if (!this.#canvas || !this.#ctx) {
-            throw "Handler not initialized.";
-        }
         
         if (inputFormat.internal === "puzzle" && (outputFormat.internal === "svg" || outputFormat.internal === "molecule")) {
             for (const file of inputFiles) {
@@ -516,10 +506,10 @@ class opusMagnumHandler implements FormatHandler {
             
                 for (let i = 0; i < inputFiles.length; i++) {
                     if (i+1 > inputFiles.length / 2) {
-                        products.push(file.bytes);
+                        products.push(inputFiles[i].bytes);
                     }
                     else {
-                        reagents.push(file.bytes);
+                        reagents.push(inputFiles[i].bytes);
                     }
                 }
             }
@@ -586,4 +576,80 @@ class opusMagnumHandler implements FormatHandler {
     }
 }
 
-export default opusMagnumHandler;
+import class opusMagnumTTMHandler implements FormatHandler {
+    public name: string = "opusMagnum";
+    public supportedFormats?: FileFormat[];
+    public ready: boolean = false;
+    
+    async init () {
+        this.supportedFormats = [
+            CommonFormats.TXT.supported("TXT", true, false),
+            {
+                name: "Opus Magnum molecule",
+                format: "molecule",
+                extension: "molecule",
+                mime: "application/x-opus-magnum-molecule",
+                from: false,
+                to: true,
+                internal: "molecule",
+                lossless: false,
+            },
+        ];
+        
+        this.ready = true;
+    }
+
+    async doConvert (
+        inputFiles: FileData[],
+        inputFormat: FileFormat,
+        outputFormat: FileFormat
+    ): Promise<FileData[]> {
+        const outputFiles: FileData[] = [];
+        
+        // Character-by-character, output molecules.
+        if (inputFormat.internal === "txt" && outputFormat.internal === "molecule") {
+            for (const file of inputFiles) {
+                // Get file as String
+                const decoder = new TextDecoder();
+                let file_as_string =  decoder.decode(file.bytes);
+                
+                // Establish molecule Dictionary
+                const molecule_dict = {
+                    "a": [],
+                    "b": [],
+                    "c": [],
+                    "d": [],
+                    "e": [],
+                    "f": [],
+                    "g": [],
+                    "h": [],
+                    "i": [],
+                    "j": [],
+                    "k": [],
+                    "l": [],
+                    "m": [],
+                    "n": [],
+                    "o": [],
+                    "p": [],
+                    "q": [],
+                    "r": [],
+                    "s": [],
+                    "t": [],
+                    "u": [],
+                    "v": [],
+                    "w": [],
+                    "x": [],
+                    "y": [],
+                    "z": [],
+                }
+            
+                // Iterate through each character and push the correct molecule.
+                for (let i = 0; i < file_as_string.length; i++) {
+                    
+                }
+            }
+        }
+        
+        return outputFiles;
+    }
+}
