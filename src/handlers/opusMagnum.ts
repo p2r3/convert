@@ -145,7 +145,6 @@ function renderMolecule(molecule: OM_Molecule, format: string): Uint8Array {
             while (bonds_bitfield.length < 4) {
                 bonds_bitfield = "0"+bonds_bitfield;
             }
-            bonds_bitfield = bonds_bitfield.split("");
         
             if (bonds_bitfield[0] === "0" && bonds_bitfield[1] === "0" && bonds_bitfield[2] === "0" && bonds_bitfield[3] === "0") {
                 throw "Error, null bond.";
@@ -210,7 +209,6 @@ function renderMolecule(molecule: OM_Molecule, format: string): Uint8Array {
             while (bonds_bitfield.length < 4) {
                 bonds_bitfield = "0"+bonds_bitfield;
             }
-            bonds_bitfield = bonds_bitfield.split("");
             
             if (bonds_bitfield[3] === "1") {
                 if (bonds_bitfield[0] === "1" || bonds_bitfield[1] === "1" || bonds_bitfield[2] === "1") {
