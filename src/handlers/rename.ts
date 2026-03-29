@@ -125,7 +125,8 @@ export const renameTxtHandler = renameHandler("renametxt", [
   CommonFormats.TEXT.builder("text").allowTo(),
   CommonFormats.JSON.builder("json").allowFrom(),
   CommonFormats.XML.builder("xml").allowFrom(),
-  CommonFormats.YML.builder("yaml").allowFrom()
+  CommonFormats.YML.builder("yaml").allowFrom(),
+  CommonFormats.SH.builder("sh").allowFrom()
 ]);
 /// handler for renaming json-based formats
 export const renameJsonHandler = renameHandler("renamejson", [
