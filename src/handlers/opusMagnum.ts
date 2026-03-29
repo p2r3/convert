@@ -581,7 +581,7 @@ export class opusMagnumTTMHandler implements FormatHandler {
     
     async init () {
         this.supportedFormats = [
-            CommonFormats.TXT.supported("TXT", true, false),
+            CommonFormats.TEXT.supported("txt", true, false),
             {
                 name: "Opus Magnum molecule",
                 format: "molecule",
