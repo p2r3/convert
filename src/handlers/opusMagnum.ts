@@ -189,13 +189,13 @@ function renderMolecule(molecule: OM_Molecule, format: string): Uint8Array {
         for (let i = 0; i < molecule.bonds.length; i++) {
             // Convert hex-based coordinates to Cartesian
             let cartesian_source_x = read_twoComplement(molecule.bonds[i].source_x);
-            let cartesian_source_y = read_twoComplement(molecule.bonds[i].source_y);
+            let cartesian_source_y = -read_twoComplement(molecule.bonds[i].source_y);
             let cartesian_destination_x = read_twoComplement(molecule.bonds[i].destination_x);
-            let cartesian_destination_y = read_twoComplement(molecule.bonds[i].destination_y);
+            let cartesian_destination_y = -read_twoComplement(molecule.bonds[i].destination_y);
             
             // Hexagonal offset
-            cartesian_source_x += 0.5*cartesian_source_y;
-            cartesian_destination_x += 0.5*cartesian_destination_y;
+            cartesian_source_x += -0.5*cartesian_source_y;
+            cartesian_destination_x += -0.5*cartesian_destination_y;
             
             // Multiply coordinates for spacing
             cartesian_source_x *= radius*spacing_factor;
@@ -249,10 +249,10 @@ function renderMolecule(molecule: OM_Molecule, format: string): Uint8Array {
         
             // Convert hex-based coordinates to Cartesian
             let cartesian_x = read_twoComplement(molecule.primes[i].x);
-            let cartesian_y = read_twoComplement(molecule.primes[i].y);
+            let cartesian_y = -read_twoComplement(molecule.primes[i].y);
             
             // Hexagonal offset
-            cartesian_x += 0.5*cartesian_y;
+            cartesian_x += -0.5*cartesian_y;
             
             // Multiply coordinates for spacing
             cartesian_x *= radius*spacing_factor;
@@ -495,12 +495,15 @@ export class opusMagnumHandler implements FormatHandler {
                     else if (file.name.includes("product") || file.name.includes("PRODUCT")) {
                         products.push(file.bytes);
                     }
+                    else {
+                        throw new Error("False flag.");
+                    }
                 }
             }
             // Otherwise, split down the middle.
             catch (_) {
-                reagents.length = 0;
-                products.length = 0;
+                reagents = [];
+                products = [];
             
                 for (let i = 0; i < inputFiles.length; i++) {
                     if (i+1 > inputFiles.length / 2) {
@@ -510,6 +513,11 @@ export class opusMagnumHandler implements FormatHandler {
                         reagents.push(inputFiles[i].bytes);
                     }
                 }
+            }
+            
+            // Double-check
+            if (reagents.length === 0 && products.length === 0) {
+                throw new Error("Error writing molecules to puzzle, reagents and products arrays are both empty.");
             }
             
             // Find puzzle name
@@ -570,12 +578,16 @@ export class opusMagnumHandler implements FormatHandler {
             throw new Error("Invalid input-output.");
         }
         
+        if (outputFiles.length === 0) {
+            throw new Error("Empty output.");
+        }
+        
         return outputFiles;
     }
 }
 
 export class opusMagnumTTMHandler implements FormatHandler {
-    public name: string = "opusMagnum";
+    public name: string = "opusMagnumTTM";
     public supportedFormats?: FileFormat[];
     public ready: boolean = false;
     
@@ -612,38 +624,65 @@ export class opusMagnumTTMHandler implements FormatHandler {
                 let file_as_string =  decoder.decode(file.bytes);
                 
                 // Establish molecule Dictionary
-                const molecule_dict = {
-                    "a": [],
-                    "b": [],
-                    "c": [],
-                    "d": [],
-                    "e": [],
-                    "f": [],
-                    "g": [],
-                    "h": [],
-                    "i": [],
-                    "j": [],
-                    "k": [],
-                    "l": [],
-                    "m": [],
-                    "n": [],
-                    "o": [],
-                    "p": [],
-                    "q": [],
-                    "r": [],
-                    "s": [],
-                    "t": [],
-                    "u": [],
-                    "v": [],
-                    "w": [],
-                    "x": [],
-                    "y": [],
-                    "z": [],
+                const molecule_dict: Dictionary<number[]> = {
+                    "a": [0x03, 0x00, 0x00, 0x00,
+                        0x01, 0x00, 0x00,
+                        0x01, 0x00, 0xff,
+                        0x01, 0x01, 0xff,
+                        
+                        0x03, 0x00, 0x00, 0x00,
+                        0x01, 0x00, 0x00, 0x00, 0xff,
+                        0x01, 0x00, 0xff, 0x01, 0xff,
+                        0x01, 0x01, 0xff, 0x00, 0x00,
+                    ],
+                    "b": [0x05, 0x00, 0x00, 0x00,
+                        0x01, 0x00, 0x01,
+                        0x01, 0x00, 0x00,
+                        0x01, 0x00, 0xff,
+                        0x01, 0x01, 0x00,
+                        0x01, 0x01, 0xff,
+                        
+                        0x05, 0x00, 0x00, 0x00,
+                        0x01, 0x00, 0x01, 0x00, 0x00,
+                        0x01, 0x00, 0x00, 0x00, 0xff,
+                        0x01, 0x00, 0xff, 0x01, 0xff,
+                        0x01, 0x01, 0xff, 0x01, 0x00,
+                        0x01, 0x01, 0x00, 0x00, 0x00,
+                    ],
+                    "c": [0x04, 0x00, 0x00, 0x00],
+                    "d": [0x05, 0x00, 0x00, 0x00],
+                    "e": [0x04, 0x00, 0x00, 0x00],
+                    "f": [0x05, 0x00, 0x00, 0x00],
+                    "g": [0x06, 0x00, 0x00, 0x00],
+                    "h": [0x05, 0x00, 0x00, 0x00],
+                    "i": [0x03, 0x00, 0x00, 0x00],
+                    "j": [0x04, 0x00, 0x00, 0x00],
+                    "k": [0x05, 0x00, 0x00, 0x00],
+                    "l": [0x04, 0x00, 0x00, 0x00],
+                    "m": [0x05, 0x00, 0x00, 0x00],
+                    "n": [0x04, 0x00, 0x00, 0x00],
+                    "o": [0x04, 0x00, 0x00, 0x00],
+                    "p": [0x05, 0x00, 0x00, 0x00],
+                    "q": [0x05, 0x00, 0x00, 0x00],
+                    "r": [0x03, 0x00, 0x00, 0x00],
+                    "s": [0x04, 0x00, 0x00, 0x00],
+                    "t": [0x05, 0x00, 0x00, 0x00],
+                    "u": [0x04, 0x00, 0x00, 0x00],
+                    "v": [0x03, 0x00, 0x00, 0x00],
+                    "w": [0x05, 0x00, 0x00, 0x00],
+                    "x": [0x05, 0x00, 0x00, 0x00],
+                    "y": [0x04, 0x00, 0x00, 0x00],
+                    "z": [0x04, 0x00, 0x00, 0x00],
                 }
             
                 // Iterate through each character and push the correct molecule.
                 for (let i = 0; i < file_as_string.length; i++) {
-                    
+                    if (file_as_string[i] in molecule_dict) {
+                        outputFiles.push({bytes: new Uint8Array(molecule_dict[file_as_string[i]]), name: file.name.split(".")[0] + "_character_" + i + "." + outputFormat.extension});
+                    }
+                    else {
+                        outputFiles.push({bytes: new Uint8Array(molecule_dict["x"]), name: file.name.split(".")[0] + "_character_" + i + "." + outputFormat.extension});
+                    }
                 }
             }
         }
