@@ -635,7 +635,7 @@ export class opusMagnumITMHandler implements FormatHandler {
             throw "Handler not initialized.";
         }
         
-        if ((inputFormat.internal === "png" || inputFormat.internal === "jpg") && outputFormat.internal === "molecule") {
+        if (inputFormat.internal === "png" && outputFormat.internal === "molecule") {
             for (const file of inputFiles) {
                 // Some code copied from mcmap.ts
                 const blob = new Blob([file.bytes as BlobPart], { type: inputFormat.mime });
@@ -649,16 +649,18 @@ export class opusMagnumITMHandler implements FormatHandler {
                 
                 const max_canvas = 128;
 
-                if (image.naturalWidth > max_canvas) {
-                    this.#canvas.width = max_canvas;
+                if (image.naturalWidth > max_canvas || image.naturalHeight > max_canvas) {
+                    if (image.naturalWidth > image.naturalHeight) {
+                        this.#canvas.width = max_canvas;
+                        this.#canvas.height = Math.floor(image.height*(max_canvas/image.width));
+                    }
+                    else {
+                        this.#canvas.width = Math.floor(image.width*(max_canvas/image.height));
+                        this.#canvas.height = max_canvas;
+                    }
                 }
                 else {
                     this.#canvas.width = image.width;
-                }
-                if (image.naturalHeight > max_canvas) {
-                    this.#canvas.height = max_canvas;
-                }
-                else {
                     this.#canvas.height = image.height;
                 }
                 this.#ctx.drawImage(image, 0, 0, this.#canvas.width, this.#canvas.height);
