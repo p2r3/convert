@@ -46,7 +46,7 @@ class clangWasiHandler implements FormatHandler {
       format: "wasm",
       extension: "wasm",
       mime: "application/wasm",
-      from: true,
+      from: false,
       to: true,
       internal: "wasm",
       category: Category.CODE,
