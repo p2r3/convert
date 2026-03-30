@@ -98,30 +98,29 @@ import CommonFormats from "src/CommonFormats.ts";
 class dummyHandler implements FormatHandler {
 
   public name: string = "dummy";
-  public supportedFormats?: FileFormat[];
+  public supportedFormats: FileFormat[] = [
+    // Example PNG format, with both input and output disabled
+    CommonFormats.PNG.builder("png")
+      .markLossless()
+      .allowFrom(false)
+      .allowTo(false),
+
+    // Alternatively, if you need a custom format, define it like so:
+    {
+      name: "CompuServe Graphics Interchange Format (GIF)",
+      format: "gif",
+      extension: "gif",
+      mime: "image/gif",
+      from: false,
+      to: false,
+      internal: "gif",
+      category: ["image", "video"],
+      lossless: false
+    },
+  ];
   public ready: boolean = false;
 
   async init () {
-    this.supportedFormats = [
-      // Example PNG format, with both input and output disabled
-      CommonFormats.PNG.builder("png")
-        .markLossless()
-        .allowFrom(false)
-        .allowTo(false),
-
-      // Alternatively, if you need a custom format, define it like so:
-      {
-        name: "CompuServe Graphics Interchange Format (GIF)",
-        format: "gif",
-        extension: "gif",
-        mime: "image/gif",
-        from: false,
-        to: false,
-        internal: "gif",
-        category: ["image", "video"],
-        lossless: false
-      },
-    ];
     this.ready = true;
   }
 
