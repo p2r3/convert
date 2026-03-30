@@ -662,7 +662,7 @@ export class opusMagnumTTMHandler implements FormatHandler {
                     // Multi-substitution
                     else if (file_as_string[i] in text_replace_multi) {
                         for (let i2 = 0; i2 < text_replace_multi[file_as_string[i]].length; i2++) {
-                            outputFiles.push({bytes: new Uint8Array(molecule_dict[text_replace_multi[file_as_string[i][i2]]]), name: base_name + "_character_" + i + "_" + i2 + "." + outputFormat.extension});
+                            outputFiles.push({bytes: new Uint8Array(molecule_dict[text_replace_multi[file_as_string[i]][i2]]), name: base_name + "_character_" + i + "_" + i2 + "." + outputFormat.extension});
                         }
                     }
                     // Clean apostrophes
