@@ -72,6 +72,9 @@ function write_lendian_4(x: number): number[] {
     if (x > 0xFFFFFFFF) {
         throw new Error("Error in write_lendian_4: number too big.");
     }
+    if (x < 0x00) {
+        throw new Error("Error in write_lendian_4: number is negative.");
+    }
 
     let num_string = x.toString(16);
     
@@ -81,7 +84,7 @@ function write_lendian_4(x: number): number[] {
     
     console.log("write_lendian_4: "+"("+x+")"+" ("+num_string+")");
     
-    const array = [parseInt(num_string.substring(6,8),16),parseInt(num_string.substring(4,6),16),parseInt(num_string.substring(2,4),16),parseInt(num_string.substring(0,2),16)];
+    const array : number[] = [parseInt(num_string.substring(6,8),16),parseInt(num_string.substring(4,6),16),parseInt(num_string.substring(2,4),16),parseInt(num_string.substring(0,2),16)];
     console.log("write_lendian_4: "+array);
     return array
 }
@@ -115,7 +118,7 @@ function write_twoComplement(input: number): number {
         throw "Invalid input for write_twoComplement: "+input;
     }
     
-    return input
+    return output;
 }
 
 function renderMolecule(molecule: OM_Molecule, format: string): Uint8Array {
@@ -127,7 +130,7 @@ function renderMolecule(molecule: OM_Molecule, format: string): Uint8Array {
         let working_bytes: number[] = [];
         
         // Push runlength for primes
-        working_bytes = working_bytes.concat(write_lendian_4(molecule.primes.length));
+        working_bytes.push(...write_lendian_4(molecule.primes.length));
         
         // Push prime data
         for (let i = 0; i < molecule.primes.length; i++) {
@@ -136,12 +139,18 @@ function renderMolecule(molecule: OM_Molecule, format: string): Uint8Array {
             }
             working_bytes.push(molecule.primes[i].element);
             
+            if (molecule.primes[i].x > 0xFF || molecule.primes[i].x < 0x00 || Math.floor(molecule.primes[i].x) !== molecule.primes[i].x) {
+                throw "Error, invalid prime x ("+molecule.primes[i].x+")";
+            }
+            if (molecule.primes[i].y > 0xFF || molecule.primes[i].y < 0x00 || Math.floor(molecule.primes[i].y) !== molecule.primes[i].y) {
+                throw "Error, invalid prime y ("+molecule.primes[i].y+")";
+            }
             working_bytes.push(molecule.primes[i].x);
             working_bytes.push(molecule.primes[i].y);
         }
         
         // Push runlength for bonds
-        working_bytes = working_bytes.concat(write_lendian_4(molecule.bonds.length));
+        working_bytes.push(...write_lendian_4(molecule.bonds.length));
 
         // Push bonds data
         for (let i = 0; i < molecule.bonds.length; i++) {
@@ -158,19 +167,18 @@ function renderMolecule(molecule: OM_Molecule, format: string): Uint8Array {
             }
             working_bytes.push(molecule.bonds[i].bond_type);
             
-            if (molecule.bonds[i].source_x > 0xFF || molecule.bonds[i].source_x < 0x00) {
+            if (molecule.bonds[i].source_x > 0xFF || molecule.bonds[i].source_x < 0x00 || Math.floor(molecule.bonds[i].source_x) !== molecule.bonds[i].source_x) {
                 throw "Error, invalid source_x ("+molecule.bonds[i].source_x+")";
             }
-            if (molecule.bonds[i].source_y > 0xFF || molecule.bonds[i].source_y < 0x00) {
+            if (molecule.bonds[i].source_y > 0xFF || molecule.bonds[i].source_y < 0x00 || Math.floor(molecule.bonds[i].source_y) !== molecule.bonds[i].source_y) {
                 throw "Error, invalid source_y ("+molecule.bonds[i].source_y+")";
             }
-            if (molecule.bonds[i].destination_x > 0xFF || molecule.bonds[i].destination_x < 0x00) {
+            if (molecule.bonds[i].destination_x > 0xFF || molecule.bonds[i].destination_x < 0x00 || Math.floor(molecule.bonds[i].destination_x) !== molecule.bonds[i].destination_x) {
                 throw "Error, invalid destination_x ("+molecule.bonds[i].destination_x+")";
             }
-            if (molecule.bonds[i].destination_y > 0xFF || molecule.bonds[i].destination_y < 0x00) {
+            if (molecule.bonds[i].destination_y > 0xFF || molecule.bonds[i].destination_y < 0x00 || Math.floor(molecule.bonds[i].destination_y) !== molecule.bonds[i].destination_y) {
                 throw "Error, invalid destination_y ("+molecule.bonds[i].destination_y+")";
             }
-            
             
             working_bytes.push(molecule.bonds[i].source_x);
             working_bytes.push(molecule.bonds[i].source_y);
@@ -178,6 +186,7 @@ function renderMolecule(molecule: OM_Molecule, format: string): Uint8Array {
             working_bytes.push(molecule.bonds[i].destination_y);
         }
         
+        console.log("working_bytes:");
         console.log(working_bytes);
         return new Uint8Array(working_bytes);
     }
@@ -487,16 +496,18 @@ export class opusMagnumHandler implements FormatHandler {
             }
         }
         else if (inputFormat.internal === "molecule" && outputFormat.internal === "puzzle") {
+            console.log("Beginning molecule to puzzle compilation...");
+            
             // Iterate through inputs to see if their names indicate them being reagents or products
             let reagents: Uint8Array[] = [];
             let products: Uint8Array[] = [];
             try {
                 for (const file of inputFiles) {
                     if (file.name.includes("reagent") || file.name.includes("REAGENT")) {
-                        reagents.push(file.bytes);
+                        reagents.push(new Uint8Array(file.bytes));
                     }
                     else if (file.name.includes("product") || file.name.includes("PRODUCT")) {
-                        products.push(file.bytes);
+                        products.push(new Uint8Array(file.bytes));
                     }
                     else {
                         throw new Error("False flag.");
@@ -510,10 +521,10 @@ export class opusMagnumHandler implements FormatHandler {
             
                 for (let i = 0; i < inputFiles.length; i++) {
                     if (i+1 > inputFiles.length / 2) {
-                        products.push(inputFiles[i].bytes);
+                        products.push(new Uint8Array(inputFiles[i].bytes));
                     }
                     else {
-                        reagents.push(inputFiles[i].bytes);
+                        reagents.push(new Uint8Array(inputFiles[i].bytes));
                     }
                 }
             }
@@ -529,6 +540,7 @@ export class opusMagnumHandler implements FormatHandler {
             }
             
             // Find puzzle name
+            console.log("Beginning search for puzzle name...");
             let puzzle_name = inputFiles[0].name.substring(0, 1);
             while (true) {
                 let break_flag = false;
@@ -557,15 +569,20 @@ export class opusMagnumHandler implements FormatHandler {
                 puzzle_name = puzzle_name.substring(0,puzzle_name.length-1);
             }
             
+            // Make sure name can be run-length encoded.
+            const encoder = new TextEncoder();
+            while ((encoder.encode(puzzle_name)).length > 0xFF) {
+                puzzle_name = puzzle_name.substring(0,puzzle_name.length-1);
+            }
+            
             console.log("Found puzzle name: "+puzzle_name);
             
             // Finally, write the file
             const working_bytes: number[] = [];
             
             working_bytes.push(0x02,0x00,0x00,0x00);
-            working_bytes.push(puzzle_name.length);
             
-            const encoder = new TextEncoder();
+            working_bytes.push((encoder.encode(puzzle_name)).length);
             working_bytes.push(...encoder.encode(puzzle_name));
             
             working_bytes.push(0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00);
@@ -584,6 +601,7 @@ export class opusMagnumHandler implements FormatHandler {
             }
             
             // Return the combined file
+            console.log("working_bytes:");
             console.log(working_bytes);
             outputFiles.push({ bytes: new Uint8Array(working_bytes), name: puzzle_name + "." + outputFormat.extension });
         }
@@ -641,22 +659,25 @@ export class opusMagnumITMHandler implements FormatHandler {
         }
         
         if (inputFormat.internal === "png" && outputFormat.internal === "molecule") {
+            console.log("Beginning image to molecule conversion file iteration...");
             for (const file of inputFiles) {
                 // Some code copied from mcmap.ts
+                console.log("Creating blob for "+file.name+"...");
                 const blob = new Blob([file.bytes as BlobPart], { type: inputFormat.mime });
-
                 console.log("Blob created for "+file.name);
 
+                console.log("Creating image for "+file.name+"...");
                 const image = new Image();
                 await new Promise((resolve, reject) => {
                     image.addEventListener("load", resolve);
                     image.addEventListener("error", reject);
                     image.src = URL.createObjectURL(blob);
                 });
-                
                 console.log("Image created for "+file.name);
                 
+                // Limit size of canvas for SVG rendering
                 const max_canvas = 128;
+                console.log("max_canvas: "+max_canvas);
 
                 if (image.naturalWidth > max_canvas || image.naturalHeight > max_canvas) {
                     if (image.naturalWidth > image.naturalHeight) {
@@ -667,13 +688,14 @@ export class opusMagnumITMHandler implements FormatHandler {
                         this.#canvas.width = Math.floor(image.width*(max_canvas/image.height));
                         this.#canvas.height = max_canvas;
                     }
+                    console.log("Image resized to "+this.#canvas.width+" "+this.#canvas.height);
                 }
                 else {
                     this.#canvas.width = image.width;
                     this.#canvas.height = image.height;
                 }
+                console.log("Drawing image for "+file.name+"...");
                 this.#ctx.drawImage(image, 0, 0, this.#canvas.width, this.#canvas.height);
-                
                 console.log("Image drawn for "+file.name);
 
                 const pixels = this.#ctx.getImageData(0, 0, this.#canvas.width, this.#canvas.height);
@@ -685,13 +707,18 @@ export class opusMagnumITMHandler implements FormatHandler {
                 
                 // Go through each pixel and determine which atom color it's closest to, then write an atom at that position.
                 for (let i = 0; i < pixels.data.length; i++) {
+                    // Print percentage iteration milestones
+                    if (i/pixels.data.length === 0.5 || pixels.data.length+1 === 0.5) {
+                        console.log("Halfway done processing pixels.");
+                    }
+                    
                     if (i % 4 !== 0) {
                         continue;
                     }
                     else if (pixels.data[i+3] === 0) {
                         continue;
                     }
-                
+                    
                     const pixel_colors: number[] = [pixels.data[i],pixels.data[i+1],pixels.data[i+2]];
                     let working_best_fit: number = 1; // this is a elementColors index
                 
@@ -724,12 +751,17 @@ export class opusMagnumITMHandler implements FormatHandler {
                     let molecule_x = this_pixel_x - (this.#canvas.width/2);
                     let molecule_y = -(this_pixel_y - (this.#canvas.height/2));
                     
-                    molecule_x -= Math.floor(molecule_y/2);
+                    molecule_x -= molecule_y/2;
+                    
+                    // Floor it?
+                    molecule_x = Math.floor(molecule_x);
+                    molecule_y = Math.floor(molecule_y);
                     
                     working_molecule.primes.push({element: working_best_fit, x: write_twoComplement(molecule_x), y: write_twoComplement(molecule_y)});
                 }
                 
                 // Render the molecule to a file
+                console.log("working_molecule:");
                 console.log(working_molecule);
                 outputFiles.push({ bytes: renderMolecule(working_molecule, outputFormat.internal), name: file.name.split(".").slice(0, -1).join(".") + "." + outputFormat.extension });
             }
