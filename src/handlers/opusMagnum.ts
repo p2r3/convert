@@ -312,9 +312,9 @@ function renderMolecule(molecule: OM_Molecule, format: string): Uint8Array {
     }
 }
 
-export class opusMagnumHandler implements FormatHandler {
+export class opusMagnumMainHandler implements FormatHandler {
 
-    public name: string = "opusMagnum";
+    public name: string = "opusMagnumMain";
     public supportedFormats?: FileFormat[];
     public ready: boolean = false;
     
@@ -518,13 +518,18 @@ export class opusMagnumHandler implements FormatHandler {
             catch (_) {
                 reagents = [];
                 products = [];
-            
-                for (let i = 0; i < inputFiles.length; i++) {
-                    if (i+1 > inputFiles.length / 2) {
-                        products.push(new Uint8Array(inputFiles[i].bytes));
-                    }
-                    else {
-                        reagents.push(new Uint8Array(inputFiles[i].bytes));
+                
+                if (inputFiles.length === 1) {
+                    reagents.push(new Uint8Array(inputFiles[0].bytes));
+                }
+                else {
+                    for (let i = 0; i < inputFiles.length; i++) {
+                        if (i+1 > inputFiles.length / 2) {
+                            products.push(new Uint8Array(inputFiles[i].bytes));
+                        }
+                        else {
+                            reagents.push(new Uint8Array(inputFiles[i].bytes));
+                        }
                     }
                 }
             }
@@ -542,31 +547,37 @@ export class opusMagnumHandler implements FormatHandler {
             // Find puzzle name
             console.log("Beginning search for puzzle name...");
             let puzzle_name = inputFiles[0].name.substring(0, 1);
-            while (true) {
-                let break_flag = false;
-                for (const file of inputFiles) {
-                    if (!file.name.startsWith(puzzle_name)) {
-                        puzzle_name = puzzle_name.substring(0,puzzle_name.length-1);
-                        break_flag = true;
+            
+            if (inputFiles.length === 1) {
+                puzzle_name = inputFiles[0].name.split(".").slice(0, -1).join(".");
+            }
+            else {
+                while (true) {
+                    let break_flag = false;
+                    for (const file of inputFiles) {
+                        if (!file.name.startsWith(puzzle_name)) {
+                            puzzle_name = puzzle_name.substring(0,puzzle_name.length-1);
+                            break_flag = true;
+                            break;
+                        }
+                    }
+                    
+                    if (break_flag) {
                         break;
                     }
+                    
+                    puzzle_name = inputFiles[0].name.substring(0, puzzle_name.length+1);
                 }
                 
-                if (break_flag) {
-                    break;
+                // Default puzzle name
+                if (puzzle_name === "" || puzzle_name.length > 0xFF) {
+                    puzzle_name = "Unnamed puzzle";
                 }
                 
-                puzzle_name = inputFiles[0].name.substring(0, puzzle_name.length+1);
-            }
-            
-            // Default puzzle name
-            if (puzzle_name === "" || puzzle_name.length > 0xFF) {
-                puzzle_name = "Unnamed puzzle";
-            }
-            
-            // Remove trailing spaces and underscores
-            while (puzzle_name.endsWith("_") || puzzle_name.endsWith(" ")) {
-                puzzle_name = puzzle_name.substring(0,puzzle_name.length-1);
+                // Remove trailing spaces and underscores
+                while (puzzle_name.endsWith("_") || puzzle_name.endsWith(" ")) {
+                    puzzle_name = puzzle_name.substring(0,puzzle_name.length-1);
+                }
             }
             
             // Make sure name can be run-length encoded.
