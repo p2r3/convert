@@ -3,6 +3,7 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import CommonFormats from "src/CommonFormats.ts";
 import { Packager, largeAssets, downloadProject } from "turbowarp-packager-browser";
+import unpackager from "@turbowarp/unpackager";
 
 // patching some assets
 largeAssets.scaffolding.src = "/convert/js/turbowarp-scaffolding/scaffolding-full.js";
@@ -19,13 +20,15 @@ class turbowarpHandler implements FormatHandler {
       extension: "sb3",
       mime: "application/x.scratch.sb3",
       from: true,
-      to: false,
+      to: true,
       internal: "sb3",
       category: "archive",
-      lossless: false,
+      lossless: true, // all project data is in the html 
     },
     CommonFormats.HTML.builder("html")
       .allowTo()
+      .allowFrom()
+      .markLossless()
   ];
   public ready: boolean = false;
 
@@ -40,18 +43,29 @@ class turbowarpHandler implements FormatHandler {
   ): Promise<FileData[]> {
     const outputFiles: FileData[] = [];
     for (const inputFile of inputFiles) {
-      const project = await downloadProject(inputFile.bytes);
-      
-      const packager = new Packager();
-      packager.project = project;
-      packager.options.target = "html";
+      if (inputFormat.internal === "sb3") {
+        const project = await downloadProject(inputFile.bytes);
+        
+        const packager = new Packager();
+        packager.project = project;
+        packager.options.target = "html";
 
-      const bytes = (await packager.package()).data;
+        const bytes = (await packager.package()).data;
 
-      outputFiles.push({ 
-        name: inputFile.name.replace(/\.sb3$/, ".html"), 
-        bytes 
-      });
+        outputFiles.push({ 
+          name: inputFile.name.replace(/\.sb3$/, ".html"), 
+          bytes 
+        });
+      } else if (inputFormat.internal === "html") {
+        const data = (await unpackager(inputFile.bytes)).data;
+        const bytes = new Uint8Array(data);
+        outputFiles.push({ 
+          name: inputFile.name.replace(/\.html$/, ".sb3"), 
+          bytes
+        });
+      } else {
+        throw new Error(`turbowarpHandler cannot convert from ${inputFormat.mime} to ${outputFormat.mime}`);
+      }
     }
     return outputFiles;
   }
