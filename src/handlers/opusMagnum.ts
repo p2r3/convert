@@ -686,7 +686,7 @@ export class opusMagnumITMHandler implements FormatHandler {
                             continue;
                         }
                     
-                        const this_color_as_array: string[] = (elementColors[i2].replace("rgb(","").replace(")")).split(", ");
+                        const this_color_as_array: string[] = (elementColors[i2].replace("rgb(","").replace(")","")).split(", ");
                         const best_color_as_array: string[] = (elementColors[working_best_fit].replace("rgb(","").replace(")")).split(", ");
                         
                         const difference_from_this = Math.abs(pixel_colors[0] - parseInt(this_color_as_array[0])) + Math.abs(pixel_colors[1] - parseInt(this_color_as_array[1])) + Math.abs(pixel_colors[2] - parseInt(this_color_as_array[2]));
