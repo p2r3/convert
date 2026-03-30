@@ -423,7 +423,6 @@ export class opusMagnumHandler implements FormatHandler {
                     
                     // Arrive at bonds data.
                     const bonds_rl = read_lendian_4(file.bytes[byte_cusror],file.bytes[byte_cusror+1],file.bytes[byte_cusror+2],file.bytes[byte_cusror+3]);;
-                    console.log("brl: "+bonds_rl);
                     
                     // Increment cursor by 4 due to padding.
                     byte_cusror += 4;
@@ -622,7 +621,7 @@ export class opusMagnumTTMHandler implements FormatHandler {
             const bd_rl = molecule_dict[key][4+el_rl*3];
             
             if (molecule_dict[key].length !== 4+el_rl*3+4+bd_rl*5) {
-                console.log("Opus Magnum: invalid predefined molecule: "+key);
+                console.log("Opus Magnum: invalid predefined molecule length: "+key);
                 console.log(el_rl);
                 console.log(bd_rl);
             }
@@ -651,25 +650,33 @@ export class opusMagnumTTMHandler implements FormatHandler {
             for (const file of inputFiles) {
                 // Get file as String
                 const decoder = new TextDecoder();
+                const base_name = file.name.split(".")[0];
                 let file_as_string =  decoder.decode(file.bytes);
             
                 // Iterate through each character and push the correct molecule.
                 for (let i = 0; i < file_as_string.length; i++) {
-                    if (file_as_string[i] === " ") {
+                    // Skip these
+                    if (file_as_string[i] === " " || file_as_string[i] === "\n") {
                     
                     }
+                    // Multi-substitution
+                    else if (file_as_string[i] in text_replace_multi) {
+                        for (let i2 = 0; i2 < text_replace_multi[file_as_string[i]].length; i2++) {
+                            outputFiles.push({bytes: new Uint8Array(molecule_dict[text_replace_multi[file_as_string[i][i2]]]), name: base_name + "_character_" + i + "_" + i2 + "." + outputFormat.extension});
+                        }
+                    }
+                    // Clean apostrophes
                     else if (file_as_string[i] === "'" || file_as_string[i] === "‘" || file_as_string[i] === "’") {
-                        outputFiles.push({bytes: new Uint8Array(molecule_dict["'"]), name: file.name.split(".")[0] + "_character_" + i + "." + outputFormat.extension});
+                        outputFiles.push({bytes: new Uint8Array(molecule_dict["'"]), name: base_name + "_character_" + i + "." + outputFormat.extension});
                     }
-                    else if (file_as_string[i] === "\"" || file_as_string[i] === "“" || file_as_string[i] === "”") {
-                        outputFiles.push({bytes: new Uint8Array(molecule_dict["'"]), name: file.name.split(".")[0] + "_character_A" + i + "." + outputFormat.extension});
-                        outputFiles.push({bytes: new Uint8Array(molecule_dict["'"]), name: file.name.split(".")[0] + "_character_B" + i + "." + outputFormat.extension});
-                    }
+                    // Standard fetching
                     else if (file_as_string[i] in molecule_dict) {
-                        outputFiles.push({bytes: new Uint8Array(molecule_dict[file_as_string[i]]), name: file.name.split(".")[0] + "_character_" + i + "." + outputFormat.extension});
+                        outputFiles.push({bytes: new Uint8Array(molecule_dict[file_as_string[i]]), name: base_name + "_character_" + i + "." + outputFormat.extension});
                     }
+                    // Unknown symbol
                     else {
-                        outputFiles.push({bytes: new Uint8Array(molecule_dict["unknown"]), name: file.name.split(".")[0] + "_character_" + i + "." + outputFormat.extension});
+                        console.warn("OpusMagnumTTM found an unrecognized character: "+file_as_string[i])
+                        outputFiles.push({bytes: new Uint8Array(molecule_dict["unknown"]), name: base_name + "_character_" + i + "." + outputFormat.extension});
                     }
                 }
             }
@@ -677,6 +684,34 @@ export class opusMagnumTTMHandler implements FormatHandler {
         
         return outputFiles;
     }
+}
+
+const text_replace_multi: Dictionary<string[]> = {
+    "\"": ["'","'"],
+    "¼": ["1","/","4"],
+    "½": ["1","/","2"],
+    "¾": ["3","/","4"],
+    "“": ["'","'"],
+    "”": ["'","'"],
+    "…": [".",".","."],
+    "℅": ["c","/","o"],
+    "⅐": ["1","/","7"],
+    "⅑": ["1","/","9"],
+    "⅒": ["1","/","10"],
+    "⅓": ["1","/","3"],
+    "⅔": ["2","/","3"],
+    "⅕": ["1","/","5"],
+    "⅖": ["2","/","5"],
+    "⅗": ["3","/","5"],
+    "⅘": ["4","/","5"],
+    "⅙": ["1","/","6"],
+    "⅚": ["5","/","6"],
+    "⅛": ["1","/","8"],
+    "⅜": ["3","/","8"],
+    "⅝": ["5","/","8"],
+    "⅞": ["7","/","8"],
+    "⅟": ["1","/"],
+    "↉": ["0","/","3"],
 }
 
 const molecule_dict: Dictionary<number[]> = {
@@ -749,17 +784,17 @@ const molecule_dict: Dictionary<number[]> = {
         0x01, 0x00, 0x00, 0x00, 0x01
     ],
     "f": [0x05, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0xFF,
         0x01, 0x00, 0x00,
-        0x01, 0x01, 0x01,
-        0x01, 0x01, 0x02,
-        0x01, 0x00, 0x02,
         0x01, 0x00, 0x01,
+        0x01, 0x01, 0x01,
+        0x01, 0x01, 0x00,
         
         0x04, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0x00,
+        0x01, 0x00, 0xFF, 0x00, 0x00,
         0x01, 0x00, 0x00, 0x00, 0x01,
-        0x01, 0x00, 0x01, 0x01, 0x01,
-        0x01, 0x00, 0x01, 0x00, 0x02,
-        0x01, 0x00, 0x02, 0x01, 0x00
+        0x01, 0x00, 0x01, 0x01, 0x01
     ],
     "g": [0x06, 0x00, 0x00, 0x00,
         0x01, 0x00, 0x00,
@@ -1076,18 +1111,22 @@ const molecule_dict: Dictionary<number[]> = {
         0x01, 0x00, 0x01, 0x01, 0x01,
         0x01, 0x00, 0x00, 0x01, 0x00
     ],
-    "F": [0x05, 0x00, 0x00, 0x00,
+    "F": [0x07, 0x00, 0x00, 0x00,
         0x01, 0x00, 0xFF,
         0x01, 0x00, 0x00,
         0x01, 0x00, 0x01,
         0x01, 0x01, 0x01,
         0x01, 0x01, 0x00,
+        0x01, 0x02, 0x01,
+        0x01, 0x02, 0x00,
         
-        0x04, 0x00, 0x00, 0x00,
+        0x06, 0x00, 0x00, 0x00,
         0x01, 0x00, 0x00, 0x01, 0x00,
         0x01, 0x00, 0xFF, 0x00, 0x00,
         0x01, 0x00, 0x00, 0x00, 0x01,
-        0x01, 0x00, 0x01, 0x01, 0x01
+        0x01, 0x00, 0x01, 0x01, 0x01,
+        0x01, 0x01, 0x01, 0x02, 0x01,
+        0x01, 0x01, 0x00, 0x02, 0x00,
     ],
     "G": [0x06, 0x00, 0x00, 0x00,
         0x01, 0x00, 0x01,
@@ -1831,5 +1870,31 @@ const molecule_dict: Dictionary<number[]> = {
         0x01, 0x00, 0x00, 0x00, 0x01,
         0x01, 0x00, 0x01, 0x01, 0x01,
         0x01, 0x00, 0x01, 0x00, 0x02
+    ],
+    "[": [0x05, 0x00, 0x00, 0x00,
+        0x01, 0x01, 0x01,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0xff,
+        0x01, 0x01, 0xff,
+        
+        0x04, 0x00, 0x00, 0x00,
+        0x01, 0x01, 0x01, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0xff,
+        0x01, 0x00, 0xff, 0x01, 0xff
+    ],
+    "]": [0x05, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x01, 0x01,
+        0x01, 0x01, 0x00,
+        0x01, 0x01, 0xff,
+        0x01, 0x00, 0xff,
+        
+        0x04, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01, 0x01, 0x01,
+        0x01, 0x01, 0x01, 0x01, 0x00,
+        0x01, 0x01, 0x00, 0x01, 0xff,
+        0x01, 0x01, 0xff, 0x00, 0xff
     ],
 }
