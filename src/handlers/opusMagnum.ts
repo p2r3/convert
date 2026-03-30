@@ -46,22 +46,22 @@ const elementSymbols: Dictionary<string> = {
 }
 
 const elementColors: Dictionary<string> = {
-    1: "#A39770",
-    2: "#B3F2F4",
-    3: "#AFDC02",
-    4: "#FE7516",
-    5: "#2B686C",
-    6: "#BBB5A2",
-    7: "#9A601F",
-    8: "#A6A4A0",
-    9: "#814837",
-    10: "#50413D",
-    11: "#B0AD8C",
-    12: "#95A7A8",
-    13: "#C5AD9A",
-    14: "#3A3829",
-    15: "#888888",
-    16: "#0A0911",
+    1: "rgb(163, 151, 112)",
+    2: "rgb(179, 242, 244)",
+    3: "rgb(175, 220, 2)",
+    4: "rgb(254, 117, 22)",
+    5: "rgb(43, 104, 108)",
+    6: "rgb(187, 181, 162)",
+    7: "rgb(154, 96, 31)",
+    8: "rgb(166, 164, 160)",
+    9: "rgb(129, 72, 55)",
+    10: "rgb(80, 65, 61)",
+    11: "rgb(176, 173, 140)",
+    12: "rgb(149, 167, 168)",
+    13: "rgb(197, 173, 154)",
+    14: "rgb(58, 56, 41)",
+    15: "rgb(136, 136, 136)",
+    16: "rgb(10, 9, 17)",
 }
 
 function read_lendian_4(a: number, b: number, c: number, d: number): number {
@@ -594,6 +594,139 @@ export class opusMagnumHandler implements FormatHandler {
     }
 }
 
+// Image-to-molecule handler
+export class opusMagnumITMHandler implements FormatHandler {
+    public name: string = "opusMagnumITM";
+    public supportedFormats?: FileFormat[];
+    public ready: boolean = false;
+    
+    #canvas?: HTMLCanvasElement;
+    #ctx?: CanvasRenderingContext2D;
+    
+    async init () {
+        this.supportedFormats = [
+            CommonFormats.PNG.supported("png", true, false),
+            {
+                name: "Opus Magnum molecule",
+                format: "molecule",
+                extension: "molecule",
+                mime: "application/x-opus-magnum-molecule",
+                from: false,
+                to: true,
+                internal: "molecule",
+                lossless: false,
+            },
+        ];
+
+        this.#canvas = document.createElement("canvas");
+        this.#ctx = this.#canvas.getContext("2d") || undefined;
+        
+        this.ready = true;
+    }
+    
+    async doConvert (
+        inputFiles: FileData[],
+        inputFormat: FileFormat,
+        outputFormat: FileFormat
+    ): Promise<FileData[]> {
+        const outputFiles: FileData[] = [];
+        
+        if (!this.#canvas || !this.#ctx) {
+            throw "Handler not initialized.";
+        }
+        
+        if ((inputFormat.internal === "png" || inputFormat.internal === "jpg") && outputFormat.internal === "molecule") {
+            for (const file of inputFiles) {
+                // Some code copied from mcmap.ts
+                const blob = new Blob([file.bytes as BlobPart], { type: inputFormat.mime });
+
+                const image = new Image();
+                await new Promise((resolve, reject) => {
+                    image.addEventListener("load", resolve);
+                    image.addEventListener("error", reject);
+                    image.src = URL.createObjectURL(blob);
+                });
+                
+                const max_canvas = 128;
+
+                if (image.naturalWidth > max_canvas) {
+                    this.#canvas.width = max_canvas;
+                }
+                else {
+                    this.#canvas.width = image.width;
+                }
+                if (image.naturalHeight > max_canvas) {
+                    this.#canvas.height = max_canvas;
+                }
+                else {
+                    this.#canvas.height = image.height;
+                }
+                this.#ctx.drawImage(image, 0, 0, this.#canvas.width, this.#canvas.height);
+
+                const pixels = this.#ctx.getImageData(0, 0, this.#canvas.width, this.#canvas.height);
+                console.log("Pixels data:");
+                console.log(pixels.data);
+                console.log("Pixels length: "+pixels.data.length);
+                
+                let working_molecule : OM_Molecule = {primes: [], bonds: []};
+                
+                // Go through each pixel and determine which atom color it's closest to, then write an atom at that position.
+                for (let i = 0; i < pixels.data.length; i++) {
+                    if (i % 4 !== 0) {
+                        continue;
+                    }
+                
+                    const pixel_colors: number[] = [pixels.data[i],pixels.data[i+1],pixels.data[i+2]];
+                    let working_best_fit: number = 1; // this is a elementColors index
+                
+                    // Loop through element colors and determine difference for each
+                    for (let i2 = 1; i2 <= 16; i2++) {
+                        // Skip the ... atom to avoid making nonsense molecules.
+                        if (i2 === 15) {
+                            continue;
+                        }
+                    
+                        const this_color_as_array: string[] = (elementColors[i2].replace("rgb(","").replace(")")).split(", ");
+                        const best_color_as_array: string[] = (elementColors[working_best_fit].replace("rgb(","").replace(")")).split(", ");
+                        
+                        const difference_from_this = Math.abs(pixel_colors[0] - parseInt(this_color_as_array[0])) + Math.abs(pixel_colors[1] - parseInt(this_color_as_array[1])) + Math.abs(pixel_colors[2] - parseInt(this_color_as_array[2]));
+                        const difference_from_best = Math.abs(pixel_colors[0] - parseInt(best_color_as_array[0])) + Math.abs(pixel_colors[1] - parseInt(best_color_as_array[1])) + Math.abs(pixel_colors[2] - parseInt(best_color_as_array[2]));;
+                        
+                        // New best
+                        if (difference_from_this <= difference_from_best) {
+                            working_best_fit = i2;
+                        }
+                    }
+                    
+                    // With our best color found, we now need to translate from top-left picture coordinates to centered y+=up coordinates
+                    const this_pixel_index = Math.floor(i/4);
+                    
+                    const this_pixel_x = this_pixel_index % this.#canvas.width;
+                    const this_pixel_y = Math.floor(this_pixel_index/this.#canvas.width);
+                    
+                    // Push molecule at coordinates
+                    let molecule_x = this_pixel_x - (this.#canvas.width/2);
+                    let molecule_y = -(this_pixel_y - (this.#canvas.height/2));
+                    
+                    molecule_x -= Math.floor(molecule_y/2);
+                    
+                    working_molecule.primes.push({element: working_best_fit, x: write_twoComplement(molecule_x), y: write_twoComplement(molecule_y)});
+                }
+                
+                // Render the molecule to a file
+                console.log(working_molecule);
+                outputFiles.push({ bytes: renderMolecule(working_molecule, outputFormat.internal), name: file.name.split(".").slice(0, -1).join(".") + "." + outputFormat.extension });
+            }
+        }
+        else {
+            throw new Error("Invalid input-output.");
+        }
+        
+        return outputFiles;
+    }
+}
+
+// Text-to-molecule handler
 export class opusMagnumTTMHandler implements FormatHandler {
     public name: string = "opusMagnumTTM";
     public supportedFormats?: FileFormat[];
@@ -651,7 +784,7 @@ export class opusMagnumTTMHandler implements FormatHandler {
                 // Get file as String
                 const decoder = new TextDecoder();
                 const base_name = file.name.split(".")[0];
-                let file_as_string =  decoder.decode(file.bytes);
+                let file_as_string = decoder.decode(file.bytes);
             
                 // Iterate through each character and push the correct molecule.
                 for (let i = 0; i < file_as_string.length; i++) {
@@ -680,6 +813,9 @@ export class opusMagnumTTMHandler implements FormatHandler {
                     }
                 }
             }
+        }
+        else {
+            throw new Error("Invalid input-output.");
         }
         
         return outputFiles;
