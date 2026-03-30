@@ -533,7 +533,7 @@ export class opusMagnumHandler implements FormatHandler {
             while (true) {
                 let break_flag = false;
                 for (const file of inputFiles) {
-                    if (!file.name.startsWith(puzzle_name) || puzzle_name.endsWith("_")) {
+                    if (!file.name.startsWith(puzzle_name)) {
                         puzzle_name = puzzle_name.substring(0,puzzle_name.length-1);
                         break_flag = true;
                         break;
@@ -550,6 +550,11 @@ export class opusMagnumHandler implements FormatHandler {
             // Default puzzle name
             if (puzzle_name === "" || puzzle_name.length > 0xFF) {
                 puzzle_name = "Unnamed puzzle";
+            }
+            
+            // Remove trailing spaces and underscores
+            while (puzzle_name.endsWith("_") || puzzle_name.endsWith(" ")) {
+                puzzle_name = puzzle_name.substring(0,puzzle_name.length-1);
             }
             
             console.log("Found puzzle name: "+puzzle_name);
@@ -640,12 +645,16 @@ export class opusMagnumITMHandler implements FormatHandler {
                 // Some code copied from mcmap.ts
                 const blob = new Blob([file.bytes as BlobPart], { type: inputFormat.mime });
 
+                console.log("Blob created for "+file.name);
+
                 const image = new Image();
                 await new Promise((resolve, reject) => {
                     image.addEventListener("load", resolve);
                     image.addEventListener("error", reject);
                     image.src = URL.createObjectURL(blob);
                 });
+                
+                console.log("Image created for "+file.name);
                 
                 const max_canvas = 128;
 
@@ -664,6 +673,8 @@ export class opusMagnumITMHandler implements FormatHandler {
                     this.#canvas.height = image.height;
                 }
                 this.#ctx.drawImage(image, 0, 0, this.#canvas.width, this.#canvas.height);
+                
+                console.log("Image drawn for "+file.name);
 
                 const pixels = this.#ctx.getImageData(0, 0, this.#canvas.width, this.#canvas.height);
                 console.log("Pixels data:");
@@ -675,6 +686,9 @@ export class opusMagnumITMHandler implements FormatHandler {
                 // Go through each pixel and determine which atom color it's closest to, then write an atom at that position.
                 for (let i = 0; i < pixels.data.length; i++) {
                     if (i % 4 !== 0) {
+                        continue;
+                    }
+                    else if (pixels.data[i+3] === 0) {
                         continue;
                     }
                 
