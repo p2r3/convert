@@ -207,7 +207,7 @@ async function buildOptionList () {
       console.warn(`Cache miss for formats of handler "${handler.name}".`);
       try {
         await handler.init();
-      } catch (_) { continue; }
+      } catch (err) {console.warn(`Handler "${handler.name}" threw an error while initializing: ${(err as Error).message}`); continue; }
       if (handler.supportedFormats) {
         window.supportedFormatCache.set(handler.name, handler.supportedFormats);
         console.info(`Updated supported format cache for "${handler.name}".`);
