@@ -128,6 +128,11 @@ function read_twoComplement(input: number): number {
 // Takes a regular number and writes it as a two's complement byte
 function write_twoComplement(input: number): number {
     let output = 0xFF;
+    
+    // Report invalid inputs
+    if (input < -128 || input > 127) {
+        throw "Invalid input for write_twoComplement: "+input;
+    }
 
     if (input < 0) {
         output = 0xFF - Math.abs(-1 - input);
@@ -136,7 +141,7 @@ function write_twoComplement(input: number): number {
         output = input;
     }
     
-    // Validate
+    // This should never trigger, but better safe than sorry.
     if (output > 0xFF || output < 0x00) {
         throw "Invalid input for write_twoComplement: "+input;
     }
@@ -216,117 +221,138 @@ function renderMolecule(molecule: OM_Molecule, format: string): Uint8Array {
     else if (format === "svg") {
         // Begin building our SVG
         const encoder = new TextEncoder();
-        let svg = "<svg xmlns='http://www.w3.org/2000/svg\' width='bigx' height='bigy' viewBox='smallx smally bigx bigy'>"
+        let svg = ""
         
-        const radius = 50;
-        const spacing_factor = 2.25;
+        let iterations = 0;
         
-        // Draw the bonds
-        for (let i = 0; i < molecule.bonds.length; i++) {
-            // Convert hex-based coordinates to Cartesian
-            let cartesian_source_x = read_twoComplement(molecule.bonds[i].source_x);
-            let cartesian_source_y = -read_twoComplement(molecule.bonds[i].source_y);
-            let cartesian_destination_x = read_twoComplement(molecule.bonds[i].destination_x);
-            let cartesian_destination_y = -read_twoComplement(molecule.bonds[i].destination_y);
+        // Looping for Validation
+        while (true) {
+            svg = "<svg xmlns='http://www.w3.org/2000/svg\' width='bigx' height='bigy' viewBox='smallx smally bigx bigy'>"
+        
+            const radius = 50-iterations;
+            const spacing_factor = 2.25;
             
-            // Hexagonal offset
-            cartesian_source_x += -0.5*cartesian_source_y;
-            cartesian_destination_x += -0.5*cartesian_destination_y;
-            
-            // Multiply coordinates for spacing
-            cartesian_source_x *= radius*spacing_factor;
-            cartesian_source_y *= radius*spacing_factor;
-            cartesian_destination_x *= radius*spacing_factor;
-            cartesian_destination_y *= radius*spacing_factor;
-            
-            svg += "\n"
-            
-            let bonds_bitfield = (molecule.bonds[i].bond_type.toString(2));
-            while (bonds_bitfield.length < 4) {
-                bonds_bitfield = "0"+bonds_bitfield;
+            // Draw the bonds
+            for (let i = 0; i < molecule.bonds.length; i++) {
+                // Convert hex-based coordinates to Cartesian
+                let cartesian_source_x = read_twoComplement(molecule.bonds[i].source_x);
+                let cartesian_source_y = -read_twoComplement(molecule.bonds[i].source_y);
+                let cartesian_destination_x = read_twoComplement(molecule.bonds[i].destination_x);
+                let cartesian_destination_y = -read_twoComplement(molecule.bonds[i].destination_y);
+                
+                // Hexagonal offset
+                cartesian_source_x += -0.5*cartesian_source_y;
+                cartesian_destination_x += -0.5*cartesian_destination_y;
+                
+                // Multiply coordinates for spacing
+                cartesian_source_x *= radius*spacing_factor;
+                cartesian_source_y *= radius*spacing_factor;
+                cartesian_destination_x *= radius*spacing_factor;
+                cartesian_destination_y *= radius*spacing_factor;
+                
+                svg += "\n"
+                
+                let bonds_bitfield = (molecule.bonds[i].bond_type.toString(2));
+                while (bonds_bitfield.length < 4) {
+                    bonds_bitfield = "0"+bonds_bitfield;
+                }
+                
+                if (bonds_bitfield[3] === "1") {
+                    if (bonds_bitfield[0] === "1" || bonds_bitfield[1] === "1" || bonds_bitfield[2] === "1") {
+                        throw "Error, triplex bond and normal bond cannot coexist.";
+                    }
+                
+                    svg += "    <line stroke='black' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.2+"'/>"
+                }
+                if (bonds_bitfield[2] === "1") {
+                    svg += "    <line stroke='red' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.4+"'/>"
+                    svg += "\n"
+                }
+                if (bonds_bitfield[1] === "1") {
+                    svg += "    <line stroke='black' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.2+"'/>"
+                    svg += "\n"
+                }
+                if (bonds_bitfield[0] === "1") {
+                    svg += "    <line stroke='yellow' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.1+"'/>"
+                }
+                
+                if (bonds_bitfield[0] === "0" && bonds_bitfield[1] === "0" && bonds_bitfield[2] === "0" && bonds_bitfield[3] === "0") {
+                    throw "Error, null bond.";
+                }
             }
             
-            if (bonds_bitfield[3] === "1") {
-                if (bonds_bitfield[0] === "1" || bonds_bitfield[1] === "1" || bonds_bitfield[2] === "1") {
-                    throw "Error, triplex bond and normal bond cannot coexist.";
+            // Draw the atoms
+            let leftmost = 99999;
+            let upmost = 99999;
+            
+            let rightmost = -99999;
+            let downmost = -99999;
+            
+            for (let i = 0; i < molecule.primes.length; i++) {
+                // Validate primes
+                if (molecule.primes[i].element > 16 || molecule.primes[i].element < 1 || Math.floor(molecule.primes[i].element) !== molecule.primes[i].element) {
+                    throw "Error, invalid prime ("+molecule.primes[i].element+")";
                 }
             
-                svg += "    <line stroke='black' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.2+"'/>"
-            }
-            if (bonds_bitfield[2] === "1") {
-                svg += "    <line stroke='red' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.4+"'/>"
+                // Convert hex-based coordinates to Cartesian
+                let cartesian_x = read_twoComplement(molecule.primes[i].x);
+                let cartesian_y = -read_twoComplement(molecule.primes[i].y);
+                
+                // Hexagonal offset
+                cartesian_x += -0.5*cartesian_y;
+                
+                // Multiply coordinates for spacing
+                cartesian_x *= radius*spacing_factor;
+                cartesian_y *= radius*spacing_factor;
+            
+                // Render the atom
                 svg += "\n"
-            }
-            if (bonds_bitfield[1] === "1") {
-                svg += "    <line stroke='black' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.2+"'/>"
+                svg += "    <circle cx='"+cartesian_x+"' cy='"+cartesian_y+"' fill='black' r='"+radius+"'/>"
                 svg += "\n"
-            }
-            if (bonds_bitfield[0] === "1") {
-                svg += "    <line stroke='yellow' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.1+"'/>"
+                svg += "    <circle cx='"+cartesian_x+"' cy='"+cartesian_y+"' fill='"+elementColors[molecule.primes[i].element]+"' r='"+radius*0.9+"'/>"
+                svg += "\n"
+                if (molecule.primes[i].element === 16) {
+                    svg += "    <text x='"+cartesian_x+"' y='"+(cartesian_y-5)+"' fill='white' text-anchor='middle' dominant-baseline='central' font-size='"+radius+"'>"+elementSymbols[4]+"</text>"
+                    svg += "    <text x='"+cartesian_x+"' y='"+(cartesian_y+5)+"' fill='white' text-anchor='middle' dominant-baseline='central' font-size='"+radius+"'>"+elementSymbols[5]+"</text>"
+                }
+                else {
+                    svg += "    <text x='"+cartesian_x+"' y='"+cartesian_y+"' fill='white' text-anchor='middle' dominant-baseline='central' font-size='"+radius+"'>"+elementSymbols[molecule.primes[i].element]+"</text>"
+                }
+                
+                // Record largest coordinates
+                if ((cartesian_x+radius) > rightmost) {
+                    rightmost = (cartesian_x+radius);
+                }
+                if ((cartesian_y+radius) > downmost) {
+                    downmost = (cartesian_y+radius);
+                }
+                if ((cartesian_x-radius) < leftmost) {
+                    leftmost = (cartesian_x-radius);
+                }
+                if ((cartesian_y-radius) < upmost) {
+                    upmost = (cartesian_y-radius);
+                }
             }
             
-            if (bonds_bitfield[0] === "0" && bonds_bitfield[1] === "0" && bonds_bitfield[2] === "0" && bonds_bitfield[3] === "0") {
-                throw "Error, null bond.";
-            }
+            svg += "\n</svg>"
+            
+            // smallx/smally are half size - molecular center
+            const bigx = (rightmost-leftmost);
+            const bigy = (downmost-upmost);
+            
+            const smallx = (rightmost+leftmost)/2 - (rightmost-leftmost)/2;
+            const smally = (downmost+upmost)/2 - (downmost-upmost)/2;
+            
+            // Test to see if these dimensions exceed svg max size, if so, repeat the loop with a lower radius.
+            //if (false) {
+            //    iterations++;
+            //    continue;
+            //}
+            
+            // Replace placeholders with actual size.
+            svg = svg.replace(/bigx/g,String(bigx)).replace(/bigy/g,String(bigy)).replace(/smallx/g,String(smallx)).replace(/smally/g,String(smally));
+            break;
         }
-        
-        // Draw the atoms
-        let leftmost = 99999;
-        let upmost = 99999;
-        
-        let rightmost = -99999;
-        let downmost = -99999;
-        
-        for (let i = 0; i < molecule.primes.length; i++) {
-            // Validate primes
-            if (molecule.primes[i].element > 16 || molecule.primes[i].element < 1 || Math.floor(molecule.primes[i].element) !== molecule.primes[i].element) {
-                throw "Error, invalid prime ("+molecule.primes[i].element+")";
-            }
-        
-            // Convert hex-based coordinates to Cartesian
-            let cartesian_x = read_twoComplement(molecule.primes[i].x);
-            let cartesian_y = -read_twoComplement(molecule.primes[i].y);
-            
-            // Hexagonal offset
-            cartesian_x += -0.5*cartesian_y;
-            
-            // Multiply coordinates for spacing
-            cartesian_x *= radius*spacing_factor;
-            cartesian_y *= radius*spacing_factor;
-        
-            // Render the atom
-            svg += "\n"
-            svg += "    <circle cx='"+cartesian_x+"' cy='"+cartesian_y+"' fill='black' r='"+radius+"'/>"
-            svg += "\n"
-            svg += "    <circle cx='"+cartesian_x+"' cy='"+cartesian_y+"' fill='"+elementColors[molecule.primes[i].element]+"' r='"+radius*0.9+"'/>"
-            svg += "\n"
-            if (molecule.primes[i].element === 16) {
-                svg += "    <text x='"+cartesian_x+"' y='"+(cartesian_y-5)+"' fill='white' text-anchor='middle' dominant-baseline='central' font-size='"+radius+"'>"+elementSymbols[4]+"</text>"
-                svg += "    <text x='"+cartesian_x+"' y='"+(cartesian_y+5)+"' fill='white' text-anchor='middle' dominant-baseline='central' font-size='"+radius+"'>"+elementSymbols[5]+"</text>"
-            }
-            else {
-                svg += "    <text x='"+cartesian_x+"' y='"+cartesian_y+"' fill='white' text-anchor='middle' dominant-baseline='central' font-size='"+radius+"'>"+elementSymbols[molecule.primes[i].element]+"</text>"
-            }
-            
-            // Record largest coordinates
-            if ((cartesian_x+radius) > rightmost) {
-                rightmost = (cartesian_x+radius);
-            }
-            if ((cartesian_y+radius) > downmost) {
-                downmost = (cartesian_y+radius);
-            }
-            if ((cartesian_x-radius) < leftmost) {
-                leftmost = (cartesian_x-radius);
-            }
-            if ((cartesian_y-radius) < upmost) {
-                upmost = (cartesian_y-radius);
-            }
-        }
-        
-        svg += "\n</svg>"
-        
-        // Replace placeholders with actual size. smallx/smally are half size - molecular center
-        svg = svg.replace(/bigx/g,String((rightmost-leftmost))).replace(/bigy/g,String((downmost-upmost))).replace(/smallx/g,String((rightmost+leftmost)/2 - (rightmost-leftmost)/2)).replace(/smally/g,String((downmost+upmost)/2 - (downmost-upmost)/2));
         
         return encoder.encode(svg);
     }
@@ -709,8 +735,8 @@ export class opusMagnumITMHandler implements FormatHandler {
                 });
                 console.log("Image created for "+file.name);
                 
-                // Limit size of canvas for SVG rendering
-                const max_canvas = 128;
+                // Mathematically calculated to be the highest canvas size before the puzzle format can't handle it: -(x/2) - ((x-1)-(x/2))/2 = -128
+                const max_canvas = 170;
                 console.log("max_canvas: "+max_canvas);
 
                 if (image.naturalWidth > max_canvas || image.naturalHeight > max_canvas) {
@@ -747,6 +773,9 @@ export class opusMagnumITMHandler implements FormatHandler {
                 console.log("Pixels length: "+pixels.data.length);
                 
                 let working_molecule : OM_Molecule = {primes: [], bonds: []};
+                
+                let running_highest_abs_x = 0;
+                let running_highest_abs_y = 0;
                 
                 // Go through each pixel and determine which atom color it's closest to, then write an atom at that position.
                 for (let i = 0; i < pixels.data.length; i++) {
@@ -801,7 +830,17 @@ export class opusMagnumITMHandler implements FormatHandler {
                     molecule_y = Math.floor(molecule_y);
                     
                     working_molecule.primes.push({element: working_best_fit, x: write_twoComplement(molecule_x), y: write_twoComplement(molecule_y)});
+                    
+                    // Tracker for debugging
+                    if (write_twoComplement(molecule_x) > running_highest_abs_x) {
+                        running_highest_abs_x = molecule_x;
+                    }
+                    if (write_twoComplement(molecule_y) > running_highest_abs_y) {
+                        running_highest_abs_y = molecule_y;
+                    }
                 }
+                
+                console.log("Highest abs x and y: "+running_highest_abs_x+" "+running_highest_abs_y)
                 
                 // Render the molecule to a file
                 console.log("working_molecule:");
