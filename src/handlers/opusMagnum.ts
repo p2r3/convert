@@ -64,6 +64,29 @@ const elementColors: Dictionary<string> = {
     16: "rgb(10, 9, 17)",
 }
 
+const elementColors_realAverage: Dictionary<string> = {
+    1: "rgb(160, 150, 124)",
+    2: "rgb(118, 147, 199)",
+    3: "rgb(54, 99, 37)",
+    4: "rgb(162, 54, 24)",
+    5: "rgb(60, 127, 121)",
+    6: "rgb(159, 150, 126)",
+    7: "rgb(135, 89, 43)",
+    8: "rgb(87, 80, 74)",
+    9: "rgb(164, 109, 84)",
+    10: "rgb(99, 81, 75)",
+    11: "rgb(114, 110, 87)",
+    12: "rgb(86, 101, 103)",
+    13: "rgb(176, 146, 123)",
+    14: "rgb(69, 63, 46)",
+    15: "rgb(0, 0, 0)",
+    16: "rgb(0, 0, 0)",
+}
+
+function color_difference(r1: number, g1: number, b1: number, r2: number, g2: number, b2: number): number {
+    return Math.sqrt(Math.pow((r1-r2),2) + Math.pow((g1-g2),2) + Math.pow((b1-b2),2));
+}
+
 function read_lendian_4(a: number, b: number, c: number, d: number): number {
     return a + (b * Math.pow(16,2)) + (c * Math.pow(16,4)) + (d * Math.pow(16,6));
 }
@@ -740,11 +763,11 @@ export class opusMagnumITMHandler implements FormatHandler {
                             continue;
                         }
                     
-                        const this_color_as_array: string[] = (elementColors[i2].replace("rgb(","").replace(")","")).split(", ");
-                        const best_color_as_array: string[] = (elementColors[working_best_fit].replace("rgb(","").replace(")","")).split(", ");
+                        const this_color_as_array: string[] = (elementColors_realAverage[i2].replace("rgb(","").replace(")","")).split(", ");
+                        const best_color_as_array: string[] = (elementColors_realAverage[working_best_fit].replace("rgb(","").replace(")","")).split(", ");
                         
-                        const difference_from_this = Math.abs(pixel_colors[0] - parseInt(this_color_as_array[0])) + Math.abs(pixel_colors[1] - parseInt(this_color_as_array[1])) + Math.abs(pixel_colors[2] - parseInt(this_color_as_array[2]));
-                        const difference_from_best = Math.abs(pixel_colors[0] - parseInt(best_color_as_array[0])) + Math.abs(pixel_colors[1] - parseInt(best_color_as_array[1])) + Math.abs(pixel_colors[2] - parseInt(best_color_as_array[2]));;
+                        const difference_from_this = color_difference(pixel_colors[0],pixel_colors[1],pixel_colors[2], parseInt(this_color_as_array[0]),parseInt(this_color_as_array[1]),parseInt(this_color_as_array[2]));
+                        const difference_from_best = color_difference(pixel_colors[0],pixel_colors[1],pixel_colors[2], parseInt(best_color_as_array[0]),parseInt(best_color_as_array[1]),parseInt(best_color_as_array[2]));
                         
                         // New best
                         if (difference_from_this <= difference_from_best) {
