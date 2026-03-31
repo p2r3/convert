@@ -722,6 +722,15 @@ export class opusMagnumITMHandler implements FormatHandler {
                         this.#canvas.width = Math.floor(image.width*(max_canvas/image.height));
                         this.#canvas.height = max_canvas;
                     }
+                    
+                    // Safety for extreme proportions (t.w.s.s.)
+                    if (this.#canvas.width < 1) {
+                        this.#canvas.width = 1;
+                    }
+                    if (this.#canvas.height < 1) {
+                        this.#canvas.height = 1;
+                    }
+                    
                     console.log("Image resized to "+this.#canvas.width+" "+this.#canvas.height);
                 }
                 else {
