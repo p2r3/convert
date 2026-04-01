@@ -40,6 +40,7 @@ function normalizeMimeType (mime: string) {
     case "text/json5": return "application/json5";
     case "application/x-json5": return "application/json5";
     case "video/x-ms-wmv": return "video/x-ms-asf";
+    case "application/coffee-pot-command": return "message/coffeepot"; // Not required, but just in case
   }
   return mime;
 }
