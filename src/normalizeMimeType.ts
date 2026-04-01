@@ -1,5 +1,9 @@
 function normalizeMimeType (mime: string) {
   switch (mime) {
+    case "audio/mid": return "audio/midi";
+    case "audio/x-mid": return "audio/midi";
+    case "audio/x-midi": return "audio/midi";
+    case "audio/sp-midi": return "audio/midi";
     case "audio/x-wav": return "audio/wav";
     case "audio/vnd.wave": return "audio/wav";
     case "application/ogg": return "audio/ogg";

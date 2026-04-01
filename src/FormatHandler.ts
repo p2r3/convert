@@ -29,6 +29,189 @@ export interface FileFormat extends IFormatDefinition {
   lossless?: boolean;
 }
 
+export type HandlerOptionValue = boolean | number | string | string[];
+
+export interface HandlerOptionChoice {
+  label: string;
+  value: string;
+  description?: string;
+}
+
+export type HandlerOptionVisibilityContext = Readonly<Record<string, HandlerOptionValue>>;
+
+interface HandlerOptionBase<TKind extends string, TValue extends HandlerOptionValue> {
+  kind: TKind;
+  id: string;
+  name: string;
+  description?: string;
+  section?: string;
+  defaultValue?: TValue;
+  showWhen?: (values: HandlerOptionVisibilityContext) => boolean;
+  getValue: () => TValue;
+  setValue: (value: TValue) => void;
+}
+
+export interface ToggleOptionDefinition extends HandlerOptionBase<"toggle", boolean> {}
+
+export interface NumberOptionDefinition extends HandlerOptionBase<"number", number> {
+  min?: number;
+  max?: number;
+  step?: number;
+  control?: "input" | "slider";
+  unit?: string;
+}
+
+export interface TextOptionDefinition extends HandlerOptionBase<"text", string> {
+  inputType?: "text" | "email" | "url" | "password";
+  placeholder?: string;
+  minLength?: number;
+  maxLength?: number;
+  multiline?: boolean;
+}
+
+export interface SelectOptionDefinition extends HandlerOptionBase<"select", string> {
+  choices: HandlerOptionChoice[];
+}
+
+export interface MultiSelectOptionDefinition extends HandlerOptionBase<"multiselect", string[]> {
+  choices: HandlerOptionChoice[];
+}
+
+export type HandlerOptionDefinition =
+  | ToggleOptionDefinition
+  | NumberOptionDefinition
+  | TextOptionDefinition
+  | SelectOptionDefinition
+  | MultiSelectOptionDefinition;
+
+export class ToggleOption implements ToggleOptionDefinition {
+  public readonly kind = "toggle" as const;
+  constructor(
+    public id: string,
+    public name: string,
+    public getValue: () => boolean,
+    public setValue: (value: boolean) => void,
+    public defaultValue?: boolean,
+    public description?: string,
+    public section?: string,
+    public showWhen?: (values: HandlerOptionVisibilityContext) => boolean
+  ) {}
+}
+
+export class NumberOption implements NumberOptionDefinition {
+  public readonly kind = "number" as const;
+  public min?: number;
+  public max?: number;
+  public step?: number;
+  public control?: "input" | "slider";
+  public unit?: string;
+  public defaultValue?: number;
+  public description?: string;
+  public section?: string;
+  public showWhen?: (values: HandlerOptionVisibilityContext) => boolean;
+
+  constructor(
+    public id: string,
+    public name: string,
+    public getValue: () => number,
+    public setValue: (value: number) => void,
+    config: {
+      min?: number;
+      max?: number;
+      step?: number;
+      control?: "input" | "slider";
+      unit?: string;
+      defaultValue?: number;
+      description?: string;
+      section?: string;
+      showWhen?: (values: HandlerOptionVisibilityContext) => boolean;
+    } = {}
+  ) {
+    Object.assign(this, config);
+  }
+}
+
+export class TextOption implements TextOptionDefinition {
+  public readonly kind = "text" as const;
+  public inputType?: "text" | "email" | "url" | "password";
+  public placeholder?: string;
+  public minLength?: number;
+  public maxLength?: number;
+  public multiline?: boolean;
+  public defaultValue?: string;
+  public description?: string;
+  public section?: string;
+  public showWhen?: (values: HandlerOptionVisibilityContext) => boolean;
+
+  constructor(
+    public id: string,
+    public name: string,
+    public getValue: () => string,
+    public setValue: (value: string) => void,
+    config: {
+      inputType?: "text" | "email" | "url" | "password";
+      placeholder?: string;
+      minLength?: number;
+      maxLength?: number;
+      multiline?: boolean;
+      defaultValue?: string;
+      description?: string;
+      section?: string;
+      showWhen?: (values: HandlerOptionVisibilityContext) => boolean;
+    } = {}
+  ) {
+    Object.assign(this, config);
+  }
+}
+
+export class SelectOption implements SelectOptionDefinition {
+  public readonly kind = "select" as const;
+  public defaultValue?: string;
+  public description?: string;
+  public section?: string;
+  public showWhen?: (values: HandlerOptionVisibilityContext) => boolean;
+
+  constructor(
+    public id: string,
+    public name: string,
+    public choices: HandlerOptionChoice[],
+    public getValue: () => string,
+    public setValue: (value: string) => void,
+    config: {
+      defaultValue?: string;
+      description?: string;
+      section?: string;
+      showWhen?: (values: HandlerOptionVisibilityContext) => boolean;
+    } = {}
+  ) {
+    Object.assign(this, config);
+  }
+}
+
+export class MultiSelectOption implements MultiSelectOptionDefinition {
+  public readonly kind = "multiselect" as const;
+  public defaultValue?: string[];
+  public description?: string;
+  public section?: string;
+  public showWhen?: (values: HandlerOptionVisibilityContext) => boolean;
+
+  constructor(
+    public id: string,
+    public name: string,
+    public choices: HandlerOptionChoice[],
+    public getValue: () => string[],
+    public setValue: (value: string[]) => void,
+    config: {
+      defaultValue?: string[];
+      description?: string;
+      section?: string;
+      showWhen?: (values: HandlerOptionVisibilityContext) => boolean;
+    } = {}
+  ) {
+    Object.assign(this, config);
+  }
+}
+
 /**
  * Class containing format definition and method used to produce FileFormat
  * that can be supported by handlers.
@@ -167,6 +350,8 @@ export interface FormatHandler {
    * Conversion using this handler will be performed only if no other direct conversion is found.
    */
   supportAnyInput?: boolean;
+  /** Optional list of user-configurable options. */
+  getOptions?: () => HandlerOptionDefinition[];
 
   /**
    * Whether the handler is ready for use. Should be set in {@link init}.
@@ -185,13 +370,15 @@ export interface FormatHandler {
    * @param outputFormat Output {@link FileFormat}, the same for all outputs.
    * @param args Optional arguments as a string array.
    * Can be used to perform recursion with different settings.
+   * @param ctx Optional {@link ConvertContext} for progress reporting.
    * @returns Array of {@link FileData} entries, one per generated output file.
    */
   doConvert: (
     inputFiles: FileData[],
     inputFormat: FileFormat,
     outputFormat: FileFormat,
-    args?: string[]
+    args?: string[],
+    ctx?: import("./ui/ProgressStore.js").ConvertContext
   ) => Promise<FileData[]>;
 }
 

@@ -36,8 +36,15 @@
     "baseUrl": ".",
     "paths": {
       "qoi-fu": ["./src/handlers/qoi-fu/transpiled/QOI.js"],
-      "qoa-fu": ["./src/handlers/qoa-fu/transpiled/QOA.js"]
-    }
+      "qoa-fu": ["./src/handlers/qoa-fu/transpiled/QOA.js"],
+      // this is driving me nuts
+      "*": ["./*"]
+    },
+    /**
+    * JSX setup
+    */
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact"
   },
   "include": [
     "src"

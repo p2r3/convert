@@ -1,6 +1,8 @@
 bun.lock
 package-lock.json
 node_modules
+.cache
+public/material-file-icons
 start.sh
 dist
 release

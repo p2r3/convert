@@ -1,4 +1,4 @@
-import CommonFormats from "src/CommonFormats.ts";
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 
 import * as THREE from "three";
@@ -18,7 +18,7 @@ class threejsHandler implements FormatHandler {
       from: true,
       to: false,
       internal: "glb",
-      category: "model",
+      category: Category.DATA,
       lossless: false
     },
     {
@@ -29,7 +29,7 @@ class threejsHandler implements FormatHandler {
       from: true,
       to: false,
       internal: "glb",
-      category: "model",
+      category: Category.DATA,
       lossless: false
     },
     {
@@ -40,7 +40,7 @@ class threejsHandler implements FormatHandler {
       from: true,
       to: false,
       internal: "obj",
-      category: "model",
+      category: Category.DATA,
       lossless: false,
     },
     CommonFormats.PNG.supported("png", false, true),

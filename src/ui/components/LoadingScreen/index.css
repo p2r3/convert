@@ -1,0 +1,202 @@
+@keyframes loading-screen-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@keyframes progress-stripes {
+	from {
+		background-position: 0 0;
+	}
+	to {
+		background-position: var(--stripe-size) 0;
+	}
+}
+
+.loading-screen {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 1.25rem;
+	padding: 2rem;
+	flex: 1;
+	min-height: 300px;
+	--stripe-width: 10px;
+	--stripe-size: 28.284px; /* stripe-width * 2 * sqrt(2) */
+	.loading-status-area {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1rem;
+
+		.file-info-badge {
+			transform: scale(1.1);
+			margin-bottom: 1rem;
+		}
+	}
+
+	.loading-title {
+		font-size: 1.5rem;
+		font-weight: 100;
+		color: var(--text-primary);
+		text-align: center;
+		margin-top: 0.5rem;
+	}
+
+	.loading-metrics-card {
+		display: flex;
+		flex-direction: column;
+		width: 100%;
+		max-width: 500px;
+		padding: 1rem;
+		border: 1px solid var(--border-primary);
+		border-radius: 12px;
+		background: var(--bg-card);
+		gap: 0.75rem;
+		box-sizing: border-box;
+	}
+
+	.loading-conversion-info {
+		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.85rem;
+		width: 100%;
+		padding: .5rem 1rem;
+		border-radius: 8px;
+		border: 1px solid var(--border-primary);
+		box-sizing: border-box;
+		margin-bottom: 1rem;
+		background: repeating-linear-gradient(
+			-45deg,
+			var(--bg-section),
+			var(--bg-section) var(--stripe-width),
+			transparent var(--stripe-width),
+			transparent calc(var(--stripe-width) * 2)
+		);
+		background-size: var(--stripe-size) var(--stripe-size);
+		animation: progress-stripes 0.8s linear infinite;
+		overflow: hidden;
+
+		&.is-done {
+			background: color-mix(in srgb, #22c55e 16%, transparent);
+			animation: none;
+		}
+	}
+
+	.loading-conversion-info::before {
+		content: "";
+		position: absolute;
+		top: 0;
+		left: 0;
+		bottom: 0;
+		/* Make pseudo-element full width, clip visually with clip-path */
+		width: 100%;
+		clip-path: inset(0 calc(100% - var(--progress, 0%)) 0 0);
+		background: repeating-linear-gradient(
+			-45deg,
+			var(--primary),
+			var(--primary) var(--stripe-width),
+			var(--primary-transparent) var(--stripe-width),
+			var(--primary-transparent) calc(var(--stripe-width) * 2)
+		);
+		background-size: var(--stripe-size) var(--stripe-size);
+		animation: progress-stripes 0.8s linear infinite;
+		transition: clip-path 0.2s ease-out;
+		z-index: 0;
+	}
+
+	.loading-conversion-info.is-done::before {
+		background: color-mix(in srgb, #22c55e 30%, transparent);
+		animation: none;
+	}
+
+	.loading-conversion-info > * {
+		position: relative;
+		z-index: 1;
+	}
+
+
+	.loading-format-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45rem;
+		height: 38px;
+		padding: 0 0.75rem;
+		border-radius: 8px;
+		border: 1px solid var(--border-primary);
+		background: var(--bg-section);
+		color: var(--text-primary);
+		min-width: 132px;
+		justify-content: center;
+		box-sizing: border-box;
+	}
+
+	.loading-format-ext {
+		font-size: 0.92rem;
+		font-weight: 700;
+		letter-spacing: 0.02em;
+	}
+
+	.loading-arrow {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--text-muted);
+		flex-shrink: 0;
+	}
+
+	.loading-actions {
+		display: flex;
+		width: 100%;
+		gap: 0.5rem;
+	}
+
+	.loading-action-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		padding: 0.65rem 1rem;
+		border-radius: 8px;
+		font-weight: 600;
+		font-size: 0.95rem;
+		cursor: pointer;
+		border: 1px solid var(--border-primary);
+		transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+		width: 100%;
+		flex: 1 1 50%;
+	}
+
+	.loading-action-btn.danger {
+		background: var(--bg-section);
+		color: var(--text-muted);
+	}
+	.loading-action-btn.danger:hover {
+		background: rgba(239, 68, 68, 0.1);
+		color: #ef4444;
+		border-color: rgba(239, 68, 68, 0.2);
+	}
+
+	.loading-action-btn.secondary {
+		background: var(--bg-section);
+		color: var(--text-secondary);
+	}
+
+	.loading-action-btn.secondary:hover {
+		background: var(--bg-card-alt-hover);
+		border-color: var(--border-secondary);
+	}
+
+	.loading-action-btn.primary {
+		background: var(--primary);
+		color: var(--text-on-primary);
+		border-color: transparent;
+	}
+
+	.loading-action-btn.primary:hover {
+		opacity: 0.9;
+	}
+}

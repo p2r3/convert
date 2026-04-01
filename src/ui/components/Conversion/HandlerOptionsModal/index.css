@@ -1,0 +1,450 @@
+/* Overlay */
+.handler-options-modal-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 90;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 1.5rem;
+	background: color-mix(in srgb, var(--bg-overlay) 40%, transparent);
+	backdrop-filter: blur(8px);
+}
+
+/* Modal Container */
+.handler-options-modal {
+	width: min(600px, 100%);
+	max-height: min(90vh, 720px);
+	display: flex;
+	flex-direction: column;
+	border-radius: 8px;
+	background: var(--bg-card);
+	border: 1px solid var(--border-primary);
+	box-shadow: 
+		0 0 0 1px color-mix(in srgb, var(--border-primary) 30%, transparent),
+		0 8px 24px color-mix(in srgb, var(--bg-overlay) 10%, transparent);
+	overflow: hidden;
+}
+
+/* Header - Sticky */
+.handler-options-modal-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 1rem;
+	padding: 1.25rem 1.5rem;
+	border-bottom: 1px solid var(--border-primary);
+	background: var(--bg-card);
+	flex-shrink: 0;
+}
+
+.handler-options-modal-title-wrap {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	flex: 1;
+	min-width: 0;
+}
+
+.handler-options-modal-title-wrap h3 {
+	font-size: 0.9375rem;
+	font-weight: 600;
+	color: var(--text-primary);
+	line-height: 1.4;
+	margin: 0;
+}
+
+.handler-options-modal-title-wrap p {
+	font-size: 0.8125rem;
+	color: var(--text-muted);
+	line-height: 1.5;
+	margin: 0;
+}
+
+.handler-options-modal-actions {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	flex-shrink: 0;
+}
+
+.handler-modal-icon-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 2rem;
+	height: 2rem;
+	padding: 0;
+	background: transparent;
+	border: none;
+	border-radius: 4px;
+	color: var(--text-muted);
+	cursor: pointer;
+	outline: none;
+	transition: none;
+}
+
+.handler-modal-icon-btn:hover {
+	background: var(--bg-section);
+	color: var(--text-secondary);
+}
+
+.handler-modal-icon-btn:active {
+	background: var(--bg-card-alt-hover);
+}
+
+.handler-modal-icon-btn:focus-visible {
+	box-shadow: 0 0 0 2px var(--primary-transparent);
+}
+
+/* Settings Sections - Collapsible */
+.conversion-settings-section {
+	display: flex;
+	flex-direction: column;
+	border-bottom: 1px solid var(--border-primary);
+	overflow: hidden;
+}
+
+.conversion-settings-section:last-child {
+	border-bottom: none;
+}
+
+.conversion-settings-section.expanded {
+	flex: 1;
+	min-height: 0;
+}
+
+.conversion-settings-section.collapsed {
+	flex: 0 0 auto;
+}
+
+.conversion-section-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.75rem 1.5rem;
+	background: var(--bg-section);
+	cursor: pointer;
+	user-select: none;
+	position: relative;
+}
+
+.conversion-section-header:hover {
+	background: var(--bg-card-alt-hover);
+}
+
+.conversion-settings-section.collapsed .conversion-section-header:hover {
+	background: color-mix(in srgb, var(--primary-transparent) 10%, var(--bg-section));
+}
+
+.conversion-section-title {
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: var(--text-secondary);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.handler-role-label {
+	font-weight: 500;
+	color: var(--text-muted);
+	font-size: 0.7rem;
+	opacity: 0.8;
+}
+
+.conversion-settings-section.expanded .conversion-section-title {
+	color: var(--primary);
+}
+
+.conversion-section-header .reset-btn {
+	opacity: 0.6;
+}
+
+.conversion-section-header .reset-btn:hover {
+	opacity: 1;
+	background: transparent;
+}
+
+/* Scrollable Content Area */
+.conversion-option-list {
+	display: flex;
+	flex-direction: column;
+	overflow-y: auto;
+	flex: 1;
+	min-height: 0;
+	background: var(--bg-card);
+}
+
+.conversion-settings-section.collapsed .conversion-option-list {
+	display: none;
+}
+
+/* Empty State */
+.conversion-settings-empty {
+	font-size: 0.8125rem;
+	color: var(--text-muted);
+	padding: 3rem 1.5rem;
+	text-align: center;
+	line-height: 1.6;
+}
+
+/* Option Item */
+.conversion-option-item {
+	display: flex;
+	flex-direction: column;
+	gap: 0.625rem;
+	padding: 1rem 1.5rem;
+	border-bottom: 1px solid var(--border-primary);
+	position: relative;
+}
+
+.conversion-option-item:last-child {
+	border-bottom: none;
+}
+
+.conversion-option-item[data-changed="true"] {
+	/* Highlight changed opts */
+	background: linear-gradient(-125deg, var(--primary-transparent) 0%, transparent 10%);
+}
+
+/* Option Header */
+.conversion-option-header {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.conversion-option-name {
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: var(--text-primary);
+	line-height: 1.5;
+}
+
+.conversion-option-description {
+	font-size: 0.75rem;
+	color: var(--text-muted);
+	line-height: 1.6;
+}
+
+/* Base Input Styles */
+.conversion-option-item input:not([type="checkbox"]):not([type="range"]),
+.conversion-option-item textarea,
+.conversion-option-item select {
+	width: 100%;
+	padding: 0.5rem 0.75rem;
+	background: var(--bg-input);
+	color: var(--text-primary);
+	outline: none;
+	font-size: 0.8125rem;
+	font-weight: 400;
+	line-height: 1.5;
+	border: 1px solid var(--border-primary);
+	border-radius: 5px;
+}
+
+.conversion-option-item input:not([type="checkbox"]):not([type="range"]):hover,
+.conversion-option-item textarea:hover,
+.conversion-option-item select:hover {
+	border-color: var(--border-secondary);
+}
+
+.conversion-option-item input:not([type="checkbox"]):not([type="range"]):focus,
+.conversion-option-item textarea:focus,
+.conversion-option-item select:focus {
+	border-color: var(--primary);
+	box-shadow: 0 0 0 3px var(--primary-transparent);
+}
+
+.conversion-option-item input::placeholder,
+.conversion-option-item textarea::placeholder {
+	color: var(--text-muted);
+}
+
+/* Select Dropdown */
+.conversion-option-item select {
+	cursor: pointer;
+}
+
+/* Textarea */
+.handler-option-textarea {
+	resize: vertical;
+	min-height: 100px;
+	font-family: inherit;
+}
+
+/* Toggle Control */
+.handler-option-toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-size: 0.8125rem;
+	font-weight: 500;
+	color: var(--text-secondary);
+	cursor: pointer;
+	user-select: none;
+}
+
+.handler-option-toggle input[type="checkbox"] {
+	width: 1rem;
+	height: 1rem;
+	border: 1.5px solid var(--border-secondary);
+	border-radius: 4px;
+	cursor: pointer;
+	margin: 0;
+	flex-shrink: 0;
+}
+
+.handler-option-toggle input[type="checkbox"]:hover {
+	border-color: var(--primary);
+}
+
+.handler-option-toggle input[type="checkbox"]:checked {
+	background: var(--primary);
+	border-color: var(--primary);
+}
+
+.handler-option-toggle input[type="checkbox"]:focus {
+	outline: none;
+	box-shadow: 0 0 0 3px var(--primary-transparent);
+}
+
+/* Number Control */
+.handler-option-number {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.handler-option-number input[type="range"] {
+	width: 100%;
+	height: 4px;
+	border-radius: 2px;
+	background: var(--bg-section);
+	outline: none;
+	cursor: pointer;
+}
+
+.handler-option-number input[type="range"]::-webkit-slider-thumb {
+	appearance: none;
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+	background: var(--primary);
+	cursor: pointer;
+	border: 2px solid var(--bg-card);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.handler-option-number input[type="range"]::-moz-range-thumb {
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+	background: var(--primary);
+	cursor: pointer;
+	border: 2px solid var(--bg-card);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.handler-option-number input[type="range"]:focus {
+	outline: none;
+}
+
+.handler-option-number input[type="range"]:focus::-webkit-slider-thumb {
+	box-shadow: 0 0 0 3px var(--primary-transparent);
+}
+
+.handler-option-number input[type="range"]:focus::-moz-range-thumb {
+	box-shadow: 0 0 0 3px var(--primary-transparent);
+}
+
+.handler-option-inline-field {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.handler-option-inline-field input {
+	flex: 1;
+	min-width: 0;
+}
+
+.handler-option-inline-field span {
+	font-size: 0.75rem;
+	color: var(--text-muted);
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+/* Multi-select */
+.handler-option-multi-list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+}
+
+.handler-option-multi-item {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	padding: 0.4rem 0.65rem;
+	border-radius: 5px;
+	font-size: 0.75rem;
+	font-weight: 500;
+	background: var(--bg-section);
+	border: 1px solid var(--border-primary);
+	color: var(--text-secondary);
+	cursor: pointer;
+	user-select: none;
+}
+
+.handler-option-multi-item:hover {
+	background: var(--bg-card-alt-hover);
+	border-color: var(--border-secondary);
+}
+
+.handler-option-multi-item input[type="checkbox"] {
+	width: 0.875rem;
+	height: 0.875rem;
+	border: 1.5px solid var(--border-secondary);
+	border-radius: 3px;
+	margin: 0;
+	cursor: pointer;
+	flex-shrink: 0;
+}
+
+.handler-option-multi-item input[type="checkbox"]:checked {
+	background: var(--primary);
+	border-color: var(--primary);
+}
+
+/* Mobile Responsive */
+@media (max-width: 720px) {
+	.handler-options-modal-overlay {
+		padding: 1rem;
+	}
+
+	.handler-options-modal {
+		max-height: 95vh;
+		border-radius: 6px;
+	}
+
+	.handler-options-modal-header {
+		padding: 1rem 1.25rem;
+	}
+
+	.handler-options-modal-title-wrap h3 {
+		font-size: 0.875rem;
+	}
+
+	.handler-options-modal-title-wrap p {
+		font-size: 0.75rem;
+	}
+
+	.conversion-option-item {
+		padding: 0.875rem 1.25rem;
+	}
+}

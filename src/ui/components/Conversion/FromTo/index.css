@@ -1,0 +1,67 @@
+.fromto {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.85rem;
+	padding: 0.15rem 0;
+	/* Properly balance out */
+	margin-bottom: .5rem;
+}
+
+.fromto-arrow {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--text-muted);
+}
+
+.fromto-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.55rem;
+	height: 46px;
+	padding: 0 0.95rem;
+	border-radius: 10px;
+	border: 1px solid var(--border-transparent);
+	background: var(--bg-section);
+	color: var(--text-primary);
+	cursor: pointer;
+	transition: all 150ms;
+	min-width: 160px;
+	justify-content: center;
+}
+
+.fromto-pill:hover {
+	background: var(--bg-card);
+	border-color: var(--border-primary);
+}
+
+.fromto-pill:active {
+	transform: translateY(0.5px);
+}
+
+.fromto-pill:focus-visible {
+	outline: none;
+	border-color: var(--primary);
+	box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 15%, transparent);
+}
+
+.fromto-ext {
+	font-size: 1.05rem;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+}
+
+.fromto-pill.is-placeholder {
+	background: color-mix(in srgb, var(--bg-section) 60%, transparent);
+	border-style: dashed;
+	border-color: color-mix(in srgb, var(--text-muted) 40%, transparent);
+}
+
+.fromto-count {
+	font-size: 0.95rem;
+	font-weight: 650;
+	letter-spacing: 0.01em;
+	color: var(--text-muted);
+}
+
