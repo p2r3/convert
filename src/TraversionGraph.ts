@@ -5,7 +5,6 @@ interface QueueNode {
     index: number;
     cost: number;
     path: ConvertPathNode[];
-    visitedBorder: number;
 };
 interface CategoryChangeCost {
     from: string;
@@ -18,7 +17,6 @@ interface CategoryAdaptiveCost {
     categories: string[]; // List of sequential categories
     cost: number; // Cost to apply when a conversion involves all of the specified categories in sequence.
 }
-
 
 // Parameters for pathfinding algorithm.
 const DEPTH_COST: number = 1; // Base cost for each conversion step. Higher values will make the algorithm prefer shorter paths more strongly.
@@ -333,30 +331,35 @@ export class TraversionGraph {
 
     public async* searchPath(from: ConvertPathNode, to: ConvertPathNode, simpleMode: boolean) : AsyncGenerator<ConvertPathNode[]> {
         // Dijkstra's algorithm
-        // Priority queue of {index, cost, path}
         let queue: PriorityQueue<QueueNode> = new PriorityQueue<QueueNode>(
             1000,
             (a: QueueNode, b: QueueNode) => a.cost - b.cost
         );
-        let visited = new Array<number>();
+        
+        let minCosts = new Map<number, number>();
+
         const fromIdentifier = from.format.mime + `(${from.format.format})`;
         const toIdentifier = to.format.mime + `(${to.format.format})`;
         let fromIndex = this.nodes.findIndex(node => node.identifier === fromIdentifier);
         let toIndex = this.nodes.findIndex(node => node.identifier === toIdentifier);
         if (fromIndex === -1 || toIndex === -1) return []; // If either format is not in the graph, return empty array
-        queue.add({index: fromIndex, cost: 0, path: [from], visitedBorder: visited.length });
+        
+        queue.add({index: fromIndex, cost: 0, path: [from]});
+        minCosts.set(fromIndex, 0);
+        
         console.log(`Starting path search from ${from.format.mime}(${from.handler?.name}) to ${to.format.mime}(${to.handler?.name}) (simple mode: ${simpleMode})`);
         let iterations = 0;
         let pathsFound = 0;
+        
         while (queue.size() > 0) {
             iterations++;
-            // Get the node with the lowest cost
             let current = queue.poll()!;
-            const indexInVisited = visited.indexOf(current.index);
-            if (indexInVisited >= 0 && indexInVisited < current.visitedBorder) {
+            
+            if (current.index !== toIndex && current.cost > (minCosts.get(current.index) ?? Infinity)) {
                 this.dispatchEvent("skipped", current.path);
                 continue;
             }
+            
             if (current.index === toIndex) {
                 // Return the path of handlers and formats to get from the input format to the output format
                 const logString = `${iterations} with cost ${current.cost.toFixed(3)}: ${current.path.map(p => p.handler.name + "(" + p.format.mime + ")").join(" → ")}`;
@@ -373,21 +376,26 @@ export class TraversionGraph {
                 }
                 continue;
             }
-            visited.push(current.index);
+            
             this.dispatchEvent("searching", current.path);
             this.nodes[current.index].edges.forEach(edgeIndex => {
                 let edge = this.edges[edgeIndex];
-                const indexInVisited = visited.indexOf(edge.to.index);
-                if (indexInVisited >= 0 && indexInVisited < current.visitedBorder) return;
+                
                 const handler = this.handlers.find(h => h.name === edge.handler);
                 if (!handler) return; // If the handler for this edge is not found, skip it
 
                 let path = current.path.concat({handler: handler, format: edge.to.format});
+                let newCost = current.cost + edge.cost + this.calculateAdaptiveCost(path);
+                
+                if (edge.to.index !== toIndex) {
+                    if (newCost >= (minCosts.get(edge.to.index) ?? Infinity)) return;
+                    minCosts.set(edge.to.index, newCost);
+                }
+                
                 queue.add({
                     index: edge.to.index,
-                    cost: current.cost + edge.cost + this.calculateAdaptiveCost(path),
-                    path: path,
-                    visitedBorder: visited.length
+                    cost: newCost,
+                    path: path
                 });
             });
             if (iterations % LOG_FREQUENCY === 0) {
