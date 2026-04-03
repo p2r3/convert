@@ -245,12 +245,7 @@ async function buildOptionList () {
       const formatDescriptor = format.format.toUpperCase();
       if (simpleMode) {
         // Hide any handler-specific information in simple mode
-        const cleanName = format.name
-          .split("(").join(")").split(")")
-          .filter((_, i) => i % 2 === 0)
-          .filter(c => c != "")
-          .join(" ");
-        newOption.appendChild(document.createTextNode(`${formatDescriptor} - ${cleanName} (${format.mime})`));
+        newOption.appendChild(document.createTextNode(`${formatDescriptor} - ${format.name} (${format.mime})`));
       } else {
         newOption.appendChild(document.createTextNode(`${formatDescriptor} - ${format.name} (${format.mime}) ${handler.name}`));
       }
