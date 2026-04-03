@@ -1,5 +1,5 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-import CommonFormats from "src/CommonFormats.ts";
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 import XCF from "./gimper/src/main.js";
 
 class xcfHandler implements FormatHandler {
@@ -21,7 +21,7 @@ class xcfHandler implements FormatHandler {
                 from: true,
                 to: false,
                 internal: "xcf",
-                category: "image",
+                category: Category.IMAGE,
                 lossless: true
             },
             CommonFormats.PNG.builder("png")

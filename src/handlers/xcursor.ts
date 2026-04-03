@@ -1,5 +1,5 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-import CommonFormats from "src/CommonFormats.ts";
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 
 class xcursorHandler implements FormatHandler {
 
@@ -15,7 +15,7 @@ class xcursorHandler implements FormatHandler {
       from: true,
       to: false,
       internal: "xcur",
-      category: "image",
+      category: Category.IMAGE,
       lossless: true
     },
   ];

@@ -2,7 +2,7 @@ import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import { LZHDecoder } from "./lzh/decoder.ts";
 import { LZHEncoder, type LHAFileInput } from "./lzh/encoder.ts";
 import JSZip from "jszip";
-import CommonFormats from "src/CommonFormats.ts";
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 import normalizeMimeType from "../normalizeMimeType.ts";
 import mime from "mime";
 
@@ -27,7 +27,7 @@ class LZHHandler implements FormatHandler {
       from: true,
       to: true,
       internal: "lzh",
-      category: "archive",
+      category: Category.ARCHIVE,
       lossless: true
     },
     CommonFormats.ZIP.builder("zip").allowFrom()

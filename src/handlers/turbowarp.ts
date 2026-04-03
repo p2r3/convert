@@ -1,7 +1,7 @@
 // file: turbowarp.ts
 
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-import CommonFormats from "src/CommonFormats.ts";
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 import { Packager, largeAssets, downloadProject } from "turbowarp-packager-browser";
 
 // patching some assets
@@ -21,7 +21,7 @@ class turbowarpHandler implements FormatHandler {
       from: true,
       to: false,
       internal: "sb3",
-      category: "archive",
+      category: Category.ARCHIVE,
       lossless: false,
     },
     CommonFormats.HTML.builder("html")
