@@ -12,7 +12,9 @@ export const Category = {
     SPREADSHEET: "spreadsheet",
     PRESENTATION: "presentation",
     FONT: "font",
-    CODE: "code"
+    CODE: "code",
+    DATABASE: "database",
+    MODEL: "model",
 }
 
 /**

@@ -1,6 +1,7 @@
 import type { FileData, FileFormat, FormatHandler } from "src/FormatHandler";
 import * as NBT from "nbtify";
 import { gunzipSync, gzipSync } from "fflate";
+import { Category } from "src/CommonFormats.ts";
 
 class mcSchematicHandler implements FormatHandler {
     public name: string = "mcSchematic";
@@ -17,7 +18,7 @@ class mcSchematicHandler implements FormatHandler {
                 from: true,
                 to: true,
                 internal: "schematic",
-                category: "data",
+                category: Category.DATA,
                 lossless: true
             },
             {
@@ -28,7 +29,7 @@ class mcSchematicHandler implements FormatHandler {
                 from: true,
                 to: true,
                 internal: "schem",
-                category: "data",
+                category: Category.DATA,
                 lossless: true
             },
             {
@@ -39,7 +40,7 @@ class mcSchematicHandler implements FormatHandler {
                 from: true,
                 to: true,
                 internal: "litematic",
-                category: "data",
+                category: Category.DATA,
                 lossless: true
             },
             // Target internal format for graph routing
@@ -51,7 +52,7 @@ class mcSchematicHandler implements FormatHandler {
                 from: false,
                 to: true,
                 internal: "nbt",
-                category: "data",
+                category: Category.DATA,
                 lossless: true
             }
         ];
