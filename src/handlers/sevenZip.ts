@@ -229,7 +229,7 @@ class sevenZipHandler implements FormatHandler {
       const sevenZip = await SevenZip(defaultSevenZipOptions);
       
       // Prevent just zipping another archive file and calling that conversion.
-      if ((inputFormat.category === Category.ARCHIVE || inputFormat.category.includes(Category.ARCHIVE)) && (outputFormat.category === Category.ARCHIVE || outputFormat.category.includes(Category.ARCHIVE))) {
+      if (inputFormat.category && outputFormat.category && (inputFormat.category === Category.ARCHIVE || inputFormat.category.includes(Category.ARCHIVE)) && (outputFormat.category === Category.ARCHIVE || outputFormat.category.includes(Category.ARCHIVE))) {
         throw new Error(`sevenZipHandler cannot convert from ${inputFormat.mime} to ${outputFormat.mime}`);
       }
       
