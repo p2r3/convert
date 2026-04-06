@@ -9,6 +9,7 @@ export const Category = {
     TEXT: "text",
     AUDIO: "audio",
     ARCHIVE: "archive",
+    IMAGE_ARCHIVE: "image archive",
     SPREADSHEET: "spreadsheet",
     PRESENTATION: "presentation",
     FONT: "font",
@@ -204,6 +205,20 @@ const CommonFormats = {
         "tar",
         "tar",
         "application/x-tar",
+        Category.ARCHIVE
+    ),
+    RAR: new FormatDefinition(
+        "Rar Archive",
+        "rar",
+        "rar",
+        "application/vnd.rar",
+        Category.ARCHIVE
+    ),
+    SZ: new FormatDefinition(
+        "7z Archive",
+        "7z",
+        "7z",
+        "application/x-7z-compressed",
         Category.ARCHIVE
     ),
     // documents
