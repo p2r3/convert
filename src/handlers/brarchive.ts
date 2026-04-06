@@ -8,6 +8,27 @@ function read_lendian_4(a: number, b: number, c: number, d: number): number {
     return a + (b * Math.pow(16,2)) + (c * Math.pow(16,4)) + (d * Math.pow(16,6));
 }
 
+function write_lendian_4(x: number): number[] {
+    if (x > 0xFFFFFFFF) {
+        throw new Error("Error in write_lendian_4: number too big.");
+    }
+    if (x < 0x00) {
+        throw new Error("Error in write_lendian_4: number is negative.");
+    }
+
+    let num_string = x.toString(16);
+    
+    while (num_string.length < 8) {
+        num_string = "0"+num_string;
+    }
+    
+    console.log("write_lendian_4: "+"("+x+")"+" ("+num_string+")");
+    
+    const array : number[] = [parseInt(num_string.substring(6,8),16),parseInt(num_string.substring(4,6),16),parseInt(num_string.substring(2,4),16),parseInt(num_string.substring(0,2),16)];
+    console.log("write_lendian_4: "+array);
+    return array
+}
+
 class BRARCHIVEHandler implements FormatHandler {
     public name: string = "brarchive";
     public supportedFormats?: FileFormat[];
@@ -15,18 +36,18 @@ class BRARCHIVEHandler implements FormatHandler {
     
     async init () {
         this.supportedFormats = [
-            CommonFormats.ZIP.supported("zip", false, true, true),
-            CommonFormats.JSON.supported("json", false, true, true),
+            CommonFormats.ZIP.supported("zip", true, true, true),
+            CommonFormats.JSON.supported("json", true, true, true),
             {
-                name: "BRARCHIVE - Minecraft Bedrock Archive",
+                name: "Minecraft Bedrock Archive",
                 format: "brarchive",
                 extension: "brarchive",
                 mime: "image/x-brarchive",
                 from: true,
-                to: false,
+                to: true,
                 internal: "brarchive",
                 category: Category.ARCHIVE,
-                lossless: false
+                lossless: true,
             },
         ];
 
@@ -47,7 +68,7 @@ class BRARCHIVEHandler implements FormatHandler {
         
             for (const file of inputFiles) {
                 const decoder = new TextDecoder();
-                const numEntries = read_lendian_4(file.bytes[0x08],file.bytes[0x09],file.bytes[0x0A],file.bytes[0x0B]);
+                const numEntries : number  = read_lendian_4(file.bytes[0x08],file.bytes[0x09],file.bytes[0x0A],file.bytes[0x0B]);
                 
                 // FileEntries begin at 0x10. Read them and store to an array we can look up later.
                 let byte_cursor = 0x10;
@@ -57,8 +78,8 @@ class BRARCHIVEHandler implements FormatHandler {
                     byte_cursor++;
                     const file_name = decoder.decode(file.bytes.subarray(byte_cursor,byte_cursor+file_name_length));
                     byte_cursor += 247; // Names are stored as padded 247-length strings?? Weird but seems to be true.
-                    const relative_offset = read_lendian_4(file.bytes[byte_cursor],file.bytes[byte_cursor+1],file.bytes[byte_cursor+2],file.bytes[byte_cursor+3]);
-                    const absolute_offset = relative_offset + 16 + file_entry_size*numEntries;
+                    const relative_offset : number = read_lendian_4(file.bytes[byte_cursor],file.bytes[byte_cursor+1],file.bytes[byte_cursor+2],file.bytes[byte_cursor+3]);
+                    const absolute_offset : number  = relative_offset + 16 + file_entry_size*numEntries;
                     byte_cursor += 4;
                     const data_size = read_lendian_4(file.bytes[byte_cursor],file.bytes[byte_cursor+1],file.bytes[byte_cursor+2],file.bytes[byte_cursor+3]);
                     
@@ -97,8 +118,8 @@ class BRARCHIVEHandler implements FormatHandler {
                 else if (outputFormat.internal === "json") {
                     // First, validate that everything in the archive is in fact a .json file.
                     for (const ar_file of archiveFiles) {
-                        if (ar_file.name.endsWith(".json")) {
-                            throw new Error("Error, brarchive doesn't consist solely of .json files, so we can't convert straight to that.");
+                        if (!ar_file.name.endsWith(".json")) {
+                            throw new Error("Error, brarchive doesn't consist solely of .json files, so we can't convert straight to that. "+ar_file.name);
                         }
                     }
                     
@@ -106,6 +127,92 @@ class BRARCHIVEHandler implements FormatHandler {
                     outputFiles.push(...archiveFiles);
                 }
             }
+        }
+        else if ((inputFormat.internal === "json" || inputFormat.internal === "zip") && outputFormat.internal === "brarchive") {
+            const working_files : FileData[] = [];
+            
+            // Special handling for zip input.
+            if (inputFormat.internal === "zip") {
+                for (const file of inputFiles) {
+                    const zip = new JSZip();
+                    await zip.loadAsync(file.bytes);
+
+                    // Extract all files from ZIP
+                    for (const [filename, zipEntry] of Object.entries(zip.files)) {
+                        if (!zipEntry.dir) {
+                            if (filename.endsWith(".json") === false) {
+                                throw new Error("Archive contains more than just .json files; abort.");
+                            }
+                            else {
+                                const data = await zipEntry.async("uint8array");
+                                working_files.push({
+                                    name: filename,
+                                    bytes: data
+                                });
+                            }
+                        }
+                    }
+                }
+            
+                // Throw error if empty
+                if (working_files.length === 0) {
+                    throw new Error("No applicable files to unzip found.");
+                }
+            }
+            else {
+                working_files.push(...inputFiles);
+            }
+            
+            // Unlikely, but handle it.
+            if (working_files.length > 0xFFFFFFFF) {
+                throw new Error("Too many input files to encode in 4 bytes.");
+            }
+        
+            // Zip all the inputs into one archive.
+            const working_bytes : number[] = [];
+            
+            // Write headers and magic numbers.
+            working_bytes.push(0x7D, 0x27, 0x25, 0xB1);
+            working_bytes.push(0xA0, 0x52, 0x70, 0x26);
+            working_bytes.push(...write_lendian_4(working_files.length));
+            working_bytes.push(0x01, 0x00, 0x00, 0x00);
+            
+            // Start writing FileEntry's
+            const encoder = new TextEncoder();
+            for (let i = 0; i < working_files.length; i++) {
+                // Shorten name if need be
+                let name = working_files[i].name
+                while ((encoder.encode(name)).length > 247) {
+                    name = name.substring(0,name.length-1);
+                }
+                
+                const name_bytes : Uint8Array = encoder.encode(name);
+                working_bytes.push(name_bytes.length);
+                
+                // Push name and padding
+                working_bytes.push(...name_bytes);
+                for (let pushed = name_bytes.length; pushed < 247; pushed++) {
+                    working_bytes.push(0x00);
+                }
+                
+                // Relative offset is the sum of the file sizes of every file that comes before it.
+                let relative_offset = 0;
+                for (let i2 = i-1; i2 >= 0; i2--) {
+                    relative_offset += working_files[i2].bytes.length;
+                }
+                working_bytes.push(...write_lendian_4(relative_offset));
+                
+                // Then, the file size of *this* file.
+                working_bytes.push(...write_lendian_4(working_files[i].bytes.length));
+            }
+            
+            // FileEntry's are done. Write raw data.
+            for (let i = 0; i < working_files.length; i++) {
+                working_bytes.push(...working_files[i].bytes);
+            }
+            
+            // Finally, push our file.
+            outputFiles.push({bytes: new Uint8Array(working_bytes), name: "Unnamed.brarchive"});
         }
         else {
             throw new Error("Invalid input-output");
