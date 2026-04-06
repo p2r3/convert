@@ -25,7 +25,7 @@ class BRARCHIVEHandler implements FormatHandler {
                 from: true,
                 to: false,
                 internal: "brarchive",
-                category: Category.DATA,
+                category: Category.ARCHIVE,
                 lossless: false
             },
         ];
