@@ -172,7 +172,7 @@ class wadHandler implements FormatHandler {
                 }
             }
 
-        } else if (inputFormat.internal === "zip") {
+        } else if (inputFormat.internal === "zip" && outputFormat.internal === "wad") {
             // ZIP → WAD: each zip entry becomes a lump
             for (const file of inputFiles) {
                 const baseName = file.name.replace(/\.zip$/i, "");
@@ -227,6 +227,9 @@ class wadHandler implements FormatHandler {
                 const wadBytes = this.buildWAD(lumps, wadType);
                 outputFiles.push({ bytes: wadBytes, name: baseName + ".wad" });
             }
+        }
+        else {
+            throw new Error("Invalid input-output.");
         }
 
         return outputFiles;
