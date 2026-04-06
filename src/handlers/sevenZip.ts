@@ -228,6 +228,11 @@ class sevenZipHandler implements FormatHandler {
     } else { // anything-to-archive conversion
       const sevenZip = await SevenZip(defaultSevenZipOptions);
       
+      // Prevent just zipping another archive file and calling that conversion.
+      if ((inputFormat.category === Category.ARCHIVE || inputFormat.category.includes(Category.ARCHIVE)) && (outputFormat.category === Category.ARCHIVE || outputFormat.category.includes(Category.ARCHIVE))) {
+        throw new Error(`sevenZipHandler cannot convert from ${inputFormat.mime} to ${outputFormat.mime}`);
+      }
+      
       const image_list = ["png","jpg","jpeg","webp","bmp","tiff","gif"];
       if (outputFormat.mime.includes("comicbook")) {
         // Single-gif catching
