@@ -129,7 +129,7 @@ class BRARCHIVEHandler implements FormatHandler {
             }
         }
         else if ((inputFormat.internal === "json" || inputFormat.internal === "zip") && outputFormat.internal === "brarchive") {
-            const working_files : FileData[] = [];
+            const working_files: { [key: string]: FileData[] } = {};
             
             // Special handling for zip input.
             if (inputFormat.internal === "zip") {
@@ -137,82 +137,90 @@ class BRARCHIVEHandler implements FormatHandler {
                     const zip = new JSZip();
                     await zip.loadAsync(file.bytes);
 
+                    let done_something_flag = false;
+
                     // Extract all files from ZIP
+                    working_files[file.name] = [];
                     for (const [filename, zipEntry] of Object.entries(zip.files)) {
                         if (!zipEntry.dir) {
                             if (filename.endsWith(".json") === false) {
                                 throw new Error("Archive contains more than just .json files; abort.");
                             }
                             else {
+                                done_something_flag = true;
                                 const data = await zipEntry.async("uint8array");
-                                working_files.push({
+                                working_files[file.name].push({
                                     name: filename,
                                     bytes: data
                                 });
                             }
                         }
                     }
-                }
-            
-                // Throw error if empty
-                if (working_files.length === 0) {
-                    throw new Error("No applicable files to unzip found.");
+                    
+                    // Throw error if empty
+                    if (!done_something_flag) {
+                        throw new Error("No applicable files to unzip found in "+file.name);
+                    }
                 }
             }
             else {
-                working_files.push(...inputFiles);
+                working_files["Unnamed.brarchive"] = [];
+                working_files["Unnamed.brarchive"].push(...inputFiles);
             }
             
-            // Unlikely, but handle it.
-            if (working_files.length > 0xFFFFFFFF) {
-                throw new Error("Too many input files to encode in 4 bytes.");
-            }
-        
-            // Zip all the inputs into one archive.
-            const working_bytes : number[] = [];
+            // Iterate through each collection of files.
+            for (const key in working_files) {
+                // Unlikely, but handle it.
+                if (working_files[key].length > 0xFFFFFFFF) {
+                    throw new Error("Too many input files to encode in 4 bytes.");
+                }
             
-            // Write headers and magic numbers.
-            working_bytes.push(0x7D, 0x27, 0x25, 0xB1);
-            working_bytes.push(0xA0, 0x52, 0x70, 0x26);
-            working_bytes.push(...write_lendian_4(working_files.length));
-            working_bytes.push(0x01, 0x00, 0x00, 0x00);
-            
-            // Start writing FileEntry's
-            const encoder = new TextEncoder();
-            for (let i = 0; i < working_files.length; i++) {
-                // Shorten name if need be
-                let name = working_files[i].name
-                while ((encoder.encode(name)).length > 247) {
-                    name = name.substring(0,name.length-1);
+                // Zip all the inputs into one archive.
+                const working_bytes : number[] = [];
+                
+                // Write headers and magic numbers.
+                working_bytes.push(0x7D, 0x27, 0x25, 0xB1);
+                working_bytes.push(0xA0, 0x52, 0x70, 0x26);
+                working_bytes.push(...write_lendian_4(working_files[key].length));
+                working_bytes.push(0x01, 0x00, 0x00, 0x00);
+                
+                // Start writing FileEntry's
+                const encoder = new TextEncoder();
+                for (let i = 0; i < working_files[key].length; i++) {
+                    // Shorten name if need be
+                    let name = working_files[key][i].name
+                    while ((encoder.encode(name)).length > 247) {
+                        name = name.substring(0,name.length-1);
+                    }
+                    
+                    const name_bytes : Uint8Array = encoder.encode(name);
+                    working_bytes.push(name_bytes.length);
+                    
+                    // Push name and padding
+                    working_bytes.push(...name_bytes);
+                    for (let pushed = name_bytes.length; pushed < 247; pushed++) {
+                        working_bytes.push(0x00);
+                    }
+                    
+                    // Relative offset is the sum of the file sizes of every file that comes before it.
+                    let relative_offset = 0;
+                    for (let i2 = i-1; i2 >= 0; i2--) {
+                        relative_offset += working_files[key][i2].bytes.length;
+                    }
+                    working_bytes.push(...write_lendian_4(relative_offset));
+                    
+                    // Then, the file size of *this* file.
+                    working_bytes.push(...write_lendian_4(working_files[key][i].bytes.length));
                 }
                 
-                const name_bytes : Uint8Array = encoder.encode(name);
-                working_bytes.push(name_bytes.length);
-                
-                // Push name and padding
-                working_bytes.push(...name_bytes);
-                for (let pushed = name_bytes.length; pushed < 247; pushed++) {
-                    working_bytes.push(0x00);
+                // FileEntry's are done. Write raw data.
+                for (let i = 0; i < working_files[key].length; i++) {
+                    working_bytes.push(...working_files[key][i].bytes);
                 }
                 
-                // Relative offset is the sum of the file sizes of every file that comes before it.
-                let relative_offset = 0;
-                for (let i2 = i-1; i2 >= 0; i2--) {
-                    relative_offset += working_files[i2].bytes.length;
-                }
-                working_bytes.push(...write_lendian_4(relative_offset));
-                
-                // Then, the file size of *this* file.
-                working_bytes.push(...write_lendian_4(working_files[i].bytes.length));
+                // Finally, push our file.
+                outputFiles.push({bytes: new Uint8Array(working_bytes), name: key.split(".").slice(0, -1).join(".") + "." + outputFormat.extension});
             }
-            
-            // FileEntry's are done. Write raw data.
-            for (let i = 0; i < working_files.length; i++) {
-                working_bytes.push(...working_files[i].bytes);
-            }
-            
-            // Finally, push our file.
-            outputFiles.push({bytes: new Uint8Array(working_bytes), name: "Unnamed.brarchive"});
         }
         else {
             throw new Error("Invalid input-output");
