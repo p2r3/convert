@@ -16,7 +16,7 @@ function write_lendian_4(x: number): number[] {
         throw new Error("Error in write_lendian_4: number is negative.");
     }
 
-    let num_string = x.toString(16);
+    let num_string : string = x.toString(16);
     
     while (num_string.length < 8) {
         num_string = "0"+num_string;
@@ -72,18 +72,18 @@ class BRARCHIVEHandler implements FormatHandler {
                 
                 // FileEntries begin at 0x10. Read them and store to an array we can look up later.
                 let byte_cursor = 0x10;
-                const FileEntries_info = [];
+                const FileEntries_info : string[][] = [];
                 for (let i = 0; i < numEntries; i++) {
                     const file_name_length = file.bytes[byte_cursor];
                     byte_cursor++;
-                    const file_name = decoder.decode(file.bytes.subarray(byte_cursor,byte_cursor+file_name_length));
+                    const file_name : string = decoder.decode(file.bytes.subarray(byte_cursor,byte_cursor+file_name_length));
                     byte_cursor += 247; // Names are stored as padded 247-length strings?? Weird but seems to be true.
                     const relative_offset : number = read_lendian_4(file.bytes[byte_cursor],file.bytes[byte_cursor+1],file.bytes[byte_cursor+2],file.bytes[byte_cursor+3]);
-                    const absolute_offset : number  = relative_offset + 16 + file_entry_size*numEntries;
+                    const absolute_offset : string  = (relative_offset + 16 + file_entry_size*numEntries).toString();
                     byte_cursor += 4;
-                    const data_size = read_lendian_4(file.bytes[byte_cursor],file.bytes[byte_cursor+1],file.bytes[byte_cursor+2],file.bytes[byte_cursor+3]);
+                    const data_size : string = (read_lendian_4(file.bytes[byte_cursor],file.bytes[byte_cursor+1],file.bytes[byte_cursor+2],file.bytes[byte_cursor+3])).toString();
                     
-                    if (data_size === 0) {
+                    if (data_size === "0") {
                         throw new Error("Error, file has no data. Can't meaningfully convert.");
                     }
                     
@@ -100,7 +100,7 @@ class BRARCHIVEHandler implements FormatHandler {
                 for (let i = 0; i < FileEntries_info.length; i++) {
                     archiveFiles.push({
                         name: FileEntries_info[i][0],
-                        bytes: file.bytes.subarray(FileEntries_info[i][1],FileEntries_info[i][1]+FileEntries_info[i][2]),
+                        bytes: file.bytes.subarray(parseInt(FileEntries_info[i][1]),parseInt(FileEntries_info[i][1])+parseInt(FileEntries_info[i][2])),
                     });
                 }
                 
