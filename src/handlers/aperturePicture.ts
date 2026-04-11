@@ -8,17 +8,20 @@ import {
   QuantizeSettings
 } from "@imagemagick/magick-wasm";
 
-import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
+import type {
+  FileData,
+  FileFormat,
+  FormatHandler
+} from "../FormatHandler.ts";
 import CommonFormats from "src/CommonFormats.ts";
 
 class aperturePictureHandler implements FormatHandler {
   public name: string = "aperturePicture";
-  public supportedFormats?: FileFormat[];
+  public supportedFormats ? : FileFormat[];
   public ready: boolean = false;
 
   async init() {
-    this.supportedFormats = [
-      {
+    this.supportedFormats = [{
         name: "Aperture Picture Format",
         format: "apf",
         extension: "apf",
@@ -30,9 +33,9 @@ class aperturePictureHandler implements FormatHandler {
         lossless: true,
       },
       CommonFormats.BMP.builder("bmp")
-        .allowFrom(true)
-        .allowTo(true)
-        .markLossless(),
+      .allowFrom(true)
+      .allowTo(true)
+      .markLossless(),
     ];
     this.ready = true;
   }
@@ -41,7 +44,7 @@ class aperturePictureHandler implements FormatHandler {
     inputFiles: FileData[],
     inputFormat: FileFormat,
     outputFormat: FileFormat,
-  ): Promise<FileData[]> {
+  ): Promise < FileData[] > {
     const outputFiles: FileData[] = [];
     const decoder = new TextDecoder();
 
@@ -62,11 +65,10 @@ class aperturePictureHandler implements FormatHandler {
           name: file.name.replace(/\.[^/.]+$/, "") + ".bmp",
         });
       }
-    }
-    else if (inputFormat.internal === "bmp") { // we're just throwing science at the wall to see what sticks
+    } else if (inputFormat.internal === "bmp") { // we're just throwing science at the wall to see what sticks
       const w = 320,
         h = 200;
-      await initializeImageMagick(); 
+      await initializeImageMagick();
 
       const inputMagickFormat = inputFormat.internal as MagickFormat;
       const inputSettings = new MagickReadSettings();
@@ -83,7 +85,7 @@ class aperturePictureHandler implements FormatHandler {
             image.grayscale();
             const Qset = new QuantizeSettings();
             Qset.colors = 2;
-            Qset.ditherMethod = 1; 
+            Qset.ditherMethod = 1;
             image.quantize(Qset); // 2 colors
 
             let data = null // now you're thinking with NoneTypes
@@ -159,9 +161,9 @@ function APFarray(data: Uint8Array): Uint8Array {
   for (const b of data) {
     let uh = 0
     if (ispalflipped) {
-      uh = (1-pal.indexOf(b))*255
+      uh = (1 - pal.indexOf(b)) * 255
     } else {
-      uh = pal.indexOf(b)*255
+      uh = pal.indexOf(b) * 255
     }
     temparray.push(uh)
     if (temparray.length === 320) {
@@ -184,14 +186,17 @@ function encodeAPF(data: Uint8Array): String {
   for (const p of q_data) {
     if (p === currun) {
       runlen += 1
-      if (runlen == 94) {runlen=0; apf += "~ "}
+      if (runlen == 94) {
+        runlen = 0;
+        apf += "~ "
+      }
     } else {
-      apf += String.fromCharCode(runlen+32)
+      apf += String.fromCharCode(runlen + 32)
       currun = p
       runlen = 1
     }
   }
-  apf += String.fromCharCode(runlen+32);
+  apf += String.fromCharCode(runlen + 32);
   return apf;
 }
 
@@ -251,5 +256,4 @@ function bitmapTo1BitBMP( // note i initially used 24-bit BMPs but the filesize 
 
 export default aperturePictureHandler;
 
-// logical next step is to go from BMP to APF but that is far beyond my level of knowledge. if anyone wants to take a crack at it the original basic code is in the old ARG Wiki at http://portalwiki.asshatter.org/index.php/Aperture_Image_Format.html#GW-Basic_AMF.2FAPF_Viewer_Source
 // if anyone wants to implement basic 1-bit colour, the .amf format is very simple, covered at http://portalwiki.asshatter.org/index.php/Aperture_Menu_Format.html. All you'd need to implement that is to check line 0 is APERTURE MENU FORMAT (c) 1985 and then line 1 is the colour info, comma separated. Idk what the RGB mappings for them are but the number meanings are at https://en.wikibooks.org/wiki/QBasic/Text_Output#Color_by_Number
