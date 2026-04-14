@@ -1,5 +1,6 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import CommonFormats from "src/CommonFormats.ts";
+import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
 class cybergrindHandler implements FormatHandler {
     public name: string = "cybergrind";
@@ -40,10 +41,10 @@ class cybergrindHandler implements FormatHandler {
         const outputFiles: FileData[] = [];
         
         if (inputFormat.internal !== "png" || outputFormat.internal !== "cgp") {
-            throw Error("Invalid output format.");
+            throw new TypeError(`Unsupported output format: ${outputFormat.internal}`);
         }
         if (!this.#canvas || !this.#ctx) {
-            throw Error("Handler not initialized.");
+            throw new InitializationError("Handler not initialized.");
         }
         
         for (const file of inputFiles) {

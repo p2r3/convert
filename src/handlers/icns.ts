@@ -1,5 +1,6 @@
 import CommonFormats from "src/CommonFormats.ts";
 import { FormatDefinition, type FileData, type FileFormat, type FormatHandler } from "../FormatHandler.ts";
+import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
 const PNG_SIGNATURE = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
 const ICNS_MAGIC = "icns";
@@ -59,7 +60,7 @@ function readFourCC (bytes: Uint8Array, offset: number): string {
 }
 
 function writeFourCC (bytes: Uint8Array, offset: number, value: string): void {
-  if (value.length !== 4) throw "FourCC must have exactly 4 characters.";
+  if (value.length !== 4) throw new RangeError("FourCC must have exactly 4 characters.");
   bytes[offset] = value.charCodeAt(0);
   bytes[offset + 1] = value.charCodeAt(1);
   bytes[offset + 2] = value.charCodeAt(2);
@@ -67,10 +68,10 @@ function writeFourCC (bytes: Uint8Array, offset: number, value: string): void {
 }
 
 export function parsePngDimensions (pngBytes: Uint8Array): { width: number, height: number } {
-  if (!isPng(pngBytes)) throw "Input is not a PNG file.";
-  if (pngBytes.length < 24) throw "Input PNG is truncated.";
+  if (!isPng(pngBytes)) throw new TypeError("Input is not a PNG file.");
+  if (pngBytes.length < 24) throw new RangeError("Input PNG is truncated.");
   const ihdr = readFourCC(pngBytes, 12);
-  if (ihdr !== "IHDR") throw "Invalid PNG data (missing IHDR chunk).";
+  if (ihdr !== "IHDR") throw new BadMagicError(`Invalid PNG data (missing IHDR chunk). Found "${ihdr}" instead.`);
   return {
     width: readUint32BE(pngBytes, 16),
     height: readUint32BE(pngBytes, 20)
@@ -86,12 +87,12 @@ export function resolveLargestIconSize (maxDimension: number): number {
 }
 
 export function extractBestPngFromIcns (icnsBytes: Uint8Array): Uint8Array {
-  if (icnsBytes.length < 8) throw "Input is too small for an ICNS file.";
-  if (readFourCC(icnsBytes, 0) !== ICNS_MAGIC) throw "Invalid ICNS signature.";
+  if (icnsBytes.length < 8) throw new RangeError("Input is too small for an ICNS file.");
+  if (readFourCC(icnsBytes, 0) !== ICNS_MAGIC) throw new BadMagicError(`Invalid ICNS signature: ${readFourCC(icnsBytes, 0)}`);
 
   const declaredLength = readUint32BE(icnsBytes, 4);
   const endOffset = Math.min(icnsBytes.length, declaredLength);
-  if (declaredLength < 8) throw "Invalid ICNS length.";
+  if (declaredLength < 8) throw new RangeError(`Invalid ICNS length: ${declaredLength}`);
 
   let bestPng: Uint8Array | null = null;
   let bestSize = 0;
@@ -117,7 +118,7 @@ export function extractBestPngFromIcns (icnsBytes: Uint8Array): Uint8Array {
   }
 
   if (!bestPng) {
-    throw "ICNS file does not contain a PNG icon payload.";
+    throw new Error("ICNS file does not contain a PNG icon payload.");
   }
 
   return bestPng;
@@ -142,12 +143,12 @@ class icnsHandler implements FormatHandler {
   async init () {
     this.#canvas = document.createElement("canvas");
     this.#ctx = this.#canvas.getContext("2d") || undefined;
-    if (!this.#ctx) throw "Failed to initialize canvas context.";
+    if (!this.#ctx) throw new InitializationError("Failed to initialize canvas context.");
     this.ready = true;
   }
 
   async #canvasToPngBytes (size: number, bitmap: ImageBitmap): Promise<Uint8Array> {
-    if (!this.#canvas || !this.#ctx) throw "Handler not initialized.";
+    if (!this.#canvas || !this.#ctx) throw new InitializationError("Handler not initialized.");
 
     this.#canvas.width = size;
     this.#canvas.height = size;
@@ -219,7 +220,7 @@ class icnsHandler implements FormatHandler {
       } else if (inputFormat.internal === "png" && outputFormat.internal === "icns") {
         bytes = await this.#encodeIcns(new Uint8Array(inputFile.bytes));
       } else {
-        throw `Unsupported conversion: ${inputFormat.internal} -> ${outputFormat.internal}`;
+        throw new TypeError(`Unsupported conversion: ${inputFormat.internal} -> ${outputFormat.internal}`);
       }
 
       outputFiles.push({

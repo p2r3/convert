@@ -1,5 +1,6 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import CommonFormats from "src/CommonFormats.ts";
+import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
 interface LibOpenMPTModule {
   __render(fileData: Uint8Array, sampleRate: number): Int16Array;
@@ -135,7 +136,7 @@ class libopenmptHandler implements FormatHandler {
     _inputFormat: FileFormat,
     _outputFormat: FileFormat
   ): Promise<FileData[]> {
-    if (!this.ready || !this.#module) throw "Handler not initialized.";
+    if (!this.ready || !this.#module) throw new InitializationError("Handler not initialized.");
 
     const mod = this.#module;
     const outputFiles: FileData[] = [];

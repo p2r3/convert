@@ -89,7 +89,7 @@ export namespace JsonType {
     export class ObjectType implements JsonType {
         value: any;
         isNumericType: boolean = false;
-        toCType(): string {throw "Unable to convert ObjectType to C type";}
+        toCType(): string {throw new Error("Unable to convert ObjectType to C type");}
         convertValue(pValue: string): void {}
     }
 

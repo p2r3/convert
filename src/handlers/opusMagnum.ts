@@ -2,6 +2,7 @@
 
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import CommonFormats from "src/CommonFormats.ts";
+import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
 interface OM_Molecule {
   primes: OM_Primes[];
@@ -66,7 +67,7 @@ const elementColors: Dictionary<string> = {
 
 function twoComplement(input: number): number {
     if (input > 255) {
-        throw "Error, coordinate over 255.";
+        throw new TypeError(`Error, coordinate over 255: ${input}`);
     }
     else if (input >= 128) {
         return -(256-input);
@@ -83,7 +84,7 @@ function renderMolecule(molecule: OM_Molecule): Uint8Array {
     
     const radius = 50;
     if (molecule.primes.length === 0) {
-        throw "Error, empty molecule.";
+        throw new RangeError("Error, empty molecule.");
     }
     
     // Draw the bonds
@@ -116,7 +117,7 @@ function renderMolecule(molecule: OM_Molecule): Uint8Array {
             svg += "    <line stroke='yellow' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.1+"'/>"
         }
         else {
-            throw "Error, invalid bond ("+molecule.bonds[i].bond_type+")";
+            throw new Error("Error, invalid bond ("+molecule.bonds[i].bond_type+")");
         }
     }
     
@@ -130,7 +131,7 @@ function renderMolecule(molecule: OM_Molecule): Uint8Array {
     for (let i = 0; i < molecule.primes.length; i++) {
         // Validate primes
         if (molecule.primes[i].element > 16 || molecule.primes[i].element < 1 || Math.floor(molecule.primes[i].element) !== molecule.primes[i].element) {
-            throw "Error, invalid prime ("+molecule.primes[i].element+")";
+            throw new Error("Error, invalid prime ("+molecule.primes[i].element+")");
         }
     
         // Convert hex-based coordinates to Cartesian
@@ -213,7 +214,7 @@ class opusMagnumHandler implements FormatHandler {
         const outputFiles: FileData[] = [];
         
         if (!this.#canvas || !this.#ctx) {
-            throw "Handler not initialized.";
+            throw new InitializationError("Handler not initialized.");
         }
         
         if (inputFormat.internal === "puzzle" && outputFormat.internal === "svg") {
@@ -322,7 +323,7 @@ class opusMagnumHandler implements FormatHandler {
             }
         }
         else {
-            throw new Error("Invalid input-output.");
+            throw new TypeError(`Unsupported conversion path: ${inputFormat.internal} -> ${outputFormat.internal}`);
         }
         
         return outputFiles;

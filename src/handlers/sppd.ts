@@ -6,6 +6,7 @@ import * as CSG from "three-bvh-csg";
 import { Demo } from "./sppd/sppd/Demo.ts";
 import { Vector } from "./sppd/sppd/Vector.ts";
 import CommonFormats from "src/CommonFormats.ts";
+import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
 function toThreeVector (vec: Vector) {
   return new THREE.Vector3(vec.y, vec.z, vec.x);
@@ -511,8 +512,8 @@ class sppdHandler implements FormatHandler {
   ): Promise<FileData[]> {
     const outputFiles: FileData[] = [];
 
-    if (!this.ready) throw "Handler not initialized!";
-    if (inputFormat.format !== "dem") throw "Invalid input format!";
+    if (!this.ready) throw new InitializationError("Handler not initialized.");
+    if (inputFormat.format !== "dem") throw new TypeError(`Unsupported input format: ${inputFormat.internal}`);
 
     let frameIndex = 0;
 

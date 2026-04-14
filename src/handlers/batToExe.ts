@@ -1,5 +1,6 @@
 import CommonFormats from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
+import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
 import headUrl from "./batToExe/exe65824head.bin?url";
 import footUrl from "./batToExe/exe65824foot.bin?url";
@@ -29,7 +30,7 @@ class batToExeHandler implements FormatHandler {
 
     const header = this.header;
     const footer = this.footer;
-    if (!this.ready || !header || !footer) throw "Handler not initialized!";
+    if (!this.ready || !header || !footer) throw new InitializationError("Handler not initialized.");
 
     const CONTENT_SIZE = 65824;
     const EXIT_BYTES = new Uint8Array([0x0d, 0x0a, 0x65, 0x78, 0x69, 0x74]); // \r\nexit
@@ -38,12 +39,15 @@ class batToExeHandler implements FormatHandler {
     const outputFiles: FileData[] = [];
 
     for (const file of inputFiles) {
-      if (inputFormat.internal !== "bat" || outputFormat.internal !== "exe") {
-        throw new Error("Invalid output format.");
+      if (inputFormat.internal !== "bat") {
+        throw new TypeError(`Unsupported input format: ${inputFormat.internal}`);
+      }
+      if (outputFormat.internal !== "exe") {
+        throw new TypeError(`Unsupported output format: ${outputFormat.internal}`);
       }
 
       if (file.bytes.length + EXIT_BYTES.length > CONTENT_SIZE) {
-        throw new Error("Input too long. Max 65818 bytes.");
+        throw new RangeError(`Input too long. Max ${CONTENT_SIZE-EXIT_BYTES.length} bytes.`);
       }
 
       // Build padded content block

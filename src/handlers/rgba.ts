@@ -2,6 +2,7 @@
 
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import CommonFormats from "src/CommonFormats.ts";
+import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
 class rgbaHandler implements FormatHandler {
 
@@ -53,7 +54,7 @@ class rgbaHandler implements FormatHandler {
         const outputFiles: FileData[] = [];
 
         if (!this.#canvas || !this.#ctx) {
-            throw "Handler not initialized.";
+            throw new InitializationError("Handler not initialized.");
         }
         
         for (const file of inputFiles) {
@@ -80,15 +81,15 @@ class rgbaHandler implements FormatHandler {
                     new_file_bytes = new Uint8Array(pixels.data);
                 }
                 else if (outputFormat.internal === "rgb") {
-                    throw new Error("This handler doesn't need to convert png to rgb, let ImageMagik do that.");
+                    throw new TypeError("This handler doesn't need to convert png to rgb, let ImageMagik do that.");
                 }
                 else {
-                    throw new Error("Invalid input-output.");
+                    throw new TypeError(`Unsupported conversion path: ${inputFormat.internal} -> ${outputFormat.internal}`);
                 }
             }
             else if (inputFormat.internal === "rgb") {
                 if (new_file_bytes.length % 3 !== 0) {
-                    throw new Error("Invalid RGB file size; not a whole number of samples.");
+                    throw new RangeError("Invalid RGB file size; not a whole number of samples.");
                 }
 
                 if (outputFormat.internal === "rgba") {
@@ -110,15 +111,15 @@ class rgbaHandler implements FormatHandler {
                     new_file_bytes = new Uint8Array(writer_array);
                 }
                 else if (outputFormat.mime === CommonFormats.PNG.mime) {
-                    throw new Error("This handler doesn't need to convert rgb to png, let ImageMagik do that.");
+                    throw new TypeError("This handler doesn't need to convert rgb to png, let ImageMagik do that.");
                 }
                 else {
-                    throw new Error("Invalid input-output.");
+                    throw new TypeError(`Unsupported conversion path: ${inputFormat.internal} -> ${outputFormat.internal}`);
                 }
             }
             else if (inputFormat.internal === "rgba") {
                 if (new_file_bytes.length % 4 !== 0) {
-                    throw new Error("Invalid RGBA file size; not a whole number of samples.");
+                    throw new RangeError("Invalid RGBA file size; not a whole number of samples.");
                 }
 
                 if (outputFormat.internal === "rgb") {
@@ -177,11 +178,11 @@ class rgbaHandler implements FormatHandler {
                     });
                 }
                 else {
-                    throw new Error("Invalid input-output.");
+                    throw new TypeError(`Unsupported conversion path: ${inputFormat.internal} -> ${outputFormat.internal}`);
                 }
             }
             else {
-                throw new Error("Invalid input.");
+                throw new TypeError(`Unsupported input format: ${inputFormat.internal}`);
             }
 
             outputFiles.push({

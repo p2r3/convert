@@ -92,7 +92,7 @@ export default class wabtHandler implements FormatHandler {
       return outputFiles;
     }
 
-    throw new Error(
+    throw new TypeError(
       `wabtHandler does not support route: ${inputFormat.internal} -> ${outputFormat.internal}`,
     );
   }
