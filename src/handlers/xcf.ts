@@ -1,6 +1,7 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import CommonFormats from "src/CommonFormats.ts";
 import XCF from "./gimper/src/main.js";
+import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
 class xcfHandler implements FormatHandler {
 
@@ -33,7 +34,7 @@ class xcfHandler implements FormatHandler {
         this.#canvas = document.createElement("canvas");
         const ctx = this.#canvas.getContext("2d");
         if (!ctx) {
-            throw new Error("Failed to create 2D rendering context.");
+            throw new InitializationError("Failed to create 2D rendering context.");
         }
         this.#ctx = ctx;
 
@@ -46,20 +47,20 @@ class xcfHandler implements FormatHandler {
         outputFormat: FileFormat
     ): Promise<FileData[]> {
         if (!this.ready || !this.#canvas || !this.#ctx) {
-            throw new Error("Handler not initialized!");
+            throw new InitializationError("Handler not initialized.");
         }
 
         const outputFiles: FileData[] = [];
 
         if (inputFormat.internal !== "xcf" || outputFormat.internal !== "png") {
-            throw Error("Invalid input/output format.");
+            throw new TypeError(`Unsupported conversion path: ${inputFormat.internal} -> ${outputFormat.internal}`);
         }
 
         for (const inputFile of inputFiles) {
             const xcf = await XCF.from_bytes(new Uint8Array(inputFile.bytes));
 
             if (xcf.layers.length === 0) {
-                throw Error("No layers to convert.");
+                throw new RangeError("No layers to convert.");
             }
 
             for (let i = 0; i < xcf.layers.length; i++) {
@@ -67,7 +68,7 @@ class xcfHandler implements FormatHandler {
                 const bpp = layer.hierarchy.bpp;
 
                 if (![3, 4].includes(bpp)) {
-                    throw Error("Only RGB and RGBA in 8-bit precision is supported.");
+                    throw new RangeError("Only RGB and RGBA in 8-bit precision is supported.");
                 }
 
                 this.#canvas.width = layer.width;

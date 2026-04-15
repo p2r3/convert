@@ -3,6 +3,7 @@ import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import Meyda from "meyda";
 import CommonFormats from "src/CommonFormats.ts";
 import { WaveFile } from "wavefile";
+import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
 class meydaHandler implements FormatHandler {
 
@@ -46,7 +47,7 @@ class meydaHandler implements FormatHandler {
 
     this.#canvas = document.createElement("canvas");
     const ctx = this.#canvas.getContext("2d");
-    if (!ctx) throw "Failed to create 2D rendering context.";
+    if (!ctx) throw new Error("Failed to create 2D rendering context.");
     this.#ctx = ctx;
 
     this.ready = true;
@@ -64,7 +65,7 @@ class meydaHandler implements FormatHandler {
       || !this.#canvas
       || !this.#ctx
     ) {
-      throw "Handler not initialized!";
+      throw new InitializationError("Handler not initialized.");
     }
     const outputFiles: FileData[] = [];
 
@@ -75,7 +76,7 @@ class meydaHandler implements FormatHandler {
     const hopSize = bufferSize / 2;
 
     if (inputIsImage === outputIsImage) {
-      throw "Invalid input/output format.";
+      throw new TypeError(`Unsupported conversion path: ${inputFormat.internal} -> ${outputFormat.internal}`);
     }
 
     if (inputIsImage) {
@@ -209,7 +210,7 @@ class meydaHandler implements FormatHandler {
           frameBuffer.set(samples.subarray(start, Math.min(start + bufferSize, samples.length)));
           const spectrum = Meyda.extract("complexSpectrum", frameBuffer);
           if (!spectrum || !("real" in spectrum) || !("imag" in spectrum)) {
-            throw "Failed to extract audio features!";
+            throw new Error("Failed to extract audio features!");
           }
           const real = spectrum.real as Float32Array;
           const imaginary = spectrum.imag as Float32Array;

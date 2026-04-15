@@ -2,6 +2,7 @@ import type { FileFormat, FileData, FormatHandler, ConvertPathNode } from "./For
 import normalizeMimeType from "./normalizeMimeType.js";
 import handlers from "./handlers";
 import { TraversionGraph } from "./TraversionGraph.js";
+import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
 /** Files currently selected for conversion */
 let selectedFiles: File[] = [];
@@ -347,25 +348,25 @@ async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
       let supportedFormats = window.supportedFormatCache.get(handler.name);
       if (!handler.ready) {
         await handler.init();
-        if (!handler.ready) throw `Handler "${handler.name}" not ready after init.`;
+        if (!handler.ready) throw new InitializationError(`Handler "${handler.name}" not ready after init.`);
         if (handler.supportedFormats) {
           window.supportedFormatCache.set(handler.name, handler.supportedFormats);
           supportedFormats = handler.supportedFormats;
         }
       }
-      if (!supportedFormats) throw `Handler "${handler.name}" doesn't support any formats.`;
+      if (!supportedFormats) throw new TypeError(`Handler "${handler.name}" doesn't support any formats.`);
       const inputFormat = supportedFormats.find(c =>
         c.from
         && c.mime === path[i].format.mime
         && c.format === path[i].format.format
       ) || (handler.supportAnyInput ? path[i].format : undefined);
-      if (!inputFormat) throw `Handler "${handler.name}" doesn't support the "${path[i].format.format}" format.`;
+      if (!inputFormat) throw new TypeError(`Handler "${handler.name}" doesn't support the "${path[i].format.format}" format.`);
       files = (await Promise.all([
         handler.doConvert(files, inputFormat, path[i + 1].format),
         // Ensure that we wait long enough for the UI to update
         new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
       ]))[0];
-      if (files.some(c => !c.bytes.length)) throw "Output is empty.";
+      if (files.some(c => !c.bytes.length)) throw new RangeError("Output is empty.");
     } catch (e) {
 
       console.log(path.map(c => c.format.format));

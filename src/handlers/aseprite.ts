@@ -1,6 +1,7 @@
 import pako from "pako";
 import CommonFormats from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
+import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
 const ASEPRITE_HEADER_MAGIC = 0xA5E0;
 const ASEPRITE_FRAME_MAGIC = 0xF1FA;
@@ -84,21 +85,21 @@ function readStringLE(bytes: Uint8Array, offset: number): { value: string; next:
 }
 
 function decodeAseprite(bytes: Uint8Array): ParsedAseprite {
-  if (bytes.length < 128) throw "File is too small to be a valid .aseprite file.";
+  if (bytes.length < 128) throw new RangeError("File is too small to be a valid .aseprite file.");
 
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const magic = view.getUint16(4, true);
-  if (magic !== ASEPRITE_HEADER_MAGIC) throw "Invalid Aseprite header magic.";
+  if (magic !== ASEPRITE_HEADER_MAGIC) throw new BadMagicError(`Invalid Aseprite header magic: ${magic}`);
 
   const frameCount = view.getUint16(6, true);
   const width = view.getUint16(8, true);
   const height = view.getUint16(10, true);
   const colorDepth = view.getUint16(12, true);
   const transparentPaletteIndex = bytes[28] ?? 0;
-  if (width === 0 || height === 0) throw "Invalid image dimensions in Aseprite file.";
-  if (frameCount === 0) throw "Aseprite file has no frames.";
+  if (width === 0 || height === 0) throw new RangeError(`Invalid image dimensions in Aseprite file: ${width}x${height}`);
+  if (frameCount === 0) throw new RangeError("Aseprite file has no frames.");
   if (colorDepth !== 32 && colorDepth !== 16 && colorDepth !== 8) {
-    throw "Unsupported Aseprite color depth. Expected RGBA(32), Grayscale(16), or Indexed(8).";
+    throw new RangeError(`Unsupported Aseprite color depth of ${colorDepth}. Expected RGBA(32), Grayscale(16), or Indexed(8).`);
   }
 
   const layers: LayerInfo[] = [];
@@ -112,10 +113,10 @@ function decodeAseprite(bytes: Uint8Array): ParsedAseprite {
 
   let offset = 128;
   for (let frameIndex = 0; frameIndex < frameCount; frameIndex++) {
-    if (offset + 16 > bytes.length) throw "Unexpected end of file while reading frame header.";
+    if (offset + 16 > bytes.length) throw new EOFError("Unexpected end of file while reading frame header.");
     const frameBytes = view.getUint32(offset, true);
     const frameMagic = view.getUint16(offset + 4, true);
-    if (frameMagic !== ASEPRITE_FRAME_MAGIC) throw "Invalid frame magic in Aseprite file.";
+    if (frameMagic !== ASEPRITE_FRAME_MAGIC) throw new BadMagicError(`Invalid frame magic in Aseprite file: ${frameMagic}`);
 
     const oldChunkCount = view.getUint16(offset + 6, true);
     const chunkCountValue = view.getUint32(offset + 12, true);
@@ -126,12 +127,12 @@ function decodeAseprite(bytes: Uint8Array): ParsedAseprite {
     const currentFrameCels = new Map<number, CelImage>();
 
     for (let i = 0; i < chunkCount; i++) {
-      if (chunkOffset + 6 > bytes.length) throw "Unexpected end of file while reading chunk header.";
+      if (chunkOffset + 6 > bytes.length) throw new EOFError("Unexpected end of file while reading chunk header.");
       const chunkSize = view.getUint32(chunkOffset, true);
       const chunkType = view.getUint16(chunkOffset + 4, true);
       const chunkDataStart = chunkOffset + 6;
       const chunkEnd = chunkOffset + chunkSize;
-      if (chunkSize < 6 || chunkEnd > bytes.length || chunkEnd > frameEnd) throw "Invalid chunk size in Aseprite file.";
+      if (chunkSize < 6 || chunkEnd > bytes.length || chunkEnd > frameEnd) throw new RangeError(`Invalid chunk size in Aseprite file: ${chunkSize}`);
 
       if (chunkType === CHUNK_TYPE_LAYER) {
         const flags = view.getUint16(chunkDataStart, true);
@@ -217,12 +218,12 @@ function decodeAseprite(bytes: Uint8Array): ParsedAseprite {
           let celBytes: Uint8Array;
           if (celType === 0) {
             const rawEnd = dataStart + expectedByteLength;
-            if (rawEnd > chunkEnd) throw "Invalid raw cel data length.";
+            if (rawEnd > chunkEnd) throw new RangeError(`Invalid raw cel data length: ${rawEnd}`);
             celBytes = bytes.subarray(dataStart, rawEnd);
           } else {
             const compressed = bytes.subarray(dataStart, chunkEnd);
             celBytes = pako.inflate(compressed);
-            if (celBytes.length !== expectedByteLength) throw "Invalid decompressed cel size.";
+            if (celBytes.length !== expectedByteLength) throw new RangeError(`Invalid decompressed cel size: ${celBytes.length}`);
           }
 
           const pixelData = new Uint8Array(celWidth * celHeight * 4);
@@ -267,7 +268,7 @@ function decodeAseprite(bytes: Uint8Array): ParsedAseprite {
       chunkOffset = chunkEnd;
     }
 
-    if (chunkOffset > frameEnd) throw "Frame chunk data exceeds frame bounds.";
+    if (chunkOffset > frameEnd) throw new RangeError(`Frame chunk data exceeds frame bounds: ${chunkOffset} > ${frameEnd}`);
     frameCels.set(frameIndex, currentFrameCels);
     offset = frameEnd;
   }
@@ -282,12 +283,12 @@ function decodeAseprite(bytes: Uint8Array): ParsedAseprite {
       }
     }
   }
-  if (!targetFrame) throw "Failed to read first frame.";
+  if (!targetFrame) throw new Error("Failed to read first frame.");
   if (targetFrame.size === 0) {
     if (unsupportedCelTypes.size > 0) {
-      throw `Unsupported Aseprite cel type(s): ${Array.from(unsupportedCelTypes).join(", ")}.`;
+      throw new TypeError(`Unsupported Aseprite cel type(s): ${Array.from(unsupportedCelTypes).join(", ")}.`);
     }
-    throw "Aseprite frame has no drawable cels.";
+    throw new RangeError("Aseprite frame has no drawable cels.");
   }
 
   const output = new Uint8ClampedArray(width * height * 4);
@@ -441,7 +442,7 @@ class asepriteHandler implements FormatHandler {
     _inputFormat: FileFormat,
     outputFormat: FileFormat
   ): Promise<FileData[]> {
-    if (!this.#canvas || !this.#ctx) throw "Handler not initialized.";
+    if (!this.#canvas || !this.#ctx) throw new InitializationError("Handler not initialized.");
 
     const outputs: FileData[] = [];
     for (const inputFile of inputFiles) {

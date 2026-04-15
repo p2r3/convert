@@ -25,7 +25,7 @@ class svgTraceHandler implements FormatHandler {
     inputFormat: FileFormat,
     outputFormat: FileFormat
   ): Promise<FileData[]> {
-    if (outputFormat.internal !== "svg") throw "Invalid output format.";
+    if (outputFormat.internal !== "svg") throw new TypeError(`Unsupported output format: ${outputFormat.internal}`);
 
     const outputFiles: FileData[] = [];
     const encoder = new TextEncoder();

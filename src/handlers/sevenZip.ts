@@ -96,7 +96,7 @@ class sevenZipHandler implements FormatHandler {
     const outputFiles: FileData[] = [];
 
     if (!this.supportedFormats.some(format => format.to && format.internal === outputFormat.internal)) {
-      throw new Error(`sevenZipHandler cannot convert to ${outputFormat.mime}`);
+      throw new TypeError(`sevenZipHandler cannot convert to ${outputFormat.mime}`);
     }
 
     // handle compressed tars
@@ -126,7 +126,7 @@ class sevenZipHandler implements FormatHandler {
           outputFiles.push({ bytes, name });
         }
       } else {
-        throw new Error(`sevenZipHandler cannot convert from ${inputFormat.mime} to ${outputFormat.mime}`);
+        throw new TypeError(`sevenZipHandler cannot convert from ${inputFormat.mime} to ${outputFormat.mime}`);
       }
       
       return outputFiles;

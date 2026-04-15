@@ -88,7 +88,7 @@ class threejsHandler implements FormatHandler {
           });
           break;
         default:
-          throw new Error("Invalid input format");
+          throw new TypeError(`Unsupported input format: ${inputFormat.internal}`);
       }
 
       const bbox = new THREE.Box3().setFromObject(object);

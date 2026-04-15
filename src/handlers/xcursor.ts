@@ -1,5 +1,6 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import CommonFormats from "src/CommonFormats.ts";
+import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
 class xcursorHandler implements FormatHandler {
 
@@ -28,7 +29,7 @@ class xcursorHandler implements FormatHandler {
 
     this.#canvas = document.createElement("canvas");
     const ctx = this.#canvas.getContext("2d");
-    if (!ctx) throw "Failed to create 2D rendering context.";
+    if (!ctx) throw new InitializationError("Failed to create 2D rendering context.");
     this.#ctx = ctx;
 
     this.ready = true;
@@ -45,14 +46,14 @@ class xcursorHandler implements FormatHandler {
       || !this.#canvas
       || !this.#ctx
     ) {
-      throw "Handler not initialized!";
+      throw new InitializationError("Handler not initialized.");
     }
     if (
       inputFormat.internal !== "xcur"
       || outputFormat.internal === "xcur"
       || inputFormat.internal === outputFormat.internal
     ) {
-      throw "Invalid input/output format!";
+      throw new TypeError(`Unsupported conversion path: ${inputFormat.internal} -> ${outputFormat.internal}`);
     }
 
     const outputFiles: FileData[] = [];
