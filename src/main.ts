@@ -2,6 +2,7 @@ import type { FileFormat, FileData, FormatHandler, ConvertPathNode } from "./For
 import normalizeMimeType from "./normalizeMimeType.js";
 import handlers from "./handlers";
 import { TraversionGraph } from "./TraversionGraph.js";
+import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
 /** Files currently selected for conversion */
 let selectedFiles: File[] = [];
@@ -347,7 +348,7 @@ async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
       let supportedFormats = window.supportedFormatCache.get(handler.name);
       if (!handler.ready) {
         await handler.init();
-        if (!handler.ready) throw new InitializationErrorError(`Handler "${handler.name}" not ready after init.`);
+        if (!handler.ready) throw new InitializationError(`Handler "${handler.name}" not ready after init.`);
         if (handler.supportedFormats) {
           window.supportedFormatCache.set(handler.name, handler.supportedFormats);
           supportedFormats = handler.supportedFormats;

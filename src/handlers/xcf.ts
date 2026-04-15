@@ -34,7 +34,7 @@ class xcfHandler implements FormatHandler {
         this.#canvas = document.createElement("canvas");
         const ctx = this.#canvas.getContext("2d");
         if (!ctx) {
-            throw new InitializationErrorError("Failed to create 2D rendering context.");
+            throw new InitializationError("Failed to create 2D rendering context.");
         }
         this.#ctx = ctx;
 
