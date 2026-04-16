@@ -72,7 +72,6 @@ import xcursorHandler from "./xcursor.ts";
 import shToElfHandler from "./shToElf.ts";
 import cssHandler from "./css.ts";
 import TypstHandler from "./typst.ts";
-import bbmodelHandler from "./bbmodel.ts";
 import emailHandler from "./email.ts";
 
 const handlers: FormatHandler[] = [];
@@ -152,7 +151,6 @@ try { handlers.push(new xcursorHandler()) } catch (_) { };
 try { handlers.push(new shToElfHandler()) } catch (_) { };
 try { handlers.push(new cssHandler()) } catch (_) { };
 try { handlers.push(new TypstHandler()) } catch (_) { };
-try { handlers.push(new bbmodelHandler()) } catch (_) { };
 try { handlers.push(new emailHandler()) } catch (_) { };
 
 export default handlers;
