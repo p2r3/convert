@@ -1,0 +1,34 @@
+From: Alice Example <alice@example.com>
+To: Bob Example <bob@example.com>
+Subject: =?UTF-8?Q?Hello_=C3=A9mail?=
+Date: Wed, 16 Apr 2025 12:34:56 +0000
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="outer-boundary"
+
+--outer-boundary
+Content-Type: multipart/alternative; boundary="inner-boundary"
+
+--inner-boundary
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+Hello plain world.
+This line has =C3=A9 and a soft=
+ wrapped word.
+
+--inner-boundary
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+<p>Hello <strong>HTML</strong> world.</p>
+<p>This line has =C3=A9.</p>
+
+--inner-boundary--
+--outer-boundary
+Content-Type: application/octet-stream; name="secret.bin"
+Content-Disposition: attachment; filename="secret.bin"
+Content-Transfer-Encoding: base64
+
+U0VDUkVULUFUVEFDSE1FTlQ=
+
+--outer-boundary--
