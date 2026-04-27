@@ -11,6 +11,7 @@ class FFmpegHandler implements FormatHandler {
 
   static formatNames: Map<string, string> = new Map([
     ["mp4", CommonFormats.MP4.name],
+    ["mkv", "Matroska Video"],
     ["m4a", "MPEG-4 Audio"],
     ["flac", CommonFormats.FLAC.name],
     ["wav", CommonFormats.WAV.name],
@@ -233,6 +234,18 @@ class FFmpegHandler implements FormatHandler {
       from: true,
       to: true,
       internal: "asf",
+      category: "video"
+    });
+
+    // Add .mkv (Matroska Video) support - uses Matroska demuxer/muxer
+    this.supportedFormats.push({
+      name: "Matroska Video",
+      format: "mkv",
+      extension: "mkv",
+      mime: "video/x-matroska",
+      from: true,
+      to: true,
+      internal: "matroska",
       category: "video"
     });
 

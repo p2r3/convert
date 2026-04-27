@@ -52,10 +52,32 @@ class threejsHandler implements FormatHandler {
       lossless: false
     },
     {
+      name: "Wavefront OBJ",
+      format: "obj",
+      extension: "obj",
+      mime: "text/plain",
+      from: true,
+      to: false,
+      internal: "obj",
+      category: "model",
+      lossless: false
+    },
+    {
       name: "Autodesk FBX",
       format: "fbx",
       extension: "fbx",
       mime: "application/octet-stream",
+      from: true,
+      to: false,
+      internal: "fbx",
+      category: "model",
+      lossless: false
+    },
+    {
+      name: "Autodesk FBX",
+      format: "fbx",
+      extension: "fbx",
+      mime: "model/vnd.fbx",
       from: true,
       to: false,
       internal: "fbx",
@@ -74,10 +96,32 @@ class threejsHandler implements FormatHandler {
       lossless: true
     },
     {
+      name: "STL",
+      format: "stl",
+      extension: "stl",
+      mime: "model/x.stl-binary",
+      from: true,
+      to: false,
+      internal: "stl",
+      category: "model",
+      lossless: true
+    },
+    {
       name: "PLY",
       format: "ply",
       extension: "ply",
       mime: "application/octet-stream",
+      from: true,
+      to: false,
+      internal: "ply",
+      category: "model",
+      lossless: true
+    },
+    {
+      name: "PLY",
+      format: "ply",
+      extension: "ply",
+      mime: "application/ply",
       from: true,
       to: false,
       internal: "ply",
