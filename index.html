@@ -41,6 +41,20 @@
       </div>
     </div>
 
+    <div id="via-container" class="format-container">
+      <h2>Waypoints <span class="via-optional">(optional)</span></h2>
+      <p class="via-hint">Force conversion through a specific intermediate format</p>
+      <div id="via-list" class="via-list"></div>
+      <div id="via-controls">
+        <button id="add-via" type="button">+ Add waypoint</button>
+        <button id="round-trip" type="button">&#x21BA; Output same format as input</button>
+        <label class="via-toggle">
+          <input id="dl-intermediates" type="checkbox">
+          Also download intermediate files
+        </label>
+      </div>
+    </div>
+
     <div id="to-container" class="format-container">
       <h2>Convert to:</h2>
       <input type="text" id="search-to" class="search" placeholder="Search">
@@ -52,6 +66,15 @@
   </div>
 
   <button id="convert-button" class="disabled">Convert</button>
+
+  <dialog id="via-picker">
+    <div class="via-picker-inner">
+      <h2>Add a waypoint</h2>
+      <input type="text" id="search-via" class="search" placeholder="Search">
+      <div id="via-picker-list" class="format-list"></div>
+      <button id="via-picker-cancel" type="button">Cancel</button>
+    </div>
+  </dialog>
 
   <div id="popup-bg"></div>
   <div id="popup">

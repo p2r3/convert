@@ -2,6 +2,8 @@ import type { FileFormat, FileData, FormatHandler, ConvertPathNode } from "./For
 import normalizeMimeType from "./normalizeMimeType.js";
 import handlers from "./handlers";
 import { TraversionGraph } from "./TraversionGraph.js";
+import { runChain } from "./runChain.js";
+import type { FormatOption, SegmentRunner } from "./runChain.js";
 
 /** Files currently selected for conversion */
 let selectedFiles: File[] = [];
@@ -12,6 +14,9 @@ let selectedFiles: File[] = [];
  *   requires the user to manually select the tool that processes the output.
  */
 let simpleMode: boolean = true;
+
+let waypointOptions: FormatOption[] = [];
+let downloadIntermediates = false;
 
 const ui = {
   fileInput: document.querySelector("#file-input") as HTMLInputElement,
@@ -25,6 +30,8 @@ const ui = {
   popupBox: document.querySelector("#popup") as HTMLDivElement,
   popupBackground: document.querySelector("#popup-bg") as HTMLDivElement
 };
+
+const viaPicker = document.querySelector("#via-picker") as HTMLDialogElement;
 
 /**
  * Filters a list of butttons to exclude those not matching a substring.
@@ -67,6 +74,46 @@ const searchHandler = (event: Event) => {
 // Assign search handler to both search boxes
 ui.inputSearch.oninput = searchHandler;
 ui.outputSearch.oninput = searchHandler;
+(document.querySelector("#search-via") as HTMLInputElement).oninput = (event) => {
+  const input = event.target as HTMLInputElement;
+  filterButtonList(
+    document.querySelector("#via-picker-list") as HTMLDivElement,
+    input.value.toLowerCase()
+  );
+};
+
+function renderWaypoints() {
+  const viaList = document.querySelector("#via-list") as HTMLDivElement;
+  viaList.innerHTML = "";
+  waypointOptions.forEach((opt, i) => {
+    const chip = document.createElement("div");
+    chip.className = "via-chip";
+
+    if (waypointOptions.length > 1) {
+      const step = document.createElement("span");
+      step.className = "via-chip-step";
+      step.textContent = `${i + 1} of ${waypointOptions.length}`;
+      chip.appendChild(step);
+    }
+
+    const label = document.createElement("span");
+    label.className = "via-chip-label";
+    label.textContent = opt.format.format.toUpperCase();
+
+    const remove = document.createElement("button");
+    remove.className = "via-chip-remove";
+    remove.type = "button";
+    remove.textContent = "×";
+    remove.onclick = () => {
+      waypointOptions.splice(i, 1);
+      renderWaypoints();
+    };
+
+    chip.appendChild(label);
+    chip.appendChild(remove);
+    viaList.appendChild(chip);
+  });
+}
 
 // Map clicks in the file selection area to the file input element
 ui.fileSelectArea.onclick = () => {
@@ -195,6 +242,48 @@ window.printSupportedFormatCache = () => {
   return JSON.stringify(entries, null, 2);
 }
 
+function buildPickerList() {
+  const pickerList = document.querySelector("#via-picker-list") as HTMLDivElement;
+  pickerList.innerHTML = "";
+  const seen = new Set<string>();
+
+  for (let i = 0; i < allOptions.length; i++) {
+    const { format, handler } = allOptions[i];
+    if (!format.from || !format.to) continue;
+
+    if (simpleMode) {
+      const key = `${format.mime}|${format.format}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+    }
+
+    const btn = document.createElement("button");
+    btn.setAttribute("format-index", i.toString());
+    btn.setAttribute("mime-type", format.mime);
+
+    const formatDescriptor = format.format.toUpperCase();
+    if (simpleMode) {
+      const cleanName = format.name
+        .split("(").join(")").split(")")
+        .filter((_, j) => j % 2 === 0)
+        .filter(c => c !== "")
+        .join(" ");
+      btn.textContent = `${formatDescriptor} - ${cleanName} (${format.mime})`;
+    } else {
+      btn.textContent = `${formatDescriptor} - ${format.name} (${format.mime}) ${handler.name}`;
+    }
+
+    btn.onclick = () => {
+      waypointOptions.push(allOptions[i]);
+      renderWaypoints();
+      viaPicker.close();
+      (document.querySelector("#search-via") as HTMLInputElement).value = "";
+      filterButtonList(pickerList, "");
+    };
+
+    pickerList.appendChild(btn);
+  }
+}
 
 async function buildOptionList () {
 
@@ -285,6 +374,7 @@ async function buildOptionList () {
   window.traversionGraph.init(window.supportedFormatCache, handlers);
   filterButtonList(ui.inputList, ui.inputSearch.value);
   filterButtonList(ui.outputList, ui.outputSearch.value);
+  buildPickerList();
 
   window.hidePopup();
 
@@ -314,7 +404,40 @@ ui.modeToggleButton.addEventListener("click", () => {
     ui.modeToggleButton.textContent = "Simple mode";
     document.body.style.setProperty("--highlight-color", "#FF6F1C");
   }
+  waypointOptions = [];
+  renderWaypoints();
   buildOptionList();
+});
+
+document.querySelector("#add-via")!.addEventListener("click", () => {
+  viaPicker.showModal();
+});
+
+document.querySelector("#via-picker-cancel")!.addEventListener("click", () => {
+  viaPicker.close();
+});
+
+document.querySelector("#round-trip")!.addEventListener("click", () => {
+  const inputSelected = document.querySelector("#from-list .selected") as HTMLButtonElement | null;
+  if (!inputSelected) {
+    alert("Pick an input format first.");
+    return;
+  }
+  const inputOpt = allOptions[Number(inputSelected.getAttribute("format-index"))];
+  const outputButton = Array.from(ui.outputList.children).find(btn => {
+    if (!(btn instanceof HTMLButtonElement)) return false;
+    const opt = allOptions[Number(btn.getAttribute("format-index"))];
+    return opt?.format.mime === inputOpt.format.mime && opt?.format.format === inputOpt.format.format;
+  }) as HTMLButtonElement | undefined;
+  if (outputButton) {
+    outputButton.click();
+  } else {
+    alert("No matching output format found for round-trip.");
+  }
+});
+
+document.querySelector("#dl-intermediates")!.addEventListener("change", (e) => {
+  downloadIntermediates = (e.target as HTMLInputElement).checked;
 });
 
 let deadEndAttempts: ConvertPathNode[][];
@@ -434,43 +557,84 @@ ui.convertButton.onclick = async function () {
   const inputOption = allOptions[Number(inputButton.getAttribute("format-index"))];
   const outputOption = allOptions[Number(outputButton.getAttribute("format-index"))];
 
-  const inputFormat = inputOption.format;
-  const outputFormat = outputOption.format;
-
   try {
 
-    const inputFileData = [];
+    const inputFileData: FileData[] = [];
     for (const inputFile of inputFiles) {
-      const inputBuffer = await inputFile.arrayBuffer();
-      const inputBytes = new Uint8Array(inputBuffer);
+      const bytes = new Uint8Array(await inputFile.arrayBuffer());
       if (
-        inputFormat.mime === outputFormat.mime
-        && inputFormat.format === outputFormat.format
+        waypointOptions.length === 0 &&
+        inputOption.format.mime === outputOption.format.mime &&
+        inputOption.format.format === outputOption.format.format
       ) {
-        downloadFile(inputBytes, inputFile.name);
+        downloadFile(bytes, inputFile.name);
         continue;
       }
-      inputFileData.push({ name: inputFile.name, bytes: inputBytes });
+      inputFileData.push({ name: inputFile.name, bytes });
     }
+    if (inputFileData.length === 0) return;
 
     window.showPopup("<h2>Finding conversion route...</h2>");
-    // Delay for a bit to give the browser time to render
     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
-    const output = await window.tryConvertByTraversing(inputFileData, inputOption, outputOption);
-    if (!output) {
+    const segments: FormatOption[] = [inputOption, ...waypointOptions, outputOption];
+
+    const segmentRunner: SegmentRunner = async (files, from, to, legIndex, totalLegs) => {
+      if (totalLegs > 1) {
+        window.showPopup(
+          `<h2>Step ${legIndex + 1} of ${totalLegs}</h2>` +
+          `<p>Converting ${from.format.format} → ${to.format.format}…</p>`
+        );
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      }
+      return window.tryConvertByTraversing(files, from as any, to as any);
+    };
+
+    const result = await runChain(inputFileData, segments, segmentRunner);
+
+    if (result.failedAt !== undefined) {
+      window.hidePopup();
+      const failFrom = segments[result.failedAt];
+      const failTo = segments[result.failedAt + 1];
+      alert(
+        `Step ${result.failedAt + 1} of ${segments.length - 1} failed: ` +
+        `${failFrom.format.format} → ${failTo.format.format}`
+      );
+      return;
+    }
+
+    if (result.finalFiles.length === 0) {
       window.hidePopup();
       alert("Failed to find conversion route.");
       return;
     }
 
-    for (const file of output.files) {
+    if (downloadIntermediates) {
+      for (let i = 0; i < result.legs.length - 1; i++) {
+        for (const file of result.legs[i].files) {
+          const dot = file.name.lastIndexOf(".");
+          const base = dot > 0 ? file.name.slice(0, dot) : file.name;
+          const ext = dot > 0 ? file.name.slice(dot) : "";
+          downloadFile(file.bytes, `${base}.step${i + 1}${ext}`);
+        }
+      }
+    }
+
+    for (const file of result.finalFiles) {
       downloadFile(file.bytes, file.name);
     }
 
+    const fullPath = result.legs.length > 0
+      ? result.legs.flatMap((leg, i) =>
+          i === 0
+            ? leg.path.map(n => n.format.format)
+            : leg.path.slice(1).map(n => n.format.format)
+        )
+      : [inputOption.format.format, outputOption.format.format];
+
     window.showPopup(
-      `<h2>Converted ${inputOption.format.format} to ${outputOption.format.format}!</h2>` +
-      `<p>Path used: <b>${output.path.map(c => c.format.format).join(" → ")}</b>.</p>\n` +
+      `<h2>Converted!</h2>` +
+      `<p>Path: <b>${fullPath.join(" → ")}</b></p>\n` +
       `<button onclick="window.hidePopup()">OK</button>`
     );
 

@@ -18,6 +18,24 @@ For a semi-technical overview of this tool, check out the video: https://youtu.b
 5. Click **Convert**!
 6. Hopefully, after a bit (or a lot) of thinking, the program will spit out the file you wanted. If not, see the "Issues" section below.
 
+### Chained / waypoint conversion
+
+Between the "Convert from" and "Convert to" columns is a **Via (optional)** panel. It lets you force the conversion through one or more intermediate formats in a single click — no re-uploading required.
+
+**Example — PNG → WAV → PNG (round-trip / reinterpretation):**
+
+1. Drop a PNG and let the tool auto-select it as the input format.
+2. Click **Round trip ↺** to automatically mirror the input as the output (PNG → PNG).
+3. Click **+ Add intermediate format** and pick **WAV** from the picker.
+4. Click **Convert**. One download arrives: the final PNG.
+
+**Tips:**
+
+- Add as many waypoints as you like by clicking **+ Add intermediate format** multiple times.
+- Remove a waypoint by clicking **×** on its chip.
+- Tick **Also download intermediate files** to also receive each leg's output (e.g. the WAV above).
+- Switching between Simple / Advanced mode clears the waypoint list.
+
 ## Issues
 
 Ever since the YouTube video released, we've been getting spammed with issues suggesting the addition of all kinds of niche file formats. To keep things organized, I've decided to specify what counts as a valid issue and what doesn't.
