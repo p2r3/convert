@@ -16,6 +16,19 @@
   <meta name="og:image" content="https://p2r3.github.io/convert/assets/favicon-Bfod-rsk.ico"/>
   <meta name="theme-color" content="#1C77FF"/>
   <meta name="og:type" content="website"/>
+  
+  <!-- Initialize theme immediately to prevent flash -->
+  <script>
+    (function() {
+      const savedTheme = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+      
+      if (theme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    })();
+  </script>
 </head>
 <body>
 
@@ -28,6 +41,7 @@
     <p id="drop-hint-text">or drag and drop it here</p>
   </div>
   <div id="side-panel">
+    <button id="theme-toggle" class="theme-btn"></button>
     <button id="mode-button">Advanced mode</button>
   </div>
 
@@ -57,6 +71,46 @@
   <div id="popup">
     <h2>Loading tools...</h2>
   </div>
+
+  <script>
+    // Initialize theme from localStorage or system preference
+    function initializeTheme() {
+      const savedTheme = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+      
+      applyTheme(theme);
+    }
+    
+    // Apply theme to document
+    function applyTheme(theme) {
+      if (theme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        const btn = document.getElementById('theme-toggle');
+        if (btn) btn.textContent = 'Light mode';
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+        const btn = document.getElementById('theme-toggle');
+        if (btn) btn.textContent = 'Dark mode';
+      }
+      localStorage.setItem('theme', theme);
+    }
+    
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeTheme();
+      
+      // Toggle theme on button click
+      const themeBtn = document.getElementById('theme-toggle');
+      if (themeBtn) {
+        themeBtn.addEventListener('click', function() {
+          const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+          const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+          applyTheme(newTheme);
+        });
+      }
+    });
+  </script>
 
   <script type="module" src="src/main.ts"></script>
 
