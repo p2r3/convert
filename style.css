@@ -1,7 +1,61 @@
+/* Global highlight color - always the same */
+:root {
+  --highlight-color: #1C77FF;
+  --button-shadow-color: rgba(28, 119, 255, 0.3);
+}
+
+/* Header styling - fixed, no theme variation */
+body > #file-area,
+body > #side-panel,
+body > #commit-id {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --text-primary: #1a1a1a;
+  --text-secondary: #4a4a4a;
+  --text-header: white;
+  --border-light: #e5e7eb;
+  --shadow-subtle: rgba(0, 0, 0, 0.08);
+}
+
+/* Light theme variables - applied to content area only */
+#format-containers,
+#convert-button,
+#popup,
+#popup-bg {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #e9ecef;
+  --text-primary: #1a1a1a;
+  --text-secondary: #4a4a4a;
+  --border-light: #e5e7eb;
+  --shadow-subtle: rgba(0, 0, 0, 0.08);
+  --shadow-medium: rgba(0, 0, 0, 0.12);
+}
+
+/* Dark theme variables - applied only when data-theme="dark" on content area */
+[data-theme="dark"] #format-containers,
+[data-theme="dark"] #convert-button,
+[data-theme="dark"] #popup,
+[data-theme="dark"] #popup-bg {
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --bg-tertiary: #3d3d3d;
+  --text-primary: #ffffff;
+  --text-secondary: #e5e5e5;
+  --border-light: #404040;
+  --shadow-subtle: rgba(0, 0, 0, 0.3);
+  --shadow-medium: rgba(0, 0, 0, 0.4);
+}
+
 body {
   margin: 0;
-  font-family: sans-serif;
-  --highlight-color: #1C77FF;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background-color: #ffffff;
+  color: #1a1a1a;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
 }
 
 #file-input {
@@ -13,16 +67,25 @@ body {
   flex-direction: column;
   justify-content: center;
   width: 100%;
-  height: 30vh;
-  background-color: var(--highlight-color);
+  height: 28vh;
+  min-height: 28vh;
+  background: linear-gradient(135deg, var(--highlight-color), #1559d9);
   color: white;
   text-align: center;
   cursor: pointer;
+  transition: filter 0.2s ease;
+  position: relative;
+  flex-shrink: 0;
+}
+
+#file-area:hover {
+  filter: brightness(1.05);
 }
 
 #file-area h2,
 #file-area p {
-  margin: 5px;
+  margin: 8px;
+  font-weight: 500;
 }
 
 #side-panel {
@@ -30,75 +93,137 @@ body {
   top: 0;
   right: 0;
   width: 20em;
-  height: 30vh;
+  height: 28vh;
   padding: 2em;
   box-sizing: border-box;
   pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-end;
+  gap: 1rem;
 }
 
-#side-panel button {
+/* Theme toggle button */
+.theme-btn {
+  font-size: 0.9rem;
+  width: 100%;
+  max-width: 16rem;
+  padding: 10px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.15);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  pointer-events: all;
+  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+}
+
+.theme-btn:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.theme-btn:active {
+  transform: scale(0.95);
+}
+
+/* Mode button styling */
+#side-panel button:not(.theme-btn) {
   font-size: 1rem;
   width: 100%;
-  padding: 10px 20px;
+  max-width: 16rem;
+  padding: 10px 16px;
   border: 0;
-  border-radius: 10px;
+  border-radius: 8px;
   background-color: white;
   color: var(--highlight-color);
   font-weight: bold;
   cursor: pointer;
-  box-shadow: 0 5px 0 0 rgba(169, 169, 169, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   pointer-events: all;
+  transition: all 0.2s ease;
 }
-#side-panel button:active {
-  transform: translateY(5px);
-  box-shadow: 0 0 0 0;
+
+#side-panel button:not(.theme-btn):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+#side-panel button:not(.theme-btn):active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 #commit-id {
-  color: #fff9;
+  color: rgba(255, 255, 255, 0.6);
   text-align: center;
   display: block;
   font-size: x-small;
   position: absolute;
   margin: 4px;
   text-decoration: none;
+  transition: color 0.2s ease;
 }
+
 #commit-id:hover {
+  color: white;
   text-decoration: underline;
 }
 
 #format-containers {
   display: flex;
+  background-color: var(--bg-primary);
+  transition: background-color 0.3s ease;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .format-container {
   display: flex;
   flex-flow: column nowrap;
   align-items: center;
-  width: 50vw;
-  min-height: 70vh;
+  flex: 1;
+  min-height: 0;
   padding: 0.8em 7em;
+  background-color: var(--bg-secondary);
+  border-right: 1px solid var(--border-light);
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  overflow: hidden;
 }
+
+.format-container:last-child {
+  border-right: none;
+}
+
 .format-container h2 {
   text-align: center;
   margin-bottom: 20px;
-}
-
-#from-container {
-  background-color: lightgray;
-}
-#to-container {
-  background-color: rgb(184, 184, 184);
+  color: var(--text-primary);
+  transition: color 0.3s ease;
 }
 
 .search {
   text-align: center;
   margin-bottom: 30px;
-  padding: 10px 20px;
-  border: 0;
-  border-radius: 5px;
+  padding: 12px 20px;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
   outline: none;
-  box-shadow: 0 5px 0 0 darkgrey;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+  font-size: 1rem;
+  box-shadow: 0 1px 3px var(--shadow-subtle);
+}
+
+.search:focus {
+  border-color: var(--highlight-color);
+  box-shadow: 0 0 0 3px rgba(28, 119, 255, 0.1);
 }
 
 .format-list {
@@ -106,29 +231,62 @@ body {
   flex-flow: column nowrap;
   width: 100%;
   align-items: center;
-  background-color: white;
-  border-radius: 10px;
+  background-color: var(--bg-primary);
+  border-radius: 12px;
+  border: 1px solid var(--border-light);
   padding: 30px;
-  margin-bottom: 5vw;
+  margin-bottom: 0;
+  box-shadow: 0 2px 8px var(--shadow-subtle);
+  transition: all 0.3s ease;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.format-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.format-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.format-list::-webkit-scrollbar-thumb {
+  background: var(--border-light);
+  border-radius: 3px;
+}
+
+.format-list::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
 }
 
 .format-list button {
   width: 80%;
   margin: 5px 0;
-  padding: 10px;
-  color: black;
-  background-color: lightgray;
-  border: 0;
-  border-radius: 10px;
-  font-family: monospace;
+  padding: 12px;
+  color: var(--text-primary);
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  font-family: 'Monaco', 'Courier New', monospace;
   word-break: break-word;
   cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+}
+
+.format-list button:hover {
+  background-color: rgba(28, 119, 255, 0.08);
+  border-color: var(--highlight-color);
+  transform: translateX(2px);
 }
 
 button.selected {
   background-color: var(--highlight-color);
   color: white;
   font-weight: bold;
+  border-color: var(--highlight-color);
+  box-shadow: 0 0 0 3px rgba(28, 119, 255, 0.2);
 }
 
 #convert-button {
@@ -136,17 +294,32 @@ button.selected {
   left: 50%;
   bottom: 5%;
   transform: translateX(-50%);
-  font-size: 1.5rem;
-  padding: 10px 20px;
+  font-size: 1.2rem;
+  padding: 14px 32px;
   border: 0;
   border-radius: 10px;
   background-color: var(--highlight-color);
   color: white;
   cursor: pointer;
+  box-shadow: 0 4px 12px var(--button-shadow-color);
+  transition: all 0.3s ease;
+  font-weight: 600;
+  z-index: 100;
+}
+
+#convert-button:hover:not(.disabled) {
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 6px 20px var(--button-shadow-color);
+}
+
+#convert-button:active:not(.disabled) {
+  transform: translateX(-50%) translateY(0);
+  box-shadow: 0 2px 8px var(--button-shadow-color);
 }
 
 .disabled {
-  filter: grayscale(1);
+  opacity: 0.5;
+  cursor: not-allowed;
   pointer-events: none;
 }
 
@@ -157,54 +330,179 @@ button.selected {
   width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 999;
+  display: none;
+  transition: all 0.3s ease;
 }
+
 #popup {
   position: fixed;
   left: 50%;
   top: 50%;
   width: 20vw;
   transform: translate(-50%, -50%);
-  background-color: white;
-  padding: 15px;
-  border-radius: 10px;
+  background-color: var(--bg-primary);
+  padding: 24px;
+  border-radius: 12px;
   text-align: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  display: none;
+  border: 1px solid var(--border-light);
+  transition: all 0.3s ease;
+}
+
+#popup h2 {
+  margin: 0 0 20px 0;
+  color: var(--text-primary);
+  transition: color 0.3s ease;
 }
 
 #popup button {
   font-size: 1rem;
-  padding: 7px 20px;
-  border: 0;
-  border-radius: 10px;
-  background-color: lightgray;
-  color: black;
+  padding: 10px 20px;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
   cursor: pointer;
+  transition: all 0.3s ease;
+  margin: 5px;
+}
+
+#popup button:hover {
+  background-color: var(--highlight-color);
+  color: white;
+  border-color: var(--highlight-color);
 }
 
 @media only screen and (max-width: 800px) {
-  #drop-hint-text {
+  body {
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* Navbar compatta */
+  #file-area {
+    height: auto;
+    min-height: auto;
+    padding: 1rem 1rem 1.5rem 1rem;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  #file-area h2 {
+    font-size: 1.2rem;
+    margin: 0 0 0.5rem 0;
+  }
+
+  #file-area p {
     display: none;
   }
-  .format-container {
+
+  /* Sidebar diventa row sotto il titolo - STESSO BACKGROUND BLU */
+  #side-panel {
+    position: static;
     width: 100%;
+    height: auto;
+    padding: 0.5rem 1rem 1rem 1rem;
     box-sizing: border-box;
-    padding: 0.8em 4em;
+    pointer-events: all;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.8rem;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, var(--highlight-color), #1559d9);
+    margin: 0;
   }
+
+  /* Bottoni più piccoli e compatti - BIANCHI sul sfondo blu */
+  .theme-btn {
+    max-width: none;
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    flex: 1;
+    min-width: 0;
+    background-color: white;
+    color: var(--highlight-color);
+    border: none;
+  }
+
+  #side-panel button:not(.theme-btn) {
+    max-width: none;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    flex: 1;
+    min-width: 0;
+    background-color: white;
+    color: var(--highlight-color);
+    border: none;
+  }
+
+  /* Content area occupa tutto lo spazio restante */
+  #format-containers {
+    flex: 1;
+    min-height: 0;
+    padding: 0;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Ogni card occupa metà dello spazio */
+  .format-container {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    padding: 0.8rem;
+    margin: 0;
+    box-sizing: border-box;
+    border-right: none;
+    border-bottom: 1px solid var(--border-light);
+    overflow: hidden;
+  }
+
+  .format-container:last-child {
+    border-bottom: none;
+  }
+
+  .format-container h2 {
+    font-size: 1rem;
+    margin-bottom: 0.8rem;
+  }
+
+  /* Search input compatto */
+  .search {
+    margin-bottom: 0.8rem;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+  }
+
+  /* List scrollabile interno */
+  .format-list {
+    flex: 1;
+    min-height: 0;
+    padding: 0.8rem;
+    margin-bottom: 0;
+    border-radius: 8px;
+  }
+
   .format-list button {
     width: 100%;
-  }
-  #format-containers {
-    flex-flow: column nowrap;
-  }
-  #popup {
-    width: 80vw;
-  }
-  #side-panel {
-    width: 50%;
-    padding: 0.8em;
-    text-align: right;
-  }
-  #side-panel button {
-    font-size: 0.8rem;
     padding: 10px;
+    font-size: 0.85rem;
+    margin: 4px 0;
+  }
+
+  /* Commit ID nascosto su mobile */
+  #commit-id {
+    display: none;
+  }
+
+  #popup {
+    width: 85vw;
   }
 }

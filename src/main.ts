@@ -310,9 +310,11 @@ ui.modeToggleButton.addEventListener("click", () => {
   if (simpleMode) {
     ui.modeToggleButton.textContent = "Advanced mode";
     document.body.style.setProperty("--highlight-color", "#1C77FF");
+    document.body.style.setProperty("--button-shadow-color", "rgba(28, 119, 255, 0.3)");
   } else {
     ui.modeToggleButton.textContent = "Simple mode";
     document.body.style.setProperty("--highlight-color", "#FF6F1C");
+    document.body.style.setProperty("--button-shadow-color", "rgba(255, 111, 28, 0.3)");
   }
   buildOptionList();
 });
