@@ -236,6 +236,32 @@ class FFmpegHandler implements FormatHandler {
       category: "video"
     });
 
+    // Add .mts (AVCHD) support - camcorder footage using the MPEG-TS container.
+    // FFmpeg auto-discovers "mpegts" but assigns the ".ts" extension, leaving
+    // ".mts" files (JVC, Sony, Panasonic AVCHD camcorders) unrecognised.
+    this.supportedFormats.push({
+      name: "AVCHD Video",
+      format: "mts",
+      extension: "mts",
+      mime: "video/mp2t",
+      from: true,
+      to: false,
+      internal: "mpegts",
+      category: "video"
+    });
+
+    // Add .m2ts (Blu-ray BDMV) support - same MPEG-TS container, different extension.
+    this.supportedFormats.push({
+      name: "Blu-ray BDMV Video",
+      format: "m2ts",
+      extension: "m2ts",
+      mime: "video/mp2t",
+      from: true,
+      to: false,
+      internal: "mpegts",
+      category: "video"
+    });
+
     // Normalize Bink metadata to ensure ".bik" files are detected by extension.
     const binkFormats = this.supportedFormats.filter(f =>
       f.internal === "bink"
