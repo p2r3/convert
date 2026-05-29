@@ -4,11 +4,20 @@ import { resolve, dirname } from "node:path";
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { healthRouter } from "./routes/health.ts";
-import { formatsRouter } from "./routes/formats.ts";
+import { formatsRouter, formatsUpdateRouter } from "./routes/formats.ts";
 import { screenshotRouter } from "./routes/screenshot.ts";
 import { convertRouter } from "./routes/convert.ts";
+import { batchRouter } from "./routes/batch.ts";
+import { ytdlpRouter } from "./routes/ytdlp.ts";
+import { ocrRouter } from "./routes/ocr.ts";
+import { transcribeRouter } from "./routes/transcribe.ts";
+import { jobsRouter } from "./routes/jobs.ts";
+import { metricsRouter } from "./routes/metrics.ts";
+import { docsRouter } from "./openapi.ts";
 import { ApiError } from "./lib/errors.ts";
-import { closeBrowser } from "./lib/browser.ts";
+import { closeBrowser, warmBrowser } from "./lib/browser.ts";
+import { authMiddleware } from "./lib/auth.ts";
+import { metricsMiddleware } from "./lib/metrics.ts";
 import { log } from "./lib/log.ts";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -26,12 +35,22 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(metricsMiddleware());
+app.use(authMiddleware());
 
 // API routers
 app.use(healthRouter);
 app.use(formatsRouter);
+app.use(formatsUpdateRouter);
 app.use(screenshotRouter);
 app.use(convertRouter);
+app.use(batchRouter);
+app.use(ytdlpRouter);
+app.use(ocrRouter);
+app.use(transcribeRouter);
+app.use(jobsRouter);
+app.use(metricsRouter);
+app.use(docsRouter);
 
 // Serve the static browser converter (used by /api/convert browser fallback).
 if (existsSync(distDir)) {
@@ -57,6 +76,10 @@ const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     res.status(413).json({ error: "Request body too large" });
     return;
   }
+  if (err && typeof err === "object" && "code" in err && (err as { code: string }).code === "LIMIT_FILE_SIZE") {
+    res.status(413).json({ error: "Uploaded file exceeds size limit" });
+    return;
+  }
   log.error("unhandled error:", err);
   const msg = err instanceof Error ? err.message : String(err);
   res.status(500).json({ error: msg });
@@ -66,7 +89,11 @@ app.use(errorHandler);
 const server = app.listen(PORT, HOST, () => {
   log.info(`convert-api listening on http://${HOST}:${PORT}`);
   log.info(`  static converter: ${existsSync(distDir) ? "available at /convert/" : "MISSING (run npm run build)"}`);
-  log.info(`  POST /api/screenshot, /api/convert; GET /api/formats, /health`);
+  log.info(`  docs at /docs (OpenAPI at /openapi.json), metrics at /metrics`);
+  log.info(`  routes: /api/screenshot /api/convert /api/convert/batch /api/ytdlp /api/ocr /api/transcribe /api/jobs /api/formats`);
+  if (process.env.CONVERT_API_WARM_BROWSER !== "0") {
+    void warmBrowser();
+  }
 });
 
 let shuttingDown = false;

@@ -5,71 +5,108 @@
   <title>convert-api</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; max-width: 880px; margin: 2rem auto; padding: 0 1rem; color: #222; line-height: 1.5; }
+    body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; max-width: 920px; margin: 2rem auto; padding: 0 1rem; color: #222; line-height: 1.5; }
     h1 { margin-bottom: 0.25rem; }
     h2 { margin-top: 2rem; border-bottom: 1px solid #ddd; padding-bottom: 0.25rem; }
-    code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    h3 { margin-top: 1.6rem; }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13.5px; }
     pre { background: #f5f5f7; padding: 1rem; border-radius: 6px; overflow-x: auto; }
     code { background: #f5f5f7; padding: 1px 4px; border-radius: 3px; }
-    .method { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.85em; font-weight: 600; }
+    .method { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.85em; font-weight: 600; margin-right: 6px; }
     .get { background: #d4edda; color: #155724; }
     .post { background: #cce5ff; color: #004085; }
+    .del { background: #f8d7da; color: #721c24; }
     .note { background: #fffbe6; border-left: 4px solid #f0d000; padding: 0.5rem 0.75rem; margin: 1rem 0; }
+    .pill { display: inline-block; font-size: 0.7em; background: #eee; color: #444; padding: 1px 6px; border-radius: 10px; vertical-align: middle; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid #eee; }
+    th { background: #fafafa; font-weight: 600; }
+    .fork { background: #f0f8ff; border-left: 4px solid #1c77ff; padding: 0.75rem 1rem; margin: 0 0 2rem; border-radius: 4px; }
   </style>
 </head>
 <body>
+  <div class="fork">
+    <strong>This is a fork.</strong> convert-api wraps the <a href="https://github.com/p2r3/convert">p2r3/convert</a> browser-based converter with an Express REST API, headless Chromium, native fast-paths via sharp, and integrations for yt-dlp, Tesseract OCR, and Whisper transcription. All upstream WASM handlers are still available — see <code>/api/formats</code>.
+  </div>
+
   <h1>convert-api</h1>
-  <p>REST API on Express for file/URL conversion. Spins up headless Chromium on demand.</p>
+  <p>
+    REST API for file/URL conversion. Sync below the 100ms threshold, async (with job IDs + ETA) above it.
+    See <a href="/docs">/docs</a> for the interactive Swagger UI, <a href="/openapi.json">/openapi.json</a> for the spec.
+  </p>
 
   <h2>Endpoints</h2>
+  <table>
+    <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><span class="method get">GET</span></td><td><code>/health</code></td><td>Liveness + capability probe</td></tr>
+      <tr><td><span class="method get">GET</span></td><td><code>/metrics</code></td><td>Prometheus metrics</td></tr>
+      <tr><td><span class="method get">GET</span></td><td><code>/api/formats</code></td><td>List supported formats</td></tr>
+      <tr><td><span class="method get">GET</span></td><td><code>/api/formats/changes</code></td><td>Recent format additions/removals</td></tr>
+      <tr><td><span class="method get">GET</span></td><td><code>/api/formats/stream</code></td><td>SSE feed of format changes</td></tr>
+      <tr><td><span class="method post">POST</span></td><td><code>/api/subscriptions/formats</code></td><td>Webhook subscription for new conversions</td></tr>
+      <tr><td><span class="method post">POST</span><span class="method get">GET</span></td><td><code>/api/screenshot</code></td><td>URL → PNG/JPEG/WEBP/PDF</td></tr>
+      <tr><td><span class="method post">POST</span></td><td><code>/api/convert</code></td><td>File/URL → any format</td></tr>
+      <tr><td><span class="method post">POST</span></td><td><code>/api/convert/batch</code></td><td>Multiple inputs → zip</td></tr>
+      <tr><td><span class="method post">POST</span></td><td><code>/api/ytdlp</code></td><td>YouTube/etc. → audio/video <span class="pill">needs yt-dlp</span></td></tr>
+      <tr><td><span class="method post">POST</span></td><td><code>/api/ocr</code></td><td>Image/PDF → text/searchable PDF <span class="pill">needs tesseract</span></td></tr>
+      <tr><td><span class="method post">POST</span></td><td><code>/api/transcribe</code></td><td>Audio → text (+ optional Claude summary) <span class="pill">needs OpenAI/whisper</span></td></tr>
+      <tr><td><span class="method get">GET</span></td><td><code>/api/jobs</code></td><td>List jobs</td></tr>
+      <tr><td><span class="method get">GET</span></td><td><code>/api/jobs/{id}</code></td><td>Job snapshot</td></tr>
+      <tr><td><span class="method get">GET</span></td><td><code>/api/jobs/{id}/result</code></td><td>Fetch result bytes (optionally <code>?wait=true</code>)</td></tr>
+      <tr><td><span class="method get">GET</span></td><td><code>/api/jobs/{id}/stream</code></td><td>SSE: <code>update</code>, <code>done</code></td></tr>
+      <tr><td><span class="method del">DEL</span></td><td><code>/api/jobs/{id}</code></td><td>Cancel/delete a job</td></tr>
+    </tbody>
+  </table>
 
-  <h3><span class="method get">GET</span> /health</h3>
-  <p>Liveness check. Returns whether the browser converter <code>dist/</code> is built.</p>
+  <h2>The 100ms rule</h2>
+  <p>
+    Every request is estimated up front. If the work is expected to take more than 100ms, the response is <strong>HTTP 202</strong> with:
+  </p>
+  <pre>{
+  "jobId": "8b1f8e6a-...",
+  "kind": "screenshot",
+  "status": "queued",
+  "estimateMs": 6000,
+  "estimatedSeconds": 6.0,
+  "statusUrl":  "http://.../api/jobs/8b1f.../",
+  "resultUrl":  "http://.../api/jobs/8b1f.../result",
+  "streamUrl":  "http://.../api/jobs/8b1f.../stream",
+  "pollAfterMs": 3000
+}</pre>
+  <p>
+    Then poll <code>statusUrl</code>, stream <code>streamUrl</code>, or long-poll <code>resultUrl?wait=true</code>.
+    Force inline with <code>?sync=true</code>; force async with <code>?async=true</code>.
+  </p>
 
-  <h3><span class="method get">GET</span> /api/formats</h3>
-  <p>Lists supported formats. Query params: <code>?category=image</code>, <code>?direction=to|from</code>.</p>
+  <h2>Quick examples</h2>
 
-  <h3><span class="method post">POST</span> <span class="method get">GET</span> /api/screenshot</h3>
-  <p>Render a URL to <strong>PNG / JPEG / WEBP / PDF</strong>. Detects YouTube and waits for the player.</p>
-  <pre>curl -X POST http://localhost:3000/api/screenshot \
+  <h3>URL → PNG</h3>
+<pre>curl -X POST http://localhost:3000/api/screenshot \
   -H 'content-type: application/json' \
   -d '{"url":"https://example.com","format":"png","fullPage":true}' \
   -o example.png</pre>
-  <p>YouTube example (renders the embedded player frame):</p>
-  <pre>curl -G 'http://localhost:3000/api/screenshot' \
-  --data-urlencode 'url=https://www.youtube.com/watch?v=dQw4w9WgXcQ' \
-  -o yt.png</pre>
-  <p>Or grab the thumbnail directly (no browser needed):</p>
-  <pre>curl -G 'http://localhost:3000/api/screenshot' \
-  --data-urlencode 'url=https://www.youtube.com/watch?v=dQw4w9WgXcQ' \
-  --data-urlencode 'youtubeThumbnail=true' \
-  -o yt-thumb.jpg</pre>
 
-  <h3><span class="method post">POST</span> /api/convert</h3>
-  <p>Convert an input (uploaded file or a remote URL) to a chosen output format.</p>
-  <pre>curl -X POST http://localhost:3000/api/convert \
+  <h3>YouTube → MP3</h3>
+<pre>curl -X POST http://localhost:3000/api/ytdlp \
+  -H 'content-type: application/json' \
+  -d '{"url":"https://www.youtube.com/watch?v=...","format":"mp3"}' \
+  -o song.mp3</pre>
+
+  <h3>Image upload → WebP (sharp fast-path, inline)</h3>
+<pre>curl -X POST http://localhost:3000/api/convert \
   -F file=@photo.jpg -F to=webp -F quality=80 \
   -o photo.webp</pre>
-  <p>URL → PNG (works for any website; YouTube uses the player frame):</p>
-  <pre>curl -X POST http://localhost:3000/api/convert \
-  -H 'content-type: application/json' \
-  -d '{"url":"https://example.com","to":"png"}' \
-  -o example.png</pre>
-  <p>URL pointing to a file (downloads then converts):</p>
-  <pre>curl -X POST http://localhost:3000/api/convert \
-  -H 'content-type: application/json' \
-  -d '{"url":"https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png","to":"jpeg","quality":85}' \
-  -o demo.jpg</pre>
 
-  <h2>Conversion engine layers</h2>
-  <ol>
-    <li><strong>URL → image/PDF</strong>: Puppeteer directly.</li>
-    <li><strong>Image → image</strong>: <code>sharp</code> native fast-path (PNG, JPEG, WEBP, AVIF, TIFF, GIF, HEIF).</li>
-    <li><strong>Everything else</strong>: Drives the existing browser-based <a href="/convert/">converter</a> via Puppeteer (requires <code>dist/</code> build).</li>
-  </ol>
+  <h3>Subscribe to new conversions (webhook)</h3>
+<pre>curl -X POST http://localhost:3000/api/subscriptions/formats \
+  -H 'content-type: application/json' \
+  -d '{"url":"https://you.example/hook","secret":"…"}'</pre>
 
   <div class="note">
-    Tip: build the full converter once with <code>bun run build</code> (or <code>npm run build</code>) to unlock the 90+ format handlers behind <code>/api/convert</code>.
+    Build the original browser converter (<code>bun run build</code>) to unlock 90+ format handlers behind <code>/api/convert</code>, beyond the sharp fast-path.
   </div>
+
+  <p>Detailed docs live in the <code>docs/</code> folder of the repo, or hit <a href="/docs">/docs</a> for the live OpenAPI viewer.</p>
 </body>
 </html>

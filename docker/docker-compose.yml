@@ -1,6 +1,16 @@
 services:
-  convert:
-    image: ghcr.io/${GITHUB_REPOSITORY:-p2r3/convert}:${CONVERT_IMAGE_TAG:-latest}
+  convert-api:
+    image: ghcr.io/${GITHUB_REPOSITORY:-peter-w07/convert-api}:${CONVERT_IMAGE_TAG:-latest}
     ports:
-      - "8080:80"
+      - "3000:3000"
     restart: unless-stopped
+    environment:
+      CONVERT_API_MAX_CONCURRENCY: ${CONVERT_API_MAX_CONCURRENCY:-2}
+      CONVERT_API_INLINE_THRESHOLD_MS: ${CONVERT_API_INLINE_THRESHOLD_MS:-100}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    volumes:
+      - convert_api_state:/var/lib/convert-api
+
+volumes:
+  convert_api_state:

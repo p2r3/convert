@@ -1,6 +1,40 @@
 # convert-api
 
+> **This is a fork of [p2r3/convert](https://github.com/p2r3/convert).**
+> Upstream is a browser-side WASM converter; this fork wraps it with an Express REST API, headless Chromium, native fast-paths via `sharp`, and integrations for `yt-dlp`, Tesseract OCR, and Whisper transcription. All upstream format handlers continue to work and are exposed through `/api/convert`.
+
 REST API on top of the [Convert to it!](https://convert.to.it/) browser converter. Express server with on-demand headless Chromium, native image fast-paths via `sharp`, URL → image/PDF screenshots, YouTube handling, and the existing 90+ WASM format handlers wired in as a fallback.
+
+## Documentation
+
+In-repo docs:
+
+- [docs/architecture.md](./docs/architecture.md) — components, request lifecycle, layering
+- [docs/api.md](./docs/api.md) — every endpoint with cURL examples
+- [docs/jobs.md](./docs/jobs.md) — async jobs, the 100ms threshold, polling/SSE/cancel
+- [docs/examples.md](./docs/examples.md) — worked examples (cURL, JS, Python)
+- [docs/deployment.md](./docs/deployment.md) — Docker, env vars, nginx, scaling
+- [docs/format-updates.md](./docs/format-updates.md) — subscribe to new conversions (SSE + webhooks)
+- [docs/contributing.md](./docs/contributing.md) — how to add endpoints/handlers/tests
+
+Runtime: hit **`/docs`** on the running server for the Swagger UI, or **`/openapi.json`** for the raw spec.
+
+## What's new in this fork
+
+| Capability | Endpoint | Notes |
+|---|---|---|
+| URL → image/PDF | `POST /api/screenshot` | Puppeteer; YouTube-aware (player hide + consent dismiss); thumbnail shortcut |
+| File/URL → any format | `POST /api/convert` | Sharp fast-path for raster, browser-converter fallback for the 90+ WASM handlers |
+| Batch | `POST /api/convert/batch` | Many inputs → one zip |
+| YouTube download | `POST /api/ytdlp` | mp3/m4a/mp4/webm; 720p/1080p; via `yt-dlp` |
+| OCR | `POST /api/ocr` | `txt`/`pdf`/`hocr`/`tsv` via Tesseract |
+| Transcribe + summarize | `POST /api/transcribe` | OpenAI Whisper API or local `whisper`; Claude summary optional |
+| Async jobs | `GET /api/jobs/:id[/result\|/stream]` | 100ms threshold flips inline → 202 + jobId |
+| Format-update subscriptions | `POST /api/subscriptions/formats` | Webhooks + SSE feed when handlers are added |
+| Result cache | sha256-keyed mem + disk | Idempotent jobs return instantly |
+| Persistent browser | warmed on startup, queued FIFO | `CONVERT_API_MAX_CONCURRENCY` |
+| Prometheus metrics | `GET /metrics` | Job state gauges, latency histograms |
+| Swagger UI | `GET /docs` | Live OpenAPI 3.1 explorer |
 
 ## Quick start
 

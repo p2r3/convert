@@ -10,9 +10,17 @@ import { createServer } from "node:http";
 import { setTimeout as wait } from "node:timers/promises";
 import express from "express";
 import { healthRouter } from "../../server/routes/health.ts";
-import { formatsRouter } from "../../server/routes/formats.ts";
+import { formatsRouter, formatsUpdateRouter } from "../../server/routes/formats.ts";
 import { screenshotRouter } from "../../server/routes/screenshot.ts";
 import { convertRouter } from "../../server/routes/convert.ts";
+import { batchRouter } from "../../server/routes/batch.ts";
+import { ytdlpRouter } from "../../server/routes/ytdlp.ts";
+import { ocrRouter } from "../../server/routes/ocr.ts";
+import { transcribeRouter } from "../../server/routes/transcribe.ts";
+import { jobsRouter } from "../../server/routes/jobs.ts";
+import { metricsRouter } from "../../server/routes/metrics.ts";
+import { docsRouter } from "../../server/openapi.ts";
+import { metricsMiddleware } from "../../server/lib/metrics.ts";
 import { ApiError } from "../../server/lib/errors.ts";
 import { closeBrowser } from "../../server/lib/browser.ts";
 import { isYouTubeUrl, youtubeVideoId } from "../../server/lib/youtube.ts";
@@ -47,10 +55,19 @@ async function startApp(): Promise<{ baseUrl: string; close: () => Promise<void>
   const app = express();
   app.use(express.json({ limit: "10mb" }));
   app.use(express.urlencoded({ extended: true }));
+  app.use(metricsMiddleware());
   app.use(healthRouter);
   app.use(formatsRouter);
+  app.use(formatsUpdateRouter);
   app.use(screenshotRouter);
   app.use(convertRouter);
+  app.use(batchRouter);
+  app.use(ytdlpRouter);
+  app.use(ocrRouter);
+  app.use(transcribeRouter);
+  app.use(jobsRouter);
+  app.use(metricsRouter);
+  app.use(docsRouter);
   app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
     if (res.headersSent) return;
     if (err instanceof ApiError) {
@@ -103,9 +120,18 @@ async function run(): Promise<void> {
       run: async () => {
         const r = await fetch(`${baseUrl}/health`);
         eq(r.status, 200, "status");
-        const j = (await r.json()) as { ok: boolean; browserConverterAvailable: boolean };
+        const j = (await r.json()) as {
+          ok: boolean;
+          capabilities: { browserConverter: boolean; ytdlp: boolean; tesseract: boolean };
+          cache: { enabled: boolean };
+          browserPool: { active: number };
+        };
         ok(j.ok === true, "ok flag");
-        ok(typeof j.browserConverterAvailable === "boolean", "browserConverterAvailable type");
+        ok(typeof j.capabilities?.browserConverter === "boolean", "capabilities.browserConverter type");
+        ok(typeof j.capabilities?.ytdlp === "boolean", "capabilities.ytdlp type");
+        ok(typeof j.capabilities?.tesseract === "boolean", "capabilities.tesseract type");
+        ok(typeof j.cache?.enabled === "boolean", "cache.enabled type");
+        ok(typeof j.browserPool?.active === "number", "browserPool.active type");
       },
     },
     {
@@ -250,6 +276,165 @@ async function run(): Promise<void> {
         threw = false;
         try { await assertSafeUrl("http://169.254.169.254/"); } catch { threw = true; }
         ok(threw, "link-local rejected");
+      },
+    },
+    {
+      name: "GET /metrics returns Prometheus format",
+      run: async () => {
+        const r = await fetch(`${baseUrl}/metrics`);
+        eq(r.status, 200, "status");
+        const text = await r.text();
+        ok(text.includes("# HELP convert_api_jobs_state"), "has job state metric");
+        ok(text.includes("# TYPE"), "has type lines");
+      },
+    },
+    {
+      name: "GET /openapi.json returns valid spec",
+      run: async () => {
+        const r = await fetch(`${baseUrl}/openapi.json`);
+        eq(r.status, 200, "status");
+        const json = (await r.json()) as { openapi: string; paths: Record<string, unknown> };
+        ok(json.openapi.startsWith("3."), "openapi version");
+        ok("/api/screenshot" in json.paths, "screenshot path");
+        ok("/api/convert" in json.paths, "convert path");
+        ok("/api/jobs/{id}" in json.paths, "job path");
+      },
+    },
+    {
+      name: "GET /docs serves Swagger UI",
+      run: async () => {
+        const r = await fetch(`${baseUrl}/docs`);
+        eq(r.status, 200, "status");
+        const html = await r.text();
+        ok(html.includes("SwaggerUIBundle"), "swagger bundle");
+        ok(html.includes("/openapi.json"), "loads spec");
+      },
+    },
+    {
+      name: "POST /api/screenshot returns 202 + job descriptor (async, no network)",
+      run: async () => {
+        // Force async to avoid an actual screenshot call.
+        const r = await fetch(`${baseUrl}/api/screenshot?async=true`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ url: "https://example.com", format: "png" }),
+        });
+        eq(r.status, 202, "status");
+        const j = (await r.json()) as {
+          jobId: string;
+          kind: string;
+          estimateMs: number;
+          statusUrl: string;
+          resultUrl: string;
+          streamUrl: string;
+        };
+        ok(/^[0-9a-f-]{36}$/i.test(j.jobId), "jobId is a uuid");
+        eq(j.kind, "screenshot", "kind");
+        ok(j.estimateMs > 0, "estimate positive");
+        ok(j.statusUrl.endsWith(j.jobId), "status url");
+        ok(j.resultUrl.endsWith("/result"), "result url");
+        ok(j.streamUrl.endsWith("/stream"), "stream url");
+        // Status endpoint should reflect the job.
+        const s = await fetch(`${baseUrl}/api/jobs/${j.jobId}`);
+        eq(s.status, 200, "snapshot status");
+        const snap = (await s.json()) as { id: string; status: string };
+        eq(snap.id, j.jobId, "snapshot id");
+        ok(["queued", "running", "complete", "failed"].includes(snap.status), "snapshot status enum");
+      },
+    },
+    {
+      name: "GET /api/jobs/:id returns 404 for unknown",
+      run: async () => {
+        const r = await fetch(`${baseUrl}/api/jobs/00000000-0000-0000-0000-000000000000`);
+        eq(r.status, 404, "status");
+      },
+    },
+    {
+      name: "POST /api/convert/batch (inline) zips multiple sharp conversions",
+      run: async () => {
+        const png = await makeFixturePng();
+        const form = new FormData();
+        form.append("files", new Blob([new Uint8Array(png)], { type: "image/png" }), "a.png");
+        form.append("files", new Blob([new Uint8Array(png)], { type: "image/png" }), "b.png");
+        form.set("items", JSON.stringify([
+          { fileIndex: 0, to: "webp", quality: 80 },
+          { fileIndex: 1, to: "jpeg", width: 16 },
+        ]));
+        form.set("sync", "true");
+        const r = await fetch(`${baseUrl}/api/convert/batch`, { method: "POST", body: form });
+        eq(r.status, 200, "status");
+        eq(r.headers.get("content-type"), "application/zip", "content-type");
+        const u = new Uint8Array(await r.arrayBuffer());
+        // ZIP signature: PK\x03\x04
+        ok(u[0] === 0x50 && u[1] === 0x4b && u[2] === 0x03 && u[3] === 0x04, "zip magic");
+      },
+    },
+    {
+      name: "Format subscription lifecycle (create / list / delete)",
+      run: async () => {
+        const r = await fetch(`${baseUrl}/api/subscriptions/formats`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ url: "https://example.com/hook", secret: "xyz", events: ["added"] }),
+        });
+        eq(r.status, 201, "create status");
+        const created = (await r.json()) as { id: string; events: string[] };
+        ok(created.events.includes("added"), "filter respected");
+        const list = await fetch(`${baseUrl}/api/subscriptions/formats`);
+        const listed = (await list.json()) as { subscriptions: Array<{ id: string; secret?: string }> };
+        const me = listed.subscriptions.find((s) => s.id === created.id);
+        ok(me !== undefined, "in listing");
+        eq(me!.secret, "***", "secret masked");
+        const del = await fetch(`${baseUrl}/api/subscriptions/formats/${created.id}`, { method: "DELETE" });
+        eq(del.status, 200, "delete status");
+        const del2 = await fetch(`${baseUrl}/api/subscriptions/formats/${created.id}`, { method: "DELETE" });
+        eq(del2.status, 404, "second delete 404");
+      },
+    },
+    {
+      name: "Format subscription rejects invalid URL",
+      run: async () => {
+        const r = await fetch(`${baseUrl}/api/subscriptions/formats`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ url: "notaurl" }),
+        });
+        eq(r.status, 400, "status");
+      },
+    },
+    {
+      name: "GET /api/formats/changes returns array",
+      run: async () => {
+        // Touch /api/formats first so the snapshot exists / diff has fired.
+        await fetch(`${baseUrl}/api/formats`);
+        const r = await fetch(`${baseUrl}/api/formats/changes`);
+        eq(r.status, 200, "status");
+        const j = (await r.json()) as { changes: Array<{ type: string }> };
+        ok(Array.isArray(j.changes), "is array");
+      },
+    },
+    {
+      name: "Capability status endpoints respond",
+      run: async () => {
+        for (const path of ["/api/ytdlp/status", "/api/ocr/status", "/api/transcribe/status"]) {
+          const r = await fetch(`${baseUrl}${path}`);
+          eq(r.status, 200, `${path} status`);
+          const j = (await r.json()) as Record<string, unknown>;
+          ok(typeof j === "object", `${path} json`);
+        }
+      },
+    },
+    {
+      name: "yt-dlp endpoint returns 503 when not installed",
+      run: async () => {
+        // Force sync so we hit the worker (and the 503) inline.
+        const r = await fetch(`${baseUrl}/api/ytdlp?sync=true`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", format: "mp3" }),
+        });
+        // Either 503 (binary missing) or 500 wrapping it — we accept both.
+        ok([500, 502, 503].includes(r.status), `expected 5xx, got ${r.status}`);
       },
     },
     {

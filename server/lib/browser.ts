@@ -107,3 +107,21 @@ export async function withBrowserSlot<T>(fn: () => Promise<T>): Promise<T> {
     release();
   }
 }
+
+export function browserPoolStats() {
+  return { active, queued: waiters.length, maxConcurrency };
+}
+
+/**
+ * Eagerly launch the browser on startup so the first request doesn't pay the
+ * ~1.5s cold-start cost. Failures are non-fatal — the next real request will
+ * retry.
+ */
+export async function warmBrowser(): Promise<void> {
+  try {
+    await getBrowser();
+    log.info("Browser warm-up complete");
+  } catch (e) {
+    log.warn("Browser warm-up failed (will retry on demand):", e);
+  }
+}

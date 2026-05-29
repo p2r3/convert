@@ -1,8 +1,8 @@
 services:
-  convert:
+  convert-api:
     build:
       context: ..
       args:
         VITE_COMMIT_SHA: docker
       dockerfile: docker/Dockerfile
-    image: convert:dev
+    image: convert-api:dev

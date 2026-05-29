@@ -2,6 +2,8 @@ import { Router } from "express";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { formatTracker, type TrackedFormat } from "../lib/formatTracker.ts";
+import { badRequest, notFound } from "../lib/errors.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const cachePath = resolve(__filename, "../../../dist/cache.json");
@@ -18,9 +20,9 @@ interface CachedFormat {
 }
 
 let cached: { handlers: Array<[string, CachedFormat[]]>; flat: CachedFormat[] } | null = null;
+let cacheLoadedMtime: number | null = null;
 
 function loadCache(): typeof cached {
-  if (cached) return cached;
   if (!existsSync(cachePath)) return null;
   try {
     const json = JSON.parse(readFileSync(cachePath, "utf8")) as Array<[string, CachedFormat[]]>;
@@ -29,13 +31,13 @@ function loadCache(): typeof cached {
       for (const f of formats) flat.push(f);
     }
     cached = { handlers: json, flat };
+    cacheLoadedMtime = Date.now();
     return cached;
   } catch {
     return null;
   }
 }
 
-/** A minimum hardcoded set of formats that the sharp + screenshot fast paths support, even if cache.json is missing. */
 const NATIVE_FORMATS: CachedFormat[] = [
   { name: "Portable Network Graphics", format: "png", extension: "png", mime: "image/png", from: true, to: true, category: "image", lossless: true },
   { name: "JPEG", format: "jpeg", extension: "jpg", mime: "image/jpeg", from: true, to: true, category: "image" },
@@ -48,13 +50,8 @@ const NATIVE_FORMATS: CachedFormat[] = [
   { name: "Webpage (screenshot input)", format: "html", extension: "html", mime: "text/html", from: true, to: false, category: "web" },
 ];
 
-export const formatsRouter: Router = Router();
-
-formatsRouter.get("/api/formats", (req, res) => {
+function mergedFormats(): CachedFormat[] {
   const cache = loadCache();
-  const category = (req.query.category as string | undefined)?.toLowerCase();
-  const direction = (req.query.direction as string | undefined)?.toLowerCase();
-
   const merged: CachedFormat[] = [...NATIVE_FORMATS];
   if (cache) {
     for (const f of cache.flat) {
@@ -62,6 +59,33 @@ formatsRouter.get("/api/formats", (req, res) => {
       if (!merged.some((m) => `${m.mime}|${m.format}` === key)) merged.push(f);
     }
   }
+  return merged;
+}
+
+/** Snapshot the current format list and emit diffs. Called on every /api/formats hit. */
+async function reconcileIfNeeded(): Promise<void> {
+  const merged = mergedFormats();
+  const tracked: TrackedFormat[] = merged.map((f) => ({
+    format: f.format,
+    mime: f.mime,
+    name: f.name,
+    extension: f.extension,
+    category: f.category,
+    from: f.from,
+    to: f.to,
+  }));
+  await formatTracker.reconcile(tracked);
+}
+
+void formatTracker.load();
+
+export const formatsRouter: Router = Router();
+
+formatsRouter.get("/api/formats", async (req, res) => {
+  await reconcileIfNeeded();
+  const merged = mergedFormats();
+  const category = (req.query.category as string | undefined)?.toLowerCase();
+  const direction = (req.query.direction as string | undefined)?.toLowerCase();
 
   const filtered = merged.filter((f) => {
     if (category) {
@@ -75,7 +99,66 @@ formatsRouter.get("/api/formats", (req, res) => {
 
   res.json({
     count: filtered.length,
-    source: cache ? "cache+native" : "native",
+    source: cached ? "cache+native" : "native",
+    cacheLoadedAt: cacheLoadedMtime,
     formats: filtered,
   });
+});
+
+export const formatsUpdateRouter: Router = Router();
+
+/** Recent format changes (additions/removals). */
+formatsUpdateRouter.get("/api/formats/changes", async (req, res) => {
+  await reconcileIfNeeded();
+  const limit = Number(req.query.limit) || 50;
+  res.json({ changes: formatTracker.recentChanges(Math.max(1, Math.min(500, limit))) });
+});
+
+/** Server-Sent Events stream of new format additions/removals. */
+formatsUpdateRouter.get("/api/formats/stream", (req, res) => {
+  res.setHeader("content-type", "text/event-stream");
+  res.setHeader("cache-control", "no-cache");
+  res.setHeader("connection", "keep-alive");
+  res.flushHeaders?.();
+  const send = (ev: string, data: unknown) => {
+    res.write(`event: ${ev}\n`);
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  };
+  send("hello", { ok: true, recent: formatTracker.recentChanges(20) });
+  const onChange = (ch: unknown) => send("change", ch);
+  formatTracker.on("change", onChange);
+  const ka = setInterval(() => res.write(`: keep-alive\n\n`), 25_000);
+  ka.unref?.();
+  req.on("close", () => {
+    formatTracker.off("change", onChange);
+    clearInterval(ka);
+  });
+});
+
+/** Register a webhook for format-update events. */
+formatsUpdateRouter.post("/api/subscriptions/formats", async (req, res) => {
+  const body = (req.body || {}) as { url?: string; secret?: string; events?: string[] };
+  const url = typeof body.url === "string" ? body.url : "";
+  if (!url) throw badRequest("Missing url");
+  try {
+    new URL(url);
+  } catch {
+    throw badRequest("Invalid url");
+  }
+  const events = (body.events || []).filter((e) => e === "added" || e === "removed") as Array<"added" | "removed">;
+  await formatTracker.load();
+  const sub = formatTracker.subscribe({ url, secret: body.secret, events });
+  res.status(201).json({ id: sub.id, url: sub.url, events: sub.events, createdAt: sub.createdAt });
+});
+
+formatsUpdateRouter.get("/api/subscriptions/formats", async (_req, res) => {
+  await formatTracker.load();
+  res.json({ subscriptions: formatTracker.listSubscriptions() });
+});
+
+formatsUpdateRouter.delete("/api/subscriptions/formats/:id", async (req, res) => {
+  await formatTracker.load();
+  const ok = formatTracker.unsubscribe(req.params.id);
+  if (!ok) throw notFound(`Subscription ${req.params.id} not found`);
+  res.json({ ok: true });
 });
