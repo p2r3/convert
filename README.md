@@ -1,4 +1,125 @@
-# [Convert to it!](https://convert.to.it/)
+# convert-api
+
+REST API on top of the [Convert to it!](https://convert.to.it/) browser converter. Express server with on-demand headless Chromium, native image fast-paths via `sharp`, URL → image/PDF screenshots, YouTube handling, and the existing 90+ WASM format handlers wired in as a fallback.
+
+## Quick start
+
+```bash
+bun install
+bun run server          # starts http://localhost:3000
+```
+
+Then:
+
+```bash
+# URL → PNG
+curl -X POST http://localhost:3000/api/screenshot \
+  -H 'content-type: application/json' \
+  -d '{"url":"https://example.com","format":"png","fullPage":true}' \
+  -o example.png
+
+# File upload → WEBP (sharp fast-path, no browser spin-up)
+curl -X POST http://localhost:3000/api/convert \
+  -F file=@photo.jpg -F to=webp -F quality=80 \
+  -o photo.webp
+
+# Remote file URL → JPEG
+curl -X POST http://localhost:3000/api/convert \
+  -H 'content-type: application/json' \
+  -d '{"url":"https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png","to":"jpeg","quality":85}' \
+  -o demo.jpg
+
+# YouTube → thumbnail (no browser; direct fetch)
+curl -G 'http://localhost:3000/api/screenshot' \
+  --data-urlencode 'url=https://www.youtube.com/watch?v=dQw4w9WgXcQ' \
+  --data-urlencode 'youtubeThumbnail=true' \
+  -o yt.jpg
+
+# YouTube → screenshot the player (full headless browser)
+curl -G 'http://localhost:3000/api/screenshot' \
+  --data-urlencode 'url=https://www.youtube.com/watch?v=dQw4w9WgXcQ' \
+  -o yt.png
+```
+
+## Endpoints
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/health` | Liveness + whether the browser converter dist is built. |
+| GET | `/api/formats` | List supported formats. `?category=image`, `?direction=to\|from`. |
+| GET / POST | `/api/screenshot` | URL → `png`/`jpeg`/`webp`/`pdf`. |
+| POST | `/api/convert` | File upload or URL → any supported format. |
+
+### POST /api/screenshot
+
+JSON body or form fields:
+
+| Field | Type | Default | Notes |
+|---|---|---|---|
+| `url` | string | — | required |
+| `format` | `png`\|`jpeg`\|`webp`\|`pdf` | `png` | |
+| `fullPage` | boolean | `false` | render below the fold |
+| `width`/`height` | number | 1366/900 | viewport |
+| `delayMs` | number | 0 | wait after load |
+| `timeoutMs` | number | 45000 | total navigation timeout |
+| `quality` | number | 90 | jpeg/webp |
+| `userAgent` | string | — | UA override |
+| `youtubeThumbnail` | boolean | `false` | fetch the thumbnail rather than render the player |
+
+### POST /api/convert
+
+`multipart/form-data` with a `file` field **or** JSON with a `url`.
+
+| Field | Type | Notes |
+|---|---|---|
+| `to` | string | **required** — target format ext, e.g. `png`, `webp`, `mp3`, `pdf` |
+| `from` | string | optional input format override (otherwise sniffed from filename/MIME) |
+| `width`/`height` | number | applied when output is a raster image |
+| `quality` | number | 1–100 for `jpeg`/`webp`/`avif` |
+| `file` | upload | up to `CONVERT_API_MAX_UPLOAD_BYTES` (200MB default) |
+| `url` | string | remote file or webpage |
+
+Conversion strategy (first hit wins):
+
+1. **URL + image/PDF target → screenshot**. Detects YouTube and renders the player frame; pass `youtubeThumbnail=true` to grab the thumbnail directly.
+2. **Image → image** uses [`sharp`](https://sharp.pixelplumbing.com/) for PNG/JPEG/WEBP/AVIF/TIFF/GIF/HEIF.
+3. **Anything else** drives the existing browser-based converter via Puppeteer (requires `bun run build` first).
+
+## Configuration
+
+| Env var | Default | Description |
+|---|---|---|
+| `PORT` | `3000` | HTTP port |
+| `HOST` | `0.0.0.0` | bind address |
+| `PUPPETEER_EXECUTABLE_PATH` | — | use a pre-installed Chromium |
+| `CONVERT_API_MAX_CONCURRENCY` | `2` | concurrent browser-driven jobs |
+| `CONVERT_API_MAX_UPLOAD_BYTES` | `209715200` | multer upload limit |
+| `CONVERT_API_IGNORE_CERT_ERRORS` | `0` | pass `--ignore-certificate-errors` + `acceptInsecureCerts` (dev only) |
+| `NODE_ENV` | — | non-`production` also enables cert ignore for dev convenience |
+
+## Tests
+
+```bash
+bun run test:server     # spins up the app, hits every endpoint family
+bun run server:typecheck
+```
+
+## Unlocking the full 90+ format converter
+
+The Express layer covers screenshots, common image transcodes, and download-then-convert via URL. The original WASM-powered converter (94 handlers covering audio, video, fonts, archives, chess PGN, MIDI synth, etc.) is wired in as a Puppeteer fallback for anything not covered by the fast paths. To enable it:
+
+```bash
+# (one-time) make sure submodules are pulled
+git submodule update --init --recursive
+bun run build           # produces dist/ — picked up automatically at runtime
+bun run cache:build:dev # speeds up first conversion by pre-caching the format graph
+```
+
+After that, `POST /api/convert` will fall through to the browser-driven path for, say, `aseprite` → `gif`, `pgn` → `svg`, `wav` → `mp3`, and so on.
+
+---
+
+# [Convert to it!](https://convert.to.it/) (original browser app)
 **Truly universal online file converter.**
 
 Many online file conversion tools are **boring** and **insecure**. They only allow conversion between two formats in the same medium (images to images, videos to videos, etc.), and they require that you _upload your files to some server_.

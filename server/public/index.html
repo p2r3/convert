@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>convert-api</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; max-width: 880px; margin: 2rem auto; padding: 0 1rem; color: #222; line-height: 1.5; }
+    h1 { margin-bottom: 0.25rem; }
+    h2 { margin-top: 2rem; border-bottom: 1px solid #ddd; padding-bottom: 0.25rem; }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    pre { background: #f5f5f7; padding: 1rem; border-radius: 6px; overflow-x: auto; }
+    code { background: #f5f5f7; padding: 1px 4px; border-radius: 3px; }
+    .method { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.85em; font-weight: 600; }
+    .get { background: #d4edda; color: #155724; }
+    .post { background: #cce5ff; color: #004085; }
+    .note { background: #fffbe6; border-left: 4px solid #f0d000; padding: 0.5rem 0.75rem; margin: 1rem 0; }
+  </style>
+</head>
+<body>
+  <h1>convert-api</h1>
+  <p>REST API on Express for file/URL conversion. Spins up headless Chromium on demand.</p>
+
+  <h2>Endpoints</h2>
+
+  <h3><span class="method get">GET</span> /health</h3>
+  <p>Liveness check. Returns whether the browser converter <code>dist/</code> is built.</p>
+
+  <h3><span class="method get">GET</span> /api/formats</h3>
+  <p>Lists supported formats. Query params: <code>?category=image</code>, <code>?direction=to|from</code>.</p>
+
+  <h3><span class="method post">POST</span> <span class="method get">GET</span> /api/screenshot</h3>
+  <p>Render a URL to <strong>PNG / JPEG / WEBP / PDF</strong>. Detects YouTube and waits for the player.</p>
+  <pre>curl -X POST http://localhost:3000/api/screenshot \
+  -H 'content-type: application/json' \
+  -d '{"url":"https://example.com","format":"png","fullPage":true}' \
+  -o example.png</pre>
+  <p>YouTube example (renders the embedded player frame):</p>
+  <pre>curl -G 'http://localhost:3000/api/screenshot' \
+  --data-urlencode 'url=https://www.youtube.com/watch?v=dQw4w9WgXcQ' \
+  -o yt.png</pre>
+  <p>Or grab the thumbnail directly (no browser needed):</p>
+  <pre>curl -G 'http://localhost:3000/api/screenshot' \
+  --data-urlencode 'url=https://www.youtube.com/watch?v=dQw4w9WgXcQ' \
+  --data-urlencode 'youtubeThumbnail=true' \
+  -o yt-thumb.jpg</pre>
+
+  <h3><span class="method post">POST</span> /api/convert</h3>
+  <p>Convert an input (uploaded file or a remote URL) to a chosen output format.</p>
+  <pre>curl -X POST http://localhost:3000/api/convert \
+  -F file=@photo.jpg -F to=webp -F quality=80 \
+  -o photo.webp</pre>
+  <p>URL → PNG (works for any website; YouTube uses the player frame):</p>
+  <pre>curl -X POST http://localhost:3000/api/convert \
+  -H 'content-type: application/json' \
+  -d '{"url":"https://example.com","to":"png"}' \
+  -o example.png</pre>
+  <p>URL pointing to a file (downloads then converts):</p>
+  <pre>curl -X POST http://localhost:3000/api/convert \
+  -H 'content-type: application/json' \
+  -d '{"url":"https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png","to":"jpeg","quality":85}' \
+  -o demo.jpg</pre>
+
+  <h2>Conversion engine layers</h2>
+  <ol>
+    <li><strong>URL → image/PDF</strong>: Puppeteer directly.</li>
+    <li><strong>Image → image</strong>: <code>sharp</code> native fast-path (PNG, JPEG, WEBP, AVIF, TIFF, GIF, HEIF).</li>
+    <li><strong>Everything else</strong>: Drives the existing browser-based <a href="/convert/">converter</a> via Puppeteer (requires <code>dist/</code> build).</li>
+  </ol>
+
+  <div class="note">
+    Tip: build the full converter once with <code>bun run build</code> (or <code>npm run build</code>) to unlock the 90+ format handlers behind <code>/api/convert</code>.
+  </div>
+</body>
+</html>
