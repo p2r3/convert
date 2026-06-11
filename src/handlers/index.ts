@@ -71,6 +71,7 @@ import piskelHandler from "./piskel.ts";
 import xcursorHandler from "./xcursor.ts";
 import shToElfHandler from "./shToElf.ts";
 import cssHandler from "./css.ts";
+import textToPdfHandler from "./text-to-pdf.ts";
 import TypstHandler from "./typst.ts";
 
 const handlers: FormatHandler[] = [];
@@ -148,6 +149,7 @@ try { handlers.push(new fenToJsonHandler()) } catch (_) { };
 try { handlers.push(new piskelHandler()) } catch (_) { };
 try { handlers.push(new xcursorHandler()) } catch (_) { };
 try { handlers.push(new shToElfHandler()) } catch (_) { };
+try { handlers.push(new textToPdfHandler()) } catch (_) { };
 try { handlers.push(new cssHandler()) } catch (_) { };
 try { handlers.push(new TypstHandler()) } catch (_) { };
 
