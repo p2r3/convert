@@ -9,7 +9,9 @@
       "DOM.Iterable"
     ],
     "types": [
-      "vite/client"
+      "vite/client",
+      "node",
+      "@types/pdfkit"
     ],
     "skipLibCheck": true,
     /* Bundler mode */
