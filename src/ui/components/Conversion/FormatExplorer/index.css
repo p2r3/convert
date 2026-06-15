@@ -1,0 +1,142 @@
+.format-explorer {
+	display: flex;
+	flex: 1;
+	min-width: 0;
+	min-height: 0;
+}
+
+.format-browser {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	background: var(--bg-page);
+}
+
+.search-container {
+	padding: 1.25rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+
+	.search-input-wrapper {
+		position: relative;
+		width: 100%;
+
+		.search-icon {
+			position: absolute;
+			left: 0.85rem;
+			top: 50%;
+			transform: translateY(-50%);
+			color: var(--text-muted);
+			pointer-events: none;
+		}
+
+		input {
+			width: 100%;
+			padding: 0.6rem 2.2rem 0.6rem 2.4rem;
+			border-radius: 6px;
+			border: 1px solid var(--border-transparent);
+			color: var(--text-primary);
+			background-color: var(--bg-section);
+			outline: none;
+			font-size: 0.875rem;
+			transition: all 150ms;
+
+			&::placeholder {
+				color: var(--text-muted);
+			}
+
+			&:focus {
+				background-color: var(--bg-card);
+				border-color: var(--primary);
+				box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 15%, transparent);
+			}
+		}
+
+		.search-clear {
+			position: absolute;
+			right: 0.6rem;
+			top: 50%;
+			transform: translateY(-50%);
+			appearance: none;
+			border: none;
+			background: transparent;
+			color: var(--text-muted);
+			cursor: pointer;
+			padding: 4px;
+			border-radius: 4px;
+			display: flex;
+
+			&:hover {
+				color: var(--text-primary);
+				background: var(--bg-section);
+			}
+		}
+	}
+}
+
+.chip-filters {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+}
+
+.format-list-container {
+	flex: 1;
+	padding: 0 1.25rem 1.25rem;
+	overflow-y: auto;
+
+	.list-header {
+		display: flex;
+		justify-content: space-between;
+		margin-bottom: 0.65rem;
+
+		span {
+			font-size: 0.7rem;
+			color: var(--text-muted);
+			font-weight: 600;
+			text-transform: uppercase;
+			letter-spacing: 0.04em;
+		}
+	}
+}
+
+.format-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+	gap: 0.5rem;
+}
+
+.no-results {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 3rem 1rem;
+	text-align: center;
+
+	p {
+		font-size: 0.9rem;
+		color: var(--text-muted);
+		font-weight: 500;
+	}
+
+	.clear-filters-btn {
+		appearance: none;
+		border: 1px solid var(--border-primary);
+		border-radius: 8px;
+		background: var(--bg-card);
+		color: var(--primary);
+		padding: 0.45rem 1rem;
+		font-size: 0.8rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 150ms;
+
+		&:hover {
+			background: var(--primary);
+			color: var(--text-on-primary);
+			border-color: var(--primary);
+		}
+	}
+}

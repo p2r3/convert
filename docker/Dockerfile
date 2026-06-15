@@ -4,6 +4,7 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     chromium \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 ENV PUPPETEER_SKIP_DOWNLOAD=true
@@ -11,6 +12,7 @@ ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 COPY .npmrc ./
 COPY package.json ./
+COPY scripts ./scripts
 RUN bun install --frozen-lockfile
 
 COPY . .

@@ -7,7 +7,7 @@ import { PlayerSpawnPoint } from "celaria-formats/class/maps/objects/PlayerSpawn
 import { Sphere } from "celaria-formats/class/maps/objects/Sphere.mjs"
 import { TutorialHologram } from "celaria-formats/class/maps/objects/TutorialHologram.mjs"
 import type { FlatVector3, Vector3 } from "celaria-formats/types/data.mts"
-import CommonFormats from "src/CommonFormats.ts"
+import CommonFormats, { Category } from "src/CommonFormats.ts"
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts"
 
 class celariaMapHandler implements FormatHandler {
@@ -25,7 +25,7 @@ class celariaMapHandler implements FormatHandler {
 				from: false,
 				to: true,
 				internal: "obj",
-				category: "model",
+				category: Category.DATA,
 				lossless: false,
 			},
 			CommonFormats.JSON.builder("json").allowFrom(true).allowTo(true).markLossless(false),

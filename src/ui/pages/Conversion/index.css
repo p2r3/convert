@@ -1,0 +1,65 @@
+.conversion-body {
+	background-color: var(--bg-page);
+	color: var(--text-secondary);
+	height: 100vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+.conversion-main {
+	display: flex;
+	flex: 1;
+	min-height: 0;
+	max-width: 1200px;
+	margin: 0 auto;
+}
+
+.conversion-action-bar {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 0.75rem;
+	padding: 0.75rem 1.25rem;
+	background: var(--bg-card);
+	border-top: 1px solid var(--border-primary);
+	flex-shrink: 0;
+	min-height: 64px;
+}
+
+.conversion-action-files {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	min-width: 0;
+	margin-inline-end: auto;
+	overflow-x: auto;
+}
+
+.conversion-action-files .file-info-badge {
+	flex-shrink: 0;
+}
+
+
+.conversion-body:has(.loading-screen) {
+	--bg: var(--bg-page);
+	--dots: var(--primary-transparent);
+	--size: 0.5px;
+	background-image:  radial-gradient(var(--dots) var(--size), transparent var(--size)), radial-gradient(var(--dots) var(--size), var(--bg) var(--size));
+	background-size: 20px 20px;
+	background-position: 0 0,10px 10px;
+	--pattern-size: 20px;
+	animation: pattern-drift 3s linear infinite;
+}
+
+@keyframes pattern-drift {
+	from {
+		background-position: 0 0, 0 0;
+	}
+
+	to {
+		background-position: calc(-1 * var(--pattern-size))
+				calc(-1 * var(--pattern-size)),
+			calc(-1 * var(--pattern-size)) calc(-1 * var(--pattern-size));
+	}
+}

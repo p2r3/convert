@@ -1,8 +1,10 @@
 import { defineConfig } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 import tsconfigPaths from "vite-tsconfig-paths";
+import preact from "@preact/preset-vite"
 
 export default defineConfig({
+  publicDir: "public",
   optimizeDeps: {
     exclude: [
       "@ffmpeg/ffmpeg",
@@ -84,6 +86,10 @@ export default defineConfig({
         }
       ]
     }),
-    tsconfigPaths()
+    tsconfigPaths(),
+    preact({
+      prefreshEnabled: false,
+      reactAliasesEnabled: true
+    })
   ]
 });

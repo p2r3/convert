@@ -1,4 +1,4 @@
-import CommonFormats from "src/CommonFormats.ts";
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import sqlite3InitModule from "@sqlite.org/sqlite-wasm";
 import {parse} from "papaparse";
@@ -19,7 +19,7 @@ class sqlite3Handler implements FormatHandler {
         from: true,
         to: true,
         internal: "sqlite3",
-        category: "database",
+        category: Category.DATA,
         lossless: false
       },
       {
@@ -30,7 +30,7 @@ class sqlite3Handler implements FormatHandler {
         from: true,
         to: false,
         internal: "sqlite3",
-        category: "database",
+        category: Category.DATA,
         lossless: false
       },
       // Lossy because extracts only tables  

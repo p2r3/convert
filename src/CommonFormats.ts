@@ -13,7 +13,7 @@ export const Category = {
     PRESENTATION: "presentation",
     FONT: "font",
     CODE: "code"
-}
+} as const
 
 /**
  * Common format definitions which can be used to reduce boilerplate definitions
@@ -286,6 +286,13 @@ const CommonFormats = {
         "exe",
         "application/vnd.microsoft.portable-executable",
         Category.CODE
+    ),
+    EPUB: new FormatDefinition(
+        "EPUB Document",
+        "epub",
+        "epub",
+        "application/epub+zip",
+        [Category.DOCUMENT]
     ),
     TYPST: new FormatDefinition(
         "Typst Document",

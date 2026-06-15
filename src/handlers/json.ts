@@ -1,5 +1,5 @@
 import CommonFormats from "src/CommonFormats.ts";
-import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
+import { NumberOption, type FileData, type FileFormat, type FormatHandler } from "../FormatHandler.ts";
 import parseXML from "./envelope/parseXML.js";
 import * as yaml from "yaml";
 
@@ -7,6 +7,11 @@ import * as yaml from "yaml";
 export class toJsonHandler implements FormatHandler {
   public name: string = "tojson";
   public ready: boolean = true;
+  private readonly options: {
+    indent: number;
+  } = {
+    indent: 2
+  };
 
   public supportedFormats: FileFormat[] = [
     CommonFormats.CSV.builder("csv").allowFrom(),
@@ -17,6 +22,26 @@ export class toJsonHandler implements FormatHandler {
 
   async init() {
     this.ready = true;
+  }
+
+  getOptions() {
+    return [
+      new NumberOption(
+        "indent",
+        "Output JSON indentation",
+        () => this.options.indent,
+        (value) => { this.options.indent = value; },
+        {
+          min: 0,
+          max: 8,
+          step: 1,
+          unit: "spaces",
+          control: "slider",
+          defaultValue: 2,
+          description: "Use 0 for compact JSON output."
+        }
+      )
+    ];
   }
 
   async doConvert (
@@ -64,7 +89,7 @@ export class toJsonHandler implements FormatHandler {
       }
       return {
         name: name,
-        bytes: new TextEncoder().encode(JSON.stringify(object))
+        bytes: new TextEncoder().encode(JSON.stringify(object, null, this.options.indent))
       };
     });
   }

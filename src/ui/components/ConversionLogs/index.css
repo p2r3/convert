@@ -1,0 +1,56 @@
+.conversion-logs-inline {
+	background: var(--bg-section);
+	border: 1px solid var(--border-transparent);
+	border-radius: 8px;
+	width: 100%;
+	height: 120px;
+	overflow-y: auto;
+	padding: 0.5rem 0.75rem;
+	font-family: monospace;
+	font-size: 0.75rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.2rem;
+	box-sizing: border-box;
+}
+
+.conversion-logs-empty {
+	color: var(--text-muted);
+	text-align: center;
+	padding: 1rem;
+	margin: auto;
+}
+
+.log-entry {
+	display: flex;
+	gap: 0.4rem;
+	word-break: break-word;
+	position: relative;
+	padding: 0.1rem 0;
+}
+.log-time {
+	opacity: 1;
+	color: var(--text-muted);
+	white-space: nowrap;
+	margin-left: auto;
+	font-size: 0.7rem;
+	padding-left: 0.5rem;
+	flex-shrink: 0;
+}
+.log-plugin {
+	color: #a855f7;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+.log-message {
+	color: var(--text-primary);
+}
+.log-entry.level-warn .log-message {
+	color: #f59e0b;
+}
+.log-entry.level-error .log-message {
+	color: #ef4444;
+}
+.log-entry.level-debug .log-message {
+	color: var(--text-muted);
+}
