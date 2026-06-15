@@ -25,6 +25,7 @@
   },
   "build": {
     "appId": "com.p2r3.convert",
+    "executableName": "ConvertToIt",
     "directories": {
       "output": "release"
     },
