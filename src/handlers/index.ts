@@ -72,8 +72,8 @@ import xcursorHandler from "./xcursor.ts";
 import shToElfHandler from "./shToElf.ts";
 import cssHandler from "./css.ts";
 import TypstHandler from "./typst.ts";
-
 import mcModpackHandler from "./mcModpack.ts";
+import azw3Handler from "./azw3.ts";
 
 const handlers: FormatHandler[] = [];
 try { handlers.push(new svgTraceHandler()) } catch (_) { };
@@ -153,5 +153,6 @@ try { handlers.push(new shToElfHandler()) } catch (_) { };
 try { handlers.push(new cssHandler()) } catch (_) { };
 try { handlers.push(new TypstHandler()) } catch (_) { };
 try { handlers.push(new mcModpackHandler()) } catch (_) { };
+try { handlers.push(new azw3Handler()) } catch (_) { };
 
 export default handlers;
