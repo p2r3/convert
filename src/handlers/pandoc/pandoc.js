@@ -32,6 +32,7 @@ import {
   WASI,
   OpenFile,
   File,
+  Directory,
   ConsoleStdout,
   PreopenDirectory,
 } from "@bjorn3/browser_wasi_shim";
@@ -127,9 +128,9 @@ export async function convert(options, stdin, files) {
   if (options["output-file"]) {
     await addFile(options["output-file"], new Blob(), false);
   }
-  // add media file for extracted media
+  // Pre-create the extract-media directory so pandoc can write into it.
   if (options["extract-media"]) {
-    await addFile(options["extract-media"], new Blob(), false);
+    ensureDirectory(options["extract-media"]);
   }
   if (stdin) {
     in_file.data = new TextEncoder().encode(stdin);
@@ -137,14 +138,17 @@ export async function convert(options, stdin, files) {
   instance.exports.convert(opts_ptr, opts_bytes.length);
 
   if (options["output-file"]) {
-    files[options["output-file"]] =
-      new Blob([fileSystem.get(options["output-file"]).data]);
+    const outputEntry = getEntry(options["output-file"]);
+    if (outputEntry instanceof File) {
+      files[options["output-file"]] = new Blob([outputEntry.data]);
+    }
   }
   if (options["extract-media"]) {
-    const mediaFile = fileSystem.get(options["extract-media"]);
-    if (mediaFile && mediaFile.data && mediaFile.data.length > 0) {
-      files[options["extract-media"]] =
-        new Blob([mediaFile.data], { type: 'application/zip' });
+    const mediaEntry = getEntry(options["extract-media"]);
+    if (mediaEntry instanceof Directory) {
+      for (const [path, blob] of collectFiles(mediaEntry, options["extract-media"])) {
+        files[path] = blob;
+      }
     }
   }
   const rawWarnings = new TextDecoder("utf-8", { fatal: true })
@@ -163,5 +167,76 @@ export async function convert(options, stdin, files) {
 async function addFile(filename, blob, readonly) {
   const buffer = await blob.arrayBuffer();
   const file = new File(new Uint8Array(buffer), { readonly: readonly });
-  fileSystem.set(filename, file);
+  setEntry(filename, file);
+}
+
+function ensureDirectory(path) {
+  if (!path) return;
+  const normalized = splitPath(path);
+  let current = fileSystem;
+
+  for (const segment of normalized) {
+    let entry = current.get(segment);
+    if (entry === undefined) {
+      entry = new Directory(new Map());
+      current.set(segment, entry);
+    }
+    if (!(entry instanceof Directory)) {
+      throw new Error(`Path segment "${segment}" is not a directory`);
+    }
+    current = entry.contents;
+  }
+}
+
+function setEntry(path, entry) {
+  const parts = splitPath(path);
+  const name = parts.pop();
+  if (!name) return;
+  if (parts.length > 0) {
+    ensureDirectory(parts.join("/"));
+  }
+  let current = fileSystem;
+  for (const segment of parts) {
+    const next = current.get(segment);
+    if (!(next instanceof Directory)) {
+      throw new Error(`Path segment "${segment}" is not a directory`);
+    }
+    current = next.contents;
+  }
+  current.set(name, entry);
+}
+
+function getEntry(path) {
+  const parts = splitPath(path);
+  let current = fileSystem;
+  let entry = null;
+
+  for (const segment of parts) {
+    entry = current.get(segment);
+    if (!entry) return null;
+    if (entry instanceof Directory) {
+      current = entry.contents;
+    }
+  }
+
+  return entry;
+}
+
+function collectFiles(directory, prefix = "") {
+  const results = new Map();
+  for (const [name, entry] of directory.contents.entries()) {
+    const path = prefix ? `${prefix}/${name}` : name;
+    if (entry instanceof File) {
+      results.set(path, new Blob([entry.data]));
+    } else if (entry instanceof Directory) {
+      for (const [nestedPath, blob] of collectFiles(entry, path)) {
+        results.set(nestedPath, blob);
+      }
+    }
+  }
+  return results;
+}
+
+function splitPath(path) {
+  return path.split("/").filter(Boolean);
 }

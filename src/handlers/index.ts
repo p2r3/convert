@@ -72,8 +72,12 @@ import xcursorHandler from "./xcursor.ts";
 import shToElfHandler from "./shToElf.ts";
 import cssHandler from "./css.ts";
 import TypstHandler from "./typst.ts";
+import EpubHandler from "./epub.ts";
 
 const handlers: FormatHandler[] = [];
+try { handlers.push(new EpubHandler()) } catch (_) { };
+try { handlers.push(new pandocHandler()) } catch (_) { };
+try { handlers.push(new TypstHandler()) } catch (_) { };
 try { handlers.push(new svgTraceHandler()) } catch (_) { };
 try { handlers.push(new canvasToBlobHandler()) } catch (_) { };
 try { handlers.push(new meydaHandler()) } catch (_) { };
@@ -116,7 +120,6 @@ try { handlers.push(new midiCodecHandler()) } catch (_) { };
 try { handlers.push(new midiSynthHandler()) } catch (_) { };
 try { handlers.push(new lzhHandler()) } catch (_) { };
 try { handlers.push(new wadHandler()) } catch (_) { };
-try { handlers.push(new pandocHandler()) } catch (_) { };
 try { handlers.push(new txtToInfiniteCraftHandler()) } catch (_) { };
 try { handlers.push(new espeakngHandler()) } catch (_) { };
 try { handlers.push(new exeToBatHandler()) } catch (_) { };
@@ -149,6 +152,5 @@ try { handlers.push(new piskelHandler()) } catch (_) { };
 try { handlers.push(new xcursorHandler()) } catch (_) { };
 try { handlers.push(new shToElfHandler()) } catch (_) { };
 try { handlers.push(new cssHandler()) } catch (_) { };
-try { handlers.push(new TypstHandler()) } catch (_) { };
 
 export default handlers;
