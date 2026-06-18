@@ -25,3 +25,6 @@
 [submodule "src/handlers/gimper"]
 	path = src/handlers/gimper
 	url = https://github.com/ConnorTippets/gimper.git
+[submodule "src/handlers/turbowarp/unpackager"]
+	path = src/handlers/turbowarp/unpackager
+	url = https://github.com/TurboWarp/unpackager.git

@@ -25,12 +25,14 @@
   },
   "build": {
     "appId": "com.p2r3.convert",
+    "executableName": "ConvertToIt",
     "directories": {
       "output": "release"
     },
     "files": [
       "dist/**/*",
-      "src/electron.cjs"
+      "src/electron.cjs",
+      "!node_modules/**/*"
     ],
     "win": {
       "target": "nsis"

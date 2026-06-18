@@ -19,17 +19,22 @@ class turbowarpHandler implements FormatHandler {
       extension: "sb3",
       mime: "application/x.scratch.sb3",
       from: true,
-      to: false,
+      to: true,
       internal: "sb3",
       category: "archive",
-      lossless: false,
+      lossless: true, // all project data is in the html
     },
     CommonFormats.HTML.builder("html")
       .allowTo()
+      .allowFrom()
+      .markLossless()
   ];
   public ready: boolean = false;
 
+  private unpackager?: any;
+
   async init () {
+    this.unpackager = await import("./turbowarp/unpackager/unpackager.js");
     this.ready = true;
   }
 
@@ -40,18 +45,29 @@ class turbowarpHandler implements FormatHandler {
   ): Promise<FileData[]> {
     const outputFiles: FileData[] = [];
     for (const inputFile of inputFiles) {
-      const project = await downloadProject(inputFile.bytes);
-      
-      const packager = new Packager();
-      packager.project = project;
-      packager.options.target = "html";
+      if (inputFormat.internal === "sb3") {
+        const project = await downloadProject(inputFile.bytes);
 
-      const bytes = (await packager.package()).data;
+        const packager = new Packager();
+        packager.project = project;
+        packager.options.target = "html";
 
-      outputFiles.push({ 
-        name: inputFile.name.replace(/\.sb3$/, ".html"), 
-        bytes 
-      });
+        const bytes = (await packager.package()).data;
+
+        outputFiles.push({
+          name: inputFile.name.replace(/\.sb3$/, ".html"),
+          bytes
+        });
+      } else if (inputFormat.internal === "html") {
+        const data = (await this.unpackager(inputFile.bytes)).data;
+        const bytes = new Uint8Array(data);
+        outputFiles.push({
+          name: inputFile.name.replace(/\.html$/, ".sb3"),
+          bytes
+        });
+      } else {
+        throw new Error(`turbowarpHandler cannot convert from ${inputFormat.mime} to ${outputFormat.mime}`);
+      }
     }
     return outputFiles;
   }
