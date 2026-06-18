@@ -72,6 +72,7 @@ import xcursorHandler from "./xcursor.ts";
 import shToElfHandler from "./shToElf.ts";
 import cssHandler from "./css.ts";
 import TypstHandler from "./typst.ts";
+import clangWasiHandler from "./clang-wasi.ts";
 import mcModpackHandler from "./mcModpack.ts";
 import azw3Handler from "./azw3.ts";
 
@@ -154,6 +155,7 @@ try { handlers.push(new xcursorHandler()) } catch (_) { };
 try { handlers.push(new shToElfHandler()) } catch (_) { };
 try { handlers.push(new cssHandler()) } catch (_) { };
 try { handlers.push(new TypstHandler()) } catch (_) { };
+try { handlers.push(new clangWasiHandler()) } catch (_) { };
 try { handlers.push(new mcModpackHandler()) } catch (_) { };
 try { handlers.push(new azw3Handler()) } catch (_) { };
 

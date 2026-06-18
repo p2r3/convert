@@ -7,7 +7,8 @@ export default defineConfig({
     exclude: [
       "@ffmpeg/ffmpeg",
       "@sqlite.org/sqlite-wasm",
-      "@bokuweb/zstd-wasm"
+      "@bokuweb/zstd-wasm",
+      "@yowasp/clang",
     ]
   },
   base: "/convert/",
