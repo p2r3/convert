@@ -1,7 +1,7 @@
 // file: textToSource.ts
 
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-import CommonFormats from "src/CommonFormats.ts";
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 
 function python(text: string): string {
   return `print(${JSON.stringify(text)})`;
@@ -69,7 +69,7 @@ class textToSourceHandler implements FormatHandler {
       from: false,
       to: true,
       internal: "js",
-      category: "code",
+      category: Category.CODE,
       lossless: true,
     }, javascript],
     [{
@@ -80,7 +80,7 @@ class textToSourceHandler implements FormatHandler {
       from: false,
       to: true,
       internal: "c",
-      category: "code",
+      category: Category.CODE,
       lossless: true,
     }, c],
     [{
@@ -91,7 +91,7 @@ class textToSourceHandler implements FormatHandler {
       from: false,
       to: true,
       internal: "cpp",
-      category: "code",
+      category: Category.CODE,
       lossless: true,
     }, cpp],
     [{
@@ -102,7 +102,7 @@ class textToSourceHandler implements FormatHandler {
       from: false,
       to: true,
       internal: "go",
-      category: "code",
+      category: Category.CODE,
       lossless: true,
     }, go],
     [CommonFormats.BATCH.builder("bat").allowTo().markLossless(), batch],
@@ -115,7 +115,7 @@ class textToSourceHandler implements FormatHandler {
       from: false,
       to: true,
       internal: "csharp",
-      category: "code",
+      category: Category.CODE,
       lossless: true,
     }, csharp],
     [{
@@ -126,7 +126,7 @@ class textToSourceHandler implements FormatHandler {
       from: false,
       to: true,
       internal: "rs",
-      category: "code",
+      category: Category.CODE,
       lossless: true,
     }, rust],
   ];

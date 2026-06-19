@@ -1,5 +1,5 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-import CommonFormats from "src/CommonFormats.ts";
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 
 import pako from "pako";
 import * as NBT from "nbtify";
@@ -95,7 +95,7 @@ class mcMapHandler implements FormatHandler {
                 from: false,
                 to: true,
                 internal: "rgb",
-                category: "image",
+                category: Category.IMAGE,
                 lossless: true
             },
             {
@@ -106,7 +106,7 @@ class mcMapHandler implements FormatHandler {
                 from: true,
                 to: true,
                 internal: "mcmap",
-                category: "data",
+                category: Category.DATA,
                 lossless: false
             },
             {
@@ -117,7 +117,7 @@ class mcMapHandler implements FormatHandler {
                 from: false,
                 to: true,
                 internal: "mcmap_grid",
-                category: "data",
+                category: Category.DATA,
                 lossless: false
             }
         ];

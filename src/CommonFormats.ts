@@ -13,7 +13,9 @@ export const Category = {
     SPREADSHEET: "spreadsheet",
     PRESENTATION: "presentation",
     FONT: "font",
-    CODE: "code"
+    CODE: "code",
+    DATABASE: "database",
+    MODEL: "model",
 }
 
 /**
@@ -134,6 +136,13 @@ const CommonFormats = {
         "text/x-python",
         Category.CODE
     ),
+    CSS: new FormatDefinition(
+        "CSS Stylesheet",
+        "css",
+        "css",
+        "text/css",
+        Category.CODE
+    ),
     SH: new FormatDefinition(
         "Shell Script",
         "sh",
@@ -222,6 +231,34 @@ const CommonFormats = {
         "application/pdf",
         Category.DOCUMENT
     ),
+    MRPACK: new FormatDefinition(
+        "Modrinth Modpack",
+        "mrpack",
+        "mrpack",
+        "application/x-modrinth-modpack+zip",
+        Category.ARCHIVE
+    ),
+    EPUB: new FormatDefinition(
+        "Electronic Publication",
+        "epub",
+        "epub",
+        "application/epub+zip",
+        Category.DOCUMENT
+    ),
+    AZW3: new FormatDefinition(
+        "Amazon Kindle Format 8",
+        "azw3",
+        "azw3",
+        "application/vnd.amazon.mobi8-ebook",
+        Category.DOCUMENT
+    ),
+    MOBI: new FormatDefinition(
+        "Mobipocket e-book",
+        "mobi",
+        "mobi",
+        "application/x-mobipocket-ebook",
+        Category.DOCUMENT
+    ),
     // documents - Microsoft Office
     DOCX: new FormatDefinition(
         "WordprocessingML Document",
@@ -294,6 +331,13 @@ const CommonFormats = {
         "exe",
         "application/vnd.microsoft.portable-executable",
         Category.CODE
+    ),
+    TYPST: new FormatDefinition(
+        "Typst Document",
+        "typst",
+        "typ",
+        "text/typst",
+        [Category.DOCUMENT, Category.TEXT]
     )
 }
 

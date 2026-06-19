@@ -7,7 +7,8 @@ export default defineConfig({
     exclude: [
       "@ffmpeg/ffmpeg",
       "@sqlite.org/sqlite-wasm",
-      "@bokuweb/zstd-wasm"
+      "@bokuweb/zstd-wasm",
+      "@yowasp/clang",
     ]
   },
   base: "/convert/",
@@ -63,15 +64,19 @@ export default defineConfig({
           dest: "js"
         },
         {
-          src: "src/handlers/tarCompressed/liblzma.wasm",
-          dest: "wasm"
-        },
-        {
           src: "node_modules/turbowarp-packager-browser/dist/scaffolding/*",
           dest: "js/turbowarp-scaffolding"
         },
         {
           src: "node_modules/7z-wasm/7zz.wasm",
+          dest: "wasm"
+        },
+        {
+          src: "node_modules/@myriaddreamin/typst-ts-web-compiler/pkg/typst_ts_web_compiler_bg.wasm",
+          dest: "wasm"
+        },
+        {
+          src: "node_modules/@myriaddreamin/typst-ts-renderer/pkg/typst_ts_renderer_bg.wasm",
           dest: "wasm"
         }
       ]

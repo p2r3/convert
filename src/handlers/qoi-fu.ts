@@ -1,4 +1,4 @@
-import CommonFormats from "src/CommonFormats.ts";
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 
 import { QOIDecoder, QOIEncoder } from "qoi-fu";
@@ -20,7 +20,7 @@ class qoiFuHandler implements FormatHandler {
       from: true,
       to: true,
       internal: "qoi",
-      category: "image",
+      category: Category.IMAGE,
       lossless: true
     }
   ];
