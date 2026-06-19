@@ -93,7 +93,7 @@ Below is a super barebones handler that does absolutely nothing. You can use thi
 // file: dummy.ts
 
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-import CommonFormats from "src/CommonFormats.ts";
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 
 class dummyHandler implements FormatHandler {
 
@@ -118,7 +118,7 @@ class dummyHandler implements FormatHandler {
         from: false,
         to: false,
         internal: "gif",
-        category: ["image", "video"],
+        category: [Category.IMAGE, CATEGORY.VIDEO], // See src/CommonFormats.ts for valid categories
         lossless: false
       },
     ];

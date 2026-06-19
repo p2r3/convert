@@ -1,5 +1,6 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-import CommonFormats from "src/CommonFormats.ts";
+
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
 class aperturePictureHandler implements FormatHandler {
@@ -17,7 +18,7 @@ class aperturePictureHandler implements FormatHandler {
         from: true,
         to: false,
         internal: "apf",
-        category: ["image"],
+        category: Category.IMAGE,
         lossless: true,
       },
       CommonFormats.BMP.builder("bmp")

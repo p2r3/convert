@@ -4,7 +4,7 @@ import { parseODT, parseODP, parseODS } from "./envelope/parseODF.js";
 import parseDOCX from "./envelope/parseDOCX.js";
 import parsePPTX from "./envelope/parsePPTX.js";
 import parseXLSX from "./envelope/parseXLSX.js";
-import CommonFormats from "src/CommonFormats.ts";
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 
 class envelopeHandler implements FormatHandler {
 
@@ -23,7 +23,7 @@ class envelopeHandler implements FormatHandler {
       from: true,
       to: false,
       internal: "odt",
-      category: "document",
+      category: Category.DOCUMENT,
       lossless: false
     },
     {
@@ -34,7 +34,7 @@ class envelopeHandler implements FormatHandler {
       from: true,
       to: false,
       internal: "odp",
-      category: "presentation",
+      category: Category.PRESENTATION,
       lossless: false
     },
     {
@@ -45,7 +45,7 @@ class envelopeHandler implements FormatHandler {
       from: true,
       to: false,
       internal: "ods",
-      category: "spreadsheet",
+      category: Category.SPREADSHEET,
       lossless: false
     },
     // Technically not "lossless", but it's about as close as we'll ever get

@@ -1,5 +1,5 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-import CommonFormats from "src/CommonFormats.ts";
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 import { QOAEncoder, QOADecoder, QOABase } from "qoa-fu";
 import { WaveFile } from "wavefile";
 import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
@@ -57,7 +57,7 @@ class qoaFuHandler implements FormatHandler {
       from: true,
       to: true,
       internal: "qoa",
-      category: "audio",
+      category: Category.AUDIO,
       lossless: false
     }
   ];

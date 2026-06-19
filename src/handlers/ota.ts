@@ -1,7 +1,8 @@
 // file: ota.ts
 
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-import CommonFormats from "src/CommonFormats.ts";
+
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
 class otaHandler implements FormatHandler {
@@ -24,7 +25,7 @@ class otaHandler implements FormatHandler {
                 from: true,
                 to: true,
                 internal: "ota",
-                category: "image",
+                category: Category.IMAGE,
                 lossless: false,
             },
         ];

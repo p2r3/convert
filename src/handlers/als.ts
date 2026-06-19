@@ -1,5 +1,5 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-import CommonFormats from "src/CommonFormats.ts";
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 
 class alsHandler implements FormatHandler {
 
@@ -14,7 +14,7 @@ class alsHandler implements FormatHandler {
       from: true,
       to: false,
       internal: "als",
-      category: "data",
+      category: Category.DATA,
       lossless: true
     },
     CommonFormats.XML.builder("xml").allowTo(),

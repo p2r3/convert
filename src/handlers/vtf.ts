@@ -1,4 +1,4 @@
-import CommonFormats from "src/CommonFormats.ts";
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
@@ -810,7 +810,7 @@ class vtfHandler implements FormatHandler {
       from: true,
       to: false,
       internal: "vtf",
-      category: "image",
+      category: Category.IMAGE,
       lossless: false
     },
     CommonFormats.PNG.supported("png", false, true, true),

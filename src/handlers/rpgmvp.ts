@@ -1,5 +1,5 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-import CommonFormats from "src/CommonFormats.ts";
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 import { Decrypter } from "./rpgmvp-decrypter/scripts/Decrypter.js";
 import { RPGFile } from "./rpgmvp-decrypter/scripts/RPGFile.js";
 
@@ -19,7 +19,7 @@ class rpgmvpHandler implements FormatHandler {
                 from: true,
                 to: false,
                 internal: "rpgmvp",
-                category: "image",
+                category: Category.IMAGE,
                 lossless: true
             },
             CommonFormats.PNG.builder("png")

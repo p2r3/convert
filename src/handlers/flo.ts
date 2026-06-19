@@ -1,6 +1,6 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import normalizeMimeType from "../normalizeMimeType.ts";
-import CommonFormats from "src/CommonFormats.ts";
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 
 function interleaveAudioBuffer(buffer: AudioBuffer): Float32Array {
@@ -187,7 +187,7 @@ class floHandler implements FormatHandler {
         from: true,
         to: true,
         internal: "flo",
-        category: "audio",
+        category: Category.AUDIO,
         lossless: false
       },
       CommonFormats.WAV.builder("wav")
@@ -200,7 +200,7 @@ class floHandler implements FormatHandler {
         from: true,
         to: true,
         internal: "f32le",
-        category: "audio",
+        category: Category.AUDIO,
         lossless: true
       },
     ];

@@ -1,5 +1,6 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-import CommonFormats from "src/CommonFormats.ts";
+
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
 class cybergrindHandler implements FormatHandler {
@@ -18,7 +19,7 @@ class cybergrindHandler implements FormatHandler {
                 format: "cgp",
                 extension: "cgp",
                 mime: "text/plain",
-                category: "data",
+                category: Category.DATA,
                 from: false,
                 to: true,
                 internal: "cgp",

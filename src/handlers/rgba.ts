@@ -1,7 +1,8 @@
 // file: rgba.ts
 
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-import CommonFormats from "src/CommonFormats.ts";
+
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
 class rgbaHandler implements FormatHandler {
@@ -24,7 +25,7 @@ class rgbaHandler implements FormatHandler {
                 from: true,
                 to: true,
                 internal: "rgb",
-                category: "image",
+                category: Category.IMAGE,
                 lossless: false
             },
             {
@@ -35,7 +36,7 @@ class rgbaHandler implements FormatHandler {
                 from: true,
                 to: true,
                 internal: "rgba",
-                category: "image",
+                category: Category.IMAGE,
                 lossless: true
             },
         ];

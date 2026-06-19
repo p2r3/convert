@@ -1,7 +1,8 @@
 // file: bunburrows.ts
 
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-import CommonFormats from "src/CommonFormats.ts";
+
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
 const COLOR_WALKABLE = [0,0,0];
@@ -29,7 +30,7 @@ class bunburrowsHandler implements FormatHandler {
                 from: true,
                 to: false,
                 internal: "bunlevel",
-                category: "data",
+                category: Category.DATA,
                 lossless: false,
             },
         ];

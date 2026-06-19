@@ -5,7 +5,8 @@ import * as CSG from "three-bvh-csg";
 
 import { Demo } from "./sppd/sppd/Demo.ts";
 import { Vector } from "./sppd/sppd/Vector.ts";
-import CommonFormats from "src/CommonFormats.ts";
+
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
 function toThreeVector (vec: Vector) {
@@ -187,7 +188,7 @@ class sppdHandler implements FormatHandler {
       from: true,
       to: false,
       internal: "dem",
-      category: "data",
+      category: Category.DATA,
       lossless: false
     },
     CommonFormats.PNG.supported("png", false, true),
