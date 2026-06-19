@@ -1,5 +1,5 @@
 import pako from "pako";
-import CommonFormats from "src/CommonFormats.ts";
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 
 const ASEPRITE_HEADER_MAGIC = 0xA5E0;
@@ -418,7 +418,7 @@ class asepriteHandler implements FormatHandler {
       from: true,
       to: false,
       internal: "aseprite",
-      category: "image",
+      category: Category.IMAGE,
       lossless: true
     },
     CommonFormats.PNG.supported("png", false, true, true),

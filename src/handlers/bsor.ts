@@ -1,7 +1,7 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import { Replay } from "./bsor/replay.ts";
 import { render } from "./bsor/renderer.ts";
-import CommonFormats from "src/CommonFormats.ts";
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 
 class bsorHandler implements FormatHandler {
   public name: string = "bsor";
@@ -14,7 +14,7 @@ class bsorHandler implements FormatHandler {
       from: true,
       to: false,
       internal: "bsor",
-      category: "data",
+      category: Category.DATA,
       lossless: false
     },
     CommonFormats.PNG.supported("png", false, true),

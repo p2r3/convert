@@ -1,5 +1,5 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-import CommonFormats from "src/CommonFormats.ts";
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 import { FileReader } from "src/handlers/terraria-wld-parser/src/";
 
 // CODE BELOW IS WRITTEN BY PIXELKAT5 IN PR #244
@@ -888,7 +888,7 @@ class terrariaWldHandler implements FormatHandler {
                 from: true,
                 to: false,
                 internal: "wld",
-                category: "data",
+                category: Category.DATA,
                 lossless: false,
             },
 
