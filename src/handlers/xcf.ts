@@ -56,7 +56,7 @@ class xcfHandler implements FormatHandler {
         }
 
         for (const inputFile of inputFiles) {
-            const xcf = await XCF.from_bytes(new Uint8Array(inputFile.bytes));
+            const xcf = XCF.from_bytes(new Uint8Array(inputFile.bytes));
 
             if (xcf.layers.length === 0) {
                 throw Error("No layers to convert.");
@@ -74,7 +74,7 @@ class xcfHandler implements FormatHandler {
                 this.#canvas.height = layer.height;
                 this.#ctx.clearRect(0, 0, layer.width, layer.height);
 
-                const pixel_data = await xcf.getLayerPixels(i);
+                const pixel_data = xcf.getLayerPixels(i);
 
                 const image_data = this.#ctx.createImageData(layer.width, layer.height);
 
