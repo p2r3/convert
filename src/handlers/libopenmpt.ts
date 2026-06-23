@@ -1,5 +1,5 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-import CommonFormats from "src/CommonFormats.ts";
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 
 interface LibOpenMPTModule {
   __render(fileData: Uint8Array, sampleRate: number): Int16Array;
@@ -120,7 +120,7 @@ class libopenmptHandler implements FormatHandler {
         from: true,
         to: false,
         internal: fmt.ext,
-        category: "audio",
+        category: Category.AUDIO,
         lossless: true
       });
     }

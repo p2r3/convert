@@ -1,4 +1,4 @@
-import CommonFormats from "src/CommonFormats.ts";
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 
 const TEXTUREFLAGS_ENVMAP = 0x00004000;
@@ -809,7 +809,7 @@ class vtfHandler implements FormatHandler {
       from: true,
       to: false,
       internal: "vtf",
-      category: "image",
+      category: Category.IMAGE,
       lossless: false
     },
     CommonFormats.PNG.supported("png", false, true, true),

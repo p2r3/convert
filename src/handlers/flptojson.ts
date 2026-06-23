@@ -3,7 +3,7 @@
 
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import { Buffer } from "buffer";
-import CommonFormats from "src/CommonFormats.ts";
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 
 if (typeof window !== "undefined") {
   (window as any).Buffer = Buffer;
@@ -32,7 +32,7 @@ class flptojsonHandler implements FormatHandler {
       from: true,
       to: false,
       internal: "flp",
-      category: "audio",
+      category: Category.AUDIO,
       lossless: false,
     },
     // Unsure about this, it might be lossless

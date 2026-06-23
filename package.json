@@ -25,12 +25,14 @@
   },
   "build": {
     "appId": "com.p2r3.convert",
+    "executableName": "ConvertToIt",
     "directories": {
       "output": "release"
     },
     "files": [
       "dist/**/*",
-      "src/electron.cjs"
+      "src/electron.cjs",
+      "!node_modules/**/*"
     ],
     "win": {
       "target": "nsis"
@@ -73,6 +75,7 @@
     "@types/pako": "^2.0.4",
     "@types/papaparse": "^5.5.2",
     "@types/three": "^0.182.0",
+    "@yowasp/clang": "^22.0.0-git20542-10",
     "bson": "^7.2.0",
     "celaria-formats": "^1.0.2",
     "chess.js": "^1.4.0",
