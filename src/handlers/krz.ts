@@ -9,10 +9,7 @@ class krzHandler implements FormatHandler {
 
   async init() {
     this.supportedFormats = [
-      CommonFormats.PNG.builder("png")
-        .markLossless()
-        .allowFrom(false)
-        .allowTo(true),
+      CommonFormats.PNG.builder("png").allowFrom(false).allowTo(true),
 
       {
         name: "Krita Raster Archive (krz)",
@@ -23,7 +20,7 @@ class krzHandler implements FormatHandler {
         to: false,
         internal: "krz",
         category: ["archive"],
-        lossless: true,
+        lossless: false,
       },
     ];
     this.ready = true;
