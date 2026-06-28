@@ -1,6 +1,6 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import normalizeMimeType from "../normalizeMimeType.ts";
-import CommonFormats from "src/CommonFormats.ts";
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 
 const ROM_MAGIC = {
   z64: [0x80, 0x37, 0x12, 0x40],
@@ -25,7 +25,7 @@ class n64romHandler implements FormatHandler {
       from: true,
       to: true,
       internal: "z64",
-      category: "data",
+      category: Category.DATA,
       lossless: true
     },
     {
@@ -36,7 +36,7 @@ class n64romHandler implements FormatHandler {
       from: true,
       to: true,
       internal: "n64",
-      category: "data",
+      category: Category.DATA,
       lossless: true
     },
     {
@@ -47,7 +47,7 @@ class n64romHandler implements FormatHandler {
       from: true,
       to: true,
       internal: "v64",
-      category: "data",
+      category: Category.DATA,
       lossless: true
     },
     CommonFormats.PNG.builder("n64png")

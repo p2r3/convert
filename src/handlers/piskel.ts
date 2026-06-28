@@ -1,5 +1,5 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-import CommonFormats from "src/CommonFormats.ts";
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 import JSZip from "jszip";
 
 class piskelHandler implements FormatHandler {
@@ -28,7 +28,7 @@ class piskelHandler implements FormatHandler {
                 mime: "image/png+json",
                 from: true,
                 to: false,
-                category: "image",
+                category: Category.IMAGE,
                 internal: "piskel",
                 lossless: true
             }

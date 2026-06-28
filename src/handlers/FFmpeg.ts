@@ -5,7 +5,7 @@ import type { LogEvent } from "@ffmpeg/ffmpeg";
 
 import mime from "mime";
 import normalizeMimeType from "../normalizeMimeType.ts";
-import CommonFormats from "src/CommonFormats.ts";
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 
 class FFmpegHandler implements FormatHandler {
 
@@ -220,7 +220,7 @@ class FFmpegHandler implements FormatHandler {
       from: true,
       to: true,
       internal: "mov",
-      category: "audio",
+      category: Category.AUDIO,
       lossless: false
     });
 
@@ -233,7 +233,7 @@ class FFmpegHandler implements FormatHandler {
       from: true,
       to: true,
       internal: "asf",
-      category: "video"
+      category: Category.VIDEO
     });
 
     // Normalize Bink metadata to ensure ".bik" files are detected by extension.
