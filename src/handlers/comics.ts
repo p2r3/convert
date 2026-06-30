@@ -82,7 +82,7 @@ class comicsHandler implements FormatHandler {
         
         // Single-gif catching
         if (inputFormat.internal === "gif" && (archives_list.includes(outputFormat.internal)) && inputFiles.length === 1) {
-            throw new Error("User probably intends for an archive of video/gif frames; abort.");
+            throw new TypeError("User probably intends for an archive of video/gif frames; abort.");
         }
         
         // Pack a zip/cbz with code copied from wad.ts
@@ -117,7 +117,7 @@ class comicsHandler implements FormatHandler {
                             // Ignore .xml files in comic book archives.
                         }
                         else if (filename.endsWith("."+outputFormat.extension) === false) {
-                            throw new Error("Archive contains multiple file types; abort.");
+                            throw new TypeError("Archive contains multiple file types; abort.");
                         }
                         else {
                             const data = await zipEntry.async("uint8array");
@@ -130,7 +130,7 @@ class comicsHandler implements FormatHandler {
                 }
             }
             
-            // Throw error if empty
+            // throw new Error if empty
             if (outputFiles.length === 0) {
                 throw new Error("No applicable files to unzip found.");
             }
@@ -153,10 +153,10 @@ class comicsHandler implements FormatHandler {
                         // Ignore .xml files in comic book archives.
                     }
                     else if (file.name.endsWith("."+outputFormat.extension) === false) {
-                        throw new Error("Archive contains multiple file types; abort.");
+                        throw new TypeError("Archive contains multiple file types; abort.");
                     }
                     else if (!file.data) {
-                        throw new Error("Undefined data type; abort.");
+                        throw new TypeError("Undefined data type; abort.");
                     }
                     else {
                         outputFiles.push({
@@ -167,7 +167,7 @@ class comicsHandler implements FormatHandler {
                 }
             }
             
-            // Throw error if empty
+            // throw new Error if empty
             if (outputFiles.length === 0) {
                 throw new Error("No applicable files to unpack found.");
             }
@@ -179,7 +179,7 @@ class comicsHandler implements FormatHandler {
             }
         }
         else {
-            throw new Error("Invalid input-output.");
+            throw new TypeError(`Unsupported conversion path: ${inputFormat.internal} -> ${outputFormat.internal}`);
         }
         
         return outputFiles;

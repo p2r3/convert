@@ -1,5 +1,7 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
+
 import CommonFormats, { Category } from "src/CommonFormats.ts";
+import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
 import pako from "pako";
 import * as NBT from "nbtify";
@@ -136,7 +138,7 @@ class mcMapHandler implements FormatHandler {
         const outputFiles: FileData[] = [];
 
         if (!this.#canvas || !this.#ctx) {
-            throw "Handler not initialized.";
+            throw new InitializationError("Handler not initialized.");
         }
 
         if (inputFormat.mime === CommonFormats.PNG.mime) {
@@ -295,7 +297,7 @@ class mcMapHandler implements FormatHandler {
             }
         }
         else {
-            throw new Error("Not Implemented")
+            throw new TypeError(`Unsupported conversion path: ${inputFormat.internal} -> ${outputFormat.internal}`);
         }
         return outputFiles;
 

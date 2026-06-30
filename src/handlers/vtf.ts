@@ -1,5 +1,6 @@
 import CommonFormats, { Category } from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
+import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
 const TEXTUREFLAGS_ENVMAP = 0x00004000;
 const RESOURCE_HIGH_RES_IMAGE = 0x30;
@@ -87,21 +88,21 @@ function versionAtLeast (header: VTFHeader, major: number, minor: number): boole
 }
 
 function parseHeader (bytes: Uint8Array): VTFHeader {
-  if (bytes.length < 64) throw "Input is too small for a VTF file.";
+  if (bytes.length < 64) throw new RangeError(`Input is too small for a VTF file: ${bytes.length} bytes`);
   if (
     bytes[0] !== 0x56 || // V
     bytes[1] !== 0x54 || // T
     bytes[2] !== 0x46 || // F
     bytes[3] !== 0x00
-  ) throw "Invalid VTF signature.";
+  ) throw new BadMagicError(`Invalid VTF signature: ${bytes[0]} ${bytes[1]} ${bytes[2]} ${bytes[3]}`);
 
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const headerSize = view.getUint32(12, true);
-  if (headerSize < 64 || headerSize > bytes.length) throw "Invalid VTF header size.";
+  if (headerSize < 64 || headerSize > bytes.length) throw new RangeError(`Invalid VTF header size: ${headerSize}`);
 
   const width = view.getUint16(16, true);
   const height = view.getUint16(18, true);
-  if (width === 0 || height === 0) throw "Invalid VTF image dimensions.";
+  if (width === 0 || height === 0) throw new RangeError(`Invalid VTF image dimensions: ${width}x${height}`);
 
   const versionMajor = view.getUint32(4, true);
   const versionMinor = view.getUint32(8, true);
@@ -208,7 +209,7 @@ function getImageDataSize (format: VTFImageFormat, width: number, height: number
 
   const bytesPerPixel = getBytesPerPixel(format);
   if (bytesPerPixel === null) {
-    throw `Unsupported VTF image format: ${format}.`;
+    throw new Error(`Unsupported VTF image format: ${format}.`);
   }
   return width * height * bytesPerPixel;
 }
@@ -722,7 +723,7 @@ function decodeUncompressed (
         break;
       }
       default:
-        throw `Unsupported VTF image format: ${format}.`;
+        throw new Error(`Unsupported VTF image format: ${format}.`);
     }
   }
 
@@ -789,7 +790,7 @@ function decodeVTF (bytes: Uint8Array): DecodedImage {
       break;
     }
   }
-  if (chosenOffset === null) throw "VTF image data is truncated.";
+  if (chosenOffset === null) throw new Error("VTF image data is truncated.");
 
   const surface = bytes.subarray(chosenOffset, chosenOffset + topImageSize);
   const pixels = decodeSurface(surface, header.width, header.height, header.imageFormat);
@@ -833,7 +834,7 @@ class vtfHandler implements FormatHandler {
     _inputFormat: FileFormat,
     outputFormat: FileFormat
   ): Promise<FileData[]> {
-    if (!this.#canvas || !this.#ctx) throw "Handler not initialized.";
+    if (!this.#canvas || !this.#ctx) throw new InitializationError("Handler not initialized.");
 
     const outputFiles: FileData[] = [];
     for (const inputFile of inputFiles) {

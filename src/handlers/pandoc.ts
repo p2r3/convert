@@ -2,6 +2,7 @@ import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import CommonFormats from "src/CommonFormats.ts";
 import mime from "mime";
 import normalizeMimeType from "../normalizeMimeType.ts";
+import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
 class pandocHandler implements FormatHandler {
 
@@ -242,7 +243,7 @@ class pandocHandler implements FormatHandler {
       !this.ready
       || !this.query
       || !this.convert
-    ) throw "Handler not initialized.";
+    ) throw new InitializationError("Handler not initialized.");
 
     const outputFiles: FileData[] = [];
 

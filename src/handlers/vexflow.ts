@@ -232,10 +232,10 @@ class VexFlowHandler implements FormatHandler {
     outputFormat: FileFormat
   ): Promise<FileData[]> {
     if (inputFormat.internal !== "musicxml" && inputFormat.internal !== "mxl") {
-      throw "Invalid input format. Expected MusicXML or MXL.";
+      throw new TypeError(`Unsupported input format of ${inputFormat.internal}. Expected MusicXML or MXL.`);
     }
     if (outputFormat.internal !== "html" && outputFormat.internal !== "mid") {
-      throw "Invalid output format. Expected HTML or MIDI.";
+      throw new TypeError(`Unsupported output format of ${outputFormat.internal}. Expected HTML or MIDI.`);
     }
 
     const outputFiles: FileData[] = [];

@@ -2,6 +2,7 @@ import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import CommonFormats, { Category } from "src/CommonFormats.ts";
 import { QOAEncoder, QOADecoder, QOABase } from "qoa-fu";
 import { WaveFile } from "wavefile";
+import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
 class uint8ArrayQOADecoder extends QOADecoder {
   private data: Uint8Array;
@@ -86,7 +87,7 @@ this.supportedFormats.push(CommonFormats.FLAC.builder("flac").allowFrom(true).al
     outputFormat: FileFormat
   ): Promise<FileData[]> {
     if (!this.ready || !this.#audioContext) {
-      throw "Handler not initialized.";
+      throw new InitializationError("Handler not initialized.");
     }
 
     const outputFiles: FileData[] = [];
@@ -95,14 +96,14 @@ this.supportedFormats.push(CommonFormats.FLAC.builder("flac").allowFrom(true).al
     const outputIsQOA = (outputFormat.internal === "qoa");
 
     if (inputIsQOA === outputIsQOA) {
-      throw "Invalid input/output format.";
+      throw new TypeError(`Unsupported conversion path: ${inputFormat.internal} -> ${outputFormat.internal}`);
     }
 
     if (inputIsQOA) { // QOA => WAV
       for (const inputFile of inputFiles) {
           const decoder = new uint8ArrayQOADecoder(inputFile.bytes);
           if (!decoder.readHeader()) {
-            throw "Invalid QOA header."
+            throw new Error("Invalid QOA header.")
           }
           const audioData = new Int16Array(decoder.getTotalSamples()*decoder.getChannels());
           let pos = 0;
@@ -127,7 +128,7 @@ this.supportedFormats.push(CommonFormats.FLAC.builder("flac").allowFrom(true).al
 
         const encoder = new uint8ArrayQOAEncoder((audioData.length*audioData.numberOfChannels*4)/8+4096);
         if (!encoder.writeHeader(audioData.length, audioData.numberOfChannels, audioData.sampleRate)) {
-          throw "Failed to write QOA header.";
+          throw new Error("Failed to write QOA header.");
         }
 
         const channelData: Float32Array[] = [];
@@ -150,7 +151,7 @@ this.supportedFormats.push(CommonFormats.FLAC.builder("flac").allowFrom(true).al
           }
 
           if (!encoder.writeFrame(frameBuffer, frameSamples)) {
-            throw "Failed to write QOA frame.";
+            throw new Error("Failed to write QOA frame.");
           }
 
           offset += frameSamples;

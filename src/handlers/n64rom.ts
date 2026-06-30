@@ -1,6 +1,8 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import normalizeMimeType from "../normalizeMimeType.ts";
+
 import CommonFormats, { Category } from "src/CommonFormats.ts";
+import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
 const ROM_MAGIC = {
   z64: [0x80, 0x37, 0x12, 0x40],
@@ -129,9 +131,9 @@ class n64romHandler implements FormatHandler {
   }
 
   #choosePackedDimensions (pixelCount: number): { width: number; height: number } {
-    if (pixelCount <= 0) throw "Input ROM is empty.";
+    if (pixelCount <= 0) throw new RangeError("Input ROM is empty.");
     if (!Number.isInteger(pixelCount)) {
-      throw "Invalid packed pixel count.";
+      throw new RangeError(`Invalid packed pixel count of ${pixelCount}.`);
     }
 
     const max = Math.min(MAX_CANVAS_DIMENSION, pixelCount);
@@ -142,14 +144,14 @@ class n64romHandler implements FormatHandler {
       if (height <= MAX_CANVAS_DIMENSION) return { width, height };
     }
 
-    throw "ROM is too large to encode as PNG within canvas limits.";
+    throw new RangeError(`ROM is too large to encode as PNG within canvas limits. Pixel count of ${pixelCount}.`);
   }
 
   #packZ64ToOpaqueRgba (z64Bytes: Uint8Array): Uint8ClampedArray {
     const byteLength = z64Bytes.length;
-    if (byteLength <= 0) throw "Input ROM is empty.";
+    if (byteLength <= 0) throw new RangeError("Input ROM is empty.");
     if (byteLength % 4 !== 0) {
-      throw "N64 ROM length must be divisible by 4.";
+      throw new RangeError(`N64 ROM length must be divisible by 4. Found byteLength of ${byteLength}.`);
     }
 
     const chunks = byteLength / 4;
@@ -175,7 +177,7 @@ class n64romHandler implements FormatHandler {
 
   #unpackOpaqueRgbaToZ64 (rgba: Uint8ClampedArray): Uint8Array {
     if (rgba.length % 8 !== 0 || rgba.length === 0) {
-      throw "PNG dimensions are incompatible with N64 ROM packed image format.";
+      throw new RangeError("PNG dimensions are incompatible with N64 ROM packed image format.");
     }
 
     const chunks = rgba.length / 8;
@@ -192,7 +194,7 @@ class n64romHandler implements FormatHandler {
   }
 
   async #pngWrapToZ64 (bytes: Uint8Array): Promise<Uint8Array> {
-    if (!this.#canvas || !this.#ctx) throw "Handler not initialized.";
+    if (!this.#canvas || !this.#ctx) throw new InitializationError("Handler not initialized.");
 
     const blob = new Blob([bytes as BlobPart], { type: "image/png" });
     const image = new Image();
@@ -211,7 +213,7 @@ class n64romHandler implements FormatHandler {
   }
 
   async #z64ToPngWrap (z64Bytes: Uint8Array): Promise<Uint8Array> {
-    if (!this.#canvas || !this.#ctx) throw "Handler not initialized.";
+    if (!this.#canvas || !this.#ctx) throw new InitializationError("Handler not initialized.");
     const rgba = this.#packZ64ToOpaqueRgba(z64Bytes);
     const pixels = rgba.length / 4;
     const { width, height } = this.#choosePackedDimensions(pixels);
@@ -237,7 +239,7 @@ class n64romHandler implements FormatHandler {
   ): Promise<FileData[]> {
 
     if (!this.#canvas || !this.#ctx) {
-      throw "Handler not initialized.";
+      throw new InitializationError("Handler not initialized.");
     }
 
     const outputFiles: FileData[] = [];

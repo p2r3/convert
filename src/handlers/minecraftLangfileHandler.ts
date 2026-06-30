@@ -47,7 +47,7 @@ class mclangHandler implements FormatHandler {
         const obj = JSON.parse(text);
 
         if (typeof obj !== "object" || Array.isArray(obj)) {
-            throw new Error("JSON must be a flat object");
+            throw new TypeError("JSON must be a flat object");
         }
 
         resultText = Object.entries(obj)
@@ -78,7 +78,7 @@ class mclangHandler implements FormatHandler {
         }
 
         else {
-        throw new Error("Unsupported conversion direction");
+        throw new TypeError(`Unsupported conversion direction: ${inputFormat.internal} -> ${outputFormat.internal}`);
         }
 
         outputFiles.push({

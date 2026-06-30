@@ -90,7 +90,7 @@ class mcSchematicHandler implements FormatHandler {
                      resultNbt = nbt;
                  }
             } else {
-                throw `Unsupported conversion route: ${inputFormat.internal} -> ${outputFormat.internal}`;
+                throw new TypeError(`Unsupported conversion route: ${inputFormat.internal} -> ${outputFormat.internal}`);
             }
 
             // Output processed intermediate NBT
@@ -125,13 +125,13 @@ class mcSchematicHandler implements FormatHandler {
         
         // 1. Validate
         if (!root.Regions) {
-            throw "Invalid Litematica file: Missing Regions tag.";
+            throw new Error("Invalid Litematica file: Missing Regions tag.");
         }
 
         // 2. Select first region
         const regionNames = Object.keys(root.Regions);
         if (regionNames.length === 0) {
-            throw "Invalid Litematica file: No regions defined.";
+            throw new Error("Invalid Litematica file: No regions defined.");
         }
         const region = root.Regions[regionNames[0]];
 
@@ -248,7 +248,7 @@ class mcSchematicHandler implements FormatHandler {
         
         // 1. Validate
         if (!root.Width || !root.Height || !root.Length || !root.Palette || !root.BlockData) {
-            throw "Invalid Schematic file: Missing required size or block data tags.";
+            throw new Error("Invalid Schematic file: Missing required size or block data tags.");
         }
 
         const width = root.Width.valueOf();
@@ -310,7 +310,7 @@ class mcSchematicHandler implements FormatHandler {
                  value |= (currentByte & 127) << (varIntLength++ * 7);
                  byteIndex++;
                  if (varIntLength > 5) {
-                     throw "VarInt is too big";
+                     throw new RangeError(`VarInt is too big: ${varIntLength}`);
                  }
                  if ((currentByte & 128) !== 128) {
                      break;

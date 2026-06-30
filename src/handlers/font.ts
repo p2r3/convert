@@ -130,7 +130,7 @@ function svgToOtf(inputFile: FileData, decoder: TextDecoder) {
   const fontEl = doc.querySelector("font");
 
   if (!fontFace || !fontEl)
-    throw "Invalid SVG font format";
+    throw new Error("Invalid SVG font format");
 
   const unitsPerEm = Number(fontFace.getAttribute("units-per-em")) || 1000;
   const ascent = Number(fontFace.getAttribute("ascent")) || 800;
@@ -244,7 +244,7 @@ class fontHandler implements FormatHandler {
     inputFormat: FileFormat,
     outputFormat: FileFormat
   ): Promise<FileData[]> {
-    if (outputFormat.internal !== "svg" && outputFormat.internal !== "otf" && outputFormat.internal !== "woff2") throw "Invalid output format.";
+    if (outputFormat.internal !== "svg" && outputFormat.internal !== "otf" && outputFormat.internal !== "woff2") throw new TypeError(`Unsupported output format: ${outputFormat.internal}`);
 
     const outputFiles: FileData[] = [];
     const encoder = new TextEncoder();

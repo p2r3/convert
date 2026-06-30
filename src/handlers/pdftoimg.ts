@@ -37,7 +37,7 @@ class pdftoimgHandler implements FormatHandler {
     if (
       outputFormat.format !== "png"
       && outputFormat.format !== "jpeg"
-    ) throw "Invalid output format.";
+    ) throw new TypeError(`Unsupported output format: ${outputFormat.internal}`);
 
     const outputFiles: FileData[] = [];
 

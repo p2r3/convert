@@ -1,6 +1,7 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import CommonFormats, { Category } from "src/CommonFormats.ts";
 import JSZip from "jszip";
+import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
 class piskelHandler implements FormatHandler {
 
@@ -37,7 +38,7 @@ class piskelHandler implements FormatHandler {
         this.#canvas = document.createElement("canvas");
         const ctx = this.#canvas.getContext("2d");
         if (!ctx) {
-            throw new Error("Failed to create 2D rendering context.");
+            throw new InitializationError("Failed to create 2D rendering context.");
         }
         this.#ctx = ctx;
 
@@ -50,11 +51,11 @@ class piskelHandler implements FormatHandler {
         outputFormat: FileFormat
     ): Promise<FileData[]> {
         if (!this.ready || !this.#canvas || !this.#ctx) {
-            throw new Error("Handler not initialized!");
+            throw new InitializationError("Handler not initialized.");
         }
 
         if (!(inputFormat.internal === "piskel" && ["png", "zip"].includes(outputFormat.internal))) {
-            throw Error("Invalid input/output format.");
+            throw new TypeError(`Unsupported conversion path: ${inputFormat.internal} -> ${outputFormat.internal}`);
         }
 
         const outputFiles: FileData[] = [];
@@ -66,12 +67,12 @@ class piskelHandler implements FormatHandler {
 
             const version: number = contents.modelVersion;
             if (version !== 2) {
-                throw Error("Only version 2 piskel files are supported.");
+                throw new Error(`Only version 2 piskel files are supported. Found version of ${version}.`);
             }
 
             const layers: string[] = contents.piskel.layers;
             if (layers.length === 0) {
-                throw Error("No layers to convert.");
+                throw new RangeError("No layers to convert.");
             }
 
             const spriteWidth: number = contents.piskel.width;
