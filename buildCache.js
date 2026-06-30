@@ -9,15 +9,27 @@ if (await outputFile.exists()) {
   await outputFile.delete();
 }
 
-const server = Bun.serve({
-  async fetch (req) {
-    const path = new URL(req.url).pathname.replace("/convert/", "") || "index.html";
-    const file = Bun.file(`${__dirname}/dist/${path}`.replaceAll("..", ""));
-    if (!(await file.exists())) return new Response("Not Found", { status: 404 });
-    return new Response(file);
-  },
-  port: 8080
-});
+var server;
+var port = 8080;
+async function fetch (req) {
+  const path = new URL(req.url).pathname.replace("/convert/", "") || "index.html";
+  const file = Bun.file(`${__dirname}/dist/${path}`.replaceAll("..", ""));
+  if (!(await file.exists())) return new Response("Not Found", { status: 404 });
+  return new Response(file);
+}
+
+while (true) {
+  try {
+    server = Bun.serve({
+      port: port,
+      fetch: fetch
+    });
+    break;
+  } catch (err) {
+    if (err?.code !== "EADDRINUSE") throw err;
+    port++;
+  }
+}
 
 const browser = await puppeteer.launch({
   headless: "new",
@@ -33,7 +45,7 @@ await Promise.all([
       if (text === "Built initial format list.") resolve();
     });
   }),
-  page.goto("http://localhost:8080/convert/index.html")
+  page.goto(`http://localhost:${port}/convert/index.html`)
 ]);
 
 const cacheJSON = await page.evaluate((minify) => {
