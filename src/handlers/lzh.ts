@@ -15,7 +15,8 @@ import mime from "mime";
  * - Converting LZH/LHA archives to ZIP format
  * - Multiple compression methods (lh0, lh1, lh4, lh5, lh6, lh7)
  */
-class LZHHandler implements FormatHandler {
+ 
+export class LZHHandler implements FormatHandler {
   public name: string = "lzh";
   
   public supportedFormats: FileFormat[] = [
@@ -35,7 +36,7 @@ class LZHHandler implements FormatHandler {
     CommonFormats.JSON.builder("json").allowTo()
   ];
 
-  public supportAnyInput: boolean = true;
+  public supportAnyInput: boolean = false;
   public ready: boolean = false;
 
   async init() {
@@ -185,25 +186,6 @@ class LZHHandler implements FormatHandler {
           bytes: lzhData
         });
       }
-    } else if (outputFormat.internal === "lzh") {
-      // Convert multiple files to LZH/LHA archive
-      const filesToArchive: LHAFileInput[] = [];
-
-      for (const inputFile of inputFiles) {
-        filesToArchive.push({
-          filename: inputFile.name,
-          data: inputFile.bytes,
-          timestamp: new Date()
-        });
-      }
-
-      const encoder = new LZHEncoder();
-      const lzhData = encoder.create(filesToArchive);
-
-      outputFiles.push({
-        name: "archive." + outputFormat.extension,
-        bytes: lzhData
-      });
     } else {
       throw new Error(`Unsupported conversion: ${inputFormat.format} to ${outputFormat.format}`);
     }
@@ -212,4 +194,62 @@ class LZHHandler implements FormatHandler {
   }
 }
 
-export default LZHHandler;
+// Packs any input(s) into a singular LZH file. Separated for tree purposes.
+export class LZH2Handler implements FormatHandler {
+  public name: string = "lzh2";
+  
+  public supportedFormats: FileFormat[] = [
+    {
+      name: "LZH/LHA Archive",
+      format: "lzh",
+      extension: "lzh",
+      mime: "application/x-lzh-compressed",
+      from: false,
+      to: true,
+      internal: "lzh",
+      category: "archive",
+      lossless: true
+    },
+  ];
+
+  public supportAnyInput: boolean = true;
+  public ready: boolean = false;
+  
+  async init() {
+    this.ready = true;
+  }
+
+  async doConvert(
+    inputFiles: FileData[],
+    inputFormat: FileFormat,
+    outputFormat: FileFormat
+  ): Promise<FileData[]> {
+    
+    if (!this.ready) {
+      throw new Error("Handler not initialized");
+    }
+
+    const outputFiles: FileData[] = [];
+
+    // Convert multiple files to LZH/LHA archive
+    const filesToArchive: LHAFileInput[] = [];
+
+    for (const inputFile of inputFiles) {
+      filesToArchive.push({
+        filename: inputFile.name,
+        data: inputFile.bytes,
+        timestamp: new Date()
+      });
+    }
+
+    const encoder = new LZHEncoder();
+    const lzhData = encoder.create(filesToArchive);
+
+    outputFiles.push({
+      name: "archive." + outputFormat.extension,
+      bytes: lzhData
+    });
+    
+    return outputFiles;
+  }
+}
