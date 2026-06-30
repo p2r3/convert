@@ -75,9 +75,11 @@ body {
   display: flex;
   flex-flow: column nowrap;
   align-items: center;
-  width: 50vw;
+  flex: 1 1 0;
+  min-width: 0;
   min-height: 70vh;
-  padding: 0.8em 7em;
+  padding: 0.8em 3em;
+  box-sizing: border-box;
 }
 .format-container h2 {
   text-align: center;
@@ -87,8 +89,176 @@ body {
 #from-container {
   background-color: lightgray;
 }
+#via-container {
+  background-color: #ececec;
+  flex: 0.6 1 0;
+  padding: 0.8em 1.5em;
+  min-width: 180px;
+}
 #to-container {
   background-color: rgb(184, 184, 184);
+}
+
+.via-optional {
+  font-weight: normal;
+  font-size: 0.8em;
+  opacity: 0.6;
+}
+
+.via-hint {
+  font-size: 0.8rem;
+  color: #555;
+  text-align: center;
+  margin: -12px 0 14px;
+  font-style: italic;
+}
+
+#via-list {
+  display: flex;
+  flex-flow: column nowrap;
+  align-items: stretch;
+  gap: 6px;
+  width: 100%;
+  min-height: 60px;
+  padding: 12px;
+  background-color: white;
+  border-radius: 10px;
+  box-sizing: border-box;
+  margin-bottom: 12px;
+}
+#via-list:empty::before {
+  content: "No waypoints — will convert directly";
+  color: #888;
+  font-style: italic;
+  text-align: center;
+  font-size: 0.9rem;
+  align-self: center;
+  margin: auto;
+}
+
+.via-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--highlight-color);
+  color: white;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-family: monospace;
+  font-weight: bold;
+  word-break: break-word;
+  animation: chipIn 0.15s ease;
+}
+@keyframes chipIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.via-chip-label {
+  flex: 1;
+  text-align: left;
+}
+.via-chip-step {
+  opacity: 0.6;
+  font-size: 0.75em;
+  margin-right: 8px;
+  font-weight: normal;
+  background: rgba(255,255,255,0.2);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+.via-chip-remove {
+  background: transparent;
+  border: 0;
+  color: white;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0 4px 0 8px;
+  line-height: 1;
+  border-radius: 4px;
+  transition: background-color 0.12s ease;
+}
+.via-chip-remove:hover {
+  background-color: rgba(255,255,255,0.25);
+}
+
+#via-controls {
+  display: flex;
+  flex-flow: column nowrap;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+}
+
+#add-via,
+#round-trip {
+  font-size: 0.95rem;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  background-color: white;
+  color: var(--highlight-color);
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 3px 0 0 rgba(169, 169, 169, 0.4);
+  transition: background-color 0.15s ease;
+}
+#add-via:hover,
+#round-trip:hover {
+  background-color: #f0f4ff;
+}
+#add-via:active,
+#round-trip:active {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 0;
+}
+
+.via-toggle {
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+  padding: 4px 0;
+}
+
+#via-picker {
+  border: 0;
+  border-radius: 12px;
+  padding: 0;
+  max-width: 600px;
+  width: 90vw;
+  max-height: 80vh;
+}
+#via-picker::backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+.via-picker-inner {
+  display: flex;
+  flex-flow: column nowrap;
+  padding: 20px;
+  gap: 10px;
+  max-height: 80vh;
+  box-sizing: border-box;
+}
+.via-picker-inner h2 {
+  margin: 0 0 5px 0;
+  text-align: center;
+}
+.via-picker-inner .format-list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  margin-bottom: 0;
+}
+#via-picker-cancel {
+  font-size: 1rem;
+  padding: 10px 20px;
+  border: 0;
+  border-radius: 10px;
+  background-color: lightgray;
+  color: black;
+  cursor: pointer;
+  align-self: center;
 }
 
 .search {
@@ -123,6 +293,10 @@ body {
   font-family: monospace;
   word-break: break-word;
   cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.format-list button:hover:not(.selected) {
+  background-color: #c0c0c0;
 }
 
 button.selected {
