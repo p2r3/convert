@@ -203,6 +203,8 @@ async function buildOptionList () {
   ui.inputList.innerHTML = "";
   ui.outputList.innerHTML = "";
 
+  const seenInputKeys = new Set<string>();
+  const seenOutputKeys = new Set<string>();
   for (const handler of handlers) {
     if (!window.supportedFormatCache.has(handler.name)) {
       console.warn(`Cache miss for formats of handler "${handler.name}".`);
@@ -228,14 +230,9 @@ async function buildOptionList () {
       // In simple mode, display each input/output format only once
       let addToInputs = true, addToOutputs = true;
       if (simpleMode) {
-        addToInputs = !Array.from(ui.inputList.children).some(c => {
-          const currFormat = allOptions[parseInt(c.getAttribute("format-index") || "")]?.format;
-          return currFormat?.mime === format.mime && currFormat?.format === format.format;
-        });
-        addToOutputs = !Array.from(ui.outputList.children).some(c => {
-          const currFormat = allOptions[parseInt(c.getAttribute("format-index") || "")]?.format;
-          return currFormat?.mime === format.mime && currFormat?.format === format.format;
-        });
+        const dedupeKey = `${format.mime}|${format.format}`;
+        addToInputs = !seenInputKeys.has(dedupeKey);
+        addToOutputs = !seenOutputKeys.has(dedupeKey);
         if ((!format.from || !addToInputs) && (!format.to || !addToOutputs)) continue;
       }
 
@@ -271,11 +268,13 @@ async function buildOptionList () {
       };
 
       if (format.from && addToInputs) {
+        if (simpleMode) seenInputKeys.add(`${format.mime}|${format.format}`);
         const clone = newOption.cloneNode(true) as HTMLButtonElement;
         clone.onclick = clickHandler;
         ui.inputList.appendChild(clone);
       }
       if (format.to && addToOutputs) {
+        if (simpleMode) seenOutputKeys.add(`${format.mime}|${format.format}`);
         const clone = newOption.cloneNode(true) as HTMLButtonElement;
         clone.onclick = clickHandler;
         ui.outputList.appendChild(clone);
