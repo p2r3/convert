@@ -2,6 +2,7 @@ import { afterAll, expect, test } from "bun:test";
 import puppeteer from "puppeteer";
 import type { FileData, FormatHandler, FileFormat, ConvertPathNode } from "../src/FormatHandler.js";
 import CommonFormats from "../src/CommonFormats.js";
+import { decodeImageText } from "../src/handlers/imageTextCodec.ts";
 
 declare global {
   interface Window {
@@ -103,6 +104,78 @@ test("png → svg", async () => {
   expect(conversion).toBeTruthy();
   expect(conversion!.path.map(c => c.format.mime)).toEqual(["image/png", "image/svg+xml"]);
 
+}, { timeout: 60000 });
+
+test("png → tagged txt → png preserves dimensions and grayscale pixels", async () => {
+  const roundTrip = await page.evaluate(async (pngFormat, textFormat) => {
+    const source: FileData[] = [{
+      bytes: await fetch("/test/colors_50x50.png").then(r => r.bytes()),
+      name: "colors_50x50.png",
+    }];
+    const node = (format: FileFormat): ConvertPathNode => ({
+      format,
+      handler: { name: "test" } as FormatHandler,
+    });
+
+    const textConversion = await window.tryConvertByTraversing(
+      source,
+      node(pngFormat),
+      node(textFormat),
+    );
+    if (!textConversion) return null;
+
+    const imageConversion = await window.tryConvertByTraversing(
+      textConversion.files,
+      node(textFormat),
+      node(pngFormat),
+    );
+    if (!imageConversion) return null;
+
+    const imageBlob = new Blob([imageConversion.files[0].bytes as BlobPart], { type: "image/png" });
+    const imageUrl = URL.createObjectURL(imageBlob);
+    const image = new Image();
+    try {
+      await new Promise<void>((resolve, reject) => {
+        image.addEventListener("load", () => resolve());
+        image.addEventListener("error", () => reject(new Error("round-trip PNG failed to load")));
+        image.src = imageUrl;
+      });
+
+      const canvas = document.createElement("canvas");
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("round-trip canvas context unavailable");
+      context.drawImage(image, 0, 0);
+      const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+      let isGrayscale = true;
+      for (let index = 0; index < pixels.length; index += 4) {
+        if (pixels[index] !== pixels[index + 1] || pixels[index] !== pixels[index + 2]) {
+          isGrayscale = false;
+          break;
+        }
+      }
+
+      return {
+        text: new TextDecoder().decode(textConversion.files[0].bytes),
+        width: canvas.width,
+        height: canvas.height,
+        isGrayscale,
+      };
+    } finally {
+      URL.revokeObjectURL(imageUrl);
+    }
+  }, CommonFormats.PNG, CommonFormats.TEXT);
+
+  expect(roundTrip).toBeTruthy();
+  expect(roundTrip!.width).toBe(50);
+  expect(roundTrip!.height).toBe(50);
+  expect(roundTrip!.isGrayscale).toBe(true);
+
+  const decodedText = decodeImageText(roundTrip!.text);
+  expect(decodedText?.width).toBe(50);
+  expect(decodedText?.height).toBe(50);
+  expect(decodedText?.pixels.length).toBe(50 * 50 * 4);
 }, { timeout: 60000 });
 
 test("mp4 → apng", async () => {
