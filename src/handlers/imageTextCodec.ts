@@ -1,4 +1,5 @@
-export const IMAGE_TEXT_MARKER = "CONVERT.TO.IT IMAGE TEXT V1";
+export const IMAGE_TEXT_MARKER = "␞ CONVERT.TO.IT IMAGE TEXT V1 ␞";
+export const IMAGE_TEXT_END_MARKER = "␟ END CONVERT.TO.IT IMAGE TEXT V1 ␟";
 
 /** Ordered from darkest to lightest. Every entry is a visible ASCII character. */
 export const INTENSITY_PALETTE = "@%#*+=-:.";
@@ -14,7 +15,7 @@ export interface DecodedImageText {
   width: number;
   height: number;
   /** RGBA pixels with an opaque alpha channel, row-major. */
-  pixels: Uint8ClampedArray;
+  pixels: Uint8ClampedArray<ArrayBuffer>;
 }
 
 export class ImageTextDecodeError extends Error {
@@ -75,7 +76,7 @@ export function rgbaToGrayscale(red: number, green: number, blue: number, alpha:
   return Math.round(opaqueIntensity * opacity + 255 * (1 - opacity));
 }
 
-export function encodeImageText(image: GrayscaleImage): string {
+export function encodeImageText(image: GrayscaleImage, preview = ""): string {
   const pixelCount = validateDimensions(image.width, image.height);
   if (image.pixels.length !== pixelCount) {
     throw new TypeError(`Image text pixel data must contain ${pixelCount} values.`);
@@ -90,12 +91,16 @@ export function encodeImageText(image: GrayscaleImage): string {
     rows.push(row);
   }
 
-  return [
+  const payload = [
     IMAGE_TEXT_MARKER,
     `width=${image.width}`,
     `height=${image.height}`,
     ...rows,
+    IMAGE_TEXT_END_MARKER,
   ].join("\n");
+
+  if (!preview) return payload;
+  return preview + (preview.endsWith("\n") ? "" : "\n") + payload;
 }
 
 function parseDimension(line: string | undefined, name: "width" | "height"): number {
@@ -112,21 +117,38 @@ function parseDimension(line: string | undefined, name: "width" | "height"): num
 }
 
 /**
- * Returns null for ordinary text. A payload with our marker is strict: a
- * malformed header or row throws instead of silently becoming a screenshot.
+ * Returns null for ordinary text. The paired non-ASCII frame cannot be emitted
+ * by the ASCII preview. Once a complete trailing frame is found, malformed
+ * metadata or rows are rejected instead of silently becoming a screenshot.
  */
 export function decodeImageText(text: string): DecodedImageText | null {
   const lines = text.replace(/\r\n?/g, "\n").split("\n");
-  if (lines[0] !== IMAGE_TEXT_MARKER) return null;
+  const markerIndex = lines.indexOf(IMAGE_TEXT_MARKER);
+  if (markerIndex < 0) return null;
 
-  const width = parseDimension(lines[1], "width");
-  const height = parseDimension(lines[2], "height");
+  const endMarkerIndex = lines.indexOf(IMAGE_TEXT_END_MARKER, markerIndex + 1);
+  const payloadLike =
+    lines[markerIndex + 1]?.startsWith("width=") ||
+    lines[markerIndex + 2]?.startsWith("height=") ||
+    endMarkerIndex >= 0;
+  if (!payloadLike) return null;
+
+  if (endMarkerIndex < 0) {
+    throw new ImageTextDecodeError("missing end marker.");
+  }
+
+  // One final line break is harmless and common in text editors, but no
+  // non-empty content or additional lines may follow the completed frame.
+  const trailingLines = lines.slice(endMarkerIndex + 1);
+  if (trailingLines.length > 1 || (trailingLines.length === 1 && trailingLines[0] !== "")) {
+    throw new ImageTextDecodeError("unexpected content after end marker.");
+  }
+
+  const width = parseDimension(lines[markerIndex + 1], "width");
+  const height = parseDimension(lines[markerIndex + 2], "height");
   const pixelCount = validateDimensions(width, height);
-  const rows = lines.slice(3);
+  const rows = lines.slice(markerIndex + 3, endMarkerIndex);
 
-  // A final line break is harmless and common in text editors, but no other
-  // extra rows are accepted because row count is part of the image metadata.
-  if (rows[rows.length - 1] === "") rows.pop();
   if (rows.length !== height) {
     throw new ImageTextDecodeError(`expected ${height} pixel rows, found ${rows.length}.`);
   }
@@ -138,7 +160,7 @@ export function decodeImageText(text: string): DecodedImageText | null {
     }
   }
 
-  let pixels: Uint8ClampedArray;
+  let pixels: Uint8ClampedArray<ArrayBuffer>;
   try {
     pixels = new Uint8ClampedArray(pixelCount * 4);
   } catch (_) {

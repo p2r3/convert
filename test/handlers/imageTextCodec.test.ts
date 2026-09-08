@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import {
+  IMAGE_TEXT_END_MARKER,
   IMAGE_TEXT_MARKER,
   INTENSITY_PALETTE,
   characterToIntensity,
@@ -8,13 +9,19 @@ import {
   intensityToCharacter,
 } from "../../src/handlers/imageTextCodec.ts";
 
-test("image text preserves dimensions and one intensity character per pixel", () => {
+test("image text preserves preview, dimensions, and one intensity character per pixel", () => {
   const source = Uint8Array.from([0, 32, 128, 200, 255, 17]);
-  const text = encodeImageText({ width: 3, height: 2, pixels: source });
+  const preview = "ASCII preview\n._-+*#@\n";
+  const text = encodeImageText({ width: 3, height: 2, pixels: source }, preview);
   const lines = text.split("\n");
-  const rows = lines.slice(3);
+  const markerIndex = lines.indexOf(IMAGE_TEXT_MARKER);
+  const endMarkerIndex = lines.indexOf(IMAGE_TEXT_END_MARKER);
+  const rows = lines.slice(markerIndex + 3, endMarkerIndex);
 
-  expect(lines.slice(0, 3)).toEqual([
+  expect(text.startsWith(preview)).toBe(true);
+  expect(markerIndex).toBeGreaterThan(0);
+  expect(endMarkerIndex).toBe(lines.length - 1);
+  expect(lines.slice(markerIndex, markerIndex + 3)).toEqual([
     IMAGE_TEXT_MARKER,
     "width=3",
     "height=2",
@@ -40,10 +47,16 @@ test("image text accepts editor line endings and leaves ordinary text untagged",
 
   expect(decodeImageText(text.replaceAll("\n", "\r\n"))).toBeTruthy();
   expect(decodeImageText("ordinary text\nwith multiple lines")).toBeNull();
+  expect(decodeImageText(`notes before\n${IMAGE_TEXT_MARKER}\nthis is still ordinary text`)).toBeNull();
+  expect(decodeImageText("CONVERT.TO.IT IMAGE TEXT V1\nwidth=1\nheight=1\n@")).toBeNull();
 });
 
 test("malformed tagged image text is rejected", () => {
-  expect(() => decodeImageText(`${IMAGE_TEXT_MARKER}\nwidth=2\nheight=1\n@`)).toThrow();
-  expect(() => decodeImageText(`${IMAGE_TEXT_MARKER}\nwidth=2\nheight=1\n@x`)).toThrow();
-  expect(() => decodeImageText(`${IMAGE_TEXT_MARKER}\nwidth=9007199254740991\nheight=1\n@`)).toThrow(/pixel row 1/);
+  expect(() => decodeImageText(`${IMAGE_TEXT_MARKER}\nwidth=2\nheight=1\n@\n${IMAGE_TEXT_END_MARKER}`)).toThrow();
+  expect(() => decodeImageText(`${IMAGE_TEXT_MARKER}\nwidth=2\nheight=1\n@x\n${IMAGE_TEXT_END_MARKER}`)).toThrow();
+  expect(() => decodeImageText(`${IMAGE_TEXT_MARKER}\nwidth=9007199254740991\nheight=1\n@\n${IMAGE_TEXT_END_MARKER}`)).toThrow(/pixel row 1/);
+
+  const valid = encodeImageText({ width: 1, height: 1, pixels: Uint8Array.of(0) });
+  expect(() => decodeImageText(valid.replace(`\n${IMAGE_TEXT_END_MARKER}`, ""))).toThrow(/missing end marker/);
+  expect(() => decodeImageText(`${valid}\ntrailing`)).toThrow(/unexpected content after end marker/);
 });

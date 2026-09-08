@@ -2,7 +2,7 @@ import { afterAll, expect, test } from "bun:test";
 import puppeteer from "puppeteer";
 import type { FileData, FormatHandler, FileFormat, ConvertPathNode } from "../src/FormatHandler.js";
 import CommonFormats from "../src/CommonFormats.js";
-import { decodeImageText } from "../src/handlers/imageTextCodec.ts";
+import { IMAGE_TEXT_MARKER, decodeImageText } from "../src/handlers/imageTextCodec.ts";
 
 declare global {
   interface Window {
@@ -171,6 +171,10 @@ test("png → tagged txt → png preserves dimensions and grayscale pixels", asy
   expect(roundTrip!.width).toBe(50);
   expect(roundTrip!.height).toBe(50);
   expect(roundTrip!.isGrayscale).toBe(true);
+
+  const markerIndex = roundTrip!.text.indexOf(IMAGE_TEXT_MARKER);
+  expect(markerIndex).toBeGreaterThan(0);
+  expect(roundTrip!.text.slice(0, markerIndex).trim().length).toBeGreaterThan(0);
 
   const decodedText = decodeImageText(roundTrip!.text);
   expect(decodedText?.width).toBe(50);
