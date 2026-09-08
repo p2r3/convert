@@ -1,15 +1,6 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import CommonFormats, { Category } from "src/CommonFormats.ts";
 
-const INFINITE_CRAFT = {
-    name: "Infinite Craft Save File",
-    format: "ic",
-    extension: "ic",
-    mime: "application/x-infinite-craft-ic",
-    internal: "ic",
-    category: Category.ARCHIVE,
-};
-
 class txtToInfiniteCraftHandler implements FormatHandler {
 
     public name: string = "txtToInfiniteCraft";
@@ -19,7 +10,13 @@ class txtToInfiniteCraftHandler implements FormatHandler {
     async init () {
         this.supportedFormats = [
             CommonFormats.TEXT.supported("text", true, false),
-            {...INFINITE_CRAFT, 
+            {
+                name: "Infinite Craft Save File",
+                format: "ic",
+                extension: "ic",
+                mime: "application/x-infinite-craft-ic",
+                internal: "ic",
+                category: Category.ARCHIVE,
                 from: false,
                 to: true,
                 lossless: false
@@ -91,7 +88,13 @@ class infiniteCraftToJsonHandler implements FormatHandler {
 
     async init() {
         this.supportedFormats = [
-            {...INFINITE_CRAFT, 
+            {
+                name: "Infinite Craft Save File",
+                format: "ic",
+                extension: "ic",
+                mime: "application/x-infinite-craft-ic",
+                internal: "ic",
+                category: Category.ARCHIVE,
                 from: true,
                 to: false,
                 lossless: true
@@ -110,10 +113,10 @@ class infiniteCraftToJsonHandler implements FormatHandler {
         if (inputFormat.internal !== "ic" || outputFormat.internal !== "json") {
             throw new TypeError(`Unsupported conversion path: ${inputFormat.internal} -> ${outputFormat.internal}`);
         }
-    
+
         const decoder = new TextDecoder("utf-8", { fatal: true });
         const encoder = new TextEncoder();
-    
+
         return Promise.all(inputFiles.map(async (inputFile) => {
             if (
                 inputFile.bytes.length < 2
@@ -122,12 +125,12 @@ class infiniteCraftToJsonHandler implements FormatHandler {
             ) {
                 throw new Error("Invalid IC file: expected gzip-compressed data.");
             }
-    
+
             const decompressedStream = new Blob([inputFile.bytes as BlobPart])
             .stream()
             .pipeThrough(new DecompressionStream("gzip"));
             const decompressedBytes = new Uint8Array(await new Response(decompressedStream).arrayBuffer());
-    
+
             let json: string;
             try {
                 json = decoder.decode(decompressedBytes);
@@ -139,12 +142,12 @@ class infiniteCraftToJsonHandler implements FormatHandler {
             } else if (!json.trimStart().startsWith("{")) {
                 throw new Error("Invalid IC file: decompressed data is not JSON.");
             }
-    
+
             const baseNameParts = inputFile.name.split(".");
             const baseName = baseNameParts.length > 1
                 ? baseNameParts.slice(0, -1).join(".")
                 : inputFile.name;
-    
+
             return {
                 name: `${baseName}.json`,
                 bytes: encoder.encode(json)
@@ -153,24 +156,5 @@ class infiniteCraftToJsonHandler implements FormatHandler {
     }
 
 }
-
-// What an IC file roughly looks like, for future reference:
-// (apart from the gzip encoding)
-//* {
-//*     "name":"Save 1 (main)",
-//*     "version":"1.0",
-//*     "created": "<number>",
-//*     "updated": "<number>",
-//*     "instances": [
-//*         {"itemId":89,"x":-5056,"y":2178},
-//*         ...
-//*     ],
-//*     "items":[
-//*         {"id":0,"text":"Water","emoji":"💧","recipes":[[1595,1]]},
-//*         {"id":1,"text":"Fire","emoji":"🔥","recipes":[[24,25],[24,54],[246,54]]},
-//*         ...
-//*         id increments I think
-//*     ]
-//* }
 
 export {txtToInfiniteCraftHandler, infiniteCraftToJsonHandler};
