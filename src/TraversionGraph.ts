@@ -147,10 +147,13 @@ export class TraversionGraph {
         // rebuild lookup caches
         this.nodeIndexByIdentifier.clear();
         this.handlerByName = new Map(handlers.map(h => [h.name, h]));
-        this.formatPriorityByHandler = new Map(handlers.map(h => [
-            h.name,
-            new Map((h.supportedFormats ?? []).map((f, i) => [f.mime, i]))
-        ]));
+        this.formatPriorityByHandler = new Map(handlers.map(h => {
+            const priorities = new Map<string, number>();
+            (h.supportedFormats ?? []).forEach((f, i) => {
+                if (!priorities.has(f.mime)) priorities.set(f.mime, i);
+            });
+            return [h.name, priorities];
+        }));
         this.handlerPairs = new Map<string, string>(
             this.categoryChangeCosts
                 .filter(c => c.handler)
