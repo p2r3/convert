@@ -28,6 +28,7 @@ interface BBModelGroup extends BBModelNodeBase {
 
 interface BBModelFace {
   enabled?: boolean;
+  texture?: string | number | null;
 }
 
 interface BBModelCube extends BBModelNodeBase {
@@ -66,12 +67,12 @@ function toVector3(input?: number[]) {
   return new THREE.Vector3(input?.[0] ?? 0, input?.[1] ?? 0, input?.[2] ?? 0);
 }
 
-function toEuler(input?: number[]) {
+function toEuler(input?: number[], order: THREE.EulerOrder = "ZYX") {
   return new THREE.Euler(
     THREE.MathUtils.degToRad(input?.[0] ?? 0),
     THREE.MathUtils.degToRad(input?.[1] ?? 0),
     THREE.MathUtils.degToRad(input?.[2] ?? 0),
-    "XYZ"
+    order
   );
 }
 
@@ -111,7 +112,7 @@ function createCubeGeometry(element: BBModelCube) {
   const visibleIndices: number[] = [];
   for (const faceName of cubeFaces) {
     const face = element.faces?.[faceName];
-    if (face === null || face?.enabled === false) continue;
+    if (face === null || face?.enabled === false || face?.texture === null) continue;
     const group = geometry.groups[cubeFaces.indexOf(faceName)];
     for (let i = group.start; i < group.start + group.count; i++) {
       visibleIndices.push(index.array[i]);
@@ -172,7 +173,10 @@ function createMeshGeometry(element: BBModelMesh) {
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
   geometry.setIndex(indices);
-  geometry.applyMatrix4(createPivotMatrix(element.origin, element.rotation));
+  // Mesh vertices are local to their origin, unlike cube coordinates.
+  geometry.applyMatrix4(new THREE.Matrix4().makeRotationFromEuler(toEuler(element.rotation, "XYZ")));
+  const origin = toVector3(element.origin);
+  geometry.translate(origin.x, origin.y, origin.z);
   geometry.computeVertexNormals();
   return geometry;
 }
