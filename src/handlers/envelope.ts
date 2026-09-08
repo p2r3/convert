@@ -64,7 +64,7 @@ class envelopeHandler implements FormatHandler {
     outputFormat: FileFormat
   ): Promise<FileData[]> {
 
-    if (outputFormat.internal !== "html") throw "Invalid output format.";
+    if (outputFormat.internal !== "html") throw new TypeError(`Unsupported output format: ${outputFormat.internal}`);
 
     let parser: (bytes: Uint8Array) => Promise<string>;
     switch (inputFormat.internal) {
@@ -74,7 +74,7 @@ class envelopeHandler implements FormatHandler {
       case "docx": parser = parseDOCX; break;
       case "pptx": parser = parsePPTX; break;
       case "xlsx": parser = parseXLSX; break;
-      default: throw "Invalid input format.";
+      default: throw new TypeError(`Unsupported input format: ${inputFormat.internal}`);
     }
 
     const outputFiles: FileData[] = [];

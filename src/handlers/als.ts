@@ -32,7 +32,7 @@ class alsHandler implements FormatHandler {
     outputFormat: FileFormat
   ): Promise<FileData[]> {
     if (inputFormat.internal !== "als" || outputFormat.internal !== "xml") {
-      throw "Invalid conversion path.";
+      throw new TypeError(`Unsupported conversion path: ${inputFormat.internal} -> ${outputFormat.internal}`);
     }
 
     const decoder = new TextDecoder("utf-8", { fatal: true });
@@ -44,7 +44,7 @@ class alsHandler implements FormatHandler {
         || inputFile.bytes[0] !== 0x1f
         || inputFile.bytes[1] !== 0x8b
       ) {
-        throw "Invalid ALS file: expected gzip-compressed data.";
+        throw new Error("Invalid ALS file: expected gzip-compressed data.");
       }
 
       const decompressedStream = new Blob([inputFile.bytes as BlobPart])
@@ -56,10 +56,10 @@ class alsHandler implements FormatHandler {
       try {
         xml = decoder.decode(decompressedBytes);
       } catch (_) {
-        throw "Invalid ALS file: decompressed data is not UTF-8 XML.";
+        throw new Error("Invalid ALS file: decompressed data is not UTF-8 XML.");
       }
       if (!xml.trimStart().startsWith("<")) {
-        throw "Invalid ALS file: decompressed data is not XML.";
+        throw new Error("Invalid ALS file: decompressed data is not XML.");
       }
 
       const baseNameParts = inputFile.name.split(".");

@@ -36,7 +36,7 @@ class htmlEmbedHandler implements FormatHandler {
     outputFormat: FileFormat
   ): Promise<FileData[]> {
 
-    if (outputFormat.internal !== "html") throw "Invalid output format.";
+    if (outputFormat.internal !== "html") throw new TypeError(`Unsupported output format: ${outputFormat.internal}`);
 
     const encoder = new TextEncoder();
     let html = "";

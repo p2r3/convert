@@ -3,6 +3,8 @@ import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 
 import { QOIDecoder, QOIEncoder } from "qoi-fu";
 
+import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
+
 class qoiFuHandler implements FormatHandler {
 
   public name: string = "qoi-fu";
@@ -32,7 +34,7 @@ class qoiFuHandler implements FormatHandler {
   async init () {
     this.#canvas = document.createElement("canvas");
     const ctx = this.#canvas.getContext("2d");
-    if (!ctx) throw "Failed to create 2D rendering context.";
+    if (!ctx) throw new InitializationError("Failed to create 2D rendering context.");
     this.#ctx = ctx;
     this.ready = true;
   }
@@ -76,7 +78,7 @@ class qoiFuHandler implements FormatHandler {
   ): Promise<FileData[]> {
 
     if (!this.#canvas || !this.#ctx) {
-      throw "Handler not initialized.";
+      throw new InitializationError("Handler not initialized.");
     }
 
     const outputFiles: FileData[] = [];
@@ -85,7 +87,7 @@ class qoiFuHandler implements FormatHandler {
     const outputIsQOI = (outputFormat.internal === "qoi");
 
     if (inputIsQOI === outputIsQOI) {
-      throw "Invalid input/output format.";
+      throw new TypeError(`Unsupported conversion path: ${inputFormat.internal} -> ${outputFormat.internal}`);
     }
 
     if (outputIsQOI) {
@@ -115,7 +117,7 @@ class qoiFuHandler implements FormatHandler {
 
         const qoiEncoder = new QOIEncoder();
         const success = qoiEncoder.encode(width, height, pixelBuffer, true, false);
-        if (!success) throw `Failed to encode QOI image "${inputFile.name}".`;
+        if (!success) throw new Error(`Failed to encode QOI image "${inputFile.name}".`);
 
         const bytesSize = qoiEncoder.getEncodedSize();
         const bytes = new Uint8Array(qoiEncoder.getEncoded().slice(0, bytesSize));
@@ -129,7 +131,7 @@ class qoiFuHandler implements FormatHandler {
 
         const qoiDecoder = new QOIDecoder();
         const success = qoiDecoder.decode(inputFile.bytes, inputFile.bytes.length);
-        if (!success) throw `Failed to decode QOI image "${inputFile.name}".`;
+        if (!success) throw new Error(`Failed to decode QOI image "${inputFile.name}".`);
 
         const width = qoiDecoder.getWidth();
         const height = qoiDecoder.getHeight();

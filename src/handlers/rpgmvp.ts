@@ -36,7 +36,7 @@ class rpgmvpHandler implements FormatHandler {
         const outputFiles: FileData[] = [];
 
         if (inputFormat.internal !== "rpgmvp" || outputFormat.internal !== "png") {
-            throw Error("Invalid input/output format.");
+            throw new TypeError(`Unsupported conversion path: ${inputFormat.internal} -> ${outputFormat.internal}`);
         }
 
         for (const inputFile of inputFiles) {

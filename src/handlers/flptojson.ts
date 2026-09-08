@@ -52,7 +52,7 @@ class flptojsonHandler implements FormatHandler {
   ): Promise<FileData[]> {
 
     if (outputFormat.format !== "json") {
-      throw new Error("Invalid output format. Only JSON is supported.");
+      throw new TypeError(`Unsupported output format ${outputFormat.format}. Only JSON is supported.`);
     }
 
     const outputFiles: FileData[] = [];

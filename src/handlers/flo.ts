@@ -134,7 +134,7 @@ async function decodeWithFFmpeg(
     for (let i = 0; i < count; i++)
       samples[i] = dv.getInt16(i * 2, true) / 0x7fff;
   } else {
-    throw new Error("Unsupported WAV bit depth: " + bitsPerSample);
+    throw new Error(`Unsupported WAV bit depth: ${bitsPerSample}`);
   }
   return { samples, sampleRate, channels };
 }
@@ -241,7 +241,7 @@ class floHandler implements FormatHandler {
     outputFormat: FileFormat,
     args?: string[],
   ): Promise<FileData[]> {
-    if (!inputFiles || inputFiles.length === 0) throw "No input files";
+    if (!inputFiles || inputFiles.length === 0) throw new RangeError("No input files.");
     const file = inputFiles[0];
     const baseName = (() => {
       const idx = file.name.lastIndexOf('.');
@@ -289,7 +289,7 @@ class floHandler implements FormatHandler {
         return [{ bytes: new Uint8Array(file.bytes), name: file.name }];
       }
 
-      throw `floHandler: unsupported target ${outputFormat.format}`;
+      throw new TypeError(`floHandler: unsupported target ${outputFormat.format}`);
     }
 
     // Inputs -> FLO
@@ -326,7 +326,7 @@ class floHandler implements FormatHandler {
       return [{ bytes: new Uint8Array(file.bytes), name: file.name }];
     }
 
-    throw `floHandler: unsupported conversion ${inputFormat.format} -> ${outputFormat.format}`;
+    throw new TypeError(`floHandler: unsupported conversion ${inputFormat.format} -> ${outputFormat.format}`);
   }
 }
 

@@ -907,7 +907,7 @@ class terrariaWldHandler implements FormatHandler {
         const outputFiles: FileData[] = [];
 
         if (inputFormat.internal !== "wld" || outputFormat.internal !== "png") {
-            throw Error("Invalid input/output format.");
+            throw new TypeError(`Unsupported conversion path: ${inputFormat.internal} -> ${outputFormat.internal}`);
         }
 
         const reader = new FileReader();

@@ -44,7 +44,7 @@ class peToZipHandler implements FormatHandler {
   ): Promise<FileData[]> {
 
     if (outputFormat.format !== "zip") {
-      throw new Error("Invalid output format. Only ZIP is supported.");
+      throw new TypeError(`Unsupported output format of ${outputFormat.format}. Only ZIP is supported.`);
     }
 
     const outputFiles: FileData[] = [];

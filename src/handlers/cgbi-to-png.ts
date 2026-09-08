@@ -8,7 +8,7 @@ async function revertCgBIBuffer(input: Uint8Array | ArrayBuffer): Promise<Uint8A
   const PNG_SIGNATURE = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
   for (let i = 0; i < 8; i++) {
     if (buffer[i] !== PNG_SIGNATURE[i]) {
-      throw "Not a PNG file";
+      throw new Error("Not a PNG file");
     }
   }
 
@@ -173,7 +173,7 @@ class cgbiToPngHandler implements FormatHandler {
     _args?: string[]
   ): Promise<FileData[]> {
     if (inputFormat.internal !== "cgbi-png" || outputFormat.internal !== "png") {
-      throw `Unsupported conversion: ${inputFormat.internal} → ${outputFormat.internal}`;
+      throw new TypeError(`Unsupported conversion: ${inputFormat.internal} → ${outputFormat.internal}`);
     }
 
     const outputFiles: FileData[] = [];
@@ -191,7 +191,7 @@ class cgbiToPngHandler implements FormatHandler {
           name: outputName
         });
       } catch (error) {
-        throw `Failed to convert ${inputFile.name}: ${(error as Error).message}`;
+        throw new Error(`Failed to convert ${inputFile.name}: ${(error as Error).message}`);
       }
     }
 

@@ -1,7 +1,9 @@
 // file: bunburrows.ts
 
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
+
 import CommonFormats, { Category } from "src/CommonFormats.ts";
+import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
 const COLOR_WALKABLE = [0,0,0];
 const COLOR_BREAKABLE = [98,135,64];
@@ -47,7 +49,7 @@ class bunburrowsHandler implements FormatHandler {
         const outputFiles: FileData[] = [];
 
         if (!this.#canvas || !this.#ctx) {
-            throw "Handler not initialized.";
+            throw new InitializationError("Handler not initialized.");
         }
         
         for (const file of inputFiles) {
@@ -71,7 +73,7 @@ class bunburrowsHandler implements FormatHandler {
 
                 // Safety check
                 if (level_data_array.length < tiles_wide*tiles_high) {
-                    throw new Error("Invalid level file.");
+                    throw new RangeError(`Invalid level file produced bad length: ${level_data_array.length}`);
                 }
 
                 // Determine color per-pixel
@@ -246,7 +248,7 @@ class bunburrowsHandler implements FormatHandler {
                 });
             }
             else {
-                throw new Error("Invalid input-output.");
+                throw new TypeError(`Unsupported conversion path: ${inputFormat.internal} -> ${outputFormat.internal}`);
             }
 
             outputFiles.push({

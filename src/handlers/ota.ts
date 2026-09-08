@@ -1,7 +1,9 @@
 // file: ota.ts
 
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
+
 import CommonFormats, { Category } from "src/CommonFormats.ts";
+import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
 class otaHandler implements FormatHandler {
 
@@ -42,7 +44,7 @@ class otaHandler implements FormatHandler {
         const outputFiles: FileData[] = [];
         
         if (!this.#canvas || !this.#ctx) {
-            throw "Handler not initialized.";
+            throw new InitializationError("Handler not initialized.");
         }
         
         if (inputFormat.internal === "ota" && outputFormat.mime === CommonFormats.PNG.mime) {
@@ -161,7 +163,7 @@ class otaHandler implements FormatHandler {
             }
         }
         else {
-            throw new Error("Invalid input-output.");
+            throw new TypeError(`Unsupported conversion path: ${inputFormat.internal} -> ${outputFormat.internal}`);
         }
     
         return outputFiles;

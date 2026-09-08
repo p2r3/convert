@@ -114,7 +114,7 @@ class nbtHandler implements FormatHandler {
         }
 
         if (outputFiles.length === 0) {
-            throw new Error(`nbtHandler does not support route: ${inputFormat.internal} -> ${outputFormat.internal}`);
+            throw new TypeError(`nbtHandler does not support route: ${inputFormat.internal} -> ${outputFormat.internal}`);
         }
 
         return outputFiles

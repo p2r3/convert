@@ -34,7 +34,7 @@ class bsonHandler implements FormatHandler {
     switch (inputFormat.mime) {
       case CommonFormats.JSON.mime:
         if (outputFormat.mime !== bsonFormat.mime) {
-          throw "Unsupported output format";
+          throw new TypeError(`Unsupported output format: ${outputFormat.internal}`);
         }
 
         return inputFiles.map(file => {
@@ -57,7 +57,7 @@ class bsonHandler implements FormatHandler {
 
       case bsonFormat.mime:
         if (outputFormat.mime !== CommonFormats.JSON.mime) {
-          throw "Unsupported output format";
+          throw new TypeError(`Unsupported output format: ${outputFormat.internal}`);
         }
 
         return inputFiles.map(file => {
@@ -73,7 +73,7 @@ class bsonHandler implements FormatHandler {
         });
 
       default:
-        throw "Unsupported input format";
+        throw new TypeError(`Unsupported input format: ${inputFormat.internal}`);
     }
   }
 }

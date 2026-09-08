@@ -2,6 +2,7 @@ import { FormatDefinition } from "../FormatHandler.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import CommonFormats from "src/CommonFormats.ts";
 import JSZip from "jszip";
+import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
 const WADFormat = new FormatDefinition(
     "Doom WAD Archive",
@@ -40,7 +41,7 @@ class wadHandler implements FormatHandler {
         const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
         const magic = String.fromCharCode(bytes[0], bytes[1], bytes[2], bytes[3]);
         if (magic !== "IWAD" && magic !== "PWAD") {
-            throw new Error("Not a valid WAD file (missing IWAD/PWAD header)");
+            throw new BadMagicError(`Not a valid WAD file (missing IWAD/PWAD header). The following magic was found instead: ${magic}`);
         }
         const numLumps = view.getInt32(4, true);
         const dirOffset = view.getInt32(8, true);
@@ -172,7 +173,7 @@ class wadHandler implements FormatHandler {
                 }
             }
 
-        } else if (inputFormat.internal === "zip") {
+        } else if (inputFormat.internal === "zip" && outputFormat.internal === "wad") {
             // ZIP → WAD: each zip entry becomes a lump
             for (const file of inputFiles) {
                 const baseName = file.name.replace(/\.zip$/i, "");
@@ -227,6 +228,9 @@ class wadHandler implements FormatHandler {
                 const wadBytes = this.buildWAD(lumps, wadType);
                 outputFiles.push({ bytes: wadBytes, name: baseName + ".wad" });
             }
+        }
+        else {
+            throw new Error("Invalid input-output.");
         }
 
         return outputFiles;
