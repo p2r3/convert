@@ -1,4 +1,5 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
+import type { ConvertContext } from "../ui/ProgressStore.js";
 import CommonFormats from "src/CommonFormats.ts";
 import mime from "mime";
 import normalizeMimeType from "../normalizeMimeType.ts";
@@ -237,7 +238,9 @@ class pandocHandler implements FormatHandler {
   async doConvert (
     inputFiles: FileData[],
     inputFormat: FileFormat,
-    outputFormat: FileFormat
+    outputFormat: FileFormat,
+    args?: string[],
+    ctx?: ConvertContext
   ): Promise<FileData[]> {
     if (
       !this.ready
@@ -247,7 +250,13 @@ class pandocHandler implements FormatHandler {
 
     const outputFiles: FileData[] = [];
 
+    ctx?.log(`Initialising Pandoc for ${inputFormat.name} -> ${outputFormat.name}...`);
+
+    let i = 0;
     for (const inputFile of inputFiles) {
+      const progressMsg = `Converting ${inputFile.name}...`;
+      ctx?.progress(progressMsg, i / inputFiles.length);
+      ctx?.log(progressMsg);
 
       const files = {
         [inputFile.name]: new Blob([inputFile.bytes as BlobPart])
@@ -268,20 +277,35 @@ class pandocHandler implements FormatHandler {
         options["html-math-method"] = "mathml";
       }
 
-      const { stderr } = await this.convert(options, null, files);
+      const { stderr, warnings } = await this.convert(options, null, files);
 
-      if (stderr) throw stderr;
+      if (stderr) {
+        ctx?.log(`Pandoc Error: ${stderr}`, "error");
+        throw stderr;
+      }
+
+      if (warnings && warnings.length > 0) {
+        for (const warning of warnings) {
+          ctx?.log(`Pandoc Warning: ${JSON.stringify(warning)}`, "warn");
+        }
+      }
 
       const outputBlob = files.output;
-      if (!(outputBlob instanceof Blob)) continue;
+      if (!(outputBlob instanceof Blob)) {
+        ctx?.log(`Pandoc failed to produce output for ${inputFile.name}`, "error");
+        continue;
+      }
 
       const arrayBuffer = await outputBlob.arrayBuffer();
       const bytes = new Uint8Array(arrayBuffer);
       const name = inputFile.name.split(".").slice(0, -1).join(".") + "." + outputFormat.extension;
 
       outputFiles.push({ bytes, name });
-
+      i++;
     }
+
+    ctx?.progress("Conversion complete!", 1);
+    ctx?.log(`Successfully converted ${outputFiles.length} files.`);
 
     return outputFiles;
   }

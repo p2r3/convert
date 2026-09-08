@@ -1,0 +1,33 @@
+footer {
+	display: flex;
+	width: 100%;
+	gap: 1rem;
+	justify-content: flex-end;
+	color: var(--text-muted);
+	padding: 0.4rem 1rem;
+	background-color: var(--bg-section);
+	font-size: 0.75rem;
+	flex-shrink: 0;
+
+	.footer-item {
+		display: flex;
+		align-items: center;
+		gap: 0.3rem;
+		color: var(--text-muted);
+		text-decoration: none;
+		transition: color 150ms;
+
+		&:hover {
+			color: var(--text-secondary);
+		}
+
+		&.footer-copyright {
+			margin-inline-end: auto;
+		}
+
+		&.footer-loading {
+			font-style: italic;
+			opacity: 0.7;
+		}
+	}
+}
