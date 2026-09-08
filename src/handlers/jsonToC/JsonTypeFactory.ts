@@ -20,7 +20,7 @@ export default class JsonTypeFactory {
                 result = new JsonType.UndefinedType();
                 break;
             default:
-                throw `Invalid C type: ${pCType}`;
+                throw new Error(`Invalid C type: ${pCType}`);
             
         }
         return result;

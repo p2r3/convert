@@ -4,6 +4,8 @@
  * Based on the LHA archive format specification
  */
 
+import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
+
 export interface LHAFile {
   filename: string;
   originalSize: number;
@@ -25,7 +27,7 @@ export class LZHDecoder {
 
   private readByte(): number {
     if (this.offset >= this.data.length) {
-      throw new Error("Unexpected end of file");
+      throw new EOFError("Unexpected end of file.");
     }
     return this.data[this.offset++];
   }
@@ -44,7 +46,7 @@ export class LZHDecoder {
 
   private readBytes(length: number): Uint8Array {
     if (this.offset + length > this.data.length) {
-      throw new Error("Unexpected end of file");
+      throw new EOFError("Unexpected end of file.");
     }
     const result = this.data.slice(this.offset, this.offset + length);
     this.offset += length;

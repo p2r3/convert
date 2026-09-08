@@ -74,8 +74,8 @@ class svgForeignObjectHandler implements FormatHandler {
     outputFormat: FileFormat
   ): Promise<FileData[]> {
 
-    if (inputFormat.internal !== "html") throw "Invalid input format.";
-    if (outputFormat.internal !== "svg") throw "Invalid output format.";
+    if (inputFormat.internal !== "html") throw new TypeError(`Unsupported input format: ${inputFormat.internal}`);
+    if (outputFormat.internal !== "svg") throw new TypeError(`Unsupported output format: ${outputFormat.internal}`);
 
     const outputFiles: FileData[] = [];
 

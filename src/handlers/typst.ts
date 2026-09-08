@@ -1,6 +1,7 @@
 import CommonFormats from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import type { TypstSnippet } from "@myriaddreamin/typst.ts/dist/esm/contrib/snippet.mjs";
+import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
 class TypstHandler implements FormatHandler {
   public name: string = "typst";
@@ -37,7 +38,7 @@ class TypstHandler implements FormatHandler {
     _inputFormat: FileFormat,
     outputFormat: FileFormat,
   ): Promise<FileData[]> {
-    if (!this.ready || !this.$typst) throw new Error("Handler not initialized.");
+    if (!this.ready || !this.$typst) throw new InitializationError("Handler not initialized.");
 
     const outputFiles: FileData[] = [];
 

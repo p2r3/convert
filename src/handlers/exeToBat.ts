@@ -37,7 +37,7 @@ export default class ExeToBatHandler implements FormatHandler {
     
     if (inputFormat.mime !== EXE_MIME || outputFormat.mime !== CommonFormats.BATCH.mime) {
       if (DEBUG_EXE_TO_BAT) console.log("[exe2bat] MIME type mismatch - expected:", EXE_MIME, "→", CommonFormats.BATCH.mime);
-      throw new Error("This handler only supports EXE to BAT conversion");
+      throw new TypeError("This handler only supports EXE to BAT conversion");
     }
 
     const results: FileData[] = [];

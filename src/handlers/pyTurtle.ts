@@ -65,8 +65,8 @@ class pyTurtleHandler implements FormatHandler {
     outputFormat: FileFormat
   ): Promise<FileData[]> {
 
-    if (inputFormat.internal !== "svg") throw "Invalid input format.";
-    if (outputFormat.internal !== "pyTurtle") throw "Invalid output format.";
+    if (inputFormat.internal !== "svg") throw new TypeError(`Unsupported input format: ${inputFormat.internal}`);
+    if (outputFormat.internal !== "pyTurtle") throw new TypeError(`Unsupported output format: ${outputFormat.internal}`);
 
     const outputFiles: FileData[] = [];
 

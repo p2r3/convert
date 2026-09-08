@@ -6,7 +6,7 @@ import * as Pe from "pe-library";
 import JSZip from "jszip";
 
 import { Buffer } from "buffer";
-import CommonFormats from "src/CommonFormats.ts";
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 if (typeof window !== "undefined") {
   (window as any).Buffer = Buffer;
 }
@@ -25,7 +25,7 @@ class peToZipHandler implements FormatHandler {
       from: true,
       to: false,
       internal: "dll",
-      category: "code",
+      category: Category.CODE,
       lossless: false
     },
     CommonFormats.ZIP.builder("zip").allowTo().markLossless()
@@ -44,7 +44,7 @@ class peToZipHandler implements FormatHandler {
   ): Promise<FileData[]> {
 
     if (outputFormat.format !== "zip") {
-      throw new Error("Invalid output format. Only ZIP is supported.");
+      throw new TypeError(`Unsupported output format of ${outputFormat.format}. Only ZIP is supported.`);
     }
 
     const outputFiles: FileData[] = [];

@@ -1,6 +1,7 @@
 import CommonFormats from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import { imageToText, rgbaToGrayscale } from "./image-to-txt/src/convert.ts";
+import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
 class canvasToBlobHandler implements FormatHandler {
 
@@ -33,7 +34,7 @@ class canvasToBlobHandler implements FormatHandler {
   ): Promise<FileData[]> {
 
     if (!this.#canvas || !this.#ctx) {
-      throw "Handler not initialized.";
+      throw new InitializationError("Handler not initialized.");
     }
 
     const outputFiles: FileData[] = [];

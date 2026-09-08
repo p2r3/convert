@@ -23,7 +23,7 @@ const server = Bun.serve({
     if (!(await file.exists())) return new Response("Not Found", { status: 404 });
     return new Response(file);
   },
-  port: 8080
+  port: 0
 });
 
 // Start puppeteer, wait for ready confirmation
@@ -40,7 +40,7 @@ await Promise.all([
       if (text === "Built initial format list.") resolve(null);
     });
   }),
-  page.goto("http://localhost:8080/convert/index.html")
+  page.goto(`http://localhost:${server.port}/convert/index.html`)
 ]);
 
 console.log("Setup finished.");

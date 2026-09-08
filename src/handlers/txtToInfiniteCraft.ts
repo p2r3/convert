@@ -1,5 +1,5 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-import CommonFormats from "src/CommonFormats.ts";
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 
 class txtToInfiniteCraftHandler implements FormatHandler {
 
@@ -18,7 +18,7 @@ class txtToInfiniteCraftHandler implements FormatHandler {
                 from: false,
                 to: true,
                 internal: "ic",
-                category: "archive",
+                category: Category.ARCHIVE,
                 lossless: false
             },
         ];

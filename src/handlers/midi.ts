@@ -1,6 +1,8 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import { extractEvents, tableToString, stringToTable, buildMidi, parseRtttl, parseGrubTune, tableToRtttl, tableToGrubTune, pngToMidi, midiToPng } from "./midi/midifilelib.js";
-import CommonFormats from "src/CommonFormats.ts";
+
+import CommonFormats, { Category } from "src/CommonFormats.ts";
+import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
 const SAMPLE_RATE = 44100;
 const BUFFER_FRAMES = 4096;
@@ -83,10 +85,10 @@ export class midiCodecHandler implements FormatHandler {
 
   async init(): Promise<void> {
     this.supportedFormats.push(
-      { name: "MIDI",          format: "mid",    extension: "mid",    mime: "audio/midi",   from: true,  to: true,  internal: "mid",   category: "audio", lossless: true },
-      { name: "RTTTL",         format: "rtttl",  extension: "rtttl",  mime: "audio/rtttl",  from: true,  to: true,  internal: "rtttl", category: "text",  lossless: false },
-      { name: "NokRing",       format: "rtttl",  extension: "nokring",mime: "audio/rtttl",  from: true,  to: false, internal: "rtttl", category: "text",  lossless: false },
-      { name: "GRUB Init Tune",format: "grub",   extension: "grub",   mime: "text/plain",   from: true,  to: true,  internal: "grub",  category: "text",  lossless: false },
+      { name: "MIDI",          format: "mid",    extension: "mid",    mime: "audio/midi",   from: true,  to: true,  internal: "mid",   category: Category.AUDIO, lossless: true },
+      { name: "RTTTL",         format: "rtttl",  extension: "rtttl",  mime: "audio/rtttl",  from: true,  to: true,  internal: "rtttl", category: Category.TEXT,  lossless: false },
+      { name: "NokRing",       format: "rtttl",  extension: "nokring",mime: "audio/rtttl",  from: true,  to: false, internal: "rtttl", category: Category.TEXT,  lossless: false },
+      { name: "GRUB Init Tune",format: "grub",   extension: "grub",   mime: "text/plain",   from: true,  to: true,  internal: "grub",  category: Category.TEXT,  lossless: false },
       CommonFormats.TEXT.builder("txt").allowFrom().allowTo().markLossless(),
       // PNG spectrogram -> MIDI (matches meyda's internal="image" so routing picks
       // up the audio->png->mid path automatically)
@@ -100,7 +102,7 @@ export class midiCodecHandler implements FormatHandler {
     inputFormat: FileFormat,
     outputFormat: FileFormat
   ): Promise<FileData[]> {
-    if (!this.ready) throw "Handler not initialized.";
+    if (!this.ready) throw new InitializationError("Handler not initialized.");
     const outputFiles: FileData[] = [];
 
     for (const inputFile of inputFiles) {
@@ -144,7 +146,7 @@ export class midiCodecHandler implements FormatHandler {
               : parseGrubTune(text);
       }
       else {
-        throw new Error("Unsupported input format.");
+        throw new TypeError(`Unsupported input format: ${inputFormat.internal}`);
       }
 
       // Step 2: event table -> output format
@@ -182,7 +184,7 @@ export class midiCodecHandler implements FormatHandler {
         outputFiles.push({ bytes, name: baseName + "." + outputFormat.extension });
 
       } else {
-        throw new Error("Unsupported output format.");
+        throw new TypeError(`Unsupported output format: ${outputFormat.internal}`);
       }
     }
 
@@ -209,7 +211,7 @@ export class midiSynthHandler implements FormatHandler {
     this.#sfontBin = sfontBin;
 
     this.supportedFormats.push(
-      { name: "MIDI",           format: "mid", extension: "mid", mime: "audio/midi", from: true,  to: false, internal: "mid", category: "audio", lossless: true },
+      { name: "MIDI",           format: "mid", extension: "mid", mime: "audio/midi", from: true,  to: false, internal: "mid", category: Category.AUDIO, lossless: true },
       CommonFormats.WAV.builder("wav").allowTo().markLossless()
     );
 
@@ -221,7 +223,7 @@ export class midiSynthHandler implements FormatHandler {
     _inputFormat: FileFormat,
     _outputFormat: FileFormat
   ): Promise<FileData[]> {
-    if (!this.ready || !this.#sfontBin) throw "Handler not initialized.";
+    if (!this.ready || !this.#sfontBin) throw new InitializationError("Handler not initialized.");
 
     const JSSynth = this.#JSSynth;
     const outputFiles: FileData[] = [];

@@ -1,7 +1,7 @@
 import * as vexml from '@stringsync/vexml';
 import VexFlow from 'vexflow';
-import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-import CommonFormats from 'src/CommonFormats.ts';
+import type { FileData, FileFormat, FormatHandler } from '../FormatHandler.ts';
+import CommonFormats, { Category } from 'src/CommonFormats.ts';
 import { buildMidi, addNote } from './midi/midifilelib.js';
 
 class VexFlowHandler implements FormatHandler {
@@ -16,7 +16,7 @@ class VexFlowHandler implements FormatHandler {
       CommonFormats.MUSICXML.builder("musicxml").allowFrom(),
       CommonFormats.MXL.builder("mxl").allowFrom(),
       CommonFormats.HTML.builder("html").allowTo(),
-      { name: "MIDI", format: "mid", extension: "mid", mime: "audio/midi", from: false, to: true, internal: "mid", category: "audio", lossless: false }
+      { name: "MIDI", format: "mid", extension: "mid", mime: "audio/midi", from: false, to: true, internal: "mid", category: Category.AUDIO, lossless: false }
     ];
     
     // Load VexFlow fonts (required for VexFlow 5)
@@ -232,10 +232,10 @@ class VexFlowHandler implements FormatHandler {
     outputFormat: FileFormat
   ): Promise<FileData[]> {
     if (inputFormat.internal !== "musicxml" && inputFormat.internal !== "mxl") {
-      throw "Invalid input format. Expected MusicXML or MXL.";
+      throw new TypeError(`Unsupported input format of ${inputFormat.internal}. Expected MusicXML or MXL.`);
     }
     if (outputFormat.internal !== "html" && outputFormat.internal !== "mid") {
-      throw "Invalid output format. Expected HTML or MIDI.";
+      throw new TypeError(`Unsupported output format of ${outputFormat.internal}. Expected HTML or MIDI.`);
     }
 
     const outputFiles: FileData[] = [];

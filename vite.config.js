@@ -1,13 +1,16 @@
 import { defineConfig } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 import tsconfigPaths from "vite-tsconfig-paths";
+import preact from "@preact/preset-vite"
 
 export default defineConfig({
+  publicDir: "public",
   optimizeDeps: {
     exclude: [
       "@ffmpeg/ffmpeg",
       "@sqlite.org/sqlite-wasm",
-      "@bokuweb/zstd-wasm"
+      "@bokuweb/zstd-wasm",
+      "@yowasp/clang",
     ]
   },
   base: "/convert/",
@@ -63,10 +66,6 @@ export default defineConfig({
           dest: "js"
         },
         {
-          src: "src/handlers/tarCompressed/liblzma.wasm",
-          dest: "wasm"
-        },
-        {
           src: "node_modules/turbowarp-packager-browser/dist/scaffolding/*",
           dest: "js/turbowarp-scaffolding"
         },
@@ -84,6 +83,10 @@ export default defineConfig({
         }
       ]
     }),
-    tsconfigPaths()
+    tsconfigPaths(),
+    preact({
+      prefreshEnabled: false,
+      reactAliasesEnabled: true
+    })
   ]
 });
