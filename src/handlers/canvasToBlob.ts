@@ -1,14 +1,10 @@
 import CommonFormats from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import {
-  imageToText,
-  rgbaToGrayscale as rgbaToPreviewGrayscale,
-} from "./image-to-txt/src/convert.ts";
-import {
   decodeImageText,
   encodeImageText,
-  rgbaToGrayscale as rgbaToPayloadGrayscale,
-} from "./imageTextCodec.ts";
+  rgbaToGrayscale,
+} from "./canvasToBlob/imageTextCodec.ts";
 import { InitializationError } from "src/errors.ts";
 
 class canvasToBlobHandler implements FormatHandler {
@@ -118,23 +114,10 @@ class canvasToBlobHandler implements FormatHandler {
       let bytes: Uint8Array;
       if(outputFormat.mime === "text/plain") {
         const pixels = this.#ctx.getImageData(0, 0, this.#canvas.width, this.#canvas.height);
-        const preview = imageToText({
-          width() { return pixels.width; },
-          height() { return pixels.height; },
-          getPixel(x: number, y: number) {
-            const index = (y * pixels.width + x) * 4;
-            return rgbaToPreviewGrayscale(
-              pixels.data[index] / 255,
-              pixels.data[index + 1] / 255,
-              pixels.data[index + 2] / 255,
-              pixels.data[index + 3] / 255,
-            );
-          }
-        });
         const grayscale = new Uint8Array(pixels.width * pixels.height);
         for (let i = 0; i < grayscale.length; i++) {
           const index = i * 4;
-          grayscale[i] = rgbaToPayloadGrayscale(
+          grayscale[i] = rgbaToGrayscale(
             pixels.data[index],
             pixels.data[index + 1],
             pixels.data[index + 2],
@@ -145,7 +128,7 @@ class canvasToBlobHandler implements FormatHandler {
           width: pixels.width,
           height: pixels.height,
           pixels: grayscale,
-        }, preview));
+        }));
       }
       else {
         bytes = await new Promise((resolve, reject) => {

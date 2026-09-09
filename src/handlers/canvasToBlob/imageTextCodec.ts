@@ -1,6 +1,3 @@
-export const IMAGE_TEXT_MARKER = "␞ CONVERT.TO.IT IMAGE TEXT V1 ␞";
-export const IMAGE_TEXT_END_MARKER = "␟ END CONVERT.TO.IT IMAGE TEXT V1 ␟";
-
 /** Ordered from darkest to lightest. Every entry is a visible ASCII character. */
 export const INTENSITY_PALETTE = "@%#*+=-:.";
 
@@ -76,7 +73,7 @@ export function rgbaToGrayscale(red: number, green: number, blue: number, alpha:
   return Math.round(opaqueIntensity * opacity + 255 * (1 - opacity));
 }
 
-export function encodeImageText(image: GrayscaleImage, preview = ""): string {
+export function encodeImageText(image: GrayscaleImage): string {
   const pixelCount = validateDimensions(image.width, image.height);
   if (image.pixels.length !== pixelCount) {
     throw new TypeError(`Image text pixel data must contain ${pixelCount} values.`);
@@ -91,74 +88,26 @@ export function encodeImageText(image: GrayscaleImage, preview = ""): string {
     rows.push(row);
   }
 
-  const payload = [
-    IMAGE_TEXT_MARKER,
-    `width=${image.width}`,
-    `height=${image.height}`,
-    ...rows,
-    IMAGE_TEXT_END_MARKER,
-  ].join("\n");
-
-  if (!preview) return payload;
-  return preview + (preview.endsWith("\n") ? "" : "\n") + payload;
-}
-
-function parseDimension(line: string | undefined, name: "width" | "height"): number {
-  const match = line?.match(new RegExp(`^${name}=([1-9][0-9]*)$`));
-  if (!match) {
-    throw new ImageTextDecodeError(`missing or invalid ${name} metadata.`);
-  }
-
-  const value = Number(match[1]);
-  if (!Number.isSafeInteger(value)) {
-    throw new ImageTextDecodeError(`${name} metadata is too large.`);
-  }
-  return value;
+  return rows.join("\n");
 }
 
 /**
- * Returns null for ordinary text. The paired non-ASCII frame cannot be emitted
- * by the ASCII preview. Once a complete trailing frame is found, malformed
- * metadata or rows are rejected instead of silently becoming a screenshot.
+ * Returns null unless the entire text is a rectangular grid made only from the
+ * image intensity palette. Dimensions are inferred from the rows and columns.
  */
 export function decodeImageText(text: string): DecodedImageText | null {
-  const lines = text.replace(/\r\n?/g, "\n").split("\n");
-  const markerIndex = lines.indexOf(IMAGE_TEXT_MARKER);
-  if (markerIndex < 0) return null;
+  const normalized = text.replace(/\r\n?/g, "\n");
+  const content = normalized.endsWith("\n") ? normalized.slice(0, -1) : normalized;
+  if (!content) return null;
 
-  const endMarkerIndex = lines.indexOf(IMAGE_TEXT_END_MARKER, markerIndex + 1);
-  const payloadLike =
-    lines[markerIndex + 1]?.startsWith("width=") ||
-    lines[markerIndex + 2]?.startsWith("height=") ||
-    endMarkerIndex >= 0;
-  if (!payloadLike) return null;
+  const rows = content.split("\n");
+  const width = rows[0].length;
+  if (width < 1) return null;
+  if (rows.some(row => row.length !== width)) return null;
+  if (rows.some(row => [...row].some(character => !INTENSITY_PALETTE.includes(character)))) return null;
 
-  if (endMarkerIndex < 0) {
-    throw new ImageTextDecodeError("missing end marker.");
-  }
-
-  // One final line break is harmless and common in text editors, but no
-  // non-empty content or additional lines may follow the completed frame.
-  const trailingLines = lines.slice(endMarkerIndex + 1);
-  if (trailingLines.length > 1 || (trailingLines.length === 1 && trailingLines[0] !== "")) {
-    throw new ImageTextDecodeError("unexpected content after end marker.");
-  }
-
-  const width = parseDimension(lines[markerIndex + 1], "width");
-  const height = parseDimension(lines[markerIndex + 2], "height");
+  const height = rows.length;
   const pixelCount = validateDimensions(width, height);
-  const rows = lines.slice(markerIndex + 3, endMarkerIndex);
-
-  if (rows.length !== height) {
-    throw new ImageTextDecodeError(`expected ${height} pixel rows, found ${rows.length}.`);
-  }
-
-  for (let y = 0; y < height; y++) {
-    const row = rows[y];
-    if (row.length !== width) {
-      throw new ImageTextDecodeError(`pixel row ${y + 1} must contain exactly ${width} characters.`);
-    }
-  }
 
   let pixels: Uint8ClampedArray<ArrayBuffer>;
   try {
