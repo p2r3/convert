@@ -54,8 +54,6 @@
     "src/handlers/qoa-fu/**/*",
     "src/handlers/sppd/**/*",
     "src/handlers/espeakng.js/**/*",
-    "src/handlers/image-to-txt/src/app.ts",
-    "src/handlers/image-to-txt/src/generate.ts",
     "src/handlers/terraria-wld-parser/**/*"
   ]
 }

@@ -10,9 +10,6 @@
 [submodule "src/handlers/qoa-fu"]
 	path = src/handlers/qoa-fu
 	url = https://github.com/pfusik/qoa-fu
-[submodule "src/handlers/image-to-txt"]
-	path = src/handlers/image-to-txt
-	url = https://github.com/zipsegv/image-to-txt
 [submodule "src/handlers/espeakng.js"]
 	path = src/handlers/espeakng.js
 	url = https://github.com/TheZipCreator/espeakng.js
