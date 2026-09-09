@@ -4,8 +4,15 @@ import {
   characterToIntensity,
   decodeImageText,
   encodeImageText,
+  fitImageTextDimensions,
   intensityToCharacter,
 } from "../../src/handlers/canvasToBlob/imageTextCodec.ts";
+
+test("image text dimensions are capped at 512px while preserving aspect ratio", () => {
+  expect(fitImageTextDimensions(320, 240)).toEqual({ width: 320, height: 240 });
+  expect(fitImageTextDimensions(4000, 3000)).toEqual({ width: 512, height: 384 });
+  expect(fitImageTextDimensions(1200, 2400)).toEqual({ width: 256, height: 512 });
+});
 
 test("image text uses one palette character per source pixel", () => {
   const source = Uint8Array.from([0, 32, 128, 200, 255, 17]);

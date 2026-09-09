@@ -3,6 +3,7 @@ import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import {
   decodeImageText,
   encodeImageText,
+  fitImageTextDimensions,
   rgbaToGrayscale,
 } from "./canvasToBlob/imageTextCodec.ts";
 import { InitializationError } from "src/errors.ts";
@@ -105,9 +106,12 @@ class canvasToBlobHandler implements FormatHandler {
           image.src = url;
         });
 
-        this.#canvas.width = image.naturalWidth;
-        this.#canvas.height = image.naturalHeight;
-        this.#ctx.drawImage(image, 0, 0);
+        const dimensions = outputFormat.mime === "text/plain"
+          ? fitImageTextDimensions(image.naturalWidth, image.naturalHeight)
+          : { width: image.naturalWidth, height: image.naturalHeight };
+        this.#canvas.width = dimensions.width;
+        this.#canvas.height = dimensions.height;
+        this.#ctx.drawImage(image, 0, 0, dimensions.width, dimensions.height);
 
       }
 

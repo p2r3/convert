@@ -1,5 +1,6 @@
 /** Ordered from darkest to lightest. Every entry is a visible ASCII character. */
 export const INTENSITY_PALETTE = "@%#*+=-:.";
+export const MAX_IMAGE_TEXT_DIMENSION = 512;
 
 export interface GrayscaleImage {
   width: number;
@@ -13,6 +14,14 @@ export interface DecodedImageText {
   height: number;
   /** RGBA pixels with an opaque alpha channel, row-major. */
   pixels: Uint8ClampedArray<ArrayBuffer>;
+}
+
+export function fitImageTextDimensions(width: number, height: number): { width: number; height: number } {
+  const scale = Math.min(1, MAX_IMAGE_TEXT_DIMENSION / Math.max(width, height));
+  return {
+    width: Math.max(1, Math.round(width * scale)),
+    height: Math.max(1, Math.round(height * scale)),
+  };
 }
 
 export class ImageTextDecodeError extends Error {
