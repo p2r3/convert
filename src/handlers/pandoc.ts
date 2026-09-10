@@ -1,7 +1,9 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
+import type { ConvertContext } from "../ui/ProgressStore.js";
 import CommonFormats from "src/CommonFormats.ts";
 import mime from "mime";
 import normalizeMimeType from "../normalizeMimeType.ts";
+import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
 export const TYPST_PAGEBREAK_MARKER = "CONVERTTYPSTPAGEBREAKTOKEN";
 export const TYPST_ASSET_MANIFEST_START = "// convert-assets-start";
@@ -533,15 +535,19 @@ class pandocHandler implements FormatHandler {
     inputFormat: FileFormat,
     outputFormat: FileFormat,
     args?: string[],
+    ctx?: ConvertContext
   ): Promise<FileData[]> {
     if (
       !this.ready
       || !this.query
       || !this.convert
-    ) throw "Handler not initialized.";
+    ) throw new InitializationError("Handler not initialized.");
 
     const outputFiles: FileData[] = [];
 
+    ctx?.log(`Initialising Pandoc for ${inputFormat.name} -> ${outputFormat.name}...`);
+
+    let i = 0;
     for (const inputFile of inputFiles) {
       const vfsInputName = inputFile.name.replace(/^.*[/\\]/, "") || "input.bin";
       const shouldNormalizeHtmlForTypst = inputFormat.internal === "html"
@@ -554,6 +560,10 @@ class pandocHandler implements FormatHandler {
       const files: Record<string, any> = {
         [vfsInputName]: new Blob([sourceBytes as BlobPart])
       };
+
+      const progressMsg = `Converting ${inputFile.name}...`;
+      ctx?.progress(progressMsg, i / inputFiles.length);
+      ctx?.log(progressMsg);
 
       const options: Record<string, any> = {
         from: inputFormat.internal,
@@ -577,17 +587,19 @@ class pandocHandler implements FormatHandler {
       const { stderr, warnings } = await this.convert(options, null, files);
 
       if (stderr) {
-        throw stderr;
+        ctx?.log(`Pandoc Error: ${stderr}`, "error");
+        throw new Error(stderr);
       }
 
       if (warnings && warnings.length > 0) {
         for (const warning of warnings) {
-          console.warn(`Pandoc Warning: ${JSON.stringify(warning)}`);
+          ctx?.log(`Pandoc Warning: ${JSON.stringify(warning)}`, "warn");
         }
       }
 
       const outputBlob = files.output;
       if (!(outputBlob instanceof Blob)) {
+        ctx?.log(`Pandoc failed to produce output for ${inputFile.name}`, "error");
         continue;
       }
 
@@ -608,7 +620,11 @@ class pandocHandler implements FormatHandler {
       const name = inputFile.name.split(".").slice(0, -1).join(".") + "." + outputFormat.extension;
 
       outputFiles.push({ bytes, name });
+      i++;
     }
+
+    ctx?.progress("Conversion complete!", 1);
+    ctx?.log(`Successfully converted ${outputFiles.length} files.`);
 
     return outputFiles;
   }

@@ -84,7 +84,7 @@ class configHandler implements FormatHandler {
           object = parseINI(text);
           break;
         default:
-          throw new Error(`Unsupported input internal format: ${inputFormat.internal}`);
+          throw new TypeError(`Unsupported input internal format: ${inputFormat.internal}`);
       }
 
       let outText = "";
@@ -108,7 +108,7 @@ class configHandler implements FormatHandler {
           outText = stringifyINI(object);
           break;
         default:
-          throw new Error(`Unsupported output internal format: ${outputFormat.internal}`);
+          throw new TypeError(`Unsupported output internal format: ${outputFormat.internal}`);
       }
 
       return {

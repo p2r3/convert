@@ -34,7 +34,7 @@ class toonHandler implements FormatHandler {
     switch (inputFormat.mime) {
       case CommonFormats.JSON.mime:
         if (outputFormat.mime !== toonFormat.mime) {
-          throw "Unsupported output format";
+          throw new TypeError(`Unsupported output format MIME: ${outputFormat.mime}`);
         }
 
         return inputFiles.map(file => {
@@ -52,7 +52,7 @@ class toonHandler implements FormatHandler {
 
       case toonFormat.mime:
         if (outputFormat.mime !== CommonFormats.JSON.mime) {
-          throw "Unsupported output format";
+          throw new TypeError(`Unsupported output format MIME: ${outputFormat.mime}`);
         }
 
         return inputFiles.map(file => {
@@ -68,7 +68,7 @@ class toonHandler implements FormatHandler {
         });
 
       default:
-        throw "Unsupported input format";
+        throw new TypeError(`Unsupported input format: ${inputFormat.internal}`);
     }
   }
 }

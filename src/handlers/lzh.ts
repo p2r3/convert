@@ -2,9 +2,10 @@ import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import { LZHDecoder } from "./lzh/decoder.ts";
 import { LZHEncoder, type LHAFileInput } from "./lzh/encoder.ts";
 import JSZip from "jszip";
-import CommonFormats from "src/CommonFormats.ts";
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 import normalizeMimeType from "../normalizeMimeType.ts";
 import mime from "mime";
+import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
 /**
  * LZH/LHA Archive Handler
@@ -27,7 +28,7 @@ class LZHHandler implements FormatHandler {
       from: true,
       to: true,
       internal: "lzh",
-      category: "archive",
+      category: Category.ARCHIVE,
       lossless: true
     },
     CommonFormats.ZIP.builder("zip").allowFrom()
@@ -49,7 +50,7 @@ class LZHHandler implements FormatHandler {
   ): Promise<FileData[]> {
     
     if (!this.ready) {
-      throw new Error("Handler not initialized");
+      throw new InitializationError("Handler not initialized.");
     }
 
     const outputFiles: FileData[] = [];
@@ -205,7 +206,7 @@ class LZHHandler implements FormatHandler {
         bytes: lzhData
       });
     } else {
-      throw new Error(`Unsupported conversion: ${inputFormat.format} to ${outputFormat.format}`);
+      throw new TypeError(`Unsupported conversion: ${inputFormat.format} to ${outputFormat.format}`);
     }
 
     return outputFiles;

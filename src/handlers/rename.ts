@@ -36,7 +36,7 @@ export const renameZipHandler = renameHandler("renamezip", [
     from: true,
     to: false,
     internal: "odt",
-    category: "document",
+    category: Category.DOCUMENT,
     lossless: true
   },
   {
@@ -47,7 +47,7 @@ export const renameZipHandler = renameHandler("renamezip", [
     from: true,
     to: false,
     internal: "odp",
-    category: "presentation",
+    category: Category.PRESENTATION,
     lossless: true
   },
   {
@@ -58,7 +58,7 @@ export const renameZipHandler = renameHandler("renamezip", [
     from: true,
     to: false,
     internal: "ods",
-    category: "spreadsheet",
+    category: Category.SPREADSHEET,
     lossless: true
   },
   {
@@ -69,7 +69,7 @@ export const renameZipHandler = renameHandler("renamezip", [
     from: true,
     to: false,
     internal: "xpi",
-    category: "archive",
+    category: Category.ARCHIVE,
     lossless: true
   },
   CommonFormats.ZIP.builder("love").allowFrom()
@@ -88,7 +88,7 @@ export const renameZipHandler = renameHandler("renamezip", [
     from: true,
     to: false,
     internal: "jar",
-    category: "archive",
+    category: Category.ARCHIVE,
     lossless: true
   },
   {
@@ -99,7 +99,7 @@ export const renameZipHandler = renameHandler("renamezip", [
     from: true,
     to: false,
     internal: "apk",
-    category: "archive",
+    category: Category.ARCHIVE,
     lossless: true
   },
   CommonFormats.ZIP.builder("sb3").allowFrom()
@@ -116,7 +116,7 @@ export const renameZipHandler = renameHandler("renamezip", [
     from: true,
     to: false,
     internal: "cbz",
-    category: "archive",
+    category: Category.ARCHIVE,
     lossless: true
   },
 ]);
@@ -137,7 +137,7 @@ export const renameJsonHandler = renameHandler("renamejson", [
     mime: "application/har+json",
     from: true,
     to: false,
-    category: "archive",
+    category: Category.ARCHIVE,
     internal: "har"
   },
   {
@@ -147,7 +147,7 @@ export const renameJsonHandler = renameHandler("renamejson", [
     mime: "image/png+json",
     from: true,
     to: false,
-    category: "image",
+    category: Category.IMAGE,
     internal: "piskel",
     lossless: true
   }

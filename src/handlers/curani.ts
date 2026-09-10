@@ -1,7 +1,7 @@
 // file: curani.ts
 
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-import CommonFormats from "src/CommonFormats.ts";
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 
 function read_lendian(x : number, y: number): number {
     return x + (y * 16 * 16);
@@ -23,7 +23,7 @@ class curaniHandler implements FormatHandler {
                 from: true,
                 to: true,
                 internal: "ani",
-                category: "image",
+                category: Category.IMAGE,
                 lossless: false,
             },
             {
@@ -34,7 +34,7 @@ class curaniHandler implements FormatHandler {
                 from: true,
                 to: true,
                 internal: "cur",
-                category: "image",
+                category: Category.IMAGE,
                 lossless: false,
             },
             {
@@ -45,7 +45,7 @@ class curaniHandler implements FormatHandler {
                 from: true,
                 to: true,
                 internal: "ico",
-                category: "image",
+                category: Category.IMAGE,
                 lossless: false,
             }
         ];
@@ -116,13 +116,13 @@ class curaniHandler implements FormatHandler {
                 }
                 else if (outputFormat.internal === "apng") {
                     // To be added!
-                    throw new Error("Invalid output format.");
+                    throw new TypeError(`Unsupported output format: ${outputFormat.internal}`);
                 }
                 else if (outputFormat.internal === "ico") {
-                    throw new Error("Refuse to convert from .ani directly to .ico; must use .cur as an intermediary.");
+                    throw new TypeError("Refuse to convert from .ani directly to .ico; must use .cur as an intermediary.");
                 }
                 else {
-                    throw new Error("Invalid output format.");
+                    throw new TypeError(`Unsupported output format: ${outputFormat.internal}`);
                 }
             }
             else if (inputFormat.internal === "cur") {
@@ -156,12 +156,12 @@ class curaniHandler implements FormatHandler {
                     }
                 }
                 else {
-                    throw new Error("Invalid output format.");
+                    throw new TypeError(`Unsupported output format: ${outputFormat.internal}`);
                 }
             }
             else if (inputFormat.internal === "ico") {
                 if (outputFormat.internal === "ani") {
-                    throw new Error("Refuse to convert from .ico directly to .ani; must use .cur as an intermediary.");
+                    throw new TypeError("Refuse to convert from .ico directly to .ani; must use .cur as an intermediary.");
                 }
                 // Convert a .cur into a .ico by ADDING hotspot and changing format header
                 else if (outputFormat.internal === "cur") {
@@ -183,15 +183,15 @@ class curaniHandler implements FormatHandler {
                     }
                 }
                 else {
-                    throw new Error("Invalid output format.");
+                    throw new TypeError(`Unsupported output format: ${outputFormat.internal}`);
                 }
             }
             else if (inputFormat.internal === "apng" && outputFormat.internal === "ani") {
                 // To be added!
-                throw new Error("Invalid input format.");
+                throw new TypeError(`Unsupported input format: ${inputFormat.internal}`);
             }
             else {
-                throw new Error("Invalid input format.");
+                throw new TypeError(`Unsupported input format: ${inputFormat.internal}`);
             }
 
             outputFiles.push({

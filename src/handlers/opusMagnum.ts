@@ -46,25 +46,74 @@ const elementSymbols: Dictionary<string> = {
 }
 
 const elementColors: Dictionary<string> = {
-    1: "#A39770",
-    2: "#B3F2F4",
-    3: "#AFDC02",
-    4: "#FE7516",
-    5: "#2B686C",
-    6: "#BBB5A2",
-    7: "#9A601F",
-    8: "#A6A4A0",
-    9: "#814837",
-    10: "#50413D",
-    11: "#B0AD8C",
-    12: "#95A7A8",
-    13: "#C5AD9A",
-    14: "#3A3829",
-    15: "#0A0911",
-    16: "#0A0911",
+    1: "rgb(163, 151, 112)",
+    2: "rgb(179, 242, 244)",
+    3: "rgb(175, 220, 2)",
+    4: "rgb(254, 117, 22)",
+    5: "rgb(43, 104, 108)",
+    6: "rgb(187, 181, 162)",
+    7: "rgb(154, 96, 31)",
+    8: "rgb(166, 164, 160)",
+    9: "rgb(129, 72, 55)",
+    10: "rgb(80, 65, 61)",
+    11: "rgb(176, 173, 140)",
+    12: "rgb(149, 167, 168)",
+    13: "rgb(197, 173, 154)",
+    14: "rgb(58, 56, 41)",
+    15: "rgb(136, 136, 136)",
+    16: "rgb(10, 9, 17)",
 }
 
-function twoComplement(input: number): number {
+const elementColors_realAverage: Dictionary<string> = {
+    1: "rgb(160, 150, 124)",
+    2: "rgb(118, 147, 199)",
+    3: "rgb(54, 99, 37)",
+    4: "rgb(162, 54, 24)",
+    5: "rgb(60, 127, 121)",
+    6: "rgb(159, 150, 126)",
+    7: "rgb(135, 89, 43)",
+    8: "rgb(87, 80, 74)",
+    9: "rgb(164, 109, 84)",
+    10: "rgb(99, 81, 75)",
+    11: "rgb(114, 110, 87)",
+    12: "rgb(86, 101, 103)",
+    13: "rgb(176, 146, 123)",
+    14: "rgb(69, 63, 46)",
+    15: "rgb(0, 0, 0)",
+    16: "rgb(0, 0, 0)",
+}
+
+function color_difference(r1: number, g1: number, b1: number, r2: number, g2: number, b2: number): number {
+    return Math.sqrt(Math.pow((r1-r2),2) + Math.pow((g1-g2),2) + Math.pow((b1-b2),2));
+}
+
+function read_lendian_4(a: number, b: number, c: number, d: number): number {
+    return a + (b * Math.pow(16,2)) + (c * Math.pow(16,4)) + (d * Math.pow(16,6));
+}
+
+function write_lendian_4(x: number): number[] {
+    if (x > 0xFFFFFFFF) {
+        throw new Error("Error in write_lendian_4: number too big.");
+    }
+    if (x < 0x00) {
+        throw new Error("Error in write_lendian_4: number is negative.");
+    }
+
+    let num_string = x.toString(16);
+    
+    while (num_string.length < 8) {
+        num_string = "0"+num_string;
+    }
+    
+    console.log("write_lendian_4: "+"("+x+")"+" ("+num_string+")");
+    
+    const array : number[] = [parseInt(num_string.substring(6,8),16),parseInt(num_string.substring(4,6),16),parseInt(num_string.substring(2,4),16),parseInt(num_string.substring(0,2),16)];
+    console.log("write_lendian_4: "+array);
+    return array
+}
+
+// Takes a two's complement byte and reads it as regular number.
+function read_twoComplement(input: number): number {
     if (input > 255) {
         throw "Error, coordinate over 255.";
     }
@@ -76,113 +125,247 @@ function twoComplement(input: number): number {
     }
 }
 
-function renderMolecule(molecule: OM_Molecule): Uint8Array {
-    // Begin building our SVG
-    const encoder = new TextEncoder();
-    let svg = "<svg xmlns='http://www.w3.org/2000/svg\' width='bigx' height='bigy' viewBox='smallx smally bigx bigy'>"
+// Takes a regular number and writes it as a two's complement byte
+function write_twoComplement(input: number): number {
+    let output = 0xFF;
     
-    const radius = 50;
+    // Report invalid inputs
+    if (input < -128 || input > 127) {
+        throw "Invalid input for write_twoComplement: "+input;
+    }
+
+    if (input < 0) {
+        output = 0xFF - Math.abs(-1 - input);
+    }
+    else {
+        output = input;
+    }
+    
+    // This should never trigger, but better safe than sorry.
+    if (output > 0xFF || output < 0x00) {
+        throw "Invalid input for write_twoComplement: "+input;
+    }
+    
+    return output;
+}
+
+function renderMolecule(molecule: OM_Molecule, format: string): Uint8Array {
     if (molecule.primes.length === 0) {
         throw "Error, empty molecule.";
     }
     
-    // Draw the bonds
-    for (let i = 0; i < molecule.bonds.length; i++) {
-        // Convert hex-based coordinates to Cartesian
-        let cartesian_source_x = twoComplement(molecule.bonds[i].source_x);
-        let cartesian_source_y = twoComplement(molecule.bonds[i].source_y);
-        let cartesian_destination_x = twoComplement(molecule.bonds[i].destination_x);
-        let cartesian_destination_y = twoComplement(molecule.bonds[i].destination_y);
+    if (format === "molecule") {
+        let working_bytes: number[] = [];
         
-        // Hexagonal offset
-        cartesian_source_x += 0.5*cartesian_source_y;
-        cartesian_destination_x += 0.5*cartesian_destination_y;
+        // Push runlength for primes
+        working_bytes.push(...write_lendian_4(molecule.primes.length));
         
-        // Multiply coordinates for spacing
-        cartesian_source_x *= radius*2.25;
-        cartesian_source_y *= radius*2.25;
-        cartesian_destination_x *= radius*2.25;
-        cartesian_destination_y *= radius*2.25;
+        // Push prime data
+        for (let i = 0; i < molecule.primes.length; i++) {
+            if (molecule.primes[i].element > 16 || molecule.primes[i].element < 1 || Math.floor(molecule.primes[i].element) !== molecule.primes[i].element) {
+                throw "Error, invalid prime ("+molecule.primes[i].element+")";
+            }
+            working_bytes.push(molecule.primes[i].element);
+            
+            if (molecule.primes[i].x > 0xFF || molecule.primes[i].x < 0x00 || Math.floor(molecule.primes[i].x) !== molecule.primes[i].x) {
+                throw "Error, invalid prime x ("+molecule.primes[i].x+")";
+            }
+            if (molecule.primes[i].y > 0xFF || molecule.primes[i].y < 0x00 || Math.floor(molecule.primes[i].y) !== molecule.primes[i].y) {
+                throw "Error, invalid prime y ("+molecule.primes[i].y+")";
+            }
+            working_bytes.push(molecule.primes[i].x);
+            working_bytes.push(molecule.primes[i].y);
+        }
         
-        svg += "\n"
-        if (molecule.bonds[i].bond_type === 1) {
-            svg += "    <line stroke='black' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.2+"'/>"
+        // Push runlength for bonds
+        working_bytes.push(...write_lendian_4(molecule.bonds.length));
+
+        // Push bonds data
+        for (let i = 0; i < molecule.bonds.length; i++) {
+            let bonds_bitfield = (molecule.bonds[i].bond_type.toString(2));
+            while (bonds_bitfield.length < 4) {
+                bonds_bitfield = "0"+bonds_bitfield;
+            }
+        
+            if (bonds_bitfield[0] === "0" && bonds_bitfield[1] === "0" && bonds_bitfield[2] === "0" && bonds_bitfield[3] === "0") {
+                throw "Error, null bond.";
+            }
+            if (bonds_bitfield[3] === "1" && (bonds_bitfield[2] !== "0" || bonds_bitfield[1] !== "0" || bonds_bitfield[0] !== "0")) {
+                throw "Error, normal bond and triplex bond cannot coexist.";
+            }
+            working_bytes.push(molecule.bonds[i].bond_type);
+            
+            if (molecule.bonds[i].source_x > 0xFF || molecule.bonds[i].source_x < 0x00 || Math.floor(molecule.bonds[i].source_x) !== molecule.bonds[i].source_x) {
+                throw "Error, invalid source_x ("+molecule.bonds[i].source_x+")";
+            }
+            if (molecule.bonds[i].source_y > 0xFF || molecule.bonds[i].source_y < 0x00 || Math.floor(molecule.bonds[i].source_y) !== molecule.bonds[i].source_y) {
+                throw "Error, invalid source_y ("+molecule.bonds[i].source_y+")";
+            }
+            if (molecule.bonds[i].destination_x > 0xFF || molecule.bonds[i].destination_x < 0x00 || Math.floor(molecule.bonds[i].destination_x) !== molecule.bonds[i].destination_x) {
+                throw "Error, invalid destination_x ("+molecule.bonds[i].destination_x+")";
+            }
+            if (molecule.bonds[i].destination_y > 0xFF || molecule.bonds[i].destination_y < 0x00 || Math.floor(molecule.bonds[i].destination_y) !== molecule.bonds[i].destination_y) {
+                throw "Error, invalid destination_y ("+molecule.bonds[i].destination_y+")";
+            }
+            
+            working_bytes.push(molecule.bonds[i].source_x);
+            working_bytes.push(molecule.bonds[i].source_y);
+            working_bytes.push(molecule.bonds[i].destination_x);
+            working_bytes.push(molecule.bonds[i].destination_y);
         }
-        else if (molecule.bonds[i].bond_type === 14) {
-            svg += "    <line stroke='red' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.4+"'/>"
-            svg += "\n"
-            svg += "    <line stroke='black' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.2+"'/>"
-            svg += "\n"
-            svg += "    <line stroke='yellow' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.1+"'/>"
-        }
-        else {
-            throw "Error, invalid bond ("+molecule.bonds[i].bond_type+")";
-        }
+        
+        console.log("working_bytes:");
+        console.log(working_bytes);
+        return new Uint8Array(working_bytes);
     }
-    
-    // Draw the atoms
-    let leftmost = 99999;
-    let upmost = 99999;
-    
-    let rightmost = -99999;
-    let downmost = -99999;
-    
-    for (let i = 0; i < molecule.primes.length; i++) {
-        // Validate primes
-        if (molecule.primes[i].element > 16 || molecule.primes[i].element < 1 || Math.floor(molecule.primes[i].element) !== molecule.primes[i].element) {
-            throw "Error, invalid prime ("+molecule.primes[i].element+")";
-        }
-    
-        // Convert hex-based coordinates to Cartesian
-        let cartesian_x = twoComplement(molecule.primes[i].x);
-        let cartesian_y = twoComplement(molecule.primes[i].y);
+    else if (format === "svg") {
+        // Begin building our SVG
+        const encoder = new TextEncoder();
+        let svg = ""
         
-        // Hexagonal offset
-        cartesian_x += 0.5*cartesian_y;
+        let iterations = 0;
         
-        // Multiply coordinates for spacing
-        cartesian_x *= radius*2.25;
-        cartesian_y *= radius*2.25;
-    
-        // Render the atom
-        svg += "\n"
-        svg += "    <circle cx='"+cartesian_x+"' cy='"+cartesian_y+"' fill='black' r='"+radius+"'/>"
-        svg += "\n"
-        svg += "    <circle cx='"+cartesian_x+"' cy='"+cartesian_y+"' fill='"+elementColors[molecule.primes[i].element]+"' r='"+radius*0.9+"'/>"
-        svg += "\n"
-        svg += "    <text x='"+cartesian_x+"' y='"+cartesian_y+"' fill='white' text-anchor='middle' dominant-baseline='central' font-size='"+radius+"'>"+elementSymbols[molecule.primes[i].element]+"</text>"
+        // Looping for Validation
+        while (true) {
+            svg = "<svg xmlns='http://www.w3.org/2000/svg\' width='bigx' height='bigy' viewBox='smallx smally bigx bigy'>"
         
-        // Record largest coordinates
-        if ((cartesian_x+radius) > rightmost) {
-            rightmost = (cartesian_x+radius);
+            const radius = 50-iterations;
+            const spacing_factor = 2.25;
+            
+            // Draw the bonds
+            for (let i = 0; i < molecule.bonds.length; i++) {
+                // Convert hex-based coordinates to Cartesian
+                let cartesian_source_x = read_twoComplement(molecule.bonds[i].source_x);
+                let cartesian_source_y = -read_twoComplement(molecule.bonds[i].source_y);
+                let cartesian_destination_x = read_twoComplement(molecule.bonds[i].destination_x);
+                let cartesian_destination_y = -read_twoComplement(molecule.bonds[i].destination_y);
+                
+                // Hexagonal offset
+                cartesian_source_x += -0.5*cartesian_source_y;
+                cartesian_destination_x += -0.5*cartesian_destination_y;
+                
+                // Multiply coordinates for spacing
+                cartesian_source_x *= radius*spacing_factor;
+                cartesian_source_y *= radius*spacing_factor;
+                cartesian_destination_x *= radius*spacing_factor;
+                cartesian_destination_y *= radius*spacing_factor;
+                
+                svg += "\n"
+                
+                let bonds_bitfield = (molecule.bonds[i].bond_type.toString(2));
+                while (bonds_bitfield.length < 4) {
+                    bonds_bitfield = "0"+bonds_bitfield;
+                }
+                
+                if (bonds_bitfield[3] === "1") {
+                    if (bonds_bitfield[0] === "1" || bonds_bitfield[1] === "1" || bonds_bitfield[2] === "1") {
+                        throw "Error, triplex bond and normal bond cannot coexist.";
+                    }
+                
+                    svg += "    <line stroke='black' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.2+"'/>"
+                }
+                if (bonds_bitfield[2] === "1") {
+                    svg += "    <line stroke='red' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.4+"'/>"
+                    svg += "\n"
+                }
+                if (bonds_bitfield[1] === "1") {
+                    svg += "    <line stroke='black' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.2+"'/>"
+                    svg += "\n"
+                }
+                if (bonds_bitfield[0] === "1") {
+                    svg += "    <line stroke='yellow' x1='"+cartesian_source_x+"' y1='"+cartesian_source_y+"' x2='"+cartesian_destination_x+"' y2='"+cartesian_destination_y+"' stroke-width='"+radius*0.1+"'/>"
+                }
+                
+                if (bonds_bitfield[0] === "0" && bonds_bitfield[1] === "0" && bonds_bitfield[2] === "0" && bonds_bitfield[3] === "0") {
+                    throw "Error, null bond.";
+                }
+            }
+            
+            // Draw the atoms
+            let leftmost = 99999;
+            let upmost = 99999;
+            
+            let rightmost = -99999;
+            let downmost = -99999;
+            
+            for (let i = 0; i < molecule.primes.length; i++) {
+                // Validate primes
+                if (molecule.primes[i].element > 16 || molecule.primes[i].element < 1 || Math.floor(molecule.primes[i].element) !== molecule.primes[i].element) {
+                    throw "Error, invalid prime ("+molecule.primes[i].element+")";
+                }
+            
+                // Convert hex-based coordinates to Cartesian
+                let cartesian_x = read_twoComplement(molecule.primes[i].x);
+                let cartesian_y = -read_twoComplement(molecule.primes[i].y);
+                
+                // Hexagonal offset
+                cartesian_x += -0.5*cartesian_y;
+                
+                // Multiply coordinates for spacing
+                cartesian_x *= radius*spacing_factor;
+                cartesian_y *= radius*spacing_factor;
+            
+                // Render the atom
+                svg += "\n"
+                svg += "    <circle cx='"+cartesian_x+"' cy='"+cartesian_y+"' fill='black' r='"+radius+"'/>"
+                svg += "\n"
+                svg += "    <circle cx='"+cartesian_x+"' cy='"+cartesian_y+"' fill='"+elementColors[molecule.primes[i].element]+"' r='"+radius*0.9+"'/>"
+                svg += "\n"
+                if (molecule.primes[i].element === 16) {
+                    svg += "    <text x='"+cartesian_x+"' y='"+(cartesian_y-5)+"' fill='white' text-anchor='middle' dominant-baseline='central' font-size='"+radius+"'>"+elementSymbols[4]+"</text>"
+                    svg += "    <text x='"+cartesian_x+"' y='"+(cartesian_y+5)+"' fill='white' text-anchor='middle' dominant-baseline='central' font-size='"+radius+"'>"+elementSymbols[5]+"</text>"
+                }
+                else {
+                    svg += "    <text x='"+cartesian_x+"' y='"+cartesian_y+"' fill='white' text-anchor='middle' dominant-baseline='central' font-size='"+radius+"'>"+elementSymbols[molecule.primes[i].element]+"</text>"
+                }
+                
+                // Record largest coordinates
+                if ((cartesian_x+radius) > rightmost) {
+                    rightmost = (cartesian_x+radius);
+                }
+                if ((cartesian_y+radius) > downmost) {
+                    downmost = (cartesian_y+radius);
+                }
+                if ((cartesian_x-radius) < leftmost) {
+                    leftmost = (cartesian_x-radius);
+                }
+                if ((cartesian_y-radius) < upmost) {
+                    upmost = (cartesian_y-radius);
+                }
+            }
+            
+            svg += "\n</svg>"
+            
+            // smallx/smally are half size - molecular center
+            const bigx = (rightmost-leftmost);
+            const bigy = (downmost-upmost);
+            
+            const smallx = (rightmost+leftmost)/2 - (rightmost-leftmost)/2;
+            const smally = (downmost+upmost)/2 - (downmost-upmost)/2;
+            
+            // Test to see if these dimensions exceed svg max size, if so, repeat the loop with a lower radius.
+            //if (false) {
+            //    iterations++;
+            //    continue;
+            //}
+            
+            // Replace placeholders with actual size.
+            svg = svg.replace(/bigx/g,String(bigx)).replace(/bigy/g,String(bigy)).replace(/smallx/g,String(smallx)).replace(/smally/g,String(smally));
+            break;
         }
-        if ((cartesian_y+radius) > downmost) {
-            downmost = (cartesian_y+radius);
-        }
-        if ((cartesian_x-radius) < leftmost) {
-            leftmost = (cartesian_x-radius);
-        }
-        if ((cartesian_y-radius) < upmost) {
-            upmost = (cartesian_y-radius);
-        }
+        
+        return encoder.encode(svg);
     }
-    
-    svg += "\n</svg>"
-    
-    // Replace placeholders with actual size. smallx/smally are half size - molecular center
-    svg = svg.replace(/bigx/g,String((rightmost-leftmost))).replace(/bigy/g,String((downmost-upmost))).replace(/smallx/g,String((rightmost+leftmost)/2 - (rightmost-leftmost)/2)).replace(/smally/g,String((downmost+upmost)/2 - (downmost-upmost)/2));
-    
-    return encoder.encode(svg);
+    else {
+        throw new Error("Opus Magnum molecule renderer given invalid output format: "+format)
+    }
 }
 
-class opusMagnumHandler implements FormatHandler {
+export class opusMagnumMainHandler implements FormatHandler {
 
-    public name: string = "opusMagnum";
+    public name: string = "opusMagnumMain";
     public supportedFormats?: FileFormat[];
     public ready: boolean = false;
-
-    #canvas?: HTMLCanvasElement;
-    #ctx?: CanvasRenderingContext2D;
     
     async init () {
         this.supportedFormats = [
@@ -193,15 +376,22 @@ class opusMagnumHandler implements FormatHandler {
                 extension: "puzzle",
                 mime: "application/x-opus-magnum-puzzle",
                 from: true,
-                to: false,
+                to: true,
                 internal: "puzzle",
                 lossless: false,
             },
+            {
+                name: "Opus Magnum molecule",
+                format: "molecule",
+                extension: "molecule",
+                mime: "application/x-opus-magnum-molecule",
+                from: true,
+                to: true,
+                internal: "molecule",
+                lossless: false,
+            },
         ];
-
-        this.#canvas = document.createElement("canvas");
-        this.#ctx = this.#canvas.getContext("2d") || undefined;
-
+        
         this.ready = true;
     }
 
@@ -212,11 +402,7 @@ class opusMagnumHandler implements FormatHandler {
     ): Promise<FileData[]> {
         const outputFiles: FileData[] = [];
         
-        if (!this.#canvas || !this.#ctx) {
-            throw "Handler not initialized.";
-        }
-        
-        if (inputFormat.internal === "puzzle" && outputFormat.internal === "svg") {
+        if (inputFormat.internal === "puzzle" && (outputFormat.internal === "svg" || outputFormat.internal === "molecule")) {
             for (const file of inputFiles) {
                 // Begin reading file
                 let byte_cusror = 0;
@@ -234,7 +420,7 @@ class opusMagnumHandler implements FormatHandler {
                 
                 // Parse reagents data
                 byte_cusror += name_rl+16;
-                const reagents_rl = file.bytes[byte_cusror];
+                const reagents_rl = read_lendian_4(file.bytes[byte_cusror],file.bytes[byte_cusror+1],file.bytes[byte_cusror+2],file.bytes[byte_cusror+3]);;
                 const reagents : OM_Molecule[] = [];
                 
                 byte_cusror += 4;
@@ -244,7 +430,7 @@ class opusMagnumHandler implements FormatHandler {
                     let working_molecule : OM_Molecule = {primes: [], bonds: []};
                     
                     // Start of loop, read primes run length
-                    const primes_rl = file.bytes[byte_cusror];
+                    const primes_rl = read_lendian_4(file.bytes[byte_cusror],file.bytes[byte_cusror+1],file.bytes[byte_cusror+2],file.bytes[byte_cusror+3]);
                     
                     // Increment cursor by 4 due to padding.
                     byte_cusror += 4;
@@ -256,7 +442,7 @@ class opusMagnumHandler implements FormatHandler {
                     }
                     
                     // Arrive at bonds data.
-                    const bonds_rl = file.bytes[byte_cusror];
+                    const bonds_rl = read_lendian_4(file.bytes[byte_cusror],file.bytes[byte_cusror+1],file.bytes[byte_cusror+2],file.bytes[byte_cusror+3]);;
                     
                     // Increment cursor by 4 due to padding.
                     byte_cusror += 4;
@@ -272,7 +458,7 @@ class opusMagnumHandler implements FormatHandler {
                 }
                 
                 // Parse the products data, which follows immediately after.
-                const products_rl = file.bytes[byte_cusror];
+                const products_rl = read_lendian_4(file.bytes[byte_cusror],file.bytes[byte_cusror+1],file.bytes[byte_cusror+2],file.bytes[byte_cusror+3]);;
                 const products : OM_Molecule[] = [];
                 
                 byte_cusror += 4;
@@ -282,7 +468,7 @@ class opusMagnumHandler implements FormatHandler {
                     let working_molecule : OM_Molecule = {primes: [], bonds: []};
                     
                     // Start of loop, read primes run length
-                    const primes_rl = file.bytes[byte_cusror];
+                    const primes_rl = read_lendian_4(file.bytes[byte_cusror],file.bytes[byte_cusror+1],file.bytes[byte_cusror+2],file.bytes[byte_cusror+3]);;
                     
                     // Increment cursor by 4 due to padding.
                     byte_cusror += 4;
@@ -294,7 +480,7 @@ class opusMagnumHandler implements FormatHandler {
                     }
                     
                     // Arrive at bonds data.
-                    const bonds_rl = file.bytes[byte_cusror];
+                    const bonds_rl = read_lendian_4(file.bytes[byte_cusror],file.bytes[byte_cusror+1],file.bytes[byte_cusror+2],file.bytes[byte_cusror+3]);;
                     
                     // Increment cursor by 4 due to padding.
                     byte_cusror += 4;
@@ -309,15 +495,452 @@ class opusMagnumHandler implements FormatHandler {
                     products.push(working_molecule);
                 }
                 
+                console.log("V"+version+" - Remaining file: "+String(file.bytes.subarray(byte_cusror,file.bytes.length)));
                 console.log(reagents);
                 console.log(products);
                 
                 // Render each molecule as a separate file.
                 for (let i = 0; i < reagents.length; i++) {
-                    outputFiles.push({ bytes: renderMolecule(reagents[i]), name: puzzle_name + "_reagent_" + i + "." + outputFormat.extension });
+                    outputFiles.push({ bytes: renderMolecule(reagents[i], outputFormat.internal), name: puzzle_name + "_reagent_" + i + "." + outputFormat.extension });
                 }
                 for (let i = 0; i < products.length; i++) {
-                    outputFiles.push({ bytes: renderMolecule(products[i]), name: puzzle_name + "_product_" + i + "." + outputFormat.extension });
+                    outputFiles.push({ bytes: renderMolecule(products[i], outputFormat.internal), name: puzzle_name + "_product_" + i + "." + outputFormat.extension });
+                }
+            }
+        }
+        else if (inputFormat.internal === "molecule" && outputFormat.internal === "svg") {
+            for (const file of inputFiles) {
+                // Start reading file
+                let byte_cusror = 0;
+                
+                // Establish working module
+                let working_molecule : OM_Molecule = {primes: [], bonds: []};
+                
+                // Start of loop, read primes run length
+                const primes_rl = read_lendian_4(file.bytes[byte_cusror],file.bytes[byte_cusror+1],file.bytes[byte_cusror+2],file.bytes[byte_cusror+3]);
+                
+                // Increment cursor by 4 due to padding.
+                byte_cusror += 4;
+                
+                // Parse primes data.
+                while (working_molecule.primes.length < primes_rl) {
+                    working_molecule.primes.push({element: file.bytes[byte_cusror], x: file.bytes[byte_cusror+1], y: file.bytes[byte_cusror+2]});
+                    byte_cusror += 3;
+                }
+                
+                // Arrive at bonds data.
+                const bonds_rl = read_lendian_4(file.bytes[byte_cusror],file.bytes[byte_cusror+1],file.bytes[byte_cusror+2],file.bytes[byte_cusror+3]);;
+                
+                // Increment cursor by 4 due to padding.
+                byte_cusror += 4;
+                
+                // Parse bonds data.
+                while (working_molecule.bonds.length < bonds_rl) {
+                    working_molecule.bonds.push({bond_type: file.bytes[byte_cusror], source_x: file.bytes[byte_cusror+1], source_y: file.bytes[byte_cusror+2], destination_x: file.bytes[byte_cusror+3], destination_y: file.bytes[byte_cusror+4]});
+                    byte_cusror += 5;
+                }
+                
+                // Push molecule
+                outputFiles.push({ bytes: renderMolecule(working_molecule, outputFormat.internal), name: file.name.split(".").slice(0, -1).join(".") + "." + outputFormat.extension });
+            }
+        }
+        else if (inputFormat.internal === "molecule" && outputFormat.internal === "puzzle") {
+            console.log("Beginning molecule to puzzle compilation...");
+            
+            // Iterate through inputs to see if their names indicate them being reagents or products
+            let reagents: Uint8Array[] = [];
+            let products: Uint8Array[] = [];
+            try {
+                for (const file of inputFiles) {
+                    if (file.name.includes("reagent") || file.name.includes("REAGENT")) {
+                        reagents.push(new Uint8Array(file.bytes));
+                    }
+                    else if (file.name.includes("product") || file.name.includes("PRODUCT")) {
+                        products.push(new Uint8Array(file.bytes));
+                    }
+                    else {
+                        throw new Error("False flag.");
+                    }
+                }
+            }
+            // Otherwise, split down the middle.
+            catch (_) {
+                reagents = [];
+                products = [];
+                
+                if (inputFiles.length === 1) {
+                    reagents.push(new Uint8Array(inputFiles[0].bytes));
+                }
+                else {
+                    for (let i = 0; i < inputFiles.length; i++) {
+                        if (i+1 > inputFiles.length / 2) {
+                            products.push(new Uint8Array(inputFiles[i].bytes));
+                        }
+                        else {
+                            reagents.push(new Uint8Array(inputFiles[i].bytes));
+                        }
+                    }
+                }
+            }
+            
+            // Double-check
+            if (reagents.length === 0 && products.length === 0) {
+                throw new Error("Error writing molecules to puzzle, reagents and products arrays are both empty.");
+            }
+            
+            // Unlikely to occur without TXT -> Molecule first, but check anyways
+            if (reagents.length > 0xFFFFFFFF || products.length > 0xFFFFFFFF) {
+                throw new Error("Reagents/products are too big to store in run-length.");
+            }
+            
+            // Find puzzle name
+            console.log("Beginning search for puzzle name...");
+            let puzzle_name = inputFiles[0].name.substring(0, 1);
+            
+            if (inputFiles.length === 1) {
+                puzzle_name = inputFiles[0].name.split(".").slice(0, -1).join(".");
+            }
+            else {
+                while (true) {
+                    let break_flag = false;
+                    for (const file of inputFiles) {
+                        if (!file.name.startsWith(puzzle_name)) {
+                            puzzle_name = puzzle_name.substring(0,puzzle_name.length-1);
+                            break_flag = true;
+                            break;
+                        }
+                    }
+                    
+                    if (break_flag) {
+                        break;
+                    }
+                    
+                    puzzle_name = inputFiles[0].name.substring(0, puzzle_name.length+1);
+                }
+                
+                // Default puzzle name
+                if (puzzle_name === "" || puzzle_name.length > 0xFF) {
+                    puzzle_name = "Unnamed puzzle";
+                }
+                
+                // Remove trailing spaces and underscores
+                while (puzzle_name.endsWith("_") || puzzle_name.endsWith(" ")) {
+                    puzzle_name = puzzle_name.substring(0,puzzle_name.length-1);
+                }
+            }
+            
+            // Make sure name can be run-length encoded.
+            const encoder = new TextEncoder();
+            while ((encoder.encode(puzzle_name)).length > 0xFF) {
+                puzzle_name = puzzle_name.substring(0,puzzle_name.length-1);
+            }
+            
+            console.log("Found puzzle name: "+puzzle_name);
+            
+            // Finally, write the file
+            const working_bytes: number[] = [];
+            
+            working_bytes.push(0x02,0x00,0x00,0x00);
+            
+            working_bytes.push((encoder.encode(puzzle_name)).length);
+            working_bytes.push(...encoder.encode(puzzle_name));
+            
+            working_bytes.push(0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00);
+            working_bytes.push(0x0f,0x17,0xc0,0x07,0x00,0x00,0x00,0x00);
+            
+            working_bytes.push(...write_lendian_4(reagents.length));
+            
+            for (const reagent of reagents) {
+                working_bytes.push(...reagent);
+            }
+            
+            working_bytes.push(...write_lendian_4(products.length));
+            
+            for (const product of products) {
+                working_bytes.push(...product);
+            }
+            
+            // Return the combined file
+            console.log("working_bytes:");
+            console.log(working_bytes);
+            outputFiles.push({ bytes: new Uint8Array(working_bytes), name: puzzle_name + "." + outputFormat.extension });
+        }
+        else {
+            throw new Error("Invalid input-output.");
+        }
+        
+        if (outputFiles.length === 0) {
+            throw new Error("Empty output.");
+        }
+        
+        return outputFiles;
+    }
+}
+
+// Image-to-molecule handler
+export class opusMagnumITMHandler implements FormatHandler {
+    public name: string = "opusMagnumITM";
+    public supportedFormats?: FileFormat[];
+    public ready: boolean = false;
+    
+    #canvas?: HTMLCanvasElement;
+    #ctx?: CanvasRenderingContext2D;
+    
+    async init () {
+        this.supportedFormats = [
+            CommonFormats.PNG.supported("png", true, false),
+            {
+                name: "Opus Magnum molecule",
+                format: "molecule",
+                extension: "molecule",
+                mime: "application/x-opus-magnum-molecule",
+                from: false,
+                to: true,
+                internal: "molecule",
+                lossless: false,
+            },
+        ];
+
+        this.#canvas = document.createElement("canvas");
+        this.#ctx = this.#canvas.getContext("2d") || undefined;
+        
+        this.ready = true;
+    }
+    
+    async doConvert (
+        inputFiles: FileData[],
+        inputFormat: FileFormat,
+        outputFormat: FileFormat
+    ): Promise<FileData[]> {
+        const outputFiles: FileData[] = [];
+        
+        if (!this.#canvas || !this.#ctx) {
+            throw "Handler not initialized.";
+        }
+        
+        if (inputFormat.internal === "png" && outputFormat.internal === "molecule") {
+            console.log("Beginning image to molecule conversion file iteration...");
+            for (const file of inputFiles) {
+                // Some code copied from mcmap.ts
+                console.log("Creating blob for "+file.name+"...");
+                const blob = new Blob([file.bytes as BlobPart], { type: inputFormat.mime });
+                console.log("Blob created for "+file.name);
+
+                console.log("Creating image for "+file.name+"...");
+                const image = new Image();
+                await new Promise((resolve, reject) => {
+                    image.addEventListener("load", resolve);
+                    image.addEventListener("error", reject);
+                    image.src = URL.createObjectURL(blob);
+                });
+                console.log("Image created for "+file.name);
+                
+                // Mathematically calculated to be the highest canvas size before the puzzle format can't handle it: -(x/2) - ((x-1)-(x/2))/2 = -128
+                const max_canvas = 170;
+                console.log("max_canvas: "+max_canvas);
+
+                if (image.naturalWidth > max_canvas || image.naturalHeight > max_canvas) {
+                    if (image.naturalWidth > image.naturalHeight) {
+                        this.#canvas.width = max_canvas;
+                        this.#canvas.height = Math.floor(image.height*(max_canvas/image.width));
+                    }
+                    else {
+                        this.#canvas.width = Math.floor(image.width*(max_canvas/image.height));
+                        this.#canvas.height = max_canvas;
+                    }
+                    
+                    // Safety for extreme proportions (t.w.s.s.)
+                    if (this.#canvas.width < 1) {
+                        this.#canvas.width = 1;
+                    }
+                    if (this.#canvas.height < 1) {
+                        this.#canvas.height = 1;
+                    }
+                    
+                    console.log("Image resized to "+this.#canvas.width+" "+this.#canvas.height);
+                }
+                else {
+                    this.#canvas.width = image.width;
+                    this.#canvas.height = image.height;
+                }
+                console.log("Drawing image for "+file.name+"...");
+                this.#ctx.drawImage(image, 0, 0, this.#canvas.width, this.#canvas.height);
+                console.log("Image drawn for "+file.name);
+
+                const pixels = this.#ctx.getImageData(0, 0, this.#canvas.width, this.#canvas.height);
+                console.log("Pixels data:");
+                console.log(pixels.data);
+                console.log("Pixels length: "+pixels.data.length);
+                
+                let working_molecule : OM_Molecule = {primes: [], bonds: []};
+                
+                let running_highest_abs_x = 0;
+                let running_highest_abs_y = 0;
+                
+                // Go through each pixel and determine which atom color it's closest to, then write an atom at that position.
+                for (let i = 0; i < pixels.data.length; i++) {
+                    // Print percentage iteration milestones
+                    if (i/pixels.data.length === 0.5 || pixels.data.length+1 === 0.5) {
+                        console.log("Halfway done processing pixels.");
+                    }
+                    
+                    if (i % 4 !== 0) {
+                        continue;
+                    }
+                    else if (pixels.data[i+3] === 0) {
+                        continue;
+                    }
+                    
+                    const pixel_colors: number[] = [pixels.data[i],pixels.data[i+1],pixels.data[i+2]];
+                    let working_best_fit: number = 1; // this is a elementColors index
+                
+                    // Loop through element colors and determine difference for each
+                    for (let i2 = 1; i2 <= 16; i2++) {
+                        // Skip the ... atom to avoid making nonsense molecules.
+                        if (i2 === 15) {
+                            continue;
+                        }
+                    
+                        const this_color_as_array: string[] = (elementColors_realAverage[i2].replace("rgb(","").replace(")","")).split(", ");
+                        const best_color_as_array: string[] = (elementColors_realAverage[working_best_fit].replace("rgb(","").replace(")","")).split(", ");
+                        
+                        const difference_from_this = color_difference(pixel_colors[0],pixel_colors[1],pixel_colors[2], parseInt(this_color_as_array[0]),parseInt(this_color_as_array[1]),parseInt(this_color_as_array[2]));
+                        const difference_from_best = color_difference(pixel_colors[0],pixel_colors[1],pixel_colors[2], parseInt(best_color_as_array[0]),parseInt(best_color_as_array[1]),parseInt(best_color_as_array[2]));
+                        
+                        // New best
+                        if (difference_from_this <= difference_from_best) {
+                            working_best_fit = i2;
+                        }
+                    }
+                    
+                    // With our best color found, we now need to translate from top-left picture coordinates to centered y+=up coordinates
+                    const this_pixel_index = Math.floor(i/4);
+                    
+                    const this_pixel_x = this_pixel_index % this.#canvas.width;
+                    const this_pixel_y = Math.floor(this_pixel_index/this.#canvas.width);
+                    
+                    // Push molecule at coordinates
+                    let molecule_x = this_pixel_x - (this.#canvas.width/2);
+                    let molecule_y = -(this_pixel_y - (this.#canvas.height/2));
+                    
+                    molecule_x -= molecule_y/2;
+                    
+                    // Floor it?
+                    molecule_x = Math.floor(molecule_x);
+                    molecule_y = Math.floor(molecule_y);
+                    
+                    working_molecule.primes.push({element: working_best_fit, x: write_twoComplement(molecule_x), y: write_twoComplement(molecule_y)});
+                    
+                    // Tracker for debugging
+                    if (write_twoComplement(molecule_x) > running_highest_abs_x) {
+                        running_highest_abs_x = molecule_x;
+                    }
+                    if (write_twoComplement(molecule_y) > running_highest_abs_y) {
+                        running_highest_abs_y = molecule_y;
+                    }
+                }
+                
+                console.log("Highest abs x and y: "+running_highest_abs_x+" "+running_highest_abs_y)
+                
+                // Render the molecule to a file
+                console.log("working_molecule:");
+                console.log(working_molecule);
+                outputFiles.push({ bytes: renderMolecule(working_molecule, outputFormat.internal), name: file.name.split(".").slice(0, -1).join(".") + "." + outputFormat.extension });
+            }
+        }
+        else {
+            throw new Error("Invalid input-output.");
+        }
+        
+        return outputFiles;
+    }
+}
+
+// Text-to-molecule handler
+export class opusMagnumTTMHandler implements FormatHandler {
+    public name: string = "opusMagnumTTM";
+    public supportedFormats?: FileFormat[];
+    public ready: boolean = false;
+    
+    async init () {
+        this.supportedFormats = [
+            CommonFormats.TEXT.supported("txt", true, false),
+            {
+                name: "Opus Magnum molecule",
+                format: "molecule",
+                extension: "molecule",
+                mime: "application/x-opus-magnum-molecule",
+                from: false,
+                to: true,
+                internal: "molecule",
+                lossless: false,
+            },
+        ];
+        
+        // Validation - testing
+        for (const key in molecule_dict) {
+            const el_rl = molecule_dict[key][0];
+            
+            const bd_rl = molecule_dict[key][4+el_rl*3];
+            
+            if (molecule_dict[key].length !== 4+el_rl*3+4+bd_rl*5) {
+                console.log("Opus Magnum: invalid predefined molecule length: "+key);
+                console.log(el_rl);
+                console.log(bd_rl);
+            }
+            
+            let i = 4+el_rl*3+4;
+            while (i < molecule_dict[key].length) {
+                if (molecule_dict[key][i] !== 0x01) {
+                    console.log("Opus Magnum: invalid bond type in predefined molecule: "+key);
+                }
+                i += 5;
+            }
+        }
+        
+        this.ready = true;
+    }
+
+    async doConvert (
+        inputFiles: FileData[],
+        inputFormat: FileFormat,
+        outputFormat: FileFormat
+    ): Promise<FileData[]> {
+        const outputFiles: FileData[] = [];
+        
+        // Character-by-character, output molecules.
+        if (inputFormat.internal === "txt" && outputFormat.internal === "molecule") {
+            for (const file of inputFiles) {
+                // Get file as String
+                const decoder = new TextDecoder();
+                const base_name = file.name.split(".")[0];
+                let file_as_string = decoder.decode(file.bytes);
+            
+                // Iterate through each character and push the correct molecule.
+                for (let i = 0; i < file_as_string.length; i++) {
+                    // Skip these
+                    if (file_as_string[i] === " " || file_as_string[i] === "\n") {
+                    
+                    }
+                    // Multi-substitution
+                    else if (file_as_string[i] in text_replace_multi) {
+                        for (let i2 = 0; i2 < text_replace_multi[file_as_string[i]].length; i2++) {
+                            outputFiles.push({bytes: new Uint8Array(molecule_dict[text_replace_multi[file_as_string[i]][i2]]), name: base_name + "_character_" + i + "_" + i2 + "." + outputFormat.extension});
+                        }
+                    }
+                    // Clean apostrophes
+                    else if (file_as_string[i] === "'" || file_as_string[i] === "‘" || file_as_string[i] === "’") {
+                        outputFiles.push({bytes: new Uint8Array(molecule_dict["'"]), name: base_name + "_character_" + i + "." + outputFormat.extension});
+                    }
+                    // Standard fetching
+                    else if (file_as_string[i] in molecule_dict) {
+                        outputFiles.push({bytes: new Uint8Array(molecule_dict[file_as_string[i]]), name: base_name + "_character_" + i + "." + outputFormat.extension});
+                    }
+                    // Unknown symbol
+                    else {
+                        console.warn("OpusMagnumTTM found an unrecognized character: "+file_as_string[i])
+                        outputFiles.push({bytes: new Uint8Array(molecule_dict["unknown"]), name: base_name + "_character_" + i + "." + outputFormat.extension});
+                    }
                 }
             }
         }
@@ -329,4 +952,1234 @@ class opusMagnumHandler implements FormatHandler {
     }
 }
 
-export default opusMagnumHandler;
+const text_replace_multi: Dictionary<string[]> = {
+    "\"": ["'","'"],
+    "¼": ["1","/","4"],
+    "½": ["1","/","2"],
+    "¾": ["3","/","4"],
+    "“": ["'","'"],
+    "”": ["'","'"],
+    "…": [".",".","."],
+    "℅": ["c","/","o"],
+    "⅐": ["1","/","7"],
+    "⅑": ["1","/","9"],
+    "⅒": ["1","/","10"],
+    "⅓": ["1","/","3"],
+    "⅔": ["2","/","3"],
+    "⅕": ["1","/","5"],
+    "⅖": ["2","/","5"],
+    "⅗": ["3","/","5"],
+    "⅘": ["4","/","5"],
+    "⅙": ["1","/","6"],
+    "⅚": ["5","/","6"],
+    "⅛": ["1","/","8"],
+    "⅜": ["3","/","8"],
+    "⅝": ["5","/","8"],
+    "⅞": ["7","/","8"],
+    "⅟": ["1","/"],
+    "↉": ["0","/","3"],
+}
+
+const molecule_dict: Dictionary<number[]> = {
+    "unknown": [0x01, 0x00, 0x00, 0x00,
+        0x10, 0x00, 0x00,
+        
+        0x00, 0x00, 0x00, 0x00,
+    ],
+    
+    // lowercase
+    "a": [0x03, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0xff,
+        0x01, 0x01, 0xff,
+        
+        0x03, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0xff,
+        0x01, 0x00, 0xff, 0x01, 0xff,
+        0x01, 0x01, 0xff, 0x00, 0x00,
+    ],
+    "b": [0x05, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0xff,
+        0x01, 0x01, 0x00,
+        0x01, 0x01, 0xff,
+        
+        0x05, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0xff,
+        0x01, 0x00, 0xff, 0x01, 0xff,
+        0x01, 0x01, 0xff, 0x01, 0x00,
+        0x01, 0x01, 0x00, 0x00, 0x00,
+    ],
+    "c": [0x04, 0x00, 0x00, 0x00,
+        0x01, 0x01, 0x01,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0x01, 0x00,
+        
+        0x03, 0x00, 0x00, 0x00,
+        0x01, 0x01, 0x01, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0x00,
+    ],
+    "d": [0x05, 0x00, 0x00, 0x00,
+        0x01, 0x01, 0x01,
+        0x01, 0x01, 0x00,
+        0x01, 0x01, 0xff,
+        0x01, 0x00, 0xff,
+        0x01, 0x00, 0x00,
+        
+        0x05, 0x00, 0x00, 0x00,
+        0x01, 0x01, 0x01, 0x01, 0x00,
+        0x01, 0x01, 0x00, 0x01, 0xff,
+        0x01, 0x01, 0xff, 0x00, 0xff,
+        0x01, 0x00, 0xff, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0x00,
+    ],
+    "e": [0x04, 0x00, 0x00, 0x00,
+        0x01, 0xFF, 0x01,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0x01, 0x00,
+        
+        0x04, 0x00, 0x00, 0x00,
+        0x01, 0xFF, 0x01, 0x00, 0x01,
+        0x01, 0xFF, 0x01, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01
+    ],
+    "f": [0x05, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0xFF,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x01, 0x01,
+        0x01, 0x01, 0x00,
+        
+        0x04, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0x00,
+        0x01, 0x00, 0xFF, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x01, 0x01
+    ],
+    "g": [0x06, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x01, 0x00,
+        0x01, 0x01, 0x01,
+        0x01, 0x01, 0x02,
+        0x01, 0x00, 0x02,
+        
+        0x06, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x02, 0x01, 0x02,
+        0x01, 0x00, 0x01, 0x00, 0x02,
+        0x01, 0x01, 0x01, 0x01, 0x02,
+        0x01, 0x00, 0x01, 0x01, 0x01,
+        0x01, 0x01, 0x00, 0x01, 0x01,
+        0x01, 0x00, 0x00, 0x01, 0x00
+    ],
+    "h": [0x05, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00,
+        0x01, 0x01, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0x02,
+        0x01, 0x01, 0x01,
+        
+        0x04, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x01, 0x00, 0x01, 0x01,
+        0x01, 0x00, 0x01, 0x01, 0x01,
+        0x01, 0x00, 0x01, 0x00, 0x02
+    ],
+    "i": [0x03, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x02, 0x00, 0x02,
+        
+        0x02, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x00, 0x02
+    ],
+    "j": [0x04, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0xFF, 0x00,
+        0x02, 0x00, 0x02,
+        
+        0x03, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x00, 0x02,
+        0x01, 0xFF, 0x00, 0x00, 0x00
+    ],
+    "k": [0x05, 0x00, 0x00, 0x00,
+        0x01, 0x01, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0x02,
+        0x01, 0x01, 0x01,
+        
+        0x04, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x01, 0x00,
+        0x01, 0x00, 0x01, 0x00, 0x02,
+        0x01, 0x00, 0x01, 0x01, 0x01
+    ],
+    "l": [0x04, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0x02,
+        0x01, 0x01, 0x00,
+        
+        0x03, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x00, 0x00, 0x01, 0x00,
+        0x01, 0x00, 0x01, 0x00, 0x02
+    ],
+    "m": [0x05, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00,
+        0x01, 0x01, 0x00,
+        0x01, 0xFF, 0x00,
+        0x01, 0xFF, 0x01,
+        0x01, 0x00, 0x01,
+        
+        0x04, 0x00, 0x00, 0x00,
+        0x01, 0xFF, 0x00, 0xFF, 0x01,
+        0x01, 0xFF, 0x01, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x01, 0x00
+    ],
+    "n": [0x04, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00,
+        0x01, 0x01, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x01, 0x01,
+        
+        0x03, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x01, 0x00,
+        0x01, 0x01, 0x00, 0x01, 0x01
+    ],
+    "o": [0x04, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00,
+        0x01, 0x01, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x01, 0x01,
+        
+        0x04, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0x00,
+        0x01, 0x01, 0x00, 0x01, 0x01,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x01, 0x01
+    ],
+    "p": [0x05, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0x02,
+        0x01, 0x01, 0x02,
+        0x01, 0x01, 0x01,
+        
+        0x05, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x01, 0x01,
+        0x01, 0x00, 0x01, 0x00, 0x02,
+        0x01, 0x01, 0x01, 0x01, 0x02,
+        0x01, 0x00, 0x02, 0x01, 0x02
+    ],
+    "q": [0x05, 0x00, 0x00, 0x00,
+        0x01, 0xFF, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0xFF, 0x02,
+        0x01, 0x00, 0x02,
+        
+        0x05, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0xFF, 0x01, 0x00, 0x01,
+        0x01, 0xFF, 0x01, 0xFF, 0x02,
+        0x01, 0xFF, 0x02, 0x00, 0x02,
+        0x01, 0x00, 0x01, 0x00, 0x02
+    ],
+    "r": [0x03, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x01, 0x01,
+        
+        0x02, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x01, 0x01
+    ],
+    "s": [0x04, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0xFF, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0xFF, 0x00,
+        
+        0x03, 0x00, 0x00, 0x00,
+        0x01, 0xFF, 0x01, 0x00, 0x01,
+        0x01, 0xFF, 0x01, 0x00, 0x00,
+        0x01, 0xFF, 0x00, 0x00, 0x00
+    ],
+    "t": [0x05, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0xFF, 0x01,
+        0x01, 0x01, 0x01,
+        0x01, 0x00, 0x02,
+        
+        0x04, 0x00, 0x00, 0x00,
+        0x01, 0xFF, 0x01, 0x00, 0x01,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x01, 0x01,
+        0x01, 0x00, 0x01, 0x00, 0x02
+    ],
+    "u": [0x04, 0x00, 0x00, 0x00,
+        0x01, 0x01, 0x00,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x01, 0x01,
+        
+        0x03, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x01, 0x00, 0x01, 0x01
+    ],
+    "v": [0x03, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00,
+        0x01, 0xFF, 0x01,
+        0x01, 0x00, 0x01,
+        
+        0x02, 0x00, 0x00, 0x00,
+        0x01, 0xFF, 0x01, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01
+    ],
+    "w": [0x05, 0x00, 0x00, 0x00,
+        0x01, 0xFF, 0x00,
+        0x01, 0x00, 0xFF,
+        0x01, 0x00, 0x00,
+        0x01, 0x01, 0xFF,
+        0x01, 0x01, 0x00,
+        
+        0x04, 0x00, 0x00, 0x00,
+        0x01, 0xFF, 0x00, 0x00, 0xFF,
+        0x01, 0x00, 0xFF, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0xFF,
+        0x01, 0x01, 0xFF, 0x01, 0x00
+    ],
+    "x": [0x05, 0x00, 0x00, 0x00,
+        0x01, 0xFF, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0x01, 0xFF,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0xFF,
+        
+        0x04, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0xFF, 0x00, 0x00, 
+        0x01, 0x00, 0x00, 0x01, 0xFF,
+        0x01, 0xFF, 0x01, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01
+    ],
+    "y": [0x04, 0x00, 0x00, 0x00,
+        0x01, 0xFF, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0xFF,
+        
+        0x03, 0x00, 0x00, 0x00,
+        0x01, 0xFF, 0x01, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x00, 0xFF, 0x00, 0x00
+    ],
+    "z": [0x04, 0x00, 0x00, 0x00,
+        0x01, 0xFF, 0x01,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0x01, 0x00,
+        
+        0x03, 0x00, 0x00, 0x00,
+        0x01, 0xFF, 0x01, 0x00, 0x01,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x00, 0x00, 0x01, 0x00
+    ],
+    
+    // Caps
+    "A": [0x05, 0x00, 0x00, 0x00,
+        0x01, 0xFF, 0xFF,
+        0x01, 0xFF, 0x00,
+        0x01, 0xFF, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0x01, 0xFF,
+        
+        0x05, 0x00, 0x00, 0x00,
+        0x01, 0xFF, 0xFF, 0xFF, 0x00,
+        0x01, 0xFF, 0x00, 0xFF, 0x01,
+        0x01, 0xFF, 0x01, 0x00, 0x00,
+        0x01, 0xFF, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0xFF
+    ],
+    "B": [0x06, 0x00, 0x00, 0x00,
+        0x01, 0x01, 0x01,
+        0x01, 0x01, 0x00,
+        0x01, 0x01, 0xFF,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0xFF,
+        
+        0x07, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0xFF, 0x01, 0xFF,
+        0x01, 0x00, 0xFF, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x01, 0x00, 0x01, 0x01,
+        0x01, 0x00, 0x01, 0x01, 0x01,
+        0x01, 0x00, 0x00, 0x01, 0xFF
+    ],
+    "C": [0x05, 0x00, 0x00, 0x00,
+        0x01, 0x01, 0x01,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0xFF,
+        0x01, 0x01, 0xFF,
+        
+        0x04, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0xFF, 0x00, 0x00,
+        0x01, 0x00, 0xFF, 0x01, 0xFF,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x01, 0x01
+    ],
+    "D": [0x06, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0xFF,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x01, 0x01,
+        0x01, 0x01, 0x00,
+        0x01, 0x01, 0xFF,
+        
+        0x06, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0xFF, 0x01, 0xFF,
+        0x01, 0x00, 0xFF, 0x00, 0x00,
+        0x01, 0x01, 0xFF, 0x01, 0x00,
+        0x01, 0x01, 0x00, 0x01, 0x01,
+        0x01, 0x00, 0x01, 0x01, 0x01,
+        0x01, 0x00, 0x00, 0x00, 0x01
+    ],
+    "E": [0x06, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0xFF,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x01, 0x01,
+        0x01, 0x01, 0xFF,
+        0x01, 0x01, 0x00,
+        
+        0x05, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0xFF, 0x01, 0xFF,
+        0x01, 0x00, 0xFF, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x01, 0x01,
+        0x01, 0x00, 0x00, 0x01, 0x00
+    ],
+    "F": [0x07, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0xFF,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x01, 0x01,
+        0x01, 0x01, 0x00,
+        0x01, 0x02, 0x01,
+        0x01, 0x02, 0x00,
+        
+        0x06, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0x00,
+        0x01, 0x00, 0xFF, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x01, 0x01,
+        0x01, 0x01, 0x01, 0x02, 0x01,
+        0x01, 0x01, 0x00, 0x02, 0x00,
+    ],
+    "G": [0x06, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0xFF,
+        0x01, 0x01, 0xFF,
+        0x01, 0x01, 0x01,
+        0x01, 0x01, 0x00,
+        
+        0x06, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0x00,
+        0x01, 0x01, 0xFF, 0x01, 0x00,
+        0x01, 0x00, 0xFF, 0x01, 0xFF,
+        0x01, 0x00, 0xFF, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x01, 0x01
+    ],
+    "H": [0x06, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0xFF,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x01, 0x00,
+        0x01, 0x01, 0x01,
+        0x01, 0x01, 0xFF,
+        
+        0x05, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0xFF, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0x00,
+        0x01, 0x01, 0xFF, 0x01, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x01, 0x00, 0x01, 0x01
+    ],
+    "I": [0x07, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0xFF,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x01, 0x01,
+        0x01, 0xFF, 0x01,
+        0x01, 0xFF, 0xFF,
+        0x01, 0x01, 0xFF,
+        
+        0x06, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0xFF, 0x01, 0xFF,
+        0x01, 0xFF, 0xFF, 0x00, 0xFF,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0xFF, 0x01, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x01, 0x01, 
+        0x01, 0x00, 0xFF, 0x00, 0x00
+    ],
+    "J": [0x06, 0x00, 0x00, 0x00,
+        0x01, 0xFF, 0x01,
+        0x01, 0x00, 0x01,
+        0x01, 0x01, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0xFF,
+        0x01, 0xFF, 0xFF,
+        
+        0x05, 0x00, 0x00, 0x00,
+        0x01, 0xFF, 0xFF, 0x00, 0xFF,
+        0x01, 0x00, 0xFF, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0xFF, 0x01, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x01, 0x01
+    ],
+    "K": [0x08, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0xFF,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0x02,
+        0x01, 0x01, 0x01,
+        0x01, 0x01, 0x00,
+        0x01, 0x02, 0xFF,
+        0x01, 0x02, 0x01,
+        
+        0x07, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0xFF, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x01, 0x01,
+        0x01, 0x00, 0x01, 0x00, 0x02,
+        0x01, 0x00, 0x01, 0x01, 0x00,
+        0x01, 0x01, 0x00, 0x02, 0xFF,
+        0x01, 0x01, 0x01, 0x02, 0x01
+    ],
+    "L": [0x06, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0xFF,
+        0x01, 0x01, 0xFF,
+        0x01, 0x02, 0xFF,
+        0x01, 0x00, 0x02,
+        
+        0x05, 0x00, 0x00, 0x00,
+        0x01, 0x01, 0xFF, 0x02, 0xFF,
+        0x01, 0x00, 0xFF, 0x01, 0xFF,
+        0x01, 0x00, 0xFF, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x00, 0x02
+    ],
+    "M": [0x07, 0x00, 0x00, 0x00,
+        0x01, 0xFF, 0xFF,
+        0x01, 0x02, 0xFF,
+        0x01, 0x01, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0xFF, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0xFF, 0x00,
+        
+        0x06, 0x00, 0x00, 0x00,
+        0x01, 0xFF, 0xFF, 0xFF, 0x00,
+        0x01, 0xFF, 0x00, 0xFF, 0x01,
+        0x01, 0xFF, 0x01, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x01, 0x00,
+        0x01, 0x01, 0x00, 0x02, 0xFF
+    ],
+    "N": [0x07, 0x00, 0x00, 0x00,
+        0x01, 0xFF, 0xFF,
+        0x01, 0xFF, 0x00,
+        0x01, 0xFF, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0x01, 0xFF,
+        0x01, 0x01, 0x00,
+        0x01, 0x01, 0x01,
+        
+        0x06, 0x00, 0x00, 0x00,
+        0x01, 0x01, 0x00, 0x01, 0x01,
+        0x01, 0x01, 0xFF, 0x01, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0xFF,
+        0x01, 0xFF, 0x01, 0x00, 0x00,
+        0x01, 0xFF, 0x00, 0xFF, 0x01,
+        0x01, 0xFF, 0xFF, 0xFF, 0x00
+    ],
+    "O": [0x08, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0xFF,
+        0x01, 0x01, 0xFF,
+        0x01, 0x02, 0xFF,
+        0x01, 0x02, 0x01,
+        0x01, 0x02, 0x00,
+        0x01, 0x01, 0x01,
+        
+        0x08, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01, 0x01, 0x01,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x00, 0xFF, 0x00, 0x00,
+        0x01, 0x00, 0xFF, 0x01, 0xFF,
+        0x01, 0x01, 0xFF, 0x02, 0xFF,
+        0x01, 0x02, 0xFF, 0x02, 0x00,
+        0x01, 0x02, 0x00, 0x02, 0x01,
+        0x01, 0x01, 0x01, 0x02, 0x01
+    ],
+    "P": [0x0A, 0x00, 0x00, 0x00,
+        0x01, 0x02, 0x02,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0x02,
+        0x01, 0x02, 0x01,
+        0x01, 0x02, 0x00,
+        0x01, 0x01, 0x00,
+        0x01, 0x00, 0x00,
+        0x01, 0x01, 0x02,
+        0x01, 0x00, 0xFF,
+        0x01, 0x00, 0xFE,
+        
+        0x0A, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0xFE, 0x00, 0xFF,
+        0x01, 0x00, 0xFF, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x00, 0x00, 0x01, 0x00,
+        0x01, 0x00, 0x01, 0x00, 0x02,
+        0x01, 0x01, 0x00, 0x02, 0x00,
+        0x01, 0x02, 0x00, 0x02, 0x01,
+        0x01, 0x02, 0x01, 0x02, 0x02,
+        0x01, 0x01, 0x02, 0x02, 0x02,
+        0x01, 0x00, 0x02, 0x01, 0x02
+    ],
+    "Q": [0x07, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0x01, 0xFF,
+        0x01, 0x02, 0xFF,
+        0x01, 0x02, 0x00,
+        0x01, 0x01, 0x01,
+        0x01, 0x03, 0xFE,
+        
+        0x07, 0x00, 0x00, 0x00,
+        0x01, 0x01, 0xFF, 0x02, 0xFF,
+        0x01, 0x00, 0x00, 0x01, 0xFF,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x02, 0xFF, 0x02, 0x00,
+        0x01, 0x01, 0x01, 0x02, 0x00,
+        0x01, 0x00, 0x01, 0x01, 0x01,
+        0x01, 0x02, 0xFF, 0x03, 0xFE
+    ],
+    "R": [0x06, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0xFF,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x01, 0x01,
+        0x01, 0x01, 0x00,
+        0x01, 0x01, 0xFF,
+        
+        0x06, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0xFF, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0xFF,
+        0x01, 0x00, 0x00, 0x01, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x01, 0x01,
+        0x01, 0x01, 0x00, 0x01, 0x01
+    ],
+    "S": [0x07, 0x00, 0x00, 0x00,
+        0x01, 0x01, 0x01,
+        0x01, 0x00, 0x01,
+        0x01, 0xFF, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0x01, 0xFF,
+        0x01, 0x00, 0xFF,
+        0x01, 0xFF, 0xFF,
+        
+        0x06, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0xFF, 0x01, 0xFF,
+        0x01, 0x00, 0x00, 0x01, 0xFF,
+        0x01, 0xFF, 0x01, 0x00, 0x00,
+        0x01, 0xFF, 0x01, 0x00, 0x01,
+        0x01, 0xFF, 0xFF, 0x00, 0xFF,
+        0x01, 0x00, 0x01, 0x01, 0x01
+    ],
+    "T": [0x05, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0xFF,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0xFF, 0x01,
+        0x01, 0x01, 0x01,
+        
+        0x04, 0x00, 0x00, 0x00,
+        0x01, 0xFF, 0x01, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x01, 0x01,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x00, 0xFF, 0x00, 0x00
+    ],
+    "U": [0x07, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0xFF,
+        0x01, 0x01, 0xFF,
+        0x01, 0x02, 0xFF,
+        0x01, 0x02, 0x00,
+        0x01, 0x02, 0x01,
+        
+        0x06, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x00, 0xFF, 0x00, 0x00,
+        0x01, 0x00, 0xFF, 0x01, 0xFF,
+        0x01, 0x01, 0xFF, 0x02, 0xFF,
+        0x01, 0x02, 0xFF, 0x02, 0x00,
+        0x01, 0x02, 0x00, 0x02, 0x01
+    ],
+    "V": [0x05, 0x00, 0x00, 0x00,
+        0x01, 0xFF, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0x01, 0xFF,
+        0x01, 0x01, 0x00,
+        0x01, 0x01, 0x01,
+        
+        0x04, 0x00, 0x00, 0x00,
+        0x01, 0x01, 0x00, 0x01, 0x01,
+        0x01, 0x01, 0xFF, 0x01, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0xFF,
+        0x01, 0xFF, 0x01, 0x00, 0x00
+    ],
+    "W": [0x07, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0xFF,
+        0x01, 0x00, 0x00,
+        0x01, 0x01, 0xFF,
+        0x01, 0x01, 0x00,
+        0x01, 0xFF, 0x00,
+        0x01, 0x01, 0x01,
+        0x01, 0xFE, 0x01,
+        
+        0x06, 0x00, 0x00, 0x00,
+        0x01, 0xFE, 0x01, 0xFF, 0x00,
+        0x01, 0xFF, 0x00, 0x00, 0xFF,
+        0x01, 0x00, 0xFF, 0x00, 0x00,
+        0x01, 0x01, 0xFF, 0x01, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0xFF,
+        0x01, 0x01, 0x00, 0x01, 0x01
+    ],
+    "X": [0x09, 0x00, 0x00, 0x00,
+        0x01, 0xFF, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0x01, 0xFF,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0x02,
+        0x01, 0xFE, 0x02,
+        0x01, 0x00, 0xFF,
+        0x01, 0x00, 0xFE,
+        0x01, 0x02, 0xFE,
+        
+        0x08, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0xFF,
+        0x01, 0x01, 0xFF, 0x02, 0xFE,
+        0x01, 0x00, 0xFE, 0x00, 0xFF,
+        0x01, 0x00, 0xFF, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x00, 0x02,
+        0x01, 0xFF, 0x01, 0x00, 0x00,
+        0x01, 0xFE, 0x02, 0xFF, 0x01
+    ],
+    "Y": [0x07, 0x00, 0x00, 0x00,
+        0x01, 0xFF, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0x02,
+        0x01, 0x00, 0xFF,
+        0x01, 0xFE, 0x02,
+        0x01, 0x00, 0xFE,
+        0x01, 0x00, 0x01,
+        
+        0x06, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0xFF, 0x00, 0x00,
+        0x01, 0xFF, 0x01, 0x00, 0x00,
+        0x01, 0xFE, 0x02, 0xFF, 0x01,
+        0x01, 0x00, 0x00, 0x00, 0x01, 
+        0x01, 0x00, 0x01, 0x00, 0x02,
+        0x01, 0x00, 0xFE, 0x00, 0xFF
+    ],
+    "Z": [0x08, 0x00, 0x00, 0x00,
+        0x01, 0xFF, 0x01,
+        0x01, 0x00, 0x01,
+        0x01, 0xFE, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0xFF,
+        0x01, 0x00, 0xFE,
+        0x01, 0x01, 0xFE,
+        0x01, 0x02, 0xFE,
+        
+        0x07, 0x00, 0x00, 0x00,
+        0x01, 0x01, 0xFE, 0x02, 0xFE,
+        0x01, 0x00, 0xFE, 0x01, 0xFE,
+        0x01, 0x00, 0xFE, 0x00, 0xFF,
+        0x01, 0x00, 0xFF, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0xFF, 0x01, 0x00, 0x01,
+        0x01, 0xFE, 0x01, 0xFF, 0x01
+    ],
+    
+    // Numbers
+    "1": [0x03, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x02,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0x00,
+        
+        0x02, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x02, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x00, 0x00
+    ],
+    "2": [0x05, 0x00, 0x00, 0x00,
+        0x01, 0xff, 0x02,
+        0x01, 0x00, 0x02,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0x01, 0x00,
+        
+        0x04, 0x00, 0x00, 0x00,
+        0x01, 0xff, 0x02, 0x00, 0x02,
+        0x01, 0x00, 0x02, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0x00
+    ],
+    "3": [0x06, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x01, 0x01,
+        0x01, 0x01, 0x00,
+        0x01, 0x00, 0x00,
+        0x01, 0x01, 0xff,
+        0x01, 0x00, 0xff,
+        
+        0x05, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01, 0x01, 0x01,
+        0x01, 0x00, 0x00, 0x01, 0x00,
+        0x01, 0x00, 0xff, 0x01, 0xff,
+        0x01, 0x01, 0x01, 0x01, 0x00,
+        0x01, 0x01, 0x00, 0x01, 0xff
+    ],
+    "4": [0x05, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0x01, 0x00,
+        0x01, 0x01, 0x01,
+        0x01, 0x01, 0xff,
+        
+        0x04, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0x00,
+        0x01, 0x01, 0x00, 0x01, 0x01,
+        0x01, 0x01, 0x00, 0x01, 0xff,
+    ],
+    "5": [0x06, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x01, 0x01,
+        0x01, 0x01, 0x00,
+        0x01, 0x00, 0x00,
+        0x01, 0x01, 0xff,
+        0x01, 0x00, 0xff,
+        
+        0x05, 0x00, 0x00, 0x00,
+        0x01, 0x01, 0x01, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0x00,
+        0x01, 0x01, 0x00, 0x01, 0xff,
+        0x01, 0x01, 0xff, 0x00, 0xff,
+    ],
+    "6": [0x06, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x01, 0x01,
+        0x01, 0x01, 0x00,
+        0x01, 0x00, 0x00,
+        0x01, 0x01, 0xff,
+        0x01, 0x00, 0xff,
+        
+        0x06, 0x00, 0x00, 0x00,
+        0x01, 0x01, 0x01, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0x00,
+        0x01, 0x01, 0x00, 0x01, 0xff,
+        0x01, 0x01, 0xff, 0x00, 0xff,
+        0x01, 0x00, 0xff, 0x00, 0x00,
+    ],
+    "7": [0x04, 0x00, 0x00, 0x00,
+        0x01, 0xff, 0x02,
+        0x01, 0x00, 0x02,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0x00,
+        
+        0x03, 0x00, 0x00, 0x00,
+        0x01, 0xff, 0x02, 0x00, 0x02,
+        0x01, 0x00, 0x02, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x00, 0x00,
+    ],
+    "8": [0x06, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x01, 0x01,
+        0x01, 0x01, 0x00,
+        0x01, 0x00, 0x00,
+        0x01, 0x01, 0xff,
+        0x01, 0x00, 0xff,
+        
+        0x07, 0x00, 0x00, 0x00,
+        0x01, 0x01, 0x01, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0x00,
+        0x01, 0x01, 0x00, 0x01, 0xff,
+        0x01, 0x01, 0xff, 0x00, 0xff,
+        0x01, 0x00, 0xff, 0x00, 0x00,
+        0x01, 0x01, 0x00, 0x01, 0x01,
+    ],
+    "9": [0x06, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x01, 0x01,
+        0x01, 0x01, 0x00,
+        0x01, 0x00, 0x00,
+        0x01, 0x01, 0xff,
+        0x01, 0x00, 0xff,
+        
+        0x06, 0x00, 0x00, 0x00,
+        0x01, 0x01, 0x01, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0x00,
+        0x01, 0x01, 0x00, 0x01, 0xff,
+        0x01, 0x01, 0xff, 0x00, 0xff,
+        0x01, 0x01, 0x00, 0x01, 0x01,
+    ],
+    "0": [0x06, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x01, 0x01,
+        0x01, 0x01, 0x00,
+        0x01, 0x00, 0x00,
+        0x01, 0x01, 0xff,
+        0x01, 0x00, 0xff,
+        
+        0x06, 0x00, 0x00, 0x00,
+        0x01, 0x01, 0x01, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x00, 0x00,
+        0x01, 0x01, 0x00, 0x01, 0xff,
+        0x01, 0x01, 0xff, 0x00, 0xff,
+        0x01, 0x00, 0xff, 0x00, 0x00,
+        0x01, 0x01, 0x00, 0x01, 0x01,
+    ],
+    
+    // Symbols
+    ".": [0x01, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00,
+        
+        0x00, 0x00, 0x00, 0x00,
+    ],
+    "!": [0x03, 0x00, 0x00, 0x00,
+        0x02, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0x02,
+        
+        0x02, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x00, 0x02
+    ],
+    "?": [0x05, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x02,
+        0x01, 0x01, 0x02,
+        0x01, 0x01, 0x01,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0x00,
+        
+        0x04, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x02, 0x01, 0x02,
+        0x01, 0x01, 0x02, 0x01, 0x01,
+        0x01, 0x01, 0x01, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x00, 0x00,
+    ],
+    "-": [0x02, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00,
+        0x01, 0x01, 0x00,
+        
+        0x01, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0x00,
+    ],
+    "–": [0x02, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00,
+        0x01, 0x01, 0x00,
+        
+        0x01, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0x00,
+    ],
+    "—": [0x03, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00,
+        0x01, 0x01, 0x00,
+        0x01, 0x02, 0x00,
+        
+        0x02, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0x00,
+        0x01, 0x01, 0x00, 0x02, 0x00,
+    ],
+    "'": [0x02, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        
+        0x01, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+    ],
+    "`": [0x02, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00,
+        0x01, 0xff, 0x01,
+        
+        0x01, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0xff, 0x01,
+    ],
+    ":": [0x02, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        
+        0x01, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+    ],
+    ",": [0x02, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        
+        0x01, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+    ],
+    ";": [0x02, 0x00, 0x00, 0x00,
+        0x02, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        
+        0x01, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+    ],
+    "/": [0x03, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0x02,
+        
+        0x02, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x00, 0x02,
+    ],
+    "\\": [0x03, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00,
+        0x01, 0xFF, 0x01,
+        0x01, 0xFE, 0x02,
+        
+        0x02, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0xFF, 0x01,
+        0x01, 0xFF, 0x01, 0xFE, 0x02,
+    ],
+    "@": [0x07, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0xFF, 0x01,
+        0x01, 0xFF, 0x00,
+        0x01, 0x00, 0xFF,
+        0x01, 0x01, 0xFF,
+        0x01, 0x01, 0x00,
+        
+        0x08, 0x00, 0x00, 0x00,
+        0x01, 0xFF, 0x00, 0x00, 0xFF,
+        0x01, 0xFF, 0x00, 0xFF, 0x01,
+        0x01, 0xFF, 0x01, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x01, 0x00,
+        0x01, 0x00, 0xFF, 0x01, 0xFF,
+        0x01, 0x01, 0xFF, 0x01, 0x00,
+        0x01, 0xFF, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0xFF
+    ],
+    "#": [0x0C, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x02, 0x00,
+        0x01, 0x01, 0x00,
+        0x01, 0x01, 0x01,
+        0x01, 0x01, 0xFF,
+        0x01, 0x00, 0xFF,
+        0x01, 0x00, 0x00,
+        0x01, 0xFF, 0x00,
+        0x01, 0x02, 0xFF,
+        0x01, 0xFF, 0xFF,
+        0x01, 0x00, 0xFE,
+        0x01, 0x01, 0xFE,
+        
+        0x0C, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x00, 0xFF, 0x00, 0x00,
+        0x01, 0x01, 0xFF, 0x01, 0x00,
+        0x01, 0x01, 0x00, 0x01, 0x01,
+        0x01, 0xFF, 0x00, 0x00, 0x00,
+        0x01, 0x01, 0x00, 0x02, 0x00,
+        0x01, 0x00, 0xFF, 0x01, 0xFF,
+        0x01, 0x01, 0xFF, 0x02, 0xFF,
+        0x01, 0xFF, 0xFF, 0x00, 0xFF,
+        0x01, 0x00, 0xFE, 0x00, 0xFF,
+        0x01, 0x01, 0xFE, 0x01, 0xFF
+    ],
+    "$": [0x07, 0x00, 0x00, 0x00,
+        0x01, 0x01, 0x01,
+        0x01, 0x00, 0x01,
+        0x01, 0xFF, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0x01, 0xFF,
+        0x01, 0x00, 0xFF,
+        0x01, 0xFF, 0xFF,
+        
+        0x06, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0xFF, 0x01, 0xFF,
+        0x01, 0x00, 0x00, 0x01, 0xFF,
+        0x01, 0xFF, 0x01, 0x00, 0x00,
+        0x01, 0xFF, 0x01, 0x00, 0x01,
+        0x01, 0xFF, 0xFF, 0x00, 0xFF,
+        0x01, 0x00, 0x01, 0x01, 0x01
+    ],
+    "%": [0x05, 0x00, 0x00, 0x00,
+        0x01, 0xFF, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0x01, 0xFF,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0xFF,
+        
+        0x04, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0xFF, 0x00, 0x00, 
+        0x01, 0x00, 0x00, 0x01, 0xFF,
+        0x01, 0xFF, 0x01, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01
+    ],
+    "^": [0x03, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x01, 0x00,
+        
+        0x02, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x01, 0x00,
+    ],
+    "&": [0x07, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x01, 0x01,
+        0x01, 0x01, 0x00,
+        0x01, 0x00, 0x00,
+        0x01, 0x01, 0xff,
+        0x01, 0x00, 0xff,
+        0x01, 0x02, 0xfe,
+        
+        0x08, 0x00, 0x00, 0x00,
+        0x01, 0x01, 0x01, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0x00,
+        0x01, 0x01, 0x00, 0x01, 0xff,
+        0x01, 0x01, 0xff, 0x00, 0xff,
+        0x01, 0x00, 0xff, 0x00, 0x00,
+        0x01, 0x01, 0x00, 0x01, 0x01,
+        0x01, 0x02, 0xfe, 0x01, 0xff,
+    ],
+    "*": [0x07, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x01, 0x00,
+        0x01, 0x01, 0xff,
+        0x01, 0x00, 0xff,
+        0x01, 0xff, 0x00,
+        0x01, 0xff, 0x01,
+        
+        0x06, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x00, 0x00, 0x01, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0xff,
+        0x01, 0x00, 0x00, 0x00, 0xff,
+        0x01, 0x00, 0x00, 0xff, 0x00,
+        0x01, 0x00, 0x00, 0xff, 0x01,
+    ],
+    "(": [0x03, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0x01, 0xff,
+        
+        0x02, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0xff,
+    ],
+    ")": [0x03, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x01, 0x00,
+        0x01, 0x01, 0xff,
+        
+        0x02, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01, 0x01, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0xff,
+    ],
+    "<": [0x03, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0x01, 0xff,
+        
+        0x02, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0xff,
+    ],
+    ">": [0x03, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x01, 0x00,
+        0x01, 0x01, 0xff,
+        
+        0x02, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01, 0x01, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0xff,
+    ],
+    "+": [0x05, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0xFF, 0x01,
+        0x01, 0x01, 0x01,
+        0x01, 0x00, 0x02,
+        
+        0x04, 0x00, 0x00, 0x00,
+        0x01, 0xFF, 0x01, 0x00, 0x01,
+        0x01, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x01, 0x01,
+        0x01, 0x00, 0x01, 0x00, 0x02
+    ],
+    "[": [0x05, 0x00, 0x00, 0x00,
+        0x01, 0x01, 0x01,
+        0x01, 0x00, 0x01,
+        0x01, 0x00, 0x00,
+        0x01, 0x00, 0xff,
+        0x01, 0x01, 0xff,
+        
+        0x04, 0x00, 0x00, 0x00,
+        0x01, 0x01, 0x01, 0x00, 0x01,
+        0x01, 0x00, 0x01, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0xff,
+        0x01, 0x00, 0xff, 0x01, 0xff
+    ],
+    "]": [0x05, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01,
+        0x01, 0x01, 0x01,
+        0x01, 0x01, 0x00,
+        0x01, 0x01, 0xff,
+        0x01, 0x00, 0xff,
+        
+        0x04, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01, 0x01, 0x01,
+        0x01, 0x01, 0x01, 0x01, 0x00,
+        0x01, 0x01, 0x00, 0x01, 0xff,
+        0x01, 0x01, 0xff, 0x00, 0xff
+    ],
+}

@@ -1,6 +1,6 @@
-import type { FileData, FileFormat, FormatHandler } from "src/FormatHandler";
+import type { FileData, FileFormat, FormatHandler } from "src/FormatHandler.ts";
 import * as NBT from "nbtify";
-import CommonFormats from "src/CommonFormats";
+import CommonFormats, { Category } from "src/CommonFormats.ts";
 import { gzipSync, gunzipSync } from "fflate";
 
 class nbtHandler implements FormatHandler {
@@ -20,7 +20,7 @@ class nbtHandler implements FormatHandler {
                 from: true,
                 to: true,
                 internal: "nbt",
-                category: "data",
+                category: Category.DATA,
                 lossless: true
             },
             CommonFormats.JSON.supported("json", true, true, true),
@@ -32,7 +32,7 @@ class nbtHandler implements FormatHandler {
                 from: true,
                 to: true,
                 internal: "snbt",
-                category: "data",
+                category: Category.DATA,
                 lossless: true // only compression data is lost
             },
         ]
@@ -114,7 +114,7 @@ class nbtHandler implements FormatHandler {
         }
 
         if (outputFiles.length === 0) {
-            throw new Error(`nbtHandler does not support route: ${inputFormat.internal} -> ${outputFormat.internal}`);
+            throw new TypeError(`nbtHandler does not support route: ${inputFormat.internal} -> ${outputFormat.internal}`);
         }
 
         return outputFiles

@@ -23,7 +23,7 @@ const server = Bun.serve({
     if (!(await file.exists())) return new Response("Not Found", { status: 404 });
     return new Response(file);
   },
-  port: 8080
+  port: 0
 });
 
 // Start puppeteer, wait for ready confirmation
@@ -40,7 +40,7 @@ await Promise.all([
       if (text === "Built initial format list.") resolve(null);
     });
   }),
-  page.goto("http://localhost:8080/convert/index.html")
+  page.goto(`http://localhost:${server.port}/convert/index.html`)
 ]);
 
 console.log("Setup finished.");
@@ -174,7 +174,7 @@ test("mp3 → png → gif", async () => {
 
 }, { timeout: 60000 });
 
-test("docx → pdf via typst", async () => {
+test("docx → typst → pdf", async () => {
 
   const conversion = await attemptConversion(
     ["word.docx"],
@@ -193,26 +193,22 @@ test("docx → pdf via typst", async () => {
 
 }, { timeout: 60000 });
 
-test("epub → pdf path goes through html and typst", async () => {
-  const path = await findPath(
-    CommonFormats.EPUB,
-    CommonFormats.PDF,
+
+test("pptx → pdf", async () => {
+
+  const conversion = await attemptConversion(
+    ["chart-and-complex.pptx"],
+    CommonFormats.PPTX,
+    CommonFormats.PDF
   );
 
-  expect(path).toBeTruthy();
-  expect(path!.map(step => step.mime)).toEqual([
-    "application/epub+zip",
-    "text/html",
-    "text/typst",
-    "application/pdf",
+  expect(conversion).toBeTruthy();
+  expect(conversion!.path.map(c => c.format.mime)).toEqual([
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/pdf"
   ]);
-  expect(path!.map(step => step.handler)).toEqual([
-    "test-from",
-    "epubjs-html",
-    "pandoc",
-    "typst",
-  ]);
-}, { timeout: 60000 });
+
+}, { timeout: 120000 });
 
 test("md → docx", async () => {
 

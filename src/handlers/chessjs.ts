@@ -53,7 +53,7 @@ class chessjsHandler implements FormatHandler {
       } else if (inputFormat.internal === "pgn") {
         chess.loadPgn(input);
       } else {
-        throw new Error(`chessjsHandler cannot convert from ${inputFormat.mime}`);
+        throw new TypeError(`chessjsHandler cannot convert from ${inputFormat.mime}`);
       }
 
       let output;
@@ -64,7 +64,7 @@ class chessjsHandler implements FormatHandler {
       } else if (outputFormat.internal === "txt") {
         output = chess.ascii();
       } else {
-        throw new Error(`chessjsHandler cannot convert to ${outputFormat.mime}`);
+        throw new TypeError(`chessjsHandler cannot convert to ${outputFormat.mime}`);
       }
 
       const bytes = new TextEncoder().encode(output);
