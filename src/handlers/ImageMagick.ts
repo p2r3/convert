@@ -11,6 +11,7 @@ import mime from "mime";
 import normalizeMimeType from "../normalizeMimeType.ts";
 import CommonFormats from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
+import type { ConvertContext } from "../ui/ProgressStore.js";
 
 class ImageMagickHandler implements FormatHandler {
 
@@ -83,7 +84,9 @@ class ImageMagickHandler implements FormatHandler {
   async doConvert (
     inputFiles: FileData[],
     inputFormat: FileFormat,
-    outputFormat: FileFormat
+    outputFormat: FileFormat,
+    args?: string[],
+    ctx?: ConvertContext
   ): Promise<FileData[]> {
 
     const inputMagickFormat = inputFormat.internal as MagickFormat;
@@ -93,29 +96,49 @@ class ImageMagickHandler implements FormatHandler {
     inputSettings.format = inputMagickFormat;
 
 
+    ctx?.log(`Initialising ImageMagick for ${inputFiles.length} files...`);
+
     const bytes: Uint8Array = await new Promise(resolve => {
       MagickImageCollection.use(outputCollection => {
+        let processedCount = 0;
         for (const inputFile of inputFiles) {
-           if (inputFormat.format === "rgb") {
+          ctx?.throwIfAborted();
+          const progressMsg = `Reading ${inputFile.name}...`;
+          ctx?.progress(progressMsg, processedCount / inputFiles.length);
+          ctx?.log(progressMsg);
+
+          if (inputFormat.format === "rgb") {
              // Guess how big the Image should be
              inputSettings.width = Math.sqrt(inputFile.bytes.length / 3);
              inputSettings.height = inputSettings.width;
-           }
+             ctx?.log(`Detected RAW RGB format. Guessed dimensions: ${inputSettings.width}x${inputSettings.height}`, "debug");
+          }
           MagickImageCollection.use(fileCollection => {
             fileCollection.read(inputFile.bytes, inputSettings);
+            ctx?.log(`Successfully read ${inputFile.name}. Found ${fileCollection.length} sub-images/frames.`, "debug");
+
+            let frameIndex = 0;
             while (fileCollection.length > 0) {
               const image = fileCollection.shift();
               if (!image) break;
 
               if(outputFormat.format === "ico" && (image.width > 256 || image.height > 256)) {
+                ctx?.log(`Image ${inputFile.name} frame ${frameIndex} too large for ICO (${image.width}x${image.height}). Resizing to 256x256...`, "warn");
                 const geometry = new MagickGeometry(256, 256);
                 image.resize(geometry);
               }
 
               outputCollection.push(image);
+              frameIndex++;
             }
           });
+          processedCount++;
         }
+
+        const writingMsg = `Encoding output as ${outputFormat.extension}...`;
+        ctx?.progress(writingMsg, 0.9);
+        ctx?.log(writingMsg);
+
         outputCollection.write(outputMagickFormat, (bytes) => {
           resolve(new Uint8Array(bytes));
         });
@@ -124,6 +147,10 @@ class ImageMagickHandler implements FormatHandler {
 
     const baseName = inputFiles[0].name.split(".").slice(0, -1).join(".");
     const name = baseName + "." + outputFormat.extension;
+
+    ctx?.progress("Conversion complete!", 1);
+    ctx?.log(`Successfully converted ${inputFiles.length} files to ${name} (${bytes.length} bytes)`);
+
     return [{ bytes, name }];
 
   }

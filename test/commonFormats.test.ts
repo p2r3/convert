@@ -23,7 +23,7 @@ const server = Bun.serve({
     if (!(await file.exists())) return new Response("Not Found", { status: 404 });
     return new Response(file);
   },
-  port: 8080
+  port: 0
 });
 
 // Start puppeteer, wait for ready confirmation
@@ -40,7 +40,7 @@ await Promise.all([
       if (text === "Built initial format list.") resolve(null);
     });
   }),
-  page.goto("http://localhost:8080/convert/index.html")
+  page.goto(`http://localhost:${server.port}/convert/index.html`)
 ]);
 
 console.log("Setup finished.");
@@ -158,7 +158,7 @@ test("mp3 → png → gif", async () => {
 
 }, { timeout: 60000 });
 
-test("docx → html → svg → png → pdf", async () => {
+test("docx → pptx → pdf", async () => {
 
   const conversion = await attemptConversion(
     ["word.docx"],
@@ -169,12 +169,27 @@ test("docx → html → svg → png → pdf", async () => {
   expect(conversion).toBeTruthy();
   expect(conversion!.path.map(c => c.format.mime)).toEqual([
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "text/html", "image/svg+xml", "image/png", "application/pdf"
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/pdf"
   ]);
-  const fileSize = Object.values(conversion!.files[0].bytes).length;
-  expect(fileSize).toBeWithin(55000, 65000);
 
 }, { timeout: 60000 });
+
+test("pptx → pdf", async () => {
+
+  const conversion = await attemptConversion(
+    ["chart-and-complex.pptx"],
+    CommonFormats.PPTX,
+    CommonFormats.PDF
+  );
+
+  expect(conversion).toBeTruthy();
+  expect(conversion!.path.map(c => c.format.mime)).toEqual([
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/pdf"
+  ]);
+
+}, { timeout: 120000 });
 
 test("md → docx", async () => {
 

@@ -1,0 +1,39 @@
+.conversion-header {
+	height: 56px;
+	background: var(--bg-card);
+	border-block-end: 1px solid var(--border-primary);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0 1.25rem;
+	z-index: 20;
+	flex-shrink: 0;
+	position: sticky;
+	top: 0;
+	gap: 1rem;
+
+	.header-left {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		min-width: 0;
+
+		.header-step-label {
+			font-size: 0.7rem;
+			font-weight: 700;
+			text-transform: uppercase;
+			letter-spacing: 0.06em;
+			color: var(--primary);
+			background: color-mix(in srgb, var(--primary) 10%, transparent);
+			padding: 0.2rem 0.55rem;
+			border-radius: 4px;
+		}
+	}
+
+	.header-right {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		flex-shrink: 0;
+	}
+}

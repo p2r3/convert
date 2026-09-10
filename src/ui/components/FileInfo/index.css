@@ -1,0 +1,57 @@
+.file-info-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.4rem 0.65rem;
+	border-radius: 8px;
+	background: var(--bg-section);
+	border: 1px solid var(--border-primary);
+	font-size: 0.8125rem;
+	transition: background 150ms, border-color 150ms;
+	max-width: 280px;
+	cursor: default;
+
+	&:hover {
+		border-color: var(--border-secondary);
+	}
+
+	.file-info-text {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+	}
+
+	.file-info-name {
+		font-weight: 600;
+		color: var(--text-primary);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		line-height: 1.3;
+	}
+
+	.file-info-size {
+		font-size: 0.6875rem;
+		color: var(--text-muted);
+		line-height: 1.2;
+	}
+
+	.file-info-remove {
+		appearance: none;
+		border: none;
+		background: transparent;
+		color: var(--text-muted);
+		cursor: pointer;
+		padding: 2px;
+		border-radius: 4px;
+		display: flex;
+		align-items: center;
+		transition: color 150ms, background 150ms;
+		flex-shrink: 0;
+
+		&:hover {
+			color: #ef4444;
+			background: rgba(239, 68, 68, 0.1);
+		}
+	}
+}

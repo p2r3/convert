@@ -1,0 +1,39 @@
+button.logo {
+	background: none;
+	border: none;
+	padding: 0;
+	font: inherit;
+	cursor: pointer;
+	text-align: inherit;
+}
+
+.logo {
+	display: flex;
+	align-items: center;
+	gap: 0.6rem;
+	user-select: none;
+
+	.logo-icon {
+		color: var(--primary);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	&:hover:not(:disabled) .logo-icon {
+		transform: rotate(-180deg);
+	}
+
+	&:disabled {
+		cursor: default;
+		opacity: 0.55;
+	}
+
+	.logo-name {
+		font-size: 1.2rem;
+		font-weight: 800;
+		color: var(--text-primary);
+		letter-spacing: -0.02em;
+	}
+}

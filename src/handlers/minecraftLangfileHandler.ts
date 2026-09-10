@@ -51,7 +51,12 @@ class mclangHandler implements FormatHandler {
         }
 
         resultText = Object.entries(obj)
-            .map(([k, v]) => `${k}=${v}`)
+            .map(([k, v])=>{
+              if (typeof v === "object") {
+                return `${k}=${JSON.stringify(v)}`;
+              }
+              return `${k}=${v}`;
+            })
             .join("\n");
         }
 
@@ -89,7 +94,6 @@ class mclangHandler implements FormatHandler {
 
     return outputFiles;
     }
-
 }
 
 export default mclangHandler;

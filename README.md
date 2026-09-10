@@ -114,7 +114,7 @@ class dummyHandler implements FormatHandler {
       from: false,
       to: false,
       internal: "gif",
-      category: [Category.IMAGE, CATEGORY.VIDEO], // See src/CommonFormats.ts for valid categories
+      category: [Category.IMAGE, Category.VIDEO], // See src/CommonFormats.ts for valid categories
       lossless: false
     },
   ];
