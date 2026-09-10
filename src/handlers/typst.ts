@@ -1,11 +1,293 @@
 import CommonFormats from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import type { TypstSnippet } from "@myriaddreamin/typst.ts/dist/esm/contrib/snippet.mjs";
-import {
-  TYPST_ASSET_MANIFEST_END,
-  TYPST_ASSET_MANIFEST_START,
-} from "./pandoc.ts";
 import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
+
+export const TYPST_PAGEBREAK_MARKER = "CONVERTTYPSTPAGEBREAKTOKEN";
+export const TYPST_ASSET_MANIFEST_START = "// convert-assets-start";
+export const TYPST_ASSET_MANIFEST_END = "// convert-assets-end";
+
+export function normalizeTypstAssetPaths(
+  typstContent: string,
+  shadowFiles: Record<string, Uint8Array>,
+): string {
+  const availablePaths = new Map<string, string>();
+
+  for (const path of Object.keys(shadowFiles)) {
+    const normalized = path
+      .replace(/\\/gu, "/")
+      .replace(/^\/+/u, "")
+      .replace(/^\.\/+/u, "")
+      .replace(/^(?:\.\.\/)+/u, "");
+    availablePaths.set(normalized, path);
+  }
+
+  return typstContent.replace(/(["'])([^"'\\\n]+)\1/gu, (match, quote, candidatePath) => {
+    const normalized = candidatePath
+      .replace(/\\/gu, "/")
+      .replace(/^\/+/u, "")
+      .replace(/^\.\/+/u, "")
+      .replace(/^(?:\.\.\/)+/u, "");
+    const canonicalPath = availablePaths.get(normalized);
+    if (!canonicalPath) return match;
+    return `${quote}${canonicalPath}${quote}`;
+  });
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+}
+
+function parseStyleAttribute(style: string): Map<string, string> {
+  const entries = new Map<string, string>();
+
+  for (const declaration of style.split(";")) {
+    const separatorIndex = declaration.indexOf(":");
+    if (separatorIndex === -1) continue;
+
+    const property = declaration.slice(0, separatorIndex).trim().toLowerCase();
+    const value = declaration.slice(separatorIndex + 1).trim();
+    if (!property || !value) continue;
+
+    entries.set(property, value);
+  }
+
+  return entries;
+}
+
+function hasPageBreakValue(value: string | undefined): boolean {
+  if (!value) return false;
+  const normalized = value.trim().toLowerCase();
+  return normalized === "page" || normalized === "always";
+}
+
+function elementHasMeaningfulContent(element: Element): boolean {
+  if (element.children.length > 0) return true;
+  if ((element.textContent || "").trim().length > 0) return true;
+
+  return [
+    "img",
+    "svg",
+    "table",
+    "hr",
+    "video",
+    "audio",
+    "canvas",
+    "iframe",
+  ].includes(element.tagName.toLowerCase());
+}
+
+function shouldInsertPageBreakBefore(element: Element): boolean {
+  const classList = element.classList;
+  if (classList.contains("__page") || classList.contains("epub-section")) return true;
+
+  const styles = parseStyleAttribute(element.getAttribute("style") || "");
+  return hasPageBreakValue(styles.get("break-before"))
+    || hasPageBreakValue(styles.get("page-break-before"));
+}
+
+function shouldInsertPageBreakAfter(element: Element): boolean {
+  const styles = parseStyleAttribute(element.getAttribute("style") || "");
+  return hasPageBreakValue(styles.get("break-after"))
+    || hasPageBreakValue(styles.get("page-break-after"));
+}
+
+function createPageBreakMarker(document: Document): HTMLParagraphElement {
+  const marker = document.createElement("p");
+  marker.setAttribute("data-typst-pagebreak-marker", "true");
+  marker.textContent = TYPST_PAGEBREAK_MARKER;
+  return marker;
+}
+
+function appendTypstAttribute(
+  element: Element,
+  name: string,
+  value: string | undefined,
+) {
+  if (!value || element.hasAttribute(name)) return;
+  element.setAttribute(name, value);
+}
+
+function promoteImageDimensions(element: Element, styles: Map<string, string>) {
+  if (element.tagName.toLowerCase() !== "img") return;
+
+  const width = styles.get("width") || styles.get("max-width");
+  const height = styles.get("height") || styles.get("max-height");
+
+  if (width && !element.getAttribute("width")) {
+    element.setAttribute("width", width);
+  }
+  if (height && !element.getAttribute("height")) {
+    element.setAttribute("height", height);
+  }
+}
+
+function applyTypstStyleHints(element: Element) {
+  const style = element.getAttribute("style");
+  if (!style) return;
+
+  const styles = parseStyleAttribute(style);
+  if (styles.size === 0) return;
+
+  const tagName = element.tagName.toLowerCase();
+  const inlineTextContainer = [
+    "span",
+    "a",
+    "code",
+    "kbd",
+    "mark",
+    "small",
+    "sub",
+    "sup",
+  ].includes(tagName);
+  const blockContainer = [
+    "div",
+    "p",
+    "section",
+    "article",
+    "blockquote",
+    "pre",
+    "figure",
+    "table",
+    "td",
+    "th",
+  ].includes(tagName);
+
+  if (inlineTextContainer) {
+    appendTypstAttribute(element, "typst:text:fill", styles.get("color"));
+    appendTypstAttribute(element, "typst:text:size", styles.get("font-size"));
+    appendTypstAttribute(element, "typst:text:font", styles.get("font-family"));
+  }
+
+  if (blockContainer) {
+    appendTypstAttribute(
+      element,
+      "typst:fill",
+      styles.get("background") || styles.get("background-color"),
+    );
+    appendTypstAttribute(
+      element,
+      "typst:inset",
+      styles.get("padding"),
+    );
+    appendTypstAttribute(
+      element,
+      "typst:stroke",
+      styles.get("border"),
+    );
+
+    if (
+      styles.get("break-inside")?.toLowerCase() === "avoid"
+      || styles.get("page-break-inside")?.toLowerCase() === "avoid"
+    ) {
+      appendTypstAttribute(element, "typst:breakable", "false");
+    }
+  }
+
+  promoteImageDimensions(element, styles);
+}
+
+export function preprocessHtmlForTypst(htmlContent: string): string {
+  if (typeof DOMParser === "undefined") return htmlContent;
+
+  const document = new DOMParser().parseFromString(htmlContent, "text/html");
+  const elements = Array.from(document.body.querySelectorAll("*"));
+  let sawMeaningfulContent = false;
+
+  for (const element of elements) {
+    if (
+      shouldInsertPageBreakBefore(element)
+      && sawMeaningfulContent
+      && element.previousElementSibling?.getAttribute("data-typst-pagebreak-marker") !== "true"
+    ) {
+      element.before(createPageBreakMarker(document));
+    }
+
+    applyTypstStyleHints(element);
+
+    if (elementHasMeaningfulContent(element)) {
+      sawMeaningfulContent = true;
+    }
+
+    if (
+      shouldInsertPageBreakAfter(element)
+      && element.nextElementSibling?.getAttribute("data-typst-pagebreak-marker") !== "true"
+    ) {
+      element.after(createPageBreakMarker(document));
+    }
+  }
+
+  return "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+}
+
+export function postprocessTypstFromPandoc(typstContent: string): string {
+  const escaped = escapeRegExp(TYPST_PAGEBREAK_MARKER);
+
+  return typstContent.replace(
+    new RegExp(`^.*${escaped}.*$`, "gmu"),
+    // Typst rejects page breaks inside containers; col breaks are valid here.
+    "#colbreak(weak: true)",
+  );
+}
+
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  const chunkSize = 0x8000;
+
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    binary += String.fromCharCode(...chunk);
+  }
+
+  return btoa(binary);
+}
+
+export async function collectTypstAssetFiles(
+  files: Record<string, any>,
+  excludedPaths: string[] = [],
+): Promise<Record<string, Uint8Array>> {
+  const bundledAssets: Record<string, Uint8Array> = {};
+  const excluded = new Set([
+    "stdin",
+    "stdout",
+    "stderr",
+    "warnings",
+    "output",
+    ...excludedPaths,
+  ]);
+
+  for (const [path, file] of Object.entries(files)) {
+    if (excluded.has(path)) continue;
+    if (!(file instanceof Blob)) continue;
+
+    const arrayBuffer = await file.arrayBuffer();
+    bundledAssets[path] = new Uint8Array(arrayBuffer);
+  }
+
+  return bundledAssets;
+}
+
+export async function bundleTypstAssets(
+  typstContent: string,
+  files: Record<string, any>,
+  excludedPaths: string[] = [],
+): Promise<string> {
+  const shadowFiles = await collectTypstAssetFiles(files, excludedPaths);
+  const assetPaths = Object.keys(shadowFiles);
+
+  if (assetPaths.length === 0) return typstContent;
+  const bundledAssets = Object.fromEntries(
+    Object.entries(shadowFiles).map(([path, bytes]) => [path, bytesToBase64(bytes)]),
+  );
+
+  return [
+    TYPST_ASSET_MANIFEST_START,
+    `// ${JSON.stringify(bundledAssets)}`,
+    TYPST_ASSET_MANIFEST_END,
+    "",
+    typstContent,
+  ].join("\n");
+}
 
 function base64ToBytes(base64: string): Uint8Array {
   const binary = atob(base64);

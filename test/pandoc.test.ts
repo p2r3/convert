@@ -5,8 +5,8 @@ import {
   bundleTypstAssets,
   postprocessTypstFromPandoc,
   preprocessHtmlForTypst,
-} from "../src/handlers/pandoc.ts";
-import { unpackTypstAssets } from "../src/handlers/typst.ts";
+  unpackTypstAssets,
+} from "../src/handlers/typst.ts";
 
 GlobalRegistrator.register();
 
