@@ -75,22 +75,6 @@ function attemptConversion (
   );
 }
 
-function findPath(from: FileFormat, to: FileFormat) {
-  return page.evaluate(async (from, to) => {
-    const iterator = window.traversionGraph.searchPath(
-      { format: from, handler: { name: "test-from" } },
-      { format: to },
-      false,
-    );
-    const result = await iterator.next();
-    return result.value?.map((step: ConvertPathNode) => ({
-      handler: step.handler.name,
-      format: step.format.format,
-      mime: step.format.mime,
-    })) ?? null;
-  }, from, to);
-}
-
 // ==================================================================
 //                         START OF TESTS
 // ==================================================================

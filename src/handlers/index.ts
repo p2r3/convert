@@ -167,7 +167,6 @@ try { handlers.push(new xcursorHandler()) } catch (_) { };
 try { handlers.push(new shToElfHandler()) } catch (_) { };
 try { handlers.push(new textToPdfHandler()) } catch (_) { };
 try { handlers.push(new cssHandler()) } catch (_) { };
-try { handlers.push(new TypstHandler()) } catch (_) { };
 try { handlers.push(new bbmodelHandler()) } catch (_) { };
 try { handlers.push(new kraHandler()) } catch (_) { };
 try { handlers.push(new krzHandler()) } catch (_) { };
