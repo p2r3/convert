@@ -1,5 +1,6 @@
 import CommonFormats from "../CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
+import type { ConvertContext } from "../ui/ProgressStore.ts";
 import ePub from "epubjs";
 
 function blobUrlRegex() {
@@ -118,6 +119,7 @@ export default class EpubHandler implements FormatHandler {
     _inputFormat: FileFormat,
     outputFormat: FileFormat,
     _args?: string[],
+    ctx?: ConvertContext,
   ): Promise<FileData[]> {
     if (!this.ready) throw new Error("Handler not initialized.");
 
@@ -149,10 +151,10 @@ export default class EpubHandler implements FormatHandler {
           file.bytes.byteOffset + file.bytes.byteLength
         );
 
-        console.log(`EPUB to HTML: Parsing EPUB buffer (${file.bytes.byteLength} bytes)...`);
+        ctx?.log(`Parsing EPUB buffer (${file.bytes.byteLength} bytes)...`);
         const currentBook = ePub(arrayBuffer as ArrayBuffer);
         await currentBook.ready;
-        console.log(`EPUB to HTML: EPUB ready. Formatting container...`);
+        ctx?.log(`EPUB ready. Formatting container...`);
 
         printDoc.open();
         printDoc.write(`
@@ -208,7 +210,7 @@ export default class EpubHandler implements FormatHandler {
           throw new Error("No spine items found in the EPUB.");
         }
 
-        console.log(`EPUB to HTML: Found ${totalSpineItems} spine chapters. Rendering concurrently...`);
+        ctx?.log(`Found ${totalSpineItems} spine chapters. Rendering concurrently...`);
 
         const CONCURRENCY = 8;
         const results: Array<{ headStyles: string[], bodyHTML: string } | null> = new Array(totalSpineItems).fill(null);
@@ -233,7 +235,7 @@ export default class EpubHandler implements FormatHandler {
             const index = currentIndex++;
             if (index >= totalSpineItems) break;
 
-            console.log(`EPUB to HTML: Rendering chapter ${index + 1}/${totalSpineItems}...`);
+            ctx?.log(`Rendering chapter ${index + 1}/${totalSpineItems}...`);
 
             const item = (currentBook.spine as any).get ? (currentBook.spine as any).get(index) : spineItems[index];
 
@@ -250,7 +252,7 @@ export default class EpubHandler implements FormatHandler {
                 results[index] = { headStyles, bodyHTML };
               }
             } catch (e) {
-              console.error("Worker failed chapter", index, e);
+              ctx?.log(`Failed to render chapter ${index + 1}: ${e}`, "error");
             }
           }
 
@@ -287,7 +289,7 @@ export default class EpubHandler implements FormatHandler {
 
         // Cleanup blob CSS links by inline fetching
         const cssLinks = Array.from(printDoc.querySelectorAll('link[rel="stylesheet"]'));
-        console.log(`EPUB to HTML: Chapters concatenated. Resolving ${cssLinks.length} dynamic stylesheets...`);
+        ctx?.log(`Chapters concatenated. Resolving ${cssLinks.length} dynamic stylesheets...`);
         const cssFetchPromises = cssLinks.map(async (link) => {
           const href = (link as HTMLLinkElement).href;
           if (href.startsWith('blob:')) {
@@ -298,17 +300,17 @@ export default class EpubHandler implements FormatHandler {
               style.textContent = text;
               link.replaceWith(style);
             } catch (e) {
-              console.error("Failed to fetch blob css:", e);
+              ctx?.log(`Failed to fetch blob CSS: ${e}`, "error");
             }
           }
         });
         await Promise.all(cssFetchPromises);
 
-        console.log("EPUB to HTML: Inlining remaining blob-backed asset references...");
+        ctx?.log("Inlining remaining blob-backed asset references...");
         await inlineBlobBackedAttributes(printDoc, blobUrlCache);
 
         // Gather fully merged HTML
-        console.log("EPUB to HTML: Assembling final HTML layout buffer...");
+        ctx?.log("Assembling final HTML layout buffer...");
         const finalHtml = "<!DOCTYPE html>\n" + printDoc.documentElement.outerHTML;
         
         // Remove helper nodes
