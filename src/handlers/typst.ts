@@ -1,7 +1,6 @@
 import CommonFormats from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import type { TypstSnippet } from "@myriaddreamin/typst.ts/dist/esm/contrib/snippet.mjs";
-import { MemoryAccessModel } from "@myriaddreamin/typst.ts/fs/memory";
 import {
   TYPST_ASSET_MANIFEST_END,
   TYPST_ASSET_MANIFEST_START,
@@ -88,10 +87,9 @@ class TypstHandler implements FormatHandler {
   private $typst?: TypstSnippet;
 
   async init() {
-    const { TypstSnippet } = await import(
+    const { $typst: typst } = await import(
       "@myriaddreamin/typst.ts/dist/esm/contrib/snippet.mjs"
     );
-    const typst = new TypstSnippet();
 
     typst.setCompilerInitOptions({
       getModule: () =>
@@ -101,9 +99,6 @@ class TypstHandler implements FormatHandler {
       getModule: () =>
         `${import.meta.env.BASE_URL}wasm/typst_ts_renderer_bg.wasm`,
     });
-
-    const accessModel = new MemoryAccessModel();
-    typst.use(TypstSnippet.withAccessModel(accessModel));
 
     this.$typst = typst;
     this.ready = true;
