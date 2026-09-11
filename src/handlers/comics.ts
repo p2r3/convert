@@ -38,7 +38,7 @@ export class comicsZipPackerHandler implements FormatHandler {
             CommonFormats.BMP.supported("bmp", true, false),
             CommonFormats.TIFF.supported("tiff", true, false),
             CommonFormats.GIF.supported("gif", true, false),
-            
+
             CommonFormats.ZIP.supported("zip", false, true, true),
             {
                 name: "Comic Book Archive (ZIP)",
@@ -48,7 +48,7 @@ export class comicsZipPackerHandler implements FormatHandler {
                 from: false,
                 to: true,
                 internal: "cbz",
-                category: [Category.ARCHIVE,Category.IMAGE_ARCHIVE],
+                category: [Category.ARCHIVE],
                 lossless: false,
             },
         ];
@@ -62,7 +62,7 @@ export class comicsZipPackerHandler implements FormatHandler {
         outputFormat: FileFormat
     ): Promise<FileData[]> {
         const outputFiles: FileData[] = [];
-        
+
         // Pack a zip/cbz with code copied from wad.ts
         if ((image_list.includes(inputFormat.internal)) && (outputFormat.internal === "cbz" || outputFormat.internal === "zip")) {
             // Single-gif catching
@@ -74,7 +74,7 @@ export class comicsZipPackerHandler implements FormatHandler {
             const baseName = inputFiles[0].name.replace("_0."+inputFormat.extension,"."+inputFormat.extension).split(".").slice(0, -1).join(".");
 
             const zip = new JSZip();
-        
+
             // Add files to archive
             const necessaryDigits = String(inputFiles.length-1).length;
             let iterations = 0;
@@ -87,14 +87,14 @@ export class comicsZipPackerHandler implements FormatHandler {
                 }
                 iterations += 1;
             }
-            
+
             const output = await zip.generateAsync({ type: "uint8array" });
             outputFiles.push({ bytes: output, name: baseName + "." + outputFormat.extension });
         }
         else {
             throw new TypeError(`Unsupported conversion path: ${inputFormat.internal} -> ${outputFormat.internal}`);
         }
-        
+
         return outputFiles;
     }
 }
@@ -112,7 +112,7 @@ export class comicsZipUnpackerHandler implements FormatHandler {
             CommonFormats.BMP.supported("bmp", false, true),
             CommonFormats.TIFF.supported("tiff", false, true),
             CommonFormats.GIF.supported("gif", false, true),
-            
+
             CommonFormats.ZIP.supported("zip", true, false),
             {
                 name: "Comic Book Archive (ZIP)",
@@ -122,7 +122,7 @@ export class comicsZipUnpackerHandler implements FormatHandler {
                 from: true,
                 to: false,
                 internal: "cbz",
-                category: [Category.ARCHIVE,Category.IMAGE_ARCHIVE],
+                category: [Category.ARCHIVE],
                 lossless: false,
             },
         ];
@@ -136,7 +136,7 @@ export class comicsZipUnpackerHandler implements FormatHandler {
         outputFormat: FileFormat
     ): Promise<FileData[]> {
         const outputFiles: FileData[] = [];
-        
+
         // Unpack a zip/cbz with code copied from lzh.ts
         if ((inputFormat.internal === "cbz" || inputFormat.internal === "zip") && (image_list.includes(outputFormat.internal))) {
             for (const file of inputFiles) {
@@ -162,7 +162,7 @@ export class comicsZipUnpackerHandler implements FormatHandler {
                     }
                 }
             }
-            
+
             // throw new Error if empty
             if (outputFiles.length === 0) {
                 throw new Error("No applicable files to unzip found.");
@@ -171,7 +171,7 @@ export class comicsZipUnpackerHandler implements FormatHandler {
         else {
             throw new TypeError(`Unsupported conversion path: ${inputFormat.internal} -> ${outputFormat.internal}`);
         }
-        
+
         return outputFiles;
     }
 }
@@ -189,7 +189,7 @@ export class comicsTarUnpackerHandler implements FormatHandler {
             CommonFormats.BMP.supported("bmp", false, true),
             CommonFormats.TIFF.supported("tiff", false, true),
             CommonFormats.GIF.supported("gif", false, true),
-            
+
             CommonFormats.TAR.supported("tar", true, false),
             {
                 name: "Comic Book Archive (TAR)",
@@ -199,7 +199,7 @@ export class comicsTarUnpackerHandler implements FormatHandler {
                 from: true,
                 to: false,
                 internal: "cbt",
-                category: [Category.ARCHIVE,Category.IMAGE_ARCHIVE],
+                category: [Category.ARCHIVE],
                 lossless: false,
             },
         ];
@@ -213,12 +213,12 @@ export class comicsTarUnpackerHandler implements FormatHandler {
         outputFormat: FileFormat
     ): Promise<FileData[]> {
         const outputFiles: FileData[] = [];
-        
+
         // Unpack a tar/cbt with code from tar.ts
         if ((inputFormat.internal === "cbt" || inputFormat.internal === "tar") && image_list.includes(outputFormat.internal)) {
             for (const inputFile of inputFiles) {
                 const files = parseTar(inputFile.bytes);
-                
+
                 for (const file of files) {
                     if (inputFormat.internal === "cbt" && file.name.endsWith(".xml")) {
                         // Ignore .xml files in comic book archives.
@@ -237,7 +237,7 @@ export class comicsTarUnpackerHandler implements FormatHandler {
                     }
                 }
             }
-            
+
             // throw new Error if empty
             if (outputFiles.length === 0) {
                 throw new Error("No applicable files to unpack found.");
@@ -246,7 +246,7 @@ export class comicsTarUnpackerHandler implements FormatHandler {
         else {
             throw new TypeError(`Unsupported conversion path: ${inputFormat.internal} -> ${outputFormat.internal}`);
         }
-        
+
         return outputFiles;
     }
 }
