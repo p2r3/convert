@@ -113,7 +113,7 @@ class sevenZipHandler implements FormatHandler {
       from: true,
       to: zipTo,
       internal: "cbz",
-      category: [Category.ARCHIVE],
+      category: Category.ARCHIVE,
       lossless: false,
     });
     this.supportedFormats.push({
@@ -124,7 +124,7 @@ class sevenZipHandler implements FormatHandler {
       from: true,
       to: tarTo,
       internal: "cbt",
-      category: [Category.ARCHIVE],
+      category: Category.ARCHIVE,
       lossless: false,
     });
     this.supportedFormats.push({
@@ -135,7 +135,7 @@ class sevenZipHandler implements FormatHandler {
       from: true,
       to: rarTo,
       internal: "cbr",
-      category: [Category.ARCHIVE],
+      category: Category.ARCHIVE,
       lossless: false,
     });
     this.supportedFormats.push({
@@ -146,7 +146,7 @@ class sevenZipHandler implements FormatHandler {
       from: true,
       to: szTo,
       internal: "cb7",
-      category: [Category.ARCHIVE],
+      category: Category.ARCHIVE,
       lossless: false,
     });
 

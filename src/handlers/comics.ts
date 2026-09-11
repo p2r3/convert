@@ -48,7 +48,7 @@ export class comicsZipPackerHandler implements FormatHandler {
                 from: false,
                 to: true,
                 internal: "cbz",
-                category: [Category.ARCHIVE],
+                category: Category.ARCHIVE,
                 lossless: false,
             },
         ];
@@ -122,7 +122,7 @@ export class comicsZipUnpackerHandler implements FormatHandler {
                 from: true,
                 to: false,
                 internal: "cbz",
-                category: [Category.ARCHIVE],
+                category: Category.ARCHIVE,
                 lossless: false,
             },
         ];
@@ -199,7 +199,7 @@ export class comicsTarUnpackerHandler implements FormatHandler {
                 from: true,
                 to: false,
                 internal: "cbt",
-                category: [Category.ARCHIVE],
+                category: Category.ARCHIVE,
                 lossless: false,
             },
         ];
