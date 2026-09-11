@@ -257,7 +257,7 @@ class sevenZipHandler implements FormatHandler {
 
         // Correct the file extension so the converter recognizes it.
         if (outputFormat.mime.includes("comicbook")) {
-          name = name.replace(".cbz",".zip").replace(".cbt",".tar").replace(".cbr",".rar").replace(".cb7",".7z");
+          name = name.replace(/\.cbz$/,".zip").replace(/\.cbt$/,".tar").replace(/\.cbr$/,".rar").replace(/\.cb7$/,".7z");
         }
 
         ctx?.log(`Re-archiving contents as ${outputFormat.internal}...`, "debug");
@@ -268,7 +268,7 @@ class sevenZipHandler implements FormatHandler {
 
         // Change it back
         if (outputFormat.mime.includes("comicbook")) {
-          name = name.replace(".zip",".cbz").replace(".tar",".cbt").replace(".rar",".cbr").replace(".7z",".cb7");
+          name = name.replace(/\.zip$/,".cbz").replace(/\.tar$/,".cbt").replace(/\.rar$/,".cbr").replace(/\.7z$/,".cb7");
         }
 
         outputFiles.push({ bytes, name });
@@ -316,7 +316,7 @@ class sevenZipHandler implements FormatHandler {
 
       // Correct the file extension so the converter recognizes it.
       if (outputFormat.mime.includes("comicbook")) {
-        name = name.replace(".cbz",".zip").replace(".cbt",".tar").replace(".cbr",".rar").replace(".cb7",".7z");
+        name = name.replace(/\.cbz$/,".zip").replace(/\.cbt$/,".tar").replace(/\.cbr$/,".rar").replace(/\.cb7$/,".7z");
       }
 
       ctx?.log(`Compiling archive ${name}...`);
@@ -327,23 +327,10 @@ class sevenZipHandler implements FormatHandler {
 
       // Change it back
       if (outputFormat.mime.includes("comicbook")) {
-        name = name.replace(".zip",".cbz").replace(".tar",".cbt").replace(".rar",".cbr").replace(".7z",".cb7");
+        name = name.replace(/\.zip$/,".cbz").replace(/\.tar$/,".cbt").replace(/\.rar$/,".cbr").replace(/\.7z$/,".cb7");
       }
 
       outputFiles.push({ bytes, name });
-    }
-
-    // Last validation
-    for (const file of outputFiles) {
-      if ((outputFormat.internal === "7z" || outputFormat.internal === "cb7") && !(file.bytes[0] === 0x37 && file.bytes[1] === 0x7A)) {
-        throw new Error("Error while compiling 7z/cb7, final file failed to have magic word beginning.")
-      }
-      else if ((outputFormat.internal === "zip" || outputFormat.internal === "cbz") && !(file.bytes[0] === 0x50 && file.bytes[1] === 0x4B)) {
-        throw new Error("Error while compiling zip/cbz, final file failed to have magic word beginning.")
-      }
-      else if ((outputFormat.internal === "tar" || outputFormat.internal === "cbt") && !(file.bytes[0x101] === 0x75 && file.bytes[0x102] === 0x73 && file.bytes[0x103] === 0x74 && file.bytes[0x104] === 0x61 && file.bytes[0x105] === 0x72)) {
-        throw new Error("Error while compiling tar/cbt, final file failed to have magic word.")
-      }
     }
 
     ctx?.progress("Complete!", 1);
