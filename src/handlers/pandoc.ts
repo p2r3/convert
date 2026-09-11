@@ -5,6 +5,14 @@ import mime from "mime";
 import normalizeMimeType from "../normalizeMimeType.ts";
 import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
 
+import {
+  bundleTypstAssets,
+  collectTypstAssetFiles,
+  normalizeTypstAssetPaths,
+  postprocessTypstFromPandoc,
+  preprocessHtmlForTypst,
+} from "./typst.ts";
+
 class pandocHandler implements FormatHandler {
 
   static formatNames: Map<string, string> = new Map([
@@ -62,7 +70,7 @@ class pandocHandler implements FormatHandler {
     ["opendocument", "OpenDocument XML"],
     ["opml", "OPML"],
     ["org", "Emacs Org mode"],
-    ["pdf", "PDF via Typst"],
+    ["pdf", CommonFormats.PDF.name],
     ["text", CommonFormats.TEXT.name],
     ["pod", "Perl POD"],
     ["pptx", CommonFormats.PPTX.name],
@@ -179,10 +187,10 @@ class pandocHandler implements FormatHandler {
     this.supportedFormats = [];
     for (const internal of allFormats) {
       let format = internal;
-      // PDF doesn't seem to work, at least with this configuration
-      if (format === "pdf") continue;
       // RevealJS seems to hang forever?
       if (format === "revealjs") continue;
+      // Typst compilation is handled by the dedicated Typst handler.
+      if (format === "pdf") continue;
       // Adjust plaintext format name to match other handlers
       if (format === "plain") format = "text";
       const name = pandocHandler.formatNames.get(format) || format;
@@ -205,10 +213,13 @@ class pandocHandler implements FormatHandler {
         || format === "odt"
         || format === "ods"
         || format === "odp";
+      const isEpubInput = format === "epub"
+        || format === "epub2"
+        || format === "epub3";
       this.supportedFormats.push({
         name, format, extension,
         mime: mimeType,
-        from: inputFormats.includes(internal),
+        from: inputFormats.includes(internal) && !isEpubInput,
         to: outputFormats.includes(internal),
         internal,
         category: categories.length === 1 ? categories[0] : categories,
@@ -221,6 +232,12 @@ class pandocHandler implements FormatHandler {
     const htmlFormat = this.supportedFormats[htmlIndex];
     this.supportedFormats.splice(htmlIndex, 1);
     this.supportedFormats.unshift(htmlFormat);
+    const typstIndex = this.supportedFormats.findIndex(c => c.internal === "typst");
+    if (typstIndex !== -1) {
+      const typstFormat = this.supportedFormats[typstIndex];
+      this.supportedFormats.splice(typstIndex, 1);
+      this.supportedFormats.splice(1, 0, typstFormat);
+    }
     // pandoc internal formats is almost always never what the user wants
     const jsonXmlFormats = this.supportedFormats.filter(c =>
       c.mime === "application/json"
@@ -254,34 +271,46 @@ class pandocHandler implements FormatHandler {
 
     let i = 0;
     for (const inputFile of inputFiles) {
+      const vfsInputName = inputFile.name.replace(/^.*[/\\]/, "") || "input.bin";
+      const shouldNormalizeHtmlForTypst = inputFormat.internal === "html"
+        && (outputFormat.internal === "pdf" || outputFormat.internal === "typst");
+      const sourceBytes = shouldNormalizeHtmlForTypst
+        ? new TextEncoder().encode(
+          preprocessHtmlForTypst(new TextDecoder().decode(inputFile.bytes)),
+        )
+        : inputFile.bytes;
+      const files: Record<string, any> = {
+        [vfsInputName]: new Blob([sourceBytes as BlobPart])
+      };
+
       const progressMsg = `Converting ${inputFile.name}...`;
       ctx?.progress(progressMsg, i / inputFiles.length);
       ctx?.log(progressMsg);
 
-      const files = {
-        [inputFile.name]: new Blob([inputFile.bytes as BlobPart])
-      };
-
-      let options = {
+      const options: Record<string, any> = {
         from: inputFormat.internal,
         to: outputFormat.internal,
-        "input-files": [inputFile.name],
+        "input-files": [vfsInputName],
         "output-file": "output",
         "embed-resources": true,
         "html-math-method": "mathjax",
-      }
+      };
 
-      // Set flag for outputting mathml
       if (outputFormat.internal === "mathml") {
         options.to = "html";
         options["html-math-method"] = "mathml";
+      }
+
+      if (outputFormat.internal === "typst") {
+        options.standalone = true;
+        options["extract-media"] = "media";
       }
 
       const { stderr, warnings } = await this.convert(options, null, files);
 
       if (stderr) {
         ctx?.log(`Pandoc Error: ${stderr}`, "error");
-        throw stderr;
+        throw new Error(stderr);
       }
 
       if (warnings && warnings.length > 0) {
@@ -297,7 +326,19 @@ class pandocHandler implements FormatHandler {
       }
 
       const arrayBuffer = await outputBlob.arrayBuffer();
-      const bytes = new Uint8Array(arrayBuffer);
+      let bytes = new Uint8Array(arrayBuffer);
+      if (outputFormat.internal === "typst") {
+        const normalizedTypst = normalizeTypstAssetPaths(
+          postprocessTypstFromPandoc(new TextDecoder().decode(bytes)),
+          await collectTypstAssetFiles(files, [vfsInputName]),
+        );
+        const bundledTypst = await bundleTypstAssets(
+          normalizedTypst,
+          files,
+          [vfsInputName],
+        );
+        bytes = new TextEncoder().encode(bundledTypst);
+      }
       const name = inputFile.name.split(".").slice(0, -1).join(".") + "." + outputFormat.extension;
 
       outputFiles.push({ bytes, name });

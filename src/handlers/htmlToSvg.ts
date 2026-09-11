@@ -82,14 +82,20 @@ async function htmlContentToSvgString(
   const parsed = new DOMParser().parseFromString(htmlContent, "text/html");
   const host = document.createElement("div");
   host.style.all = "initial";
-  host.style.position = "fixed";
-  host.style.left = "-20000px";
-  host.style.top = "0";
-  host.style.pointerEvents = "none";
   host.style.background = "transparent";
-  document.body.appendChild(host);
+
+  const frame = document.createElement("iframe");
+  frame.sandbox.add("allow-same-origin");
+  frame.style.position = "fixed";
+  frame.style.left = "-20000px";
+  frame.style.top = "0";
+  frame.style.pointerEvents = "none";
+  frame.style.width = `${window.innerWidth}px`;
+  frame.style.height = `${window.innerHeight}px`;
+  document.body.appendChild(frame);
 
   try {
+    frame.contentDocument!.body.appendChild(host);
     const shadow = host.attachShadow({ mode: "closed" });
 
     const html = parsed.documentElement.cloneNode(true) as HTMLElement;
@@ -98,7 +104,7 @@ async function htmlContentToSvgString(
 
     return await renderRootToSvgString(root, options);
   } finally {
-    host.remove();
+    frame.remove();
   }
 }
 

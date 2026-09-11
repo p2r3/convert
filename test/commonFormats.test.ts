@@ -158,7 +158,7 @@ test("mp3 → png → gif", async () => {
 
 }, { timeout: 60000 });
 
-test("docx → pptx → pdf", async () => {
+test("docx → typst → pdf", async () => {
 
   const conversion = await attemptConversion(
     ["word.docx"],
@@ -169,11 +169,14 @@ test("docx → pptx → pdf", async () => {
   expect(conversion).toBeTruthy();
   expect(conversion!.path.map(c => c.format.mime)).toEqual([
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "text/typst",
     "application/pdf"
   ]);
+  const fileSize = Object.values(conversion!.files[0].bytes).length;
+  expect(fileSize).toBeGreaterThan(1000);
 
 }, { timeout: 60000 });
+
 
 test("pptx → pdf", async () => {
 
