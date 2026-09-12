@@ -305,7 +305,7 @@ export default function Conversion() {
     }
   };
 
-  const canProceed = step === "select-from" ? !!fromOption : !!toOption;
+  const canProceed = step === "select-from" ? !!fromOption : !!fromOption && !!toOption;
 
   return (
     <div className="conversion-body">
