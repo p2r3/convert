@@ -144,29 +144,37 @@ export default function Conversion() {
     [allOptions, files],
   );
 
-  const autoAdvance = useMemo(() => {
-    if (!matchingFrom.size) return false;
+  const autoSelectOption = useMemo<ConversionOption | null>(() => {
+    if (!matchingFrom.size) return null;
     const isSimple = Mode.value === ModeEnum.Simple;
-    if (!isSimple) return matchingFrom.size === 1;
-    const uniqueFormats = new Set<string>();
-    for (const [format] of matchingFrom) {
-      uniqueFormats.add(`${format.mime}|${format.format}`);
+    if (!isSimple) {
+      if (matchingFrom.size === 1) return matchingFrom.entries().next().value ?? null;
+      else return null;
     }
-    return uniqueFormats.size === 1;
-  }, [matchingFrom, Mode.value]);
+
+    const mimeCandidates = getMimeCandidatesForFile(firstFile);
+    const ext = firstFile.name.split(".").pop()?.toLowerCase() || "";
+
+    const uniqueFormats = new Set<string>();
+    for (const [format, handler] of matchingFrom) {
+      uniqueFormats.add(`${format.mime}|${format.format}`);
+
+      // chances are, this format is exactly what the user wants
+      if (ext === format.extension && mimeCandidates.includes(format.mime)) {
+        return [format, handler];
+      }
+    }
+    if (uniqueFormats.size === 1) return matchingFrom.entries().next().value ?? null;
+
+    return null;
+  }, [matchingFrom, Mode.value, firstFile]);
 
   const [step, setStep] = useState<ConversionStep>(() => {
-    if (autoAdvance) return "select-to";
+    if (autoSelectOption) return "select-to";
     return "select-from";
   });
 
-  const [fromOption, setFromOption] = useState<ConversionOption | null>(() => {
-    if (autoAdvance) {
-      const first = matchingFrom.entries().next().value;
-      return first ? [first[0], first[1]] : null;
-    }
-    return null;
-  });
+  const [fromOption, setFromOption] = useState<ConversionOption | null>(autoSelectOption);
 
   const [toOption, setToOption] = useState<ConversionOption | null>(null);
   const [isConverting, setIsConverting] = useState(false);
@@ -174,9 +182,8 @@ export default function Conversion() {
   useEffect(() => {
     if (!firstFile || isConverting) return;
 
-    if (autoAdvance) {
-      const first = matchingFrom.entries().next().value;
-      setFromOption(first ? [first[0], first[1]] : null);
+    if (autoSelectOption) {
+      setFromOption(autoSelectOption);
       setStep("select-to");
     } else {
       setFromOption(null);
