@@ -330,7 +330,7 @@ export default function Conversion() {
           <FormatExplorer
             conversionOptions={step === "select-from" ? matchingFrom : allOptions}
             onSelect={step === "select-from" ? handleFromSelect : handleToSelect}
-            filterDirection={step === "select-from" ? "from" : "to"}
+            direction={step === "select-from" ? "from" : "to"}
             fromOption={fromOption}
             toOption={toOption}
             fromCount={countAvailableFormats(matchingFrom, "from", isAdvanced)}

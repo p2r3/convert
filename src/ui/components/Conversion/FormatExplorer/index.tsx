@@ -34,7 +34,7 @@ interface FormatExplorerProps {
   conversionOptions: ConversionOptionsMap;
   onSelect?: (format: ConversionOption | null) => void;
   debounceWaitMs?: number;
-  filterDirection?: "from" | "to";
+  direction?: "from" | "to";
   fromOption?: ConversionOption | null;
   toOption?: ConversionOption | null;
   fromCount?: number;
@@ -146,7 +146,7 @@ export default function FormatExplorer({
   conversionOptions,
   onSelect,
   debounceWaitMs = 200,
-  filterDirection = "to",
+  direction = "to",
   fromOption,
   toOption,
   fromCount,
@@ -157,8 +157,8 @@ export default function FormatExplorer({
   const isAdvanced = Mode.value === ModeEnum.Advanced;
 
   const originalIndex = useMemo(
-    () => generateSearchIndex(conversionOptions, isAdvanced, filterDirection),
-    [conversionOptions, isAdvanced, filterDirection],
+    () => generateSearchIndex(conversionOptions, isAdvanced, direction),
+    [conversionOptions, isAdvanced, direction],
   );
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -200,7 +200,7 @@ export default function FormatExplorer({
 
   useEffect(() => {
     setSelectedOptionId(null);
-  }, [filterDirection]);
+  }, [direction]);
 
   return (
     <div className="format-explorer">
@@ -211,6 +211,7 @@ export default function FormatExplorer({
             toOption={toOption ?? null}
             fromCount={fromCount ?? 0}
             toCount={toCount ?? 0}
+            direction={direction}
             onClickFrom={() => onClickFrom?.()}
             onClickTo={() => {
               onClickTo?.();

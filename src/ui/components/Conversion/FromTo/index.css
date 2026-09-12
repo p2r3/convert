@@ -43,12 +43,6 @@
   transform: translateY(0.5px);
 }
 
-.fromto-pill:focus-visible {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 15%, transparent);
-}
-
 .fromto-ext {
   font-size: 1.05rem;
   font-weight: 700;
@@ -59,6 +53,17 @@
   background: color-mix(in srgb, var(--bg-section) 60%, transparent);
   border-style: dashed;
   border-color: color-mix(in srgb, var(--text-muted) 40%, transparent);
+}
+
+.fromto-pill.active {
+  border-color: var(--text-muted);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--text-muted) 15%, transparent);
+}
+
+.fromto-pill:focus-visible {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 15%, transparent);
 }
 
 .fromto-count {

@@ -8,6 +8,7 @@ interface FromToProps {
   toOption: ConversionOption | null;
   fromCount: number;
   toCount: number;
+  direction: "from" | "to";
   onClickFrom: () => void;
   onClickTo: () => void;
 }
@@ -17,12 +18,14 @@ function ExtPill({
   placeholder,
   count,
   kind,
+  selected,
   onClick,
 }: {
   option: ConversionOption | null;
   placeholder: boolean;
   count: number;
   kind: "input" | "output";
+  selected: boolean;
   onClick: () => void;
 }) {
   const ext = option?.[0].extension?.toUpperCase();
@@ -32,7 +35,7 @@ function ExtPill({
   return (
     <button
       type="button"
-      className={`fromto-pill ${placeholder ? "is-placeholder" : ""}`}
+      className={`fromto-pill ${placeholder ? "is-placeholder" : ""} ${selected ? "active" : ""}`}
       onClick={onClick}
       aria-label={placeholder ? label : `Selected ${kind} format: ${ext}`}
     >
@@ -58,6 +61,7 @@ export default function FromTo({
   toOption,
   fromCount,
   toCount,
+  direction,
   onClickFrom,
   onClickTo,
 }: FromToProps) {
@@ -68,6 +72,7 @@ export default function FromTo({
         placeholder={!fromOption}
         count={fromCount}
         kind="input"
+        selected={direction === "from"}
         onClick={onClickFrom}
       />
       <div className="fromto-arrow" aria-hidden="true">
@@ -78,6 +83,7 @@ export default function FromTo({
         placeholder={!toOption}
         count={toCount}
         kind="output"
+        selected={direction === "to"}
         onClick={onClickTo}
       />
     </div>
