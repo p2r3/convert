@@ -83,6 +83,7 @@ import wasiRunnerHandler from "./wasiRunner.ts";
 import clangWasiHandler from "./clangWasi.ts";
 import mcModpackHandler from "./mcModpack.ts";
 import azw3Handler from "./azw3.ts";
+import wavebreakHandler from "./wavebreak.ts";
 
 const handlers: FormatHandler[] = [];
 try { handlers.push(new epubHandler()) } catch (_) { };
@@ -181,5 +182,6 @@ try { handlers.push(new wasiRunnerHandler()) } catch (_) { };
 try { handlers.push(new clangWasiHandler()) } catch (_) { };
 try { handlers.push(new mcModpackHandler()) } catch (_) { };
 try { handlers.push(new azw3Handler()) } catch (_) { };
+try { handlers.push(new wavebreakHandler()) } catch (_) { };
 
 export default handlers;
