@@ -33,6 +33,12 @@ jobs:
       - name: Install dependencies
         run: bun i --frozen-lockfile
 
+      - name: Check linting
+        run: bun run lint
+
+      - name: Check formatting
+        run: bun run fmt:check
+
       - name: Build
         run: |
           export VITE_COMMIT_SHA=${{ github.sha }}
