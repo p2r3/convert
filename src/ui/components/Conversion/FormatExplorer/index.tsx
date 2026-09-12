@@ -16,7 +16,7 @@ import {
 import { useDebouncedCallback } from "use-debounce";
 
 import "./index.css";
-import { useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { useMemo, useRef, useState } from "preact/hooks";
 import type { FileFormat } from "src/FormatHandler";
 import type { ConversionOption, ConversionOptionsMap } from "src/main";
 import { Mode, ModeEnum } from "src/ui/ModeStore";
@@ -173,7 +173,10 @@ export default function FormatExplorer({
     [originalIndex, searchTerm, activeCategories],
   );
 
-  const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
+  const selectedOption = direction === "from" ? fromOption : toOption;
+  const selectedOptionId = selectedOption
+    ? formatExplorerRowKey(selectedOption[0], selectedOption[1].name)
+    : null;
 
   const handleDebounceSearch = useDebouncedCallback((term: string) => {
     setSearchTerm(term);
@@ -181,11 +184,9 @@ export default function FormatExplorer({
 
   const handleOptionSelection = (id: string, option: ConversionOption) => {
     if (id === selectedOptionId) {
-      setSelectedOptionId(null);
       onSelect?.(null);
       return;
     }
-    setSelectedOptionId(id);
     onSelect?.(option);
   };
 
@@ -197,10 +198,6 @@ export default function FormatExplorer({
 
   const noResults = searchResultsIndex.size === 0;
   const filtersActive = hasActiveFilters() || searchTerm !== "";
-
-  useEffect(() => {
-    setSelectedOptionId(null);
-  }, [direction]);
 
   return (
     <div className="format-explorer">

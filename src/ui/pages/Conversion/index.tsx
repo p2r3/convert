@@ -195,7 +195,6 @@ export default function Conversion() {
 
   const handleFromSelect = useCallback((option: ConversionOption | null) => {
     setFromOption(option);
-    if (!option) setToOption(null);
   }, []);
 
   const handleToSelect = useCallback((option: ConversionOption | null) => {
@@ -205,26 +204,21 @@ export default function Conversion() {
   const handleNext = () => {
     if (step === "select-from" && fromOption) {
       setStep("select-to");
-      setToOption(null);
     }
   };
 
   const handleBack = () => {
     if (step === "select-to") {
       setStep("select-from");
-      setToOption(null);
     }
   };
 
   const handleFromToClickFrom = () => {
     setStep("select-from");
-    setFromOption(null);
-    setToOption(null);
   };
 
   const handleFromToClickTo = () => {
     setStep("select-to");
-    setToOption(null);
   };
 
   const handleConvert = async () => {
