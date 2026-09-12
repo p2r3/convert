@@ -1,3 +1,5 @@
+/* oxlint-disable unicorn/require-post-message-target-origin */
+
 import initReflo, {
   decode as refloDecode,
   encode as refloEncode,
@@ -18,11 +20,11 @@ type Msg =
 
 async function init() {
   try {
-    await initReflo("/convert/wasm/reflo_bg.wasm");
+    await initReflo({ module_or_path: "/convert/wasm/reflo_bg.wasm" });
     // signal ready
-    (self as any).postMessage({ id: 0, type: "ready" }, self.location.origin);
+    (self as any).postMessage({ id: 0, type: "ready" });
   } catch (e: any) {
-    (self as any).postMessage({ id: 0, type: "error", error: String(e) }, self.location.origin);
+    (self as any).postMessage({ id: 0, type: "error", error: String(e) });
   }
 }
 
@@ -56,6 +58,6 @@ self.addEventListener("message", async (ev: MessageEvent) => {
       (self as any).postMessage(out, [bytes.buffer]);
     }
   } catch (e: any) {
-    (self as any).postMessage({ id, type: "error", error: String(e) }, self.location.origin);
+    (self as any).postMessage({ id, type: "error", error: String(e) });
   }
 });
