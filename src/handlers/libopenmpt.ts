@@ -84,6 +84,7 @@ class libopenmptHandler implements FormatHandler {
   public name: string = "libopenmpt";
   public supportedFormats: FileFormat[] = [];
   public ready: boolean = false;
+  public offload: boolean = true;
 
   #module?: LibOpenMPTModule;
 
@@ -97,15 +98,8 @@ class libopenmptHandler implements FormatHandler {
     // and __render (uses closure-scoped HEAPU8/HEAP16) before calling run().
     (globalThis as any).libopenmpt = { wasmBinary };
 
-    // Load as a classic <script> tag so it is never run through Rollup/Vite's
-    // module pipeline (which would break the Emscripten global-variable pattern).
-    await new Promise<void>((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = "/convert/wasm/libopenmpt.js";
-      script.addEventListener("load", () => resolve());
-      script.addEventListener("error", () => reject(new Error("Failed to load libopenmpt.js")));
-      document.head.appendChild(script);
-    });
+    const runtimeUrl = "/convert/wasm/libopenmpt.js";
+    await import(/* @vite-ignore */ runtimeUrl);
 
     // __readyPromise was attached by our libopenmpt.js patch and resolves with
     // the Module object once onRuntimeInitialized fires.

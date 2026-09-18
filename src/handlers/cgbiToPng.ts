@@ -148,6 +148,7 @@ async function revertCgBIBuffer(input: Uint8Array | ArrayBuffer): Promise<Uint8A
 class cgbiToPngHandler implements FormatHandler {
   public name = "cgbiToPng";
   public ready = true;
+  public offload: boolean = true;
 
   public supportedFormats: FileFormat[] = [
     {

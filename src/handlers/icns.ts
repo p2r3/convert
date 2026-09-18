@@ -134,12 +134,13 @@ class icnsHandler implements FormatHandler {
       // ICNS contains a finite icon set; conversions here are not guaranteed bit-exact round-trips.
       .markLossless(false),
   ];
+  public offload: boolean = true;
 
-  #canvas?: HTMLCanvasElement;
-  #ctx?: CanvasRenderingContext2D;
+  #canvas?: OffscreenCanvas;
+  #ctx?: OffscreenCanvasRenderingContext2D;
 
   async init() {
-    this.#canvas = document.createElement("canvas");
+    this.#canvas = new OffscreenCanvas(1, 1);
     this.#ctx = this.#canvas.getContext("2d") || undefined;
     if (!this.#ctx) throw new InitializationError("Failed to initialize canvas context.");
     this.ready = true;
@@ -153,14 +154,12 @@ class icnsHandler implements FormatHandler {
     this.#ctx.clearRect(0, 0, size, size);
     this.#ctx.drawImage(bitmap, 0, 0, size, size);
 
-    const blob = await new Promise<Blob>((resolve, reject) => {
-      this.#canvas!.toBlob((output) => {
-        if (!output) return reject("Failed to encode canvas to PNG.");
-        resolve(output);
-      }, "image/png");
+    const blob = await this.#canvas.convertToBlob({
+      type: "image/png",
     });
+    const bytes = new Uint8Array(await blob.arrayBuffer());
 
-    return new Uint8Array(await blob.arrayBuffer());
+    return bytes;
   }
 
   async #encodeIcns(pngBytes: Uint8Array): Promise<Uint8Array> {

@@ -1,9 +1,10 @@
 // @ts-nocheck
+import { DOMParser } from 'linkedom/worker'
 const unescapeHTML = str => {
     if (!str) return ''
-    const textarea = document.createElement('textarea')
-    textarea.innerHTML = str
-    return textarea.value
+    return new DOMParser().parseFromString(
+        `<div>${str.replaceAll('<', '&lt;')}</div>`, 'text/html'
+    ).documentElement.textContent
 }
 
 const MIME = {
@@ -670,7 +671,6 @@ function rawBytesToString(uint8Array) {
 
 class MOBI6 {
     parser = new DOMParser()
-    serializer = new XMLSerializer()
     #resourceCache = new Map()
     #textCache = new Map()
     #cache = new Map()
@@ -863,7 +863,7 @@ class MOBI6 {
         }`))
 
         await this.replaceResources(doc)
-        const result = this.serializer.serializeToString(doc)
+        const result = doc.toString()
         const url = URL.createObjectURL(new Blob([result], { type: this.#type }))
         this.#cache.set(section, url)
         return url
@@ -915,8 +915,13 @@ const getFragmentSelector = str => {
     const match = str.match(/\s(id|name|aid)\s*=\s*['"]([^'"]*)['"]/i)
     if (!match) return
     const [, attr, value] = match
-    return `[${attr}="${CSS.escape(value)}"]`
+    return { attr: attr.toLowerCase(), value }
 }
+
+const findFragment = (doc, fragment) => fragment
+    ? Array.from(doc.querySelectorAll(`[${fragment.attr}]`))
+        .find(el => el.getAttribute(fragment.attr) === fragment.value) ?? null
+    : null
 
 // replace asynchronously and sequentially
 const replaceSeries = async (str, regex, f) => {
@@ -939,7 +944,6 @@ const getPageSpread = properties => {
 
 class KF8 {
     parser = new DOMParser()
-    serializer = new XMLSerializer()
     transformTarget = new EventTarget()
     #cache = new Map()
     #fragmentOffsets = new Map()
@@ -1184,7 +1188,7 @@ class KF8 {
                 el.replaceWith(node)
         }
         const url = URL.createObjectURL(
-            new Blob([this.serializer.serializeToString(doc)], { type: this.#type }))
+            new Blob([doc.toString()], { type: this.#type }))
         this.#cache.set(section, url)
         return url
     }
@@ -1207,7 +1211,7 @@ class KF8 {
         if (index < 0) return
 
         const saved = this.#fragmentSelectors.get(fid)?.get(off)
-        if (saved) return { index, anchor: doc => doc.querySelector(saved) }
+        if (saved) return { index, anchor: doc => findFragment(doc, saved) }
 
         const { skel, frags } = this.#sections[index]
         const frag = frags.find(frag => frag.index === fid)
@@ -1216,7 +1220,7 @@ class KF8 {
         const str = this.mobi.decode(fragRaw.slice(off))
         const selector = getFragmentSelector(str)
         this.#setFragmentSelector(fid, off, selector)
-        const anchor = doc => doc.querySelector(selector)
+        const anchor = doc => findFragment(doc, selector)
         return { index, anchor }
     }
     splitTOCHref(href) {
@@ -1226,7 +1230,7 @@ class KF8 {
     }
     getTOCFragment(doc, { fid, off }) {
         const selector = this.#fragmentSelectors.get(fid)?.get(off)
-        return doc.querySelector(selector)
+        return findFragment(doc, selector)
     }
     isExternal(uri) {
         return /^(?!blob|kindle)\w+:/i.test(uri)

@@ -25,6 +25,7 @@ interface ParsedWAD {
 class wadHandler implements FormatHandler {
   public name: string = "wad";
   public ready: boolean = true;
+  public offload: boolean = true;
 
   public supportedFormats: FileFormat[] = [
     WADFormat.builder("wad").allowFrom().allowTo().markLossless(),

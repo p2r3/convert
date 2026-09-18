@@ -1,5 +1,6 @@
 import type { FileFormat, FileData, FormatHandler } from "../FormatHandler.js";
 import CommonFormats from "src/CommonFormats.js";
+import { Buffer } from "buffer";
 
 // Toggle logging for debugging EXE to BAT conversion
 const DEBUG_EXE_TO_BAT = false;
@@ -14,6 +15,7 @@ export default class exeToBatHandler implements FormatHandler {
   ];
 
   ready = false;
+  public offload: boolean = true;
 
   async init() {
     if (DEBUG_EXE_TO_BAT) console.log("[exe2bat] Initializing handler...");

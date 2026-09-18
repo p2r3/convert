@@ -506,6 +506,7 @@ export class opusMagnumMainHandler implements FormatHandler {
   public name: string = "opusMagnumMain";
   public supportedFormats?: FileFormat[];
   public ready: boolean = false;
+  public offload: boolean = true;
 
   async init() {
     this.supportedFormats = [
@@ -906,9 +907,10 @@ export class opusMagnumITMHandler implements FormatHandler {
   public name: string = "opusMagnumITM";
   public supportedFormats?: FileFormat[];
   public ready: boolean = false;
+  public offload: boolean = true;
 
-  #canvas?: HTMLCanvasElement;
-  #ctx?: CanvasRenderingContext2D;
+  #canvas?: OffscreenCanvas;
+  #ctx?: OffscreenCanvasRenderingContext2D;
 
   async init() {
     this.supportedFormats = [
@@ -925,7 +927,7 @@ export class opusMagnumITMHandler implements FormatHandler {
       },
     ];
 
-    this.#canvas = document.createElement("canvas");
+    this.#canvas = new OffscreenCanvas(1, 1);
     this.#ctx = this.#canvas.getContext("2d") || undefined;
 
     this.ready = true;
@@ -951,20 +953,15 @@ export class opusMagnumITMHandler implements FormatHandler {
         console.log("Blob created for " + file.name);
 
         console.log("Creating image for " + file.name + "...");
-        const image = new Image();
-        await new Promise((resolve, reject) => {
-          image.addEventListener("load", resolve);
-          image.addEventListener("error", reject);
-          image.src = URL.createObjectURL(blob);
-        });
+        const image = await createImageBitmap(blob);
         console.log("Image created for " + file.name);
 
         // Mathematically calculated to be the highest canvas size before the puzzle format can't handle it: -(x/2) - ((x-1)-(x/2))/2 = -128
         const max_canvas = 170;
         console.log("max_canvas: " + max_canvas);
 
-        if (image.naturalWidth > max_canvas || image.naturalHeight > max_canvas) {
-          if (image.naturalWidth > image.naturalHeight) {
+        if (image.width > max_canvas || image.height > max_canvas) {
+          if (image.width > image.height) {
             this.#canvas.width = max_canvas;
             this.#canvas.height = Math.floor(image.height * (max_canvas / image.width));
           } else {
@@ -1108,6 +1105,7 @@ export class opusMagnumTTMHandler implements FormatHandler {
   public name: string = "opusMagnumTTM";
   public supportedFormats?: FileFormat[];
   public ready: boolean = false;
+  public offload: boolean = true;
 
   async init() {
     this.supportedFormats = [

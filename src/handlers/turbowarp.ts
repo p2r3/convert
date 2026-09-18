@@ -25,6 +25,7 @@ class turbowarpHandler implements FormatHandler {
     CommonFormats.HTML.builder("html").allowTo().allowFrom().markLossless(),
   ];
   public ready: boolean = false;
+  public offload: boolean = true;
 
   private unpackager?: any;
 

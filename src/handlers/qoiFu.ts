@@ -12,7 +12,6 @@ class qoiFuHandler implements FormatHandler {
     CommonFormats.JPEG.supported("jpeg", true, true),
     CommonFormats.WEBP.supported("webp", true, true),
     CommonFormats.GIF.supported("gif", true, false),
-    CommonFormats.SVG.supported("svg", true, false),
     {
       name: "Quite OK Image",
       format: "qoi",
@@ -26,12 +25,13 @@ class qoiFuHandler implements FormatHandler {
     },
   ];
   public ready: boolean = false;
+  public offload: boolean = true;
 
-  #canvas?: HTMLCanvasElement;
-  #ctx?: CanvasRenderingContext2D;
+  #canvas?: OffscreenCanvas;
+  #ctx?: OffscreenCanvasRenderingContext2D;
 
   async init() {
-    this.#canvas = document.createElement("canvas");
+    this.#canvas = new OffscreenCanvas(1, 1);
     const ctx = this.#canvas.getContext("2d");
     if (!ctx) throw new InitializationError("Failed to create 2D rendering context.");
     this.#ctx = ctx;
@@ -95,17 +95,10 @@ class qoiFuHandler implements FormatHandler {
         this.#ctx.clearRect(0, 0, this.#canvas.width, this.#canvas.width);
 
         const blob = new Blob([inputFile.bytes as BlobPart], { type: inputFormat.mime });
-        const url = URL.createObjectURL(blob);
+        const image = await createImageBitmap(blob);
 
-        const image = new Image();
-        await new Promise((resolve, reject) => {
-          image.addEventListener("load", resolve);
-          image.addEventListener("error", reject);
-          image.src = url;
-        });
-
-        const width = image.naturalWidth;
-        const height = image.naturalHeight;
+        const width = image.width;
+        const height = image.height;
 
         this.#canvas.width = width;
         this.#canvas.height = height;
@@ -144,12 +137,10 @@ class qoiFuHandler implements FormatHandler {
         this.#canvas.height = height;
         this.#ctx.putImageData(imageData, 0, 0);
 
-        const bytes: Uint8Array = await new Promise((resolve, reject) => {
-          this.#canvas!.toBlob((blob) => {
-            if (!blob) return reject("Canvas output failed.");
-            blob.arrayBuffer().then((buf) => resolve(new Uint8Array(buf)));
-          }, outputFormat.mime);
+        const blob = await this.#canvas.convertToBlob({
+          type: outputFormat.mime,
         });
+        const bytes = new Uint8Array(await blob.arrayBuffer());
         const name =
           inputFile.name.split(".").slice(0, -1).join(".") + "." + outputFormat.extension;
         outputFiles.push({ bytes, name });

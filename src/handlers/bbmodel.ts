@@ -319,6 +319,7 @@ class bbmodelHandler implements FormatHandler {
       .allowFrom(true)
       .allowTo(false),
   ];
+  public offload: boolean = true;
 
   async init() {
     this.ready = true;

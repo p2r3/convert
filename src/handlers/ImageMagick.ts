@@ -19,6 +19,7 @@ class ImageMagickHandler implements FormatHandler {
   public supportedFormats: FileFormat[] = [];
 
   public ready: boolean = false;
+  public offload: boolean = true;
 
   async init() {
     const wasmLocation = "/convert/wasm/magick.wasm";

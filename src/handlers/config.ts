@@ -55,6 +55,7 @@ const INI_FORMAT = new FormatDefinition(
 class configHandler implements FormatHandler {
   public name: string = "config";
   public ready: boolean = true;
+  public offload: boolean = true;
 
   public supportedFormats: FileFormat[] = [
     // JSON maintains exact data equivalence to JS Objects natively

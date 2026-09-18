@@ -7,14 +7,15 @@ export async function render(
   replay: BSOR.Replay,
   width: number,
   height: number,
-  onFrame: (renderer: THREE.WebGLRenderer) => Promise<void>,
+  onFrame: (canvas: OffscreenCanvas) => Promise<void>,
   onDone: () => Promise<void>,
 ) {
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
 
-  const renderer = new THREE.WebGLRenderer();
-  renderer.setSize(width, height);
+  const canvas = new OffscreenCanvas(width, height);
+  const renderer = new THREE.WebGLRenderer({ canvas });
+  renderer.setSize(width, height, false);
 
   const frames = [...replay.frames].toSorted((a, b) => a.time - b.time);
   let frameIndex = 0;
@@ -168,7 +169,7 @@ export async function render(
     notes = notes.filter((n) => !n.removalQueued);
 
     renderer.render(scene, camera);
-    await onFrame(renderer);
+    await onFrame(canvas);
 
     if (frameIndex >= frames.length) {
       // cleanup

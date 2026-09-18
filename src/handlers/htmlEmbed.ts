@@ -15,6 +15,7 @@ class htmlEmbedHandler implements FormatHandler {
     CommonFormats.MP3.supported("mp3", true, false),
   ];
   public ready: boolean = false;
+  public offload: boolean = true;
 
   async init() {
     this.ready = true;

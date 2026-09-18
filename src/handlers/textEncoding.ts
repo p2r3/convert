@@ -167,6 +167,7 @@ export default class textEncodingHandler implements FormatHandler {
   name = "textEncoding";
   supportedFormats = formats;
   ready = true;
+  offload: boolean = true;
   init = async () => {
     this.ready = true;
   };

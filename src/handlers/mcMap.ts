@@ -80,9 +80,10 @@ class mcMapHandler implements FormatHandler {
   public name: string = "mcMap";
   public supportedFormats?: FileFormat[];
   public ready: boolean = false;
+  public offload: boolean = true;
 
-  #canvas?: HTMLCanvasElement;
-  #ctx?: CanvasRenderingContext2D;
+  #canvas?: OffscreenCanvas;
+  #ctx?: OffscreenCanvasRenderingContext2D;
 
   async init() {
     this.supportedFormats = [
@@ -122,7 +123,7 @@ class mcMapHandler implements FormatHandler {
       },
     ];
 
-    this.#canvas = document.createElement("canvas");
+    this.#canvas = new OffscreenCanvas(128, 128);
     this.#ctx = this.#canvas.getContext("2d") || undefined;
 
     this.ready = true;
@@ -157,18 +158,13 @@ class mcMapHandler implements FormatHandler {
 
         const blob = new Blob([file.bytes as BlobPart], { type: inputFormat.mime });
 
-        const image = new Image();
-        await new Promise((resolve, reject) => {
-          image.addEventListener("load", resolve);
-          image.addEventListener("error", reject);
-          image.src = URL.createObjectURL(blob);
-        });
+        const image = await createImageBitmap(blob);
 
         if (outputFormat.internal === "mcmap_grid") {
           const zip = new JSZip();
 
-          this.#canvas.width = Math.ceil(image.naturalWidth / 128) * 128;
-          this.#canvas.height = Math.ceil(image.naturalHeight / 128) * 128;
+          this.#canvas.width = Math.ceil(image.width / 128) * 128;
+          this.#canvas.height = Math.ceil(image.height / 128) * 128;
           this.#ctx.drawImage(image, 0, 0, this.#canvas.width, this.#canvas.height);
 
           const pixels = this.#ctx.getImageData(0, 0, this.#canvas.width, this.#canvas.height);
@@ -244,12 +240,10 @@ class mcMapHandler implements FormatHandler {
 
             this.#ctx.putImageData(image_data, 0, 0);
 
-            const bytes: Uint8Array = await new Promise((resolve, reject) => {
-              this.#canvas!.toBlob((blob) => {
-                if (!blob) return reject("Canvas output failed");
-                blob.arrayBuffer().then((buf) => resolve(new Uint8Array(buf)));
-              }, outputFormat.mime);
+            const blob = await this.#canvas.convertToBlob({
+              type: outputFormat.mime,
             });
+            const bytes = new Uint8Array(await blob.arrayBuffer());
 
             outputFiles.push({
               name: file.name.split(".").slice(0, -1).join(".") + "." + outputFormat.extension,

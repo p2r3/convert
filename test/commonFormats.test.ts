@@ -54,6 +54,7 @@ console.log("Setup finished.");
 const dummyHandler: FormatHandler = {
   name: "dummy",
   ready: true,
+  offload: false,
   async init() {},
   async doConvert(_inputFiles, inputFormat, outputFormat, _args) {
     return [];
@@ -174,6 +175,7 @@ test(
     expect(conversion).toBeTruthy();
     expect(conversion!.path.map((c) => c.format.mime)).toEqual([
       "audio/mpeg",
+      "audio/wav",
       "image/png",
       "image/gif",
     ]);

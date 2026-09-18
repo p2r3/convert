@@ -2,7 +2,6 @@ import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import CommonFormats, { Category } from "src/CommonFormats.ts";
 import { QOAEncoder, QOADecoder, QOABase } from "qoa-fu";
 import { WaveFile } from "wavefile";
-import { InitializationError } from "src/errors.ts";
 
 class uint8ArrayQOADecoder extends QOADecoder {
   private data: Uint8Array;
@@ -60,24 +59,12 @@ class qoaFuHandler implements FormatHandler {
       category: Category.AUDIO,
       lossless: false,
     },
+    CommonFormats.WAV.builder("wav").allowFrom(true).allowTo(true),
   ];
   public ready: boolean = false;
-
-  #audioContext?: AudioContext;
+  public offload: boolean = true;
 
   async init() {
-    const dummy = document.createElement("audio");
-    if (dummy.canPlayType("audio/wav"))
-      this.supportedFormats.push(CommonFormats.WAV.builder("wav").allowFrom(true).allowTo(true));
-    if (dummy.canPlayType("audio/mpeg"))
-      this.supportedFormats.push(CommonFormats.MP3.builder("mp3").allowFrom(true).allowTo(false));
-    if (dummy.canPlayType("audio/ogg"))
-      this.supportedFormats.push(CommonFormats.OGG.builder("ogg").allowFrom(true).allowTo(false));
-    if (dummy.canPlayType("audio/flac"))
-      this.supportedFormats.push(CommonFormats.FLAC.builder("flac").allowFrom(true).allowTo(false));
-    dummy.remove();
-
-    this.#audioContext = new AudioContext();
     this.ready = true;
   }
 
@@ -86,22 +73,9 @@ class qoaFuHandler implements FormatHandler {
     inputFormat: FileFormat,
     outputFormat: FileFormat,
   ): Promise<FileData[]> {
-    if (!this.ready || !this.#audioContext) {
-      throw new InitializationError("Handler not initialized.");
-    }
-
     const outputFiles: FileData[] = [];
 
-    const inputIsQOA = inputFormat.internal === "qoa";
-    const outputIsQOA = outputFormat.internal === "qoa";
-
-    if (inputIsQOA === outputIsQOA) {
-      throw new TypeError(
-        `Unsupported conversion path: ${inputFormat.internal} -> ${outputFormat.internal}`,
-      );
-    }
-
-    if (inputIsQOA) {
+    if (inputFormat.internal === "qoa" && outputFormat.internal == "wav") {
       // QOA => WAV
       for (const inputFile of inputFiles) {
         const decoder = new uint8ArrayQOADecoder(inputFile.bytes);
@@ -130,34 +104,33 @@ class qoaFuHandler implements FormatHandler {
         const name = inputFile.name.split(".").slice(0, -1).join(".") + ".wav";
         outputFiles.push({ bytes: wavBytes, name });
       }
-    } else {
-      // any audio => QOA
+    } else if (inputFormat.internal === "wav" && outputFormat.internal === "qoa") {
+      // WAV => QOA
       for (const inputFile of inputFiles) {
-        const inputBytes = new Uint8Array(inputFile.bytes);
-        const audioData = await this.#audioContext?.decodeAudioData(inputBytes.buffer);
+        const wav = new WaveFile(inputFile.bytes);
+        wav.toBitDepth("32f");
+        const wavData = wav.data as { samples: Uint8Array }; // idiot library
+        const wavFmt = wav.fmt as { sampleRate: number; numChannels: number; blockAlign: number };
+        const length = wavData.samples.length / wavFmt.blockAlign;
 
-        const encoder = new uint8ArrayQOAEncoder(
-          (audioData.length * audioData.numberOfChannels * 4) / 8 + 4096,
-        );
-        if (
-          !encoder.writeHeader(audioData.length, audioData.numberOfChannels, audioData.sampleRate)
-        ) {
+        const encoder = new uint8ArrayQOAEncoder((length * wavFmt.numChannels * 4) / 8 + 4096);
+        if (!encoder.writeHeader(length, wavFmt.numChannels, wavFmt.sampleRate)) {
           throw new Error("Failed to write QOA header.");
         }
 
-        const channelData: Float32Array[] = [];
-        for (let c = 0; c < audioData.numberOfChannels; c++) {
-          channelData.push(audioData.getChannelData(c));
-        }
+        const maybeChannels = wav.getSamples(false, Float32Array) as unknown as
+          | Float32Array
+          | Float32Array[];
+        const channelData = Array.isArray(maybeChannels) ? maybeChannels : [maybeChannels];
 
         let offset = 0;
-        while (offset < audioData.length) {
-          const frameSamples = Math.min(QOABase.MAX_FRAME_SAMPLES, audioData.length - offset);
-          const frameBuffer = new Int16Array(frameSamples * audioData.numberOfChannels);
+        while (offset < length) {
+          const frameSamples = Math.min(QOABase.MAX_FRAME_SAMPLES, length - offset);
+          const frameBuffer = new Int16Array(frameSamples * wavFmt.numChannels);
 
           let index = 0;
           for (let i = 0; i < frameSamples; i++) {
-            for (let c = 0; c < audioData.numberOfChannels; c++) {
+            for (let c = 0; c < wavFmt.numChannels; c++) {
               let sample = channelData[c][offset + i];
               sample = sample < -1 ? -1 : sample > 1 ? 1 : sample;
               frameBuffer[index++] = sample < 0 ? sample * 32768 : sample * 32767;
@@ -174,6 +147,12 @@ class qoaFuHandler implements FormatHandler {
         const qoaBytes = encoder.getData();
         const name = inputFile.name.split(".").slice(0, -1).join(".") + ".qoa";
         outputFiles.push({ bytes: qoaBytes, name });
+      }
+    } else {
+      {
+        throw new TypeError(
+          `Unsupported conversion path: ${inputFormat.internal} -> ${outputFormat.internal}`,
+        );
       }
     }
 

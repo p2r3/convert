@@ -7,6 +7,7 @@ class sqliteHandler implements FormatHandler {
   public name: string = "sqlite";
   public supportedFormats?: FileFormat[];
   public ready: boolean = false;
+  public offload: boolean = true;
 
   async init() {
     this.supportedFormats = [

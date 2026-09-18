@@ -7,6 +7,7 @@ class mcSchematicHandler implements FormatHandler {
   public name: string = "mcSchematic";
   public supportedFormats?: FileFormat[];
   public ready: boolean = false;
+  public offload: boolean = true;
 
   async init() {
     this.supportedFormats = [

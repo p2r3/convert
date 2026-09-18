@@ -882,6 +882,7 @@ class terrariaWldHandler implements FormatHandler {
   public name: string = "terrariaWld";
   public supportedFormats?: FileFormat[];
   public ready: boolean = false;
+  public offload: boolean = true;
 
   async init() {
     this.supportedFormats = [
@@ -930,9 +931,7 @@ class terrariaWldHandler implements FormatHandler {
       const hellLayer = height - 200;
 
       // CODE BELOW IS WRITTEN BY PIXELKAT5 IN PR #244
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
+      const canvas = new OffscreenCanvas(width, height);
       const ctx = canvas.getContext("2d")!;
       const img = ctx.createImageData(width, height);
 
@@ -968,9 +967,7 @@ class terrariaWldHandler implements FormatHandler {
 
       ctx.putImageData(img, 0, 0);
 
-      const blob = await new Promise<Blob>((res, rej) =>
-        canvas.toBlob((blob) => (blob ? res(blob) : rej("canvasToBlob failed")), "image/png"),
-      );
+      const blob = await canvas.convertToBlob({ type: "image/png" });
       // CODE ABOVE IS WRITTEN BY PIXELKAT5 IN PR #244
 
       const bytes = new Uint8Array(await blob.arrayBuffer());

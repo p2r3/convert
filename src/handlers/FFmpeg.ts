@@ -27,6 +27,7 @@ class FFmpegHandler implements FormatHandler {
   public name: string = "FFmpeg";
   public supportedFormats: FileFormat[] = [];
   public ready: boolean = false;
+  public offload: boolean = true;
 
   #ffmpeg?: FFmpeg;
 

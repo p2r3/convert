@@ -50,6 +50,7 @@ export class lzhHandler implements FormatHandler {
 
   public supportAnyInput: boolean = false;
   public ready: boolean = false;
+  public offload: boolean = true;
 
   async init() {
     this.ready = true;
@@ -214,6 +215,7 @@ export class lzh2Handler implements FormatHandler {
 
   public supportAnyInput: boolean = true;
   public ready: boolean = false;
+  public offload: boolean = true;
 
   async init() {
     this.ready = true;

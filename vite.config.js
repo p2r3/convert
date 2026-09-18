@@ -9,6 +9,10 @@ export default defineConfig({
     exclude: ["@ffmpeg/ffmpeg", "@sqlite.org/sqlite-wasm", "@bokuweb/zstd-wasm", "@yowasp/clang"],
   },
   base: "/convert/",
+  worker: {
+    format: "es",
+    plugins: () => [tsconfigPaths()],
+  },
   plugins: [
     viteStaticCopy({
       targets: [

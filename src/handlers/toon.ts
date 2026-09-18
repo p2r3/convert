@@ -20,6 +20,7 @@ class toonHandler implements FormatHandler {
   ];
 
   public ready: boolean = false;
+  public offload: boolean = true;
 
   async init() {
     this.ready = true;

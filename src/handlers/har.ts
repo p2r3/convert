@@ -14,6 +14,7 @@ const harFormat = new FormatDefinition(
 class harHandler implements FormatHandler {
   public name: string = "har";
   public ready: boolean = true;
+  public offload: boolean = true;
 
   public supportedFormats?: FileFormat[] = [
     harFormat.builder("har").allowFrom(),

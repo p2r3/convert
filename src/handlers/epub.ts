@@ -110,6 +110,7 @@ async function inlineBlobBackedAttributes(printDoc: Document, cache: Map<string,
 export default class epubHandler implements FormatHandler {
   public name: string = "epub";
   public ready: boolean = false;
+  public offload: boolean = false; // uses iframes and shit
 
   public supportedFormats: FileFormat[] = [
     CommonFormats.EPUB.supported("epub", true, false),

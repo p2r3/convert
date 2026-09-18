@@ -23,6 +23,7 @@ class bsorHandler implements FormatHandler {
   ];
 
   public ready: boolean = true;
+  public offload: boolean = true;
 
   async init() {
     this.ready = true;
@@ -52,13 +53,11 @@ class bsorHandler implements FormatHandler {
               replay,
               640,
               480,
-              async (renderer) => {
-                const bytes: Uint8Array = await new Promise((resolve, reject) => {
-                  renderer.domElement.toBlob((blob) => {
-                    if (!blob) return reject("Canvas output failed");
-                    blob.arrayBuffer().then((buf) => resolve(new Uint8Array(buf)));
-                  }, outputFormat.mime);
+              async (canvas) => {
+                const blob = await canvas.convertToBlob({
+                  type: outputFormat.mime,
                 });
+                const bytes = new Uint8Array(await blob.arrayBuffer());
                 outputs.push({
                   name: file.name.split(".")[0] + "_" + frameIndex++ + "." + outputFormat.extension,
                   bytes: bytes,

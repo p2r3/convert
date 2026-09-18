@@ -57,6 +57,7 @@ class pyTurtleHandler implements FormatHandler {
   public name: string = "pyTurtle";
   public supportedFormats?: FileFormat[];
   public ready: boolean = false;
+  public offload: boolean = false; // dom stuff. probably possible though
 
   async init() {
     this.supportedFormats = [

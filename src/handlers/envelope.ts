@@ -52,6 +52,7 @@ class envelopeHandler implements FormatHandler {
   ];
 
   public ready: boolean = true;
+  public offload: boolean = true;
 
   async init() {
     this.ready = true;

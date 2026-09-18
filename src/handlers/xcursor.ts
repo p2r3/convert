@@ -21,12 +21,13 @@ class xcursorHandler implements FormatHandler {
     },
   ];
   public ready: boolean = false;
+  public offload: boolean = true;
 
-  #canvas?: HTMLCanvasElement;
-  #ctx?: CanvasRenderingContext2D;
+  #canvas?: OffscreenCanvas;
+  #ctx?: OffscreenCanvasRenderingContext2D;
 
   async init() {
-    this.#canvas = document.createElement("canvas");
+    this.#canvas = new OffscreenCanvas(1, 1);
     const ctx = this.#canvas.getContext("2d");
     if (!ctx) throw new InitializationError("Failed to create 2D rendering context.");
     this.#ctx = ctx;
@@ -92,12 +93,8 @@ class xcursorHandler implements FormatHandler {
         const imageData = new ImageData(pixels as ImageDataArray, width, height);
         this.#ctx.putImageData(imageData, 0, 0);
 
-        const bytes: Uint8Array = await new Promise((resolve, reject) => {
-          this.#canvas!.toBlob((blob) => {
-            if (!blob) return reject("Canvas output failed.");
-            blob.arrayBuffer().then((buf) => resolve(new Uint8Array(buf)));
-          }, outputFormat.mime);
-        });
+        const blob = await this.#canvas.convertToBlob({ type: outputFormat.mime });
+        const bytes = new Uint8Array(await blob.arrayBuffer());
         const name = `${inputFile.name}_${i}.${outputFormat.extension}`;
         outputFiles.push({ bytes, name });
       }

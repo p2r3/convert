@@ -331,6 +331,7 @@ function parseSvgPageDimensions(svgBytes: Uint8Array): { widthPt: number; height
 class typstHandler implements FormatHandler {
   public name: string = "typst";
   public ready: boolean = false;
+  public offload: boolean = true;
 
   public supportedFormats: FileFormat[] = [
     CommonFormats.TYPST.supported("typst", true, false, true),

@@ -5,6 +5,7 @@ class txtToInfiniteCraftHandler implements FormatHandler {
   public name: string = "txtToInfiniteCraft";
   public supportedFormats?: FileFormat[];
   public ready: boolean = false;
+  public offload: boolean = true;
 
   async init() {
     this.supportedFormats = [
@@ -80,6 +81,7 @@ class infiniteCraftToJsonHandler implements FormatHandler {
   public name: string = "infiniteCraftToJson";
   public supportedFormats?: FileFormat[];
   public ready: boolean = false;
+  public offload: boolean = true;
 
   async init() {
     this.supportedFormats = [

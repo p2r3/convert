@@ -7,9 +7,10 @@ class xcfHandler implements FormatHandler {
   public name: string = "xcf";
   public supportedFormats?: FileFormat[];
   public ready: boolean = false;
+  public offload: boolean = true;
 
-  #canvas?: HTMLCanvasElement;
-  #ctx?: CanvasRenderingContext2D;
+  #canvas?: OffscreenCanvas;
+  #ctx?: OffscreenCanvasRenderingContext2D;
 
   async init() {
     this.supportedFormats = [
@@ -27,7 +28,7 @@ class xcfHandler implements FormatHandler {
       CommonFormats.PNG.builder("png").markLossless().allowFrom(false).allowTo(true),
     ];
 
-    this.#canvas = document.createElement("canvas");
+    this.#canvas = new OffscreenCanvas(1, 1);
     const ctx = this.#canvas.getContext("2d");
     if (!ctx) {
       throw new InitializationError("Failed to create 2D rendering context.");
@@ -97,14 +98,8 @@ class xcfHandler implements FormatHandler {
 
         this.#ctx.putImageData(image_data, 0, 0);
 
-        const bytes: Uint8Array = await new Promise((resolve, reject) => {
-          this.#canvas!.toBlob((blob) => {
-            if (!blob) {
-              return reject("Canvas output failed");
-            }
-            blob.arrayBuffer().then((buffer) => resolve(new Uint8Array(buffer)));
-          }, "image/png");
-        });
+        const blob = await this.#canvas.convertToBlob({ type: "image/png" });
+        const bytes = new Uint8Array(await blob.arrayBuffer());
 
         const name =
           inputFile.name.split(".").slice(0, -1).join(".") +

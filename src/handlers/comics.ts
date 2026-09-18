@@ -20,6 +20,7 @@ export class comicsZipPackerHandler implements FormatHandler {
   public name: string = "comicsZipPacker";
   public supportedFormats?: FileFormat[];
   public ready: boolean = false;
+  public offload: boolean = true;
 
   async init() {
     this.supportedFormats = [
@@ -104,6 +105,7 @@ export class comicsZipUnpackerHandler implements FormatHandler {
   public name: string = "comicsZipUnpacker";
   public supportedFormats?: FileFormat[];
   public ready: boolean = false;
+  public offload: boolean = true;
 
   async init() {
     this.supportedFormats = [
@@ -183,6 +185,7 @@ export class comicsTarUnpackerHandler implements FormatHandler {
   public name: string = "comicsTarUnpacker";
   public supportedFormats?: FileFormat[];
   public ready: boolean = false;
+  public offload: boolean = true;
 
   async init() {
     this.supportedFormats = [

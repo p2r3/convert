@@ -125,6 +125,7 @@ class htmlToSvgHandler implements FormatHandler {
   ];
 
   public ready: boolean = true;
+  public offload: boolean = false; // very dom heavy
 
   async init() {
     this.ready = true;

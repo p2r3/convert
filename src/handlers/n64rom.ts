@@ -54,12 +54,13 @@ class n64romHandler implements FormatHandler {
     CommonFormats.PNG.builder("n64png").allowFrom().allowTo().markLossless(),
   ];
   public ready: boolean = false;
+  public offload: boolean = true;
 
-  #canvas?: HTMLCanvasElement;
-  #ctx?: CanvasRenderingContext2D;
+  #canvas?: OffscreenCanvas;
+  #ctx?: OffscreenCanvasRenderingContext2D;
 
   async init() {
-    this.#canvas = document.createElement("canvas");
+    this.#canvas = new OffscreenCanvas(1, 1);
     this.#ctx = this.#canvas.getContext("2d") || undefined;
     this.ready = true;
   }
@@ -200,15 +201,10 @@ class n64romHandler implements FormatHandler {
     if (!this.#canvas || !this.#ctx) throw new InitializationError("Handler not initialized.");
 
     const blob = new Blob([bytes as BlobPart], { type: "image/png" });
-    const image = new Image();
-    await new Promise((resolve, reject) => {
-      image.addEventListener("load", resolve);
-      image.addEventListener("error", reject);
-      image.src = URL.createObjectURL(blob);
-    });
+    const image = await createImageBitmap(blob);
 
-    this.#canvas.width = image.naturalWidth;
-    this.#canvas.height = image.naturalHeight;
+    this.#canvas.width = image.width;
+    this.#canvas.height = image.height;
     this.#ctx.drawImage(image, 0, 0);
 
     const rgba = this.#ctx.getImageData(0, 0, this.#canvas.width, this.#canvas.height).data;
@@ -227,12 +223,11 @@ class n64romHandler implements FormatHandler {
     this.#canvas.height = height;
     this.#ctx.putImageData(new ImageData(imageDataBytes, width, height), 0, 0);
 
-    return await new Promise((resolve, reject) => {
-      this.#canvas!.toBlob((blob) => {
-        if (!blob) return reject("Canvas output failed");
-        blob.arrayBuffer().then((buf) => resolve(new Uint8Array(buf)));
-      }, "image/png");
+    const blob = await this.#canvas.convertToBlob({
+      type: "image/png",
     });
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    return bytes;
   }
 
   async doConvert(

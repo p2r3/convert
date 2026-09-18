@@ -26,6 +26,7 @@ class cssHandler implements FormatHandler {
   public name: string = "css";
   public supportedFormats?: FileFormat[];
   public ready: boolean = false;
+  public offload: boolean = true;
 
   async init() {
     this.supportedFormats = [
@@ -47,8 +48,22 @@ class cssHandler implements FormatHandler {
       const basename = file.name.split(".").slice(0, -1).join(".");
       let css: string;
       if (inputFormat.internal === "less") {
-        const less = await import("less");
-        const { css: compiled } = await less.default.render(source);
+        const [{ default: createLess }, { default: createFileManager }, { default: PluginLoader }] =
+          await Promise.all([
+            // @ts-ignore
+            import("less/lib/less/index.js"),
+            // @ts-ignore
+            import("less/lib/less-browser/file-manager.js"),
+            // @ts-ignore
+            import("less/lib/less-browser/plugin-loader.js"),
+          ]);
+        const less = createLess();
+        less.PluginLoader = PluginLoader;
+        less.FileManager = createFileManager({}, less.logger);
+        less.environment.addFileManager(new less.FileManager());
+        const { css: compiled } = await less.render(source, {
+          filename: new URL("input", new URL(import.meta.env.BASE_URL, location.href)).href,
+        });
         css = compiled;
       } else if (inputFormat.internal === "scss") {
         const sass = await import("sass");

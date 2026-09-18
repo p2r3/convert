@@ -62,6 +62,7 @@ class fenToJsonHandler implements FormatHandler {
     CommonFormats.JSON.builder("json").allowTo().allowFrom().markLossless(),
   ];
   public ready: boolean = false;
+  public offload: boolean = true;
 
   async init() {
     this.ready = true;

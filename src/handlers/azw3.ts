@@ -3,11 +3,13 @@ import CommonFormats from "src/CommonFormats.ts";
 import JSZip from "jszip";
 import pako from "pako";
 import { isMOBI, MOBI } from "./azw3/mobi.js";
+import { DOMParser } from "linkedom/worker";
 
 class azw3Handler implements FormatHandler {
   public name: string = "azw3";
   public supportedFormats?: FileFormat[];
   public ready: boolean = false;
+  public offload: boolean = true;
 
   async init() {
     this.supportedFormats = [
@@ -50,8 +52,6 @@ class azw3Handler implements FormatHandler {
       const manifest: string[] = [];
       const spine: string[] = [];
 
-      const serializer = new XMLSerializer();
-
       let itemIndex = 0;
 
       for (let i = 0; i < book.sections.length; i++) {
@@ -59,7 +59,7 @@ class azw3Handler implements FormatHandler {
         const isLinear = section.linear !== "no";
 
         try {
-          const doc = (await section.createDocument?.()) as Document;
+          const doc = (await section.createDocument?.()) as Document | undefined;
           if (!doc) continue;
 
           // Images handling
@@ -102,13 +102,16 @@ class azw3Handler implements FormatHandler {
             }
 
             if (b64) {
-              img.src = `data:${type};base64,` + b64;
+              img.setAttribute("src", `data:${type};base64,` + b64);
             }
           }
 
+          // Serialize in XML mode so HTML void elements are valid EPUB XHTML.
+          const xml = new DOMParser().parseFromString("", "text/xml");
+          const root = xml.importNode(doc.documentElement, true);
+          root.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
           const html =
-            `<?xml version="1.0" encoding="utf-8"?>\n<!DOCTYPE html>\n` +
-            serializer.serializeToString(doc);
+            `<?xml version="1.0" encoding="utf-8"?>\n<!DOCTYPE html>\n` + root.toString();
           const filename = `part${itemIndex}.xhtml`;
           oebps.file(filename, html);
 

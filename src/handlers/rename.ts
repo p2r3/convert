@@ -7,6 +7,7 @@ function renameHandler(name: string, formats: FileFormat[]): FormatHandler {
     name: name,
     ready: true,
     supportedFormats: formats,
+    offload: true,
     async init() {
       this.ready = true;
     },
@@ -15,10 +16,10 @@ function renameHandler(name: string, formats: FileFormat[]): FormatHandler {
       inputFormat: FileFormat,
       outputFormat: FileFormat,
     ): Promise<FileData[]> {
-      return inputFiles.map((file) => {
-        file.name = file.name.split(".").slice(0, -1).join(".") + "." + outputFormat.extension;
-        return file;
-      });
+      return inputFiles.map((file) => ({
+        ...file,
+        name: file.name.split(".").slice(0, -1).join(".") + "." + outputFormat.extension,
+      }));
     },
   };
 }

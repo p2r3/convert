@@ -9,6 +9,7 @@ class pdfparseHandler implements FormatHandler {
     CommonFormats.TEXT.builder("txt").allowTo(),
   ];
   public ready: boolean = false;
+  public offload: boolean = true;
 
   async init() {
     PDFParse.setWorker("/convert/js/pdf.worker.mjs");
@@ -23,7 +24,7 @@ class pdfparseHandler implements FormatHandler {
     const outputFiles: FileData[] = [];
 
     for (const inputFile of inputFiles) {
-      const parser = new PDFParse({ data: inputFile.bytes });
+      const parser = new PDFParse({ data: new Uint8Array(inputFile.bytes) });
       const text = await parser.getText();
       await parser.destroy();
 

@@ -6,6 +6,7 @@ class krzHandler implements FormatHandler {
   public name: string = "krz";
   public supportedFormats?: FileFormat[];
   public ready: boolean = false;
+  public offload: boolean = true;
 
   async init() {
     this.supportedFormats = [

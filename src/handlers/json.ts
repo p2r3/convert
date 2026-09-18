@@ -7,6 +7,7 @@ import * as yaml from "yaml";
 export class toJsonHandler implements FormatHandler {
   public name: string = "toJson";
   public ready: boolean = true;
+  public offload: boolean = true;
 
   public supportedFormats: FileFormat[] = [
     CommonFormats.CSV.builder("csv").allowFrom(),
@@ -86,6 +87,7 @@ function csvEscape(str: string): string {
 export class fromJsonHandler {
   public name: string = "fromJson";
   public ready: boolean = true;
+  public offload: boolean = true;
 
   public supportedFormats: FileFormat[] = [
     CommonFormats.CSV.builder("csv").allowTo(),

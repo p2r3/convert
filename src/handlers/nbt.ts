@@ -7,6 +7,7 @@ class nbtHandler implements FormatHandler {
   public name: string = "nbt";
   public supportedFormats?: FileFormat[];
   public ready: boolean = false;
+  public offload: boolean = true;
 
   public indent: number = 2;
 

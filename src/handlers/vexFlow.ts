@@ -1,8 +1,11 @@
 import * as vexml from "@stringsync/vexml";
 import VexFlow from "vexflow";
+import { DOMParser as WorkerDOMParser, Document } from "linkedom/worker";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import CommonFormats, { Category } from "src/CommonFormats.ts";
 import { buildMidi, addNote } from "./midi/midifilelib.js";
+
+const DOMParser = WorkerDOMParser as unknown as typeof globalThis.DOMParser;
 
 // Note name to MIDI number mapping
 function noteToMidi(step: string, octave: number, alter: number = 0): number {
@@ -12,10 +15,43 @@ function noteToMidi(step: string, octave: number, alter: number = 0): number {
   return baseNote + (octave + 1) * 12 + alter;
 }
 
+function renderCanvases(xml: string): OffscreenCanvas[] {
+  const renderDocument = new DOMParser().parseFromString("<html></html>", "text/html");
+  const canvases = new Map<Element, OffscreenCanvas>();
+
+  const createElement = renderDocument.createElement.bind(renderDocument);
+  renderDocument.createElement = ((tag: string) => {
+    const element = createElement(tag);
+    if (tag === "canvas") {
+      const canvas = new OffscreenCanvas(300, 150);
+      (element as HTMLCanvasElement).getContext = (() =>
+        canvas.getContext("2d")) as HTMLCanvasElement["getContext"];
+      canvases.set(element, canvas);
+    }
+    return element;
+  }) as typeof renderDocument.createElement;
+  VexFlow.Element.setTextMeasurementCanvas(new OffscreenCanvas(300, 150));
+  // VexML's DOM wrapper is synchronous; don't leave these globals in the shared worker.
+  Object.assign(globalThis, { document: renderDocument, Document, DOMParser });
+
+  try {
+    const div = renderDocument.createElement("div");
+    vexml.renderMusicXML(xml, div, {
+      config: { ...vexml.DEFAULT_CONFIG, WIDTH: 800, DRAWING_BACKEND: "canvas" },
+    });
+    return Array.from(div.querySelectorAll("canvas"), (canvas) => canvases.get(canvas)!);
+  } finally {
+    Reflect.deleteProperty(globalThis, "document");
+    Reflect.deleteProperty(globalThis, "Document");
+    Reflect.deleteProperty(globalThis, "DOMParser");
+  }
+}
+
 class vexFlowHandler implements FormatHandler {
   public name: string = "vexFlow";
   public supportedFormats?: FileFormat[];
   public ready: boolean = false;
+  public offload: boolean = true;
   private static fontsLoaded = false;
 
   async init() {
@@ -365,44 +401,19 @@ class vexFlowHandler implements FormatHandler {
         }
         VexFlow.setFonts("Bravura", "Academico");
 
-        // Configure vexml with proper width for multi-line rendering
-        const config = {
-          ...vexml.DEFAULT_CONFIG,
-          WIDTH: 800, // Page width - controls line wrapping
-          VIEWPORT_SCALE: 1.0,
-          DRAWING_BACKEND: "canvas" as const, // Use canvas to avoid font loading issues
-        };
-
-        // Create a temporary div element for vexml to render into
-        const div = document.createElement("div");
-        div.style.width = "800px";
-        div.style.backgroundColor = "white";
-        div.style.padding = "20px";
-
-        // Render using vexml - we already have xmlString from above
-        const _score = vexml.renderMusicXML(xmlString, div, { config });
-
-        // Wait a bit for rendering to complete
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        // Extract the rendered content (canvas elements with music notation)
-        const canvases = div.querySelectorAll("canvas");
+        const canvases = renderCanvases(xmlString);
         if (canvases.length === 0) {
           throw new Error("Failed to render MusicXML - no canvases generated");
         }
 
         // Convert canvases to base64 images for embedding in HTML
-        const imageDataPromises = Array.from(canvases).map((canvas) => {
-          return new Promise<string>((resolve) => {
-            canvas.toBlob((blob) => {
-              if (blob) {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result as string);
-                reader.readAsDataURL(blob);
-              } else {
-                resolve(canvas.toDataURL("image/png"));
-              }
-            }, "image/png");
+        const imageDataPromises = canvases.map(async (canvas) => {
+          const blob = await canvas.convertToBlob({ type: "image/png" });
+          return new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.addEventListener("load", () => resolve(reader.result as string));
+            reader.addEventListener("error", () => reject(reader.error));
+            reader.readAsDataURL(blob);
           });
         });
 

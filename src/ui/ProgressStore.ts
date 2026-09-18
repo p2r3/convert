@@ -4,7 +4,7 @@ export type LogLevel = "log" | "error" | "debug" | "warn";
 
 export interface LogEntry {
   timestamp: number;
-  plugin: string;
+  plugin?: string;
   message: string;
   level: LogLevel;
 }
@@ -14,6 +14,11 @@ export interface ConvertContext {
   log: (message: string, level?: LogLevel) => void;
   signal: AbortSignal;
   throwIfAborted: () => void;
+}
+
+export interface IProgressStore {
+  progress: (message: string, percent: number) => void;
+  log: (message: string, level?: LogLevel, pluginName?: string, relayToConsole?: boolean) => void;
 }
 
 export const ProgressStore = {
@@ -38,24 +43,40 @@ export const ProgressStore = {
     this.percent.value = Math.max(0, Math.min(1, percent));
   },
 
-  createContext(pluginName: string, userSignal?: AbortSignal): ConvertContext {
-    const parentSignal = userSignal ?? this.controller.signal;
-    return {
-      progress: (msg, val) => {
-        this.message.value = msg;
-        const nextVal = typeof val === "function" ? val(this.percent.value) : val;
-        this.percent.value = Math.max(0, Math.min(1, nextVal));
-      },
-      log: (msg, level = "log") => {
-        this.logs.value = [
-          ...this.logs.value,
-          { timestamp: Date.now(), plugin: pluginName, message: msg, level },
-        ];
-      },
-      signal: parentSignal,
-      throwIfAborted() {
-        if (parentSignal.aborted) throw new DOMException("Conversion cancelled", "AbortError");
-      },
-    };
+  log(
+    message: string,
+    level: LogLevel = "log",
+    pluginName?: string,
+    relayToConsole: boolean = true,
+  ) {
+    this.logs.value = [
+      ...this.logs.value,
+      { timestamp: Date.now(), plugin: pluginName, message, level },
+    ];
+    if (relayToConsole) console[level](`[${pluginName}] ${message}`);
   },
 };
+
+export function createRemoteContext(
+  store: IProgressStore,
+  pluginName: string,
+  abort: AbortSignal,
+): ConvertContext {
+  let prevVal = 0;
+
+  return {
+    progress: (msg, val) => {
+      let nextVal = typeof val === "function" ? val(prevVal) : val;
+      store.progress(msg, nextVal);
+      prevVal = nextVal;
+    },
+    log: (msg, level = "log") => {
+      store.log(msg, level, pluginName, false);
+      console[level](`[${pluginName}] ${msg}`);
+    },
+    signal: abort,
+    throwIfAborted() {
+      if (abort.aborted) throw new DOMException("Conversion cancelled", "AbortError");
+    },
+  };
+}

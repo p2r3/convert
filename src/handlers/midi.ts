@@ -19,23 +19,6 @@ const SAMPLE_RATE = 44100;
 const BUFFER_FRAMES = 4096;
 const TAIL_CHUNKS_MAX = 100; // up to ~9s of reverb tail
 
-// Cache script-load promises so each URL is only ever loaded once.
-// Classic scripts use `let` at the top level, which cannot be redeclared
-// if the same script tag is inserted twice.
-const scriptCache = new Map<string, Promise<void>>();
-function loadScript(src: string): Promise<void> {
-  if (scriptCache.has(src)) return scriptCache.get(src)!;
-  const p = new Promise<void>((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = src;
-    script.addEventListener("load", () => resolve());
-    script.addEventListener("error", () => reject(new Error(`Failed to load ${src}`)));
-    document.head.appendChild(script);
-  });
-  scriptCache.set(src, p);
-  return p;
-}
-
 // Cache the full FluidSynth init so concurrent or repeated calls share one run.
 let midiInitPromise: Promise<{ JSSynth: any; sfontBin: ArrayBuffer }> | null = null;
 
@@ -73,9 +56,7 @@ function loadFluidSynth(): Promise<{ JSSynth: any; sfontBin: ArrayBuffer }> {
       URL.revokeObjectURL(blobUrl);
       const fluidModule = await fluidModuleReady;
 
-      await loadScript("/convert/wasm/js-synthesizer.js");
-
-      const JSSynth = (globalThis as any).JSSynth;
+      const JSSynth = await import("js-synthesizer");
       JSSynth.Synthesizer.initializeWithFluidSynthModule(fluidModule);
       await JSSynth.Synthesizer.waitForWasmInitialized();
 
@@ -97,6 +78,7 @@ export class midiCodecHandler implements FormatHandler {
   public name = "midiCodec";
   public supportedFormats: FileFormat[] = [];
   public ready = false;
+  public offload: boolean = true;
 
   async init(): Promise<void> {
     this.supportedFormats.push(
@@ -170,17 +152,8 @@ export class midiCodecHandler implements FormatHandler {
       if (inputFormat.internal === "png") {
         // PNG spectrogram: decode pixels then extract notes
         const blob = new Blob([inputFile.bytes as BlobPart], { type: inputFormat.mime });
-        const url = URL.createObjectURL(blob);
-        const img = new Image();
-        await new Promise<void>((res, rej) => {
-          img.addEventListener("load", () => res());
-          img.addEventListener("error", () => rej(new Error("Failed to load spectrogram image")));
-          img.src = url;
-        });
-        URL.revokeObjectURL(url);
-        const canvas = document.createElement("canvas");
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
+        const img = await createImageBitmap(blob);
+        const canvas = new OffscreenCanvas(img.width, img.height);
         const ctx = canvas.getContext("2d")!;
         ctx.drawImage(img, 0, 0);
         const { data, width, height } = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -230,17 +203,13 @@ export class midiCodecHandler implements FormatHandler {
       } else if (outputFormat.internal === "png") {
         // Render piano roll onto a PNG using the same frequency->row mapping as pngToMidi
         const { pixels, width, height } = midiToPng(table);
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
+        const canvas = new OffscreenCanvas(width, height);
         const ctx = canvas.getContext("2d")!;
         ctx.putImageData(new ImageData(pixels as ImageDataArray, width, height), 0, 0);
-        const bytes: Uint8Array = await new Promise((res, rej) => {
-          canvas.toBlob((b) => {
-            if (!b) return rej("Canvas output failed");
-            b.arrayBuffer().then((buf) => res(new Uint8Array(buf)));
-          }, "image/png");
+        const blob = await canvas.convertToBlob({
+          type: outputFormat.mime,
         });
+        const bytes = new Uint8Array(await blob.arrayBuffer());
         outputFiles.push({ bytes, name: baseName + "." + outputFormat.extension });
       } else {
         throw new TypeError(`Unsupported output format: ${outputFormat.internal}`);
@@ -260,6 +229,7 @@ export class midiSynthHandler implements FormatHandler {
   public name = "midiSynth";
   public supportedFormats: FileFormat[] = [];
   public ready = false;
+  public offload: boolean = true;
 
   #sfontBin?: ArrayBuffer;
   #JSSynth?: any;

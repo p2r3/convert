@@ -9,6 +9,7 @@ class textToPdfHandler implements FormatHandler {
     CommonFormats.PDF.builder("pdf").allowFrom(false).allowTo(true),
   ];
   public ready = false;
+  public offload: boolean = true;
 
   async init() {
     this.ready = true;

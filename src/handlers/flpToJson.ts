@@ -2,9 +2,7 @@ import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import { Buffer } from "buffer";
 import CommonFormats, { Category } from "src/CommonFormats.ts";
 
-if (typeof window !== "undefined") {
-  (window as any).Buffer = Buffer;
-}
+(globalThis as any).Buffer = Buffer;
 
 import {
   parseFlp,
@@ -36,6 +34,7 @@ class flpToJsonHandler implements FormatHandler {
   ];
 
   public ready: boolean = true;
+  public offload: boolean = true;
 
   async init() {
     this.ready = true;

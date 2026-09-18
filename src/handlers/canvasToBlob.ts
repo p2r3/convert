@@ -11,17 +11,17 @@ class canvasToBlobHandler implements FormatHandler {
     CommonFormats.JPEG.supported("jpeg", true, true),
     CommonFormats.WEBP.supported("webp", true, true),
     CommonFormats.GIF.supported("gif", true, false),
-    CommonFormats.SVG.supported("svg", true, false),
     CommonFormats.TEXT.supported("text", true, true),
   ];
 
-  #canvas?: HTMLCanvasElement;
-  #ctx?: CanvasRenderingContext2D;
+  #canvas?: OffscreenCanvas;
+  #ctx?: OffscreenCanvasRenderingContext2D;
 
   public ready: boolean = false;
+  public offload: boolean = true;
 
   async init() {
-    this.#canvas = document.createElement("canvas");
+    this.#canvas = new OffscreenCanvas(1, 1);
     this.#ctx = this.#canvas.getContext("2d") || undefined;
     this.ready = true;
   }
@@ -70,21 +70,11 @@ class canvasToBlobHandler implements FormatHandler {
         }
       } else {
         const blob = new Blob([inputFile.bytes as BlobPart], { type: inputFormat.mime });
-        // For SVG, convert to data URL to avoid "Tainted canvases may not be exported" error
-        const url =
-          inputFormat.mime === "image/svg+xml"
-            ? `data:${inputFormat.mime};base64,${btoa(inputFile.bytes.reduce((str, byte) => str + String.fromCharCode(byte), ""))}`
-            : URL.createObjectURL(blob);
 
-        const image = new Image();
-        await new Promise((resolve, reject) => {
-          image.addEventListener("load", resolve);
-          image.addEventListener("error", reject);
-          image.src = url;
-        });
+        const image = await createImageBitmap(blob);
 
-        this.#canvas.width = image.naturalWidth;
-        this.#canvas.height = image.naturalHeight;
+        this.#canvas.width = image.width;
+        this.#canvas.height = image.height;
         this.#ctx.drawImage(image, 0, 0);
       }
 
@@ -111,12 +101,10 @@ class canvasToBlobHandler implements FormatHandler {
           }),
         );
       } else {
-        bytes = await new Promise((resolve, reject) => {
-          this.#canvas!.toBlob((blob) => {
-            if (!blob) return reject("Canvas output failed");
-            blob.arrayBuffer().then((buf) => resolve(new Uint8Array(buf)));
-          }, outputFormat.mime);
+        const blob = await this.#canvas.convertToBlob({
+          type: outputFormat.mime,
         });
+        bytes = new Uint8Array(await blob.arrayBuffer());
       }
 
       const name = inputFile.name.split(".").slice(0, -1).join(".") + "." + outputFormat.extension;

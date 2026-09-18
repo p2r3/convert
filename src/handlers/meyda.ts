@@ -5,6 +5,8 @@ import CommonFormats from "src/CommonFormats.ts";
 import { WaveFile } from "wavefile";
 import { InitializationError } from "src/errors.ts";
 
+const SAMPLE_RATE = 34000;
+
 class meydaHandler implements FormatHandler {
   public name: string = "meyda";
   public supportedFormats: FileFormat[] = [
@@ -12,37 +14,16 @@ class meydaHandler implements FormatHandler {
     CommonFormats.PNG.supported("image", true, true),
     CommonFormats.JPEG.supported("image", true, true),
     CommonFormats.WEBP.supported("image", true, true),
+    CommonFormats.WAV.builder("audio").allowFrom().allowTo(),
   ];
   public ready: boolean = false;
+  public offload: boolean = true;
 
-  #audioContext?: AudioContext;
-  #canvas?: HTMLCanvasElement;
-  #ctx?: CanvasRenderingContext2D;
+  #canvas?: OffscreenCanvas;
+  #ctx?: OffscreenCanvasRenderingContext2D;
 
   async init() {
-    const dummy = document.createElement("audio");
-    this.supportedFormats.push(
-      CommonFormats.WAV.builder("audio")
-        .allowFrom(dummy.canPlayType("audio/wav") !== "")
-        .allowTo(),
-    );
-
-    if (dummy.canPlayType("audio/mpeg"))
-      this.supportedFormats.push(
-        // lossless=false, lossy reconstruction
-        CommonFormats.MP3.supported("audio", true, false),
-      );
-    if (dummy.canPlayType("audio/ogg"))
-      this.supportedFormats.push(CommonFormats.OGG.builder("audio").allowFrom());
-    if (dummy.canPlayType("audio/flac"))
-      this.supportedFormats.push(CommonFormats.FLAC.builder("audio").allowFrom());
-    dummy.remove();
-
-    this.#audioContext = new AudioContext({
-      sampleRate: 34000,
-    });
-
-    this.#canvas = document.createElement("canvas");
+    this.#canvas = new OffscreenCanvas(1, 1);
     const ctx = this.#canvas.getContext("2d");
     if (!ctx) throw new Error("Failed to create 2D rendering context.");
     this.#ctx = ctx;
@@ -55,7 +36,7 @@ class meydaHandler implements FormatHandler {
     inputFormat: FileFormat,
     outputFormat: FileFormat,
   ): Promise<FileData[]> {
-    if (!this.ready || !this.#audioContext || !this.#canvas || !this.#ctx) {
+    if (!this.ready || !this.#canvas || !this.#ctx) {
       throw new InitializationError("Handler not initialized.");
     }
     const outputFiles: FileData[] = [];
@@ -77,14 +58,8 @@ class meydaHandler implements FormatHandler {
         this.#ctx.clearRect(0, 0, this.#canvas.width, this.#canvas.width);
 
         const blob = new Blob([inputFile.bytes as BlobPart], { type: inputFormat.mime });
-        const url = URL.createObjectURL(blob);
 
-        const image = new Image();
-        await new Promise((resolve, reject) => {
-          image.addEventListener("load", resolve);
-          image.addEventListener("error", reject);
-          image.src = url;
-        });
+        const image = await createImageBitmap(blob);
 
         /**
          * After an image-audio-image round-trip, the output height gets
@@ -92,8 +67,8 @@ class meydaHandler implements FormatHandler {
          * stretch the image width here to maintain the aspect ratio.
          * For normal audio files, this shouldn't change anything.
          */
-        const imageHeight = image.naturalHeight;
-        const imageWidth = Math.round(image.naturalWidth * (hopSize / imageHeight));
+        const imageHeight = image.height;
+        const imageWidth = Math.round(image.width * (hopSize / imageHeight));
 
         this.#canvas.width = imageWidth;
         this.#canvas.height = imageHeight;
@@ -102,17 +77,15 @@ class meydaHandler implements FormatHandler {
         const imageData = this.#ctx.getImageData(0, 0, imageWidth, imageHeight);
         const pixelBuffer = imageData.data as Uint8ClampedArray;
 
-        const sampleRate = this.#audioContext.sampleRate;
-
         const audioData = new Float32Array(imageWidth * hopSize + bufferSize);
 
         // Precompute sine and cosine waves for each frequency
         const sineWaves = new Float32Array(imageHeight * bufferSize);
         const cosineWaves = new Float32Array(imageHeight * bufferSize);
         for (let y = 0; y < imageHeight; y++) {
-          const frequency = (y / imageHeight) * (sampleRate / 2);
+          const frequency = (y / imageHeight) * (SAMPLE_RATE / 2);
           for (let s = 0; s < bufferSize; s++) {
-            const timeInSeconds = s / sampleRate;
+            const timeInSeconds = s / SAMPLE_RATE;
             const angle = 2 * Math.PI * frequency * timeInSeconds;
             sineWaves[y * bufferSize + s] = Math.sin(angle);
             cosineWaves[y * bufferSize + s] = Math.cos(angle);
@@ -171,7 +144,7 @@ class meydaHandler implements FormatHandler {
         }
 
         const wav = new WaveFile();
-        wav.fromScratch(1, sampleRate, "32f", audioData);
+        wav.fromScratch(1, SAMPLE_RATE, "32f", audioData);
 
         const bytes = wav.toBuffer();
         const name =
@@ -180,12 +153,18 @@ class meydaHandler implements FormatHandler {
       }
     } else {
       for (const inputFile of inputFiles) {
-        const inputBytes = new Uint8Array(inputFile.bytes);
-        const audioData = await this.#audioContext.decodeAudioData(inputBytes.buffer);
+        const wav = new WaveFile(inputFile.bytes);
+        wav.toBitDepth("32f");
+        wav.toSampleRate(SAMPLE_RATE);
+        const wavFmt = wav.fmt as { sampleRate: number };
 
         Meyda.bufferSize = bufferSize;
-        Meyda.sampleRate = audioData.sampleRate;
-        const samples = audioData.getChannelData(0);
+        Meyda.sampleRate = wavFmt.sampleRate;
+        const maybeChannels = wav.getSamples(false, Float32Array) as unknown as
+          | Float32Array
+          | Float32Array[];
+        const samples = Array.isArray(maybeChannels) ? maybeChannels[0] : maybeChannels;
+
         const imageWidth = Math.max(1, Math.ceil((samples.length - bufferSize) / hopSize) + 1);
         const imageHeight = Meyda.bufferSize / 2;
 
@@ -225,12 +204,10 @@ class meydaHandler implements FormatHandler {
           this.#ctx.putImageData(imageData, i, 0);
         }
 
-        const bytes: Uint8Array = await new Promise((resolve, reject) => {
-          this.#canvas!.toBlob((blob) => {
-            if (!blob) return reject("Canvas output failed.");
-            blob.arrayBuffer().then((buf) => resolve(new Uint8Array(buf)));
-          }, outputFormat.mime);
+        const blob = await this.#canvas.convertToBlob({
+          type: outputFormat.mime,
         });
+        const bytes = new Uint8Array(await blob.arrayBuffer());
         const name =
           inputFile.name.split(".").slice(0, -1).join(".") + "." + outputFormat.extension;
         outputFiles.push({ bytes, name });

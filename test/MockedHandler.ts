@@ -11,6 +11,7 @@ export class MockedHandler implements FormatHandler {
     public supportAnyInput?: boolean,
   ) {}
   ready: boolean = false;
+  offload: boolean = false;
   init() {
     this.ready = true;
     return Promise.resolve();

@@ -30,6 +30,7 @@ class shToElfHandler implements FormatHandler {
     },
   ];
   public ready: boolean = false;
+  public offload: boolean = true;
 
   #binary?: Buffer;
 

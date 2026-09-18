@@ -203,6 +203,7 @@ class sppdHandler implements FormatHandler {
   ];
 
   public ready: boolean = false;
+  public offload: boolean = true;
 
   private renderBounds = { width: 640, height: 360 };
 
@@ -213,7 +214,8 @@ class sppdHandler implements FormatHandler {
     0.1,
     4096,
   );
-  private renderer = new THREE.WebGLRenderer();
+  private canvas?: OffscreenCanvas;
+  private renderer?: THREE.WebGLRenderer;
 
   private ambientLight = new THREE.AmbientLight(0xffffff, 1);
   private pointLight = new THREE.PointLight(0xffffff, 1e5, 4096);
@@ -515,7 +517,9 @@ class sppdHandler implements FormatHandler {
   }
 
   async init() {
-    this.renderer.setSize(this.renderBounds.width, this.renderBounds.height);
+    this.canvas = new OffscreenCanvas(this.renderBounds.width, this.renderBounds.height);
+    this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas });
+    this.renderer.setSize(this.renderBounds.width, this.renderBounds.height, false);
     this.scene.add(this.ambientLight);
     this.scene.add(this.pointLight);
 
@@ -560,6 +564,10 @@ class sppdHandler implements FormatHandler {
         continue;
       }
 
+      const canvas = this.canvas;
+      const renderer = this.renderer;
+      if (!canvas || !renderer) throw new InitializationError("Handler not initialized.");
+
       this.buildWalls(voxels, portalVoxels);
       this.resetSceneEntities();
 
@@ -567,14 +575,10 @@ class sppdHandler implements FormatHandler {
         new Demo(inputFile.bytes, {
           onTick: async (demo: Demo) => {
             await this.playbackTickHandler(demo);
-            this.renderer.render(this.scene, this.camera);
+            renderer.render(this.scene, this.camera);
 
-            const bytes: Uint8Array = await new Promise((resolve, reject) => {
-              this.renderer.domElement.toBlob((blob) => {
-                if (!blob) return reject("Canvas output failed");
-                blob.arrayBuffer().then((buf) => resolve(new Uint8Array(buf)));
-              }, outputFormat.mime);
-            });
+            const rendered = await canvas.convertToBlob({ type: outputFormat.mime });
+            const bytes = new Uint8Array(await rendered.arrayBuffer());
             const name =
               inputFile.name.split(".").slice(0, -1).join(".") +
               "_" +

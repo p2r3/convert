@@ -22,6 +22,7 @@ class pdfToImgHandler implements FormatHandler {
   ];
 
   public ready: boolean = true;
+  public offload: boolean = false; // pdftoimg hardcodes main thread apis
 
   async init() {
     this.ready = true;

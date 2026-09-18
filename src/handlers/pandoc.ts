@@ -161,6 +161,7 @@ class pandocHandler implements FormatHandler {
   public name: string = "pandoc";
   public supportedFormats?: FileFormat[];
   public ready: boolean = false;
+  public offload: boolean = true;
 
   private query?: (options: any) => Promise<any>;
   private convert?: (

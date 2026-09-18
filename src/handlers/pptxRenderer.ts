@@ -1,6 +1,5 @@
 import { buildPresentation, parseZip, renderSlide } from "@aiden0z/pptx-renderer";
 import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
 import CommonFormats from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 
@@ -51,7 +50,10 @@ function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
 export default class pptxRendererHandler implements FormatHandler {
   public name: string = "pptxRenderer";
 
-  public ready: boolean = true;
+  public ready: boolean = false;
+  public offload: boolean = false; // dom heavy
+
+  private html2canvas?: any;
 
   public supportedFormats: FileFormat[] = [
     CommonFormats.PPTX.supported("pptx", true, false),
@@ -59,6 +61,7 @@ export default class pptxRendererHandler implements FormatHandler {
   ];
 
   async init() {
+    this.html2canvas = (await import("html2canvas")).default;
     this.ready = true;
   }
 
@@ -112,7 +115,7 @@ export default class pptxRendererHandler implements FormatHandler {
 
             await waitForSlideToSettle(handle.element);
 
-            const canvas = await html2canvas(handle.element, {
+            const canvas = await this.html2canvas(handle.element, {
               backgroundColor: "#ffffff",
               scale: 2,
               useCORS: true,

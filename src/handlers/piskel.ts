@@ -7,9 +7,10 @@ class piskelHandler implements FormatHandler {
   public name: string = "piskel";
   public supportedFormats?: FileFormat[];
   public ready: boolean = false;
+  public offload: boolean = true;
 
-  #canvas?: HTMLCanvasElement;
-  #ctx?: CanvasRenderingContext2D;
+  #canvas?: OffscreenCanvas;
+  #ctx?: OffscreenCanvasRenderingContext2D;
 
   async init() {
     this.supportedFormats = [
@@ -28,7 +29,7 @@ class piskelHandler implements FormatHandler {
       },
     ];
 
-    this.#canvas = document.createElement("canvas");
+    this.#canvas = new OffscreenCanvas(1, 1);
     const ctx = this.#canvas.getContext("2d");
     if (!ctx) {
       throw new InitializationError("Failed to create 2D rendering context.");
@@ -94,26 +95,18 @@ class piskelHandler implements FormatHandler {
         // I'm not entirely sure, but I think only the first chunk is used?
         const layerB64: string = layer.chunks[0].base64PNG;
 
-        const image = new Image();
-        await new Promise((resolve, reject) => {
-          image.addEventListener("load", resolve);
-          image.addEventListener("error", reject);
-          image.src = layerB64;
-        });
+        const blob = await (await fetch(layerB64)).blob(); // funny decoding
+        const image = await createImageBitmap(blob);
 
         this.#ctx.globalAlpha = opacity;
         this.#ctx.drawImage(image, 0, 0);
       }
 
       if (outputFormat.internal === "png") {
-        const bytes: Uint8Array = await new Promise((resolve, reject) => {
-          this.#canvas!.toBlob((blob) => {
-            if (!blob) {
-              return reject("Canvas output failed");
-            }
-            blob.arrayBuffer().then((buffer) => resolve(new Uint8Array(buffer)));
-          }, "image/png");
+        const blob = await this.#canvas.convertToBlob({
+          type: outputFormat.mime,
         });
+        const bytes = new Uint8Array(await blob.arrayBuffer());
 
         const name =
           inputFile.name.split(".").slice(0, -1).join(".") + "." + outputFormat.extension;
@@ -121,14 +114,10 @@ class piskelHandler implements FormatHandler {
       } else if (outputFormat.internal === "zip") {
         const zip = new JSZip();
 
-        const fullUri = this.#canvas.toDataURL("image/png");
-
-        const image = new Image();
-        await new Promise((resolve, reject) => {
-          image.addEventListener("load", resolve);
-          image.addEventListener("error", reject);
-          image.src = fullUri;
+        const blob = await this.#canvas.convertToBlob({
+          type: "image/png",
         });
+        const image = await createImageBitmap(blob);
 
         this.#canvas.width = spriteWidth;
         this.#canvas.height = spriteHeight;
@@ -138,14 +127,10 @@ class piskelHandler implements FormatHandler {
           this.#ctx.clearRect(0, 0, this.#canvas.width, this.#canvas.height);
           this.#ctx.drawImage(image, x, 0);
 
-          const bytes: Uint8Array = await new Promise((resolve, reject) => {
-            this.#canvas!.toBlob((blob) => {
-              if (!blob) {
-                return reject("Canvas output failed");
-              }
-              blob.arrayBuffer().then((buffer) => resolve(new Uint8Array(buffer)));
-            }, "image/png");
+          const blob = await this.#canvas.convertToBlob({
+            type: "image/png",
           });
+          const bytes = new Uint8Array(await blob.arrayBuffer());
           const name = `${baseName}_Frame${-Number(x / spriteWidth)}.png`;
           zip.file(name, bytes);
         }

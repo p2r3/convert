@@ -19,6 +19,7 @@ class wasiRunnerHandler implements FormatHandler {
     CommonFormats.TEXT.builder("txt").allowTo(),
   ];
   public ready: boolean = false;
+  public offload: boolean = true;
 
   async init() {
     this.ready = true;

@@ -151,6 +151,7 @@ class textToSourceHandler implements FormatHandler {
   public name: string = "textToSource";
   public supportedFormats?: FileFormat[];
   public ready: boolean = false;
+  public offload: boolean = true;
 
   async init() {
     const formats = textToSourceHandler.converters.map(([format]) => format);

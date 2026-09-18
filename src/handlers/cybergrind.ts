@@ -7,9 +7,10 @@ class cybergrindHandler implements FormatHandler {
   public name: string = "cybergrind";
   public supportedFormats?: FileFormat[];
   public ready: boolean = false;
+  public offload: boolean = true;
 
-  #canvas?: HTMLCanvasElement;
-  #ctx?: CanvasRenderingContext2D;
+  #canvas?: OffscreenCanvas;
+  #ctx?: OffscreenCanvasRenderingContext2D;
 
   async init() {
     this.supportedFormats = [
@@ -27,7 +28,7 @@ class cybergrindHandler implements FormatHandler {
       },
     ];
 
-    this.#canvas = document.createElement("canvas");
+    this.#canvas = new OffscreenCanvas(16, 16);
     this.#ctx = this.#canvas.getContext("2d") || undefined;
 
     this.ready = true;
@@ -51,12 +52,7 @@ class cybergrindHandler implements FormatHandler {
     for (const file of inputFiles) {
       // take img and load
       const blob = new Blob([file.bytes as BlobPart], { type: inputFormat.mime });
-      const image = new Image();
-      await new Promise((resolve, reject) => {
-        image.addEventListener("load", resolve);
-        image.addEventListener("error", reject);
-        image.src = URL.createObjectURL(blob);
-      });
+      const image = await createImageBitmap(blob);
 
       // make canvas with 16x16
       this.#canvas.width = 16;

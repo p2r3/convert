@@ -310,7 +310,7 @@ export default function Conversion() {
       openPopup();
     } catch (e) {
       console.error(e);
-      if (e instanceof DOMException && e.name === "AbortError") {
+      if (e instanceof Error && e.name === "AbortError") {
         // Don't show an error popup for manual cancellation
       } else {
         PopupData.value = {

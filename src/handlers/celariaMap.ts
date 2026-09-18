@@ -9,6 +9,9 @@ import { TutorialHologram } from "celaria-formats/class/maps/objects/TutorialHol
 import type { FlatVector3, Vector3 } from "celaria-formats/types/data.mts";
 import CommonFormats, { Category } from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
+import { Buffer } from "buffer";
+
+(globalThis as any).Buffer = Buffer;
 
 function putInstances(
   map: EditableCelariaMap | CelariaMap,
@@ -52,6 +55,7 @@ class celariaMapHandler implements FormatHandler {
   public name: string = "celariaMap";
   public supportedFormats?: FileFormat[];
   public ready: boolean = false;
+  public offload: boolean = true;
   /**/
   async init() {
     this.supportedFormats = [

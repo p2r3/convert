@@ -30,6 +30,7 @@ class chessjsHandler implements FormatHandler {
     CommonFormats.TEXT.builder("txt").allowTo().markLossless(false),
   ];
   public ready: boolean = false;
+  public offload: boolean = true;
 
   async init() {
     this.ready = true;

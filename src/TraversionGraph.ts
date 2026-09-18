@@ -521,7 +521,12 @@ export class TraversionGraph {
     for (const deadEnd of this.temporaryDeadEnds) {
       let isDeadEnd = true;
       for (let i = 0; i < deadEnd.length; i++) {
-        if (path[i] === deadEnd[i]) continue;
+        if (
+          path[i]?.handler.name === deadEnd[i].handler.name &&
+          path[i]?.format.mime === deadEnd[i].format.mime &&
+          path[i]?.format.format === deadEnd[i].format.format
+        )
+          continue;
         isDeadEnd = false;
         break;
       }
@@ -558,4 +563,4 @@ export class TraversionGraph {
   }
 }
 
-comlink.expose(new TraversionGraph());
+if (typeof document === "undefined") comlink.expose(TraversionGraph);

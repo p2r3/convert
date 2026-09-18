@@ -9,6 +9,7 @@ class curaniHandler implements FormatHandler {
   public name: string = "curani";
   public supportedFormats?: FileFormat[];
   public ready: boolean = false;
+  public offload: boolean = true;
 
   async init() {
     this.supportedFormats = [

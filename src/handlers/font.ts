@@ -1,4 +1,5 @@
 import { Font, Glyph, Path, parse } from "opentype.js";
+import { DOMParser } from "@xmldom/xmldom";
 import { SVGPathData } from "svg-pathdata";
 import { compress, decompress } from "woff2-encoder";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
@@ -128,8 +129,8 @@ function svgToOtf(inputFile: FileData, decoder: TextDecoder) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(decoder.decode(inputFile.bytes), "image/svg+xml");
 
-  const fontFace = doc.querySelector("font-face");
-  const fontEl = doc.querySelector("font");
+  const fontFace = doc.getElementsByTagName("font-face")[0];
+  const fontEl = doc.getElementsByTagName("font")[0];
 
   if (!fontFace || !fontEl) throw new Error("Invalid SVG font format");
 
@@ -137,7 +138,7 @@ function svgToOtf(inputFile: FileData, decoder: TextDecoder) {
   const ascent = Number(fontFace.getAttribute("ascent")) || 800;
   const descent = Number(fontFace.getAttribute("descent")) || -200;
 
-  const glyphNodes = Array.from(doc.querySelectorAll("glyph"));
+  const glyphNodes = Array.from(doc.getElementsByTagName("glyph"));
 
   const glyphs: Glyph[] = [];
 
@@ -226,6 +227,7 @@ class fontHandler implements FormatHandler {
   public name: string = "font";
   public supportedFormats?: FileFormat[];
   public ready: boolean = false;
+  public offload: boolean = true;
 
   async init() {
     this.supportedFormats = [

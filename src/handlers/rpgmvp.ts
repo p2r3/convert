@@ -1,12 +1,12 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import CommonFormats, { Category } from "src/CommonFormats.ts";
 import { Decrypter } from "./rpgmvp-decrypter/scripts/Decrypter.js";
-import { RPGFile } from "./rpgmvp-decrypter/scripts/RPGFile.js";
 
 class rpgmvpHandler implements FormatHandler {
   public name: string = "rpgmvp";
   public supportedFormats?: FileFormat[];
   public ready: boolean = false;
+  public offload: boolean = true;
 
   async init() {
     this.supportedFormats = [
@@ -43,20 +43,18 @@ class rpgmvpHandler implements FormatHandler {
       const as_buffer = inputFile.bytes.buffer as ArrayBuffer;
 
       const encryption_key = Decrypter.getKeyFromPNG(16, as_buffer);
-      const decrypter = new Decrypter(encryption_key);
+      const decrypter = new Decrypter(encryption_key) as Decrypter & {
+        verifyFakeHeader(header: Uint8Array): boolean;
+        decrypt(buffer: ArrayBuffer): ArrayBuffer;
+      };
+      if (!decrypter.verifyFakeHeader(new Uint8Array(as_buffer, 0, 16))) {
+        throw new Error(`Invalid RPGMVP header: ${inputFile.name}`);
+      }
 
-      let file = new RPGFile(new File([as_buffer], inputFile.name), null);
-      decrypter.decryptFile(file, (file: RPGFile, e: Error) => {
-        if (e) {
-          throw e;
-        }
+      const bytes = new Uint8Array(decrypter.decrypt(as_buffer));
+      const name = inputFile.name.split(".").slice(0, -1).join(".") + "." + outputFormat.extension;
 
-        const bytes = new Uint8Array(file.content);
-        const name =
-          inputFile.name.split(".").slice(0, -1).join(".") + "." + outputFormat.extension;
-
-        outputFiles.push({ bytes, name });
-      });
+      outputFiles.push({ bytes, name });
     }
 
     return outputFiles;

@@ -7,9 +7,10 @@ class rgbaHandler implements FormatHandler {
   public name: string = "rgba";
   public supportedFormats?: FileFormat[];
   public ready: boolean = false;
+  public offload: boolean = true;
 
-  #canvas?: HTMLCanvasElement;
-  #ctx?: CanvasRenderingContext2D;
+  #canvas?: OffscreenCanvas;
+  #ctx?: OffscreenCanvasRenderingContext2D;
 
   async init() {
     this.supportedFormats = [
@@ -38,7 +39,7 @@ class rgbaHandler implements FormatHandler {
       },
     ];
 
-    this.#canvas = document.createElement("canvas");
+    this.#canvas = new OffscreenCanvas(1, 1);
     this.#ctx = this.#canvas.getContext("2d") || undefined;
 
     this.ready = true;
@@ -62,13 +63,7 @@ class rgbaHandler implements FormatHandler {
         if (outputFormat.internal === "rgba") {
           // Some code copied from mcmap.ts
           const blob = new Blob([file.bytes as BlobPart], { type: inputFormat.mime });
-
-          const image = new Image();
-          await new Promise((resolve, reject) => {
-            image.addEventListener("load", resolve);
-            image.addEventListener("error", reject);
-            image.src = URL.createObjectURL(blob);
-          });
+          const image = await createImageBitmap(blob);
 
           this.#canvas.width = image.width;
           this.#canvas.height = image.height;
@@ -178,12 +173,10 @@ class rgbaHandler implements FormatHandler {
 
           this.#ctx.putImageData(image_data, 0, 0);
 
-          new_file_bytes = await new Promise((resolve, reject) => {
-            this.#canvas!.toBlob((blob) => {
-              if (!blob) return reject("Canvas output failed");
-              blob.arrayBuffer().then((buf) => resolve(new Uint8Array(buf)));
-            }, outputFormat.mime);
+          const blob = await this.#canvas.convertToBlob({
+            type: outputFormat.mime,
           });
+          new_file_bytes = new Uint8Array(await blob.arrayBuffer());
         } else {
           throw new TypeError(
             `Unsupported conversion path: ${inputFormat.internal} -> ${outputFormat.internal}`,

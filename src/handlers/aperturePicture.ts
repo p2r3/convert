@@ -1,19 +1,15 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-import {
-  MagickFormat,
-  MagickImageCollection,
-  MagickReadSettings,
-  MagickGeometry,
-  QuantizeSettings,
-  DitherMethod,
-} from "@imagemagick/magick-wasm";
 import CommonFormats, { Category } from "src/CommonFormats.ts";
-import { BadMagicError } from "src/errors.ts";
+import { BadMagicError, InitializationError } from "src/errors.ts";
 
 class aperturePictureHandler implements FormatHandler {
   public name: string = "aperturePicture";
   public supportedFormats?: FileFormat[];
   public ready: boolean = false;
+  public offload: boolean = true;
+
+  #canvas?: OffscreenCanvas;
+  #ctx?: OffscreenCanvasRenderingContext2D;
 
   async init() {
     this.supportedFormats = [
@@ -30,6 +26,8 @@ class aperturePictureHandler implements FormatHandler {
       },
       CommonFormats.BMP.builder("bmp").allowFrom(true).allowTo(true).markLossless(),
     ];
+    this.#canvas = new OffscreenCanvas(320, 200);
+    this.#ctx = this.#canvas.getContext("2d") || undefined;
     this.ready = true;
   }
 
@@ -61,42 +59,34 @@ class aperturePictureHandler implements FormatHandler {
         });
       }
     } else if (inputFormat.internal === "bmp") {
-      // we're just throwing science at the wall to see what sticks
-      const inputMagickFormat = inputFormat.internal as MagickFormat;
-      const inputSettings = new MagickReadSettings();
-      const totalPixels = 320 * 200;
-
-      inputSettings.format = inputMagickFormat;
-
+      if (!this.#canvas || !this.#ctx) {
+        throw new InitializationError("Handler not initialized.");
+      }
       for (const inputFile of inputFiles) {
-        MagickImageCollection.use((fileCollection) => {
-          fileCollection.read(inputFile.bytes);
-          for (const image of fileCollection) {
-            if (!image) break;
+        const blob = new Blob([inputFile.bytes as BlobPart], { type: inputFormat.mime });
+        const image = await createImageBitmap(blob);
+        try {
+          this.#ctx.fillStyle = "white";
+          this.#ctx.fillRect(0, 0, this.#canvas.width, this.#canvas.height);
+          this.#ctx.drawImage(image, 0, 0, this.#canvas.width, this.#canvas.height);
+        } finally {
+          image.close();
+        }
 
-            // this is to crush the image into 320x200 with 2 colors.
-            image.resize(new MagickGeometry("!320x200"));
-            image.grayscale();
-            const Qset = new QuantizeSettings();
-            Qset.colors = 2;
-            Qset.ditherMethod = DitherMethod.FloydSteinberg; // Dither it for prettier images
-            image.quantize(Qset); // 2 colors
-
-            let data: Uint8Array<ArrayBufferLike> = new Uint8Array(totalPixels);
-
-            image.getPixels((pixels) => {
-              data = pixels.toByteArray(0, 0, 320, 200, "r")!; // since there's no color data, the r is just ignoring the redundant g and b channels
-            });
-
-            const apf: string = encodeAPF(data)!;
-            const apf_bytes: Uint8Array<ArrayBufferLike> = stringToByteArray(apf)!;
-
-            outputFiles.push({
-              bytes: apf_bytes,
-              name: inputFile.name.replace(/\.[^/.]+$/, "") + ".apf",
-            });
-            break;
-          }
+        const pixels = this.#ctx.getImageData(0, 0, this.#canvas.width, this.#canvas.height);
+        const data = new Uint8Array(pixels.width * pixels.height);
+        for (let i = 0; i < data.length; i++) {
+          const brightness = rgbaToGrayscale(
+            pixels.data[i * 4],
+            pixels.data[i * 4 + 1],
+            pixels.data[i * 4 + 2],
+            1,
+          );
+          data[i] = brightness < 128 ? 0 : 255;
+        }
+        outputFiles.push({
+          bytes: new TextEncoder().encode(encodeAPF(data)),
+          name: inputFile.name.replace(/\.[^/.]+$/, "") + ".apf",
         });
       }
     } else {
@@ -104,6 +94,11 @@ class aperturePictureHandler implements FormatHandler {
     }
     return outputFiles;
   }
+}
+
+function rgbaToGrayscale(r: number, g: number, b: number, a: number): number {
+  // https://www.grayscaleimage.com/three-algorithms-for-converting-color-to-grayscale/
+  return 0.299 * (r * a) + 0.587 * (g * a) + 0.114 * (b * a);
 }
 
 function decodeAPF(data: string, SK: number): Uint8Array {
@@ -253,17 +248,6 @@ function bitmapTo1BitBMP(
   }
 
   return buf;
-}
-
-// This function was taken from https://pythonguides.com/convert-a-string-to-a-byte-array-in-typescript/
-function stringToByteArray(str: string): Uint8Array<ArrayBufferLike> {
-  const byteArray: Uint8Array<ArrayBufferLike> = new Uint8Array(str.length);
-
-  for (let i = 0; i < str.length; i++) {
-    byteArray[i] = str.charCodeAt(i);
-  }
-
-  return byteArray;
 }
 
 export default aperturePictureHandler;

@@ -9,6 +9,7 @@ export default class wabtHandler implements FormatHandler {
   public name: string = "wabt";
   public supportedFormats?: FileFormat[];
   public ready: boolean = false;
+  public offload: boolean = true;
 
   private wabtModule?: WabtModule;
 

@@ -142,15 +142,27 @@ export class FormatDefinition implements IFormatDefinition {
   }
 }
 
+/** Describes a file.
+ *
+ * **Please note:** _handlers_ are responsible for ensuring the lifetime
+ * and consistency of the buffer and the immutability of the object as a whole
+ * when passed as input.
+ */
 export interface FileData {
-  /** File name with extension. */
-  name: string;
+  /** File name with extension.
+   *
+   * **Please note:** _handlers_ are responsible for ensuring the lifetime
+   * and consistency of the buffer and the immutability of the object as a whole
+   * when passed as input.
+   */
+  readonly name: string;
   /**
    * File contents in bytes.
    *
    * **Please note:** _handlers_ are responsible for ensuring the lifetime
-   * and consistency of this buffer. If you're not sure that your handler
-   * won't modify it, wrap it in `new Uint8Array()`.
+   * and consistency of the buffer and the immutability of the object as a whole
+   * when passed as input. If you're not sure that your handler won't modify
+   * this, wrap it in `new Uint8Array()`.
    */
   readonly bytes: Uint8Array;
 }
@@ -165,6 +177,13 @@ export interface HandlerDefinition {
    * Conversion using this handler will be performed only if no other direct conversion is found.
    */
   supportAnyInput?: boolean;
+
+  /** Whether the handler supports running in a Web Worker.
+   * Unless you are doing something extraordinary, this should be enabled. If you do need to disable it,
+   * make sure your reason is really good. Try replacing `HTMLCanvasElement` -> `OffscreenCanvas`
+   * (`toBlob()` -> `convertToBlob()`), `new Image()` -> `createImageBitmap()`, and avoiding audio APIs.
+   */
+  offload: boolean;
 }
 
 /**
@@ -230,6 +249,7 @@ export function stripHandler(handler: HandlerDefinition): HandlerDefinition {
     name: handler.name,
     supportAnyInput: handler.supportAnyInput,
     supportedFormats: handler.supportedFormats?.map(stripFormat),
+    offload: handler.offload,
   };
 }
 
