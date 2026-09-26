@@ -33,12 +33,7 @@ async function fetchFile(path: string, url: string) {
   return file;
 }
 
-function outPathOf(requirement: Requirement) {
-  return join(OUT_DIR, requirement.name);
-}
-
-async function extractTarball(requirement: Requirement, tarball: Uint8Array) {
-  const outPath = outPathOf(requirement);
+async function extractTarball(outPath: string, tarball: Uint8Array) {
   const tmp = join(CACHE_DIR, `tmp-${crypto.randomUUID()}`);
   await mkdir(tmp, { recursive: true });
   await rm(outPath, { recursive: true, force: true });
@@ -55,7 +50,7 @@ function hashFile(alg: Bun.SupportedCryptoAlgorithms, bytes: Uint8Array) {
   return new Bun.CryptoHasher(alg).update(bytes).digest("hex");
 }
 
-async function assembleRequirement(requirement: Requirement, args: AssembleArgs) {
+async function assembleRequirement(requirement: Requirement, outPath: string, args: AssembleArgs) {
   const tarballPath = join(TARBALLS_DIR, `${requirement.name}.tar.gz`);
 
   let tarball;
@@ -86,16 +81,15 @@ async function assembleRequirement(requirement: Requirement, args: AssembleArgs)
     );
   }
 
-  await extractTarball(requirement, tarball);
+  await extractTarball(outPath, tarball);
 
   const subrecipePath = join(RECIPE_DIR, requirement.name);
-  const outPath = outPathOf(requirement);
   for (const patch of requirement.patches || []) {
     await $`patch -p1 -i ${join(subrecipePath, patch)}`.cwd(outPath);
   }
 }
 
-async function hashRequirement(requirement: Requirement) {
+async function hashRequirement(requirement: Requirement, outPath: string) {
   const hash = new Bun.CryptoHasher("sha256");
 
   hash.update(JSON.stringify(requirement));
@@ -109,7 +103,6 @@ async function hashRequirement(requirement: Requirement) {
     hash.update("\0");
   }
 
-  const outPath = outPathOf(requirement);
   const paths = await readdir(outPath, { recursive: true });
   paths.sort();
 
@@ -126,18 +119,18 @@ async function hashRequirement(requirement: Requirement) {
   return hash.digest("hex");
 }
 
-async function writeHash(requirement: Requirement) {
+async function writeHash(requirement: Requirement, outPath: string) {
   const outHashPath = join(OUT_HASHES_DIR, requirement.name);
-  const actualHash = await hashRequirement(requirement);
+  const actualHash = await hashRequirement(requirement, outPath);
   await Bun.write(outHashPath, actualHash);
 }
 
-async function checkHash(requirement: Requirement): Promise<boolean> {
+async function checkHash(requirement: Requirement, outPath: string): Promise<boolean> {
   const outHashPath = join(OUT_HASHES_DIR, requirement.name);
 
   try {
     const outHash = (await Bun.file(outHashPath).text()).trim();
-    const actualHash = await hashRequirement(requirement);
+    const actualHash = await hashRequirement(requirement, outPath);
     return outHash === actualHash;
   } catch {
     return false;
@@ -153,12 +146,13 @@ const assembleArgs = {
 type AssembleArgs = ParsedArgs<typeof assembleArgs>;
 
 async function assembleRequirementChecked(requirement: Requirement, args: AssembleArgs) {
-  if (!args.force && !args.refetch && (await checkHash(requirement))) {
+  const outPath = join(OUT_DIR, requirement.name);
+  if (!args.force && !args.refetch && (await checkHash(requirement, outPath))) {
     if (args.verbose) console.log(`${requirement.name} is up to date.`);
     return;
   }
-  await assembleRequirement(requirement, args);
-  await writeHash(requirement);
+  await assembleRequirement(requirement, outPath, args);
+  await writeHash(requirement, outPath);
   if (args.verbose) console.log(`Assembled ${requirement.name}.`);
 }
 
