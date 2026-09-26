@@ -22,7 +22,7 @@ await mkdir(TARBALLS_DIR, { recursive: true });
 const assemble = defineCommand({
   meta: { name: "assemble", description: "Prepare all requirements for use" },
   args: {},
-  async run({ args }) {
+  async run() {
     for (const [name, requirement] of Object.entries(requirementsConfig)) {
       console.log(`Moving onto ${name}...`);
       const fileName = join(TARBALLS_DIR, `${name}.tar.gz`);
@@ -45,7 +45,7 @@ const assemble = defineCommand({
 
       const tmp = join(CACHE_DIR, "tmp");
       const out = join(OUT_DIR, name);
-      mkdir(tmp, { recursive: true });
+      await mkdir(tmp, { recursive: true });
       await rm(out, { recursive: true, force: true });
 
       const archive = new Bun.Archive(tarball);
