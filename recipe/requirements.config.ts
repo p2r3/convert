@@ -50,6 +50,7 @@ export default [
     name: "turbowarp-unpackager",
     url: "https://github.com/TurboWarp/unpackager/archive/2eb03bd5dc18e3b7b1318190bef8e14274123778.tar.gz",
     hash: ["sha256", "3bb10d2d3cf90496ddca29b523da85a901040d707ac03751de40edd35c8d61ce"],
+    patches: ["make-esm.patch"],
   },
   {
     name: "typst-assets",

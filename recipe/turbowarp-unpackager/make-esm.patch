@@ -1,0 +1,24 @@
+diff -ruN unpackager-a/unpackager.js unpackager-b/unpackager.js
+--- unpackager-a/unpackager.js	2026-03-03 01:40:30.000000000 +0200
++++ unpackager-b/unpackager.js	2026-09-26 21:43:16.421440636 +0200
+@@ -4,7 +4,7 @@
+  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+  */
+ 
+-var unpackage = (function(JSZip) {
++var unpackage = function (JSZip) {
+   'use strict';
+ 
+   if (!JSZip) {
+@@ -474,9 +474,6 @@
+   };
+ 
+   return unpackage;
+-}(typeof JSZip !== 'undefined' ? JSZip : null));
++};
+ 
+-// Allow usage as Node.js dependency
+-if (typeof module !== 'undefined') {
+-  module.exports = unpackage;
+-}
++export default unpackage;

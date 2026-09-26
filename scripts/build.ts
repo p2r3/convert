@@ -2,11 +2,13 @@ import { join } from "path";
 import requirementsConfig from "../recipe/requirements.config";
 import { defineCommand, runMain, type ArgsDef, type ParsedArgs } from "citty";
 import { mkdir, readdir, rm, rename, stat } from "fs/promises";
+import { $ } from "bun";
 
 export type Requirement = {
   name: string;
   url: `https://${string}.tar.gz`; // only tar gz for now
   hash: [Bun.SupportedCryptoAlgorithms, string];
+  patches?: string[];
 };
 
 export type RequirementsConfig = Requirement[];
@@ -20,6 +22,8 @@ await mkdir(OUT_DIR, { recursive: true });
 await mkdir(CACHE_DIR, { recursive: true });
 await mkdir(TARBALLS_DIR, { recursive: true });
 await mkdir(OUT_HASHES_DIR, { recursive: true });
+
+const RECIPE_DIR = join(import.meta.dir, "../recipe");
 
 async function fetchFile(path: string, url: string) {
   const res = await fetch(url);
@@ -51,7 +55,7 @@ function hashFile(alg: Bun.SupportedCryptoAlgorithms, bytes: Uint8Array) {
   return new Bun.CryptoHasher(alg).update(bytes).digest("hex");
 }
 
-async function assembleFromTarball(requirement: Requirement, args: AssembleArgs) {
+async function assembleRequirement(requirement: Requirement, args: AssembleArgs) {
   const tarballPath = join(TARBALLS_DIR, `${requirement.name}.tar.gz`);
 
   let tarball;
@@ -83,8 +87,12 @@ async function assembleFromTarball(requirement: Requirement, args: AssembleArgs)
   }
 
   await extractTarball(requirement, tarball);
-  await writeHash(requirement);
-  if (args.verbose) console.log(`Assembled ${requirement.name}.`);
+
+  const subrecipePath = join(RECIPE_DIR, requirement.name);
+  const outPath = outPathOf(requirement);
+  for (const patch of requirement.patches || []) {
+    await $`patch -p1 -i ${join(subrecipePath, patch)}`.cwd(outPath);
+  }
 }
 
 async function hashDir(dirPath: string) {
@@ -131,12 +139,14 @@ const assembleArgs = {
 
 type AssembleArgs = ParsedArgs<typeof assembleArgs>;
 
-async function assembleRequirement(requirement: Requirement, args: AssembleArgs) {
+async function assembleRequirementChecked(requirement: Requirement, args: AssembleArgs) {
   if (!args.force && !args.refetch && (await checkHash(requirement))) {
     if (args.verbose) console.log(`${requirement.name} is up to date.`);
     return;
   }
-  await assembleFromTarball(requirement, args);
+  await assembleRequirement(requirement, args);
+  await writeHash(requirement);
+  if (args.verbose) console.log(`Assembled ${requirement.name}.`);
 }
 
 const assemble = defineCommand({
@@ -145,7 +155,7 @@ const assemble = defineCommand({
   async run({ args }) {
     const start = performance.now();
     const results = await Promise.allSettled(
-      requirementsConfig.map((requirement) => assembleRequirement(requirement, args)),
+      requirementsConfig.map((requirement) => assembleRequirementChecked(requirement, args)),
     );
     const end = performance.now();
 
