@@ -1,6 +1,6 @@
 import CommonFormats from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-import { SimpleTTS } from "./espeakng.js/js/espeakng-simple.js";
+import { SimpleTTS } from "built/espeakng.js/js/espeakng-simple.js";
 import { WaveFile } from "wavefile";
 
 export class espeakngHandler implements FormatHandler {

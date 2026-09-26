@@ -1,9 +1,9 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 
-import { parseODT, parseODP, parseODS } from "./envelope/parseODF.js";
-import parseDOCX from "./envelope/parseDOCX.js";
-import parsePPTX from "./envelope/parsePPTX.js";
-import parseXLSX from "./envelope/parseXLSX.js";
+import { parseODT, parseODP, parseODS } from "built/envelope/parseODF.js";
+import parseDOCX from "built/envelope/parseDOCX.js";
+import parsePPTX from "built/envelope/parsePPTX.js";
+import parseXLSX from "built/envelope/parseXLSX.js";
 import CommonFormats, { Category } from "src/CommonFormats.ts";
 
 class envelopeHandler implements FormatHandler {

@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 import preact from "@preact/preset-vite";
+import { fileURLToPath } from "node:url";
 
 export default defineConfig({
   publicDir: "public",
@@ -13,6 +14,9 @@ export default defineConfig({
   },
   resolve: {
     tsconfigPaths: true,
+    alias: {
+      built: fileURLToPath(new URL("./built", import.meta.url)),
+    },
   },
   plugins: [
     viteStaticCopy({
@@ -54,11 +58,11 @@ export default defineConfig({
           dest: "wasm",
         },
         {
-          src: "src/handlers/espeakng.js/js/espeakng.worker.js",
+          src: "built/espeakng.js/js/espeakng.worker.js",
           dest: "js",
         },
         {
-          src: "src/handlers/espeakng.js/js/espeakng.worker.data",
+          src: "built/espeakng.js/js/espeakng.worker.data",
           dest: "js",
         },
         {
@@ -86,7 +90,7 @@ export default defineConfig({
           dest: "wasm",
         },
         {
-          src: "src/handlers/typst-assets/files/fonts/*",
+          src: "built/typst-assets/files/fonts/*",
           dest: "wasm/typst",
         },
       ],

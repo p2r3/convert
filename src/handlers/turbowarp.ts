@@ -30,7 +30,7 @@ class turbowarpHandler implements FormatHandler {
   private unpackager?: any;
 
   async init() {
-    // this.unpackager = await import("./turbowarp/unpackager/unpackager.js");
+    // this.unpackager = await import("built/turbowarp-unpackager/unpackager.js");
     this.ready = true;
   }
 

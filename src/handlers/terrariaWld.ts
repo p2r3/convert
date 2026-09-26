@@ -1,6 +1,6 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import CommonFormats, { Category } from "src/CommonFormats.ts";
-import { FileReader } from "src/handlers/terraria-wld-parser/src/";
+import { FileReader } from "built/terraria-wld-parser/src/";
 
 // CODE BELOW IS WRITTEN BY PIXELKAT5 IN PR #244
 const TILE_COLORS: Record<number, [number, number, number]> = {
