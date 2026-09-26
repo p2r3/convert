@@ -1,29 +1,58 @@
-import { join } from "path";
-import requirementsConfig from "../recipe/requirements.config";
+import { join, relative } from "path";
 import { defineCommand, runMain, type ArgsDef, type ParsedArgs } from "citty";
 import { mkdir, readdir, rm, rename, stat } from "fs/promises";
 import { $ } from "bun";
 
-export type Requirement = {
+export type SourceRequirement = {
   name: string;
   url: `https://${string}.tar.gz`; // only tar gz for now
   hash: [Bun.SupportedCryptoAlgorithms, string];
   patches?: string[];
 };
 
+export type SubrecipeRequirement = {
+  name: string;
+  assemble: string;
+};
+
+export type Requirement = SourceRequirement | SubrecipeRequirement;
+
 export type RequirementsConfig = Requirement[];
 
 const OUT_DIR = join(import.meta.dir, "../built");
 const CACHE_DIR = join(import.meta.dir, "../.cache/convert-build");
 const TARBALLS_DIR = join(CACHE_DIR, "tarballs");
-const OUT_HASHES_DIR = join(CACHE_DIR, "out-hashes");
+const RECIPE_DIR = join(import.meta.dir, "../recipe");
 
 await mkdir(OUT_DIR, { recursive: true });
-await mkdir(CACHE_DIR, { recursive: true });
 await mkdir(TARBALLS_DIR, { recursive: true });
-await mkdir(OUT_HASHES_DIR, { recursive: true });
 
-const RECIPE_DIR = join(import.meta.dir, "../recipe");
+type Scope = {
+  recipeDir: string;
+  outDir: string;
+  stateDir: string;
+};
+
+const ROOT_SCOPE: Scope = { recipeDir: RECIPE_DIR, outDir: OUT_DIR, stateDir: CACHE_DIR };
+
+function subrecipeScope(scope: Scope, name: string): Scope {
+  const stateDir = join(scope.stateDir, "subrecipes", name);
+  return {
+    recipeDir: join(scope.recipeDir, name),
+    outDir: join(stateDir, "requirements"),
+    stateDir,
+  };
+}
+
+function isSubrecipe(requirement: Requirement): requirement is SubrecipeRequirement {
+  return "assemble" in requirement;
+}
+
+async function loadRequirements(recipeDir: string): Promise<RequirementsConfig> {
+  const configPath = join(recipeDir, "requirements.config.ts");
+  if (!(await Bun.file(configPath).exists())) return [];
+  return (await import(configPath)).default;
+}
 
 async function fetchFile(path: string, url: string) {
   const res = await fetch(url);
@@ -50,8 +79,20 @@ function hashFile(alg: Bun.SupportedCryptoAlgorithms, bytes: Uint8Array) {
   return new Bun.CryptoHasher(alg).update(bytes).digest("hex");
 }
 
-async function assembleRequirement(requirement: Requirement, outPath: string, args: AssembleArgs) {
-  const tarballPath = join(TARBALLS_DIR, `${requirement.name}.tar.gz`);
+async function listFiles(dir: string) {
+  try {
+    const entries = await readdir(dir, { recursive: true, withFileTypes: true });
+    return entries
+      .filter((entry) => entry.isFile())
+      .map((entry) => relative(dir, join(entry.parentPath, entry.name)))
+      .toSorted();
+  } catch {
+    return [];
+  }
+}
+
+async function assembleSource(requirement: SourceRequirement, scope: Scope, args: AssembleArgs) {
+  const tarballPath = join(TARBALLS_DIR, `${requirement.hash[1]}.tar.gz`);
 
   let tarball;
   if (!args.refetch) {
@@ -81,32 +122,55 @@ async function assembleRequirement(requirement: Requirement, outPath: string, ar
     );
   }
 
+  const outPath = join(scope.outDir, requirement.name);
   await extractTarball(outPath, tarball);
 
-  const subrecipePath = join(RECIPE_DIR, requirement.name);
+  const recipePath = join(scope.recipeDir, requirement.name);
   for (const patch of requirement.patches || []) {
-    await $`patch -p1 -i ${join(subrecipePath, patch)}`.cwd(outPath);
+    await $`patch -p1 -i ${join(recipePath, patch)}`.cwd(outPath);
   }
 }
 
-async function hashRequirement(requirement: Requirement, outPath: string) {
+/** Expects the subrecipe's own requirements to already be assembled. */
+async function assembleSubrecipe(requirement: SubrecipeRequirement, scope: Scope) {
+  const sub = subrecipeScope(scope, requirement.name);
+  const outPath = join(scope.outDir, requirement.name);
+  await rm(outPath, { recursive: true, force: true });
+  await mkdir(outPath, { recursive: true });
+
+  await $`bun run ${join(sub.recipeDir, requirement.assemble)}`
+    .cwd(sub.outDir)
+    .env({ ...process.env, OUT_DIR: outPath });
+}
+
+function hashPath(requirement: Requirement, scope: Scope) {
+  return join(scope.stateDir, "out-hashes", requirement.name);
+}
+
+async function hashRequirement(requirement: Requirement, scope: Scope) {
   const hash = new Bun.CryptoHasher("sha256");
 
   hash.update(JSON.stringify(requirement));
   hash.update("\0");
 
-  const subrecipePath = join(RECIPE_DIR, requirement.name);
-  for (const patch of requirement.patches || []) {
-    hash.update(patch);
+  const recipePath = join(scope.recipeDir, requirement.name);
+  for (const path of await listFiles(recipePath)) {
+    hash.update(path);
     hash.update("\0");
-    hash.update(await Bun.file(join(subrecipePath, patch)).bytes());
+    hash.update(await Bun.file(join(recipePath, path)).bytes());
     hash.update("\0");
   }
 
-  const paths = await readdir(outPath, { recursive: true });
-  paths.sort();
+  if (isSubrecipe(requirement)) {
+    const sub = subrecipeScope(scope, requirement.name);
+    for (const subrequirement of await loadRequirements(sub.recipeDir)) {
+      hash.update(await Bun.file(hashPath(subrequirement, sub)).text());
+      hash.update("\0");
+    }
+  }
 
-  for (const path of paths) {
+  const outPath = join(scope.outDir, requirement.name);
+  for (const path of await listFiles(outPath)) {
     const s = await stat(join(outPath, path));
     hash.update(path);
     hash.update("\0");
@@ -119,19 +183,14 @@ async function hashRequirement(requirement: Requirement, outPath: string) {
   return hash.digest("hex");
 }
 
-async function writeHash(requirement: Requirement, outPath: string) {
-  const outHashPath = join(OUT_HASHES_DIR, requirement.name);
-  const actualHash = await hashRequirement(requirement, outPath);
-  await Bun.write(outHashPath, actualHash);
+async function writeHash(requirement: Requirement, scope: Scope) {
+  await Bun.write(hashPath(requirement, scope), await hashRequirement(requirement, scope));
 }
 
-async function checkHash(requirement: Requirement, outPath: string): Promise<boolean> {
-  const outHashPath = join(OUT_HASHES_DIR, requirement.name);
-
+async function checkHash(requirement: Requirement, scope: Scope): Promise<boolean> {
   try {
-    const outHash = (await Bun.file(outHashPath).text()).trim();
-    const actualHash = await hashRequirement(requirement, outPath);
-    return outHash === actualHash;
+    const outHash = (await Bun.file(hashPath(requirement, scope)).text()).trim();
+    return outHash === (await hashRequirement(requirement, scope));
   } catch {
     return false;
   }
@@ -145,15 +204,44 @@ const assembleArgs = {
 
 type AssembleArgs = ParsedArgs<typeof assembleArgs>;
 
-async function assembleRequirementChecked(requirement: Requirement, args: AssembleArgs) {
-  const outPath = join(OUT_DIR, requirement.name);
-  if (!args.force && !args.refetch && (await checkHash(requirement, outPath))) {
+async function assembleRequirementChecked(
+  requirement: Requirement,
+  scope: Scope,
+  args: AssembleArgs,
+) {
+  if (isSubrecipe(requirement)) {
+    const sub = subrecipeScope(scope, requirement.name);
+    await assembleAll(await loadRequirements(sub.recipeDir), sub, args);
+  }
+
+  if (!args.force && !args.refetch && (await checkHash(requirement, scope))) {
     if (args.verbose) console.log(`${requirement.name} is up to date.`);
     return;
   }
-  await assembleRequirement(requirement, outPath, args);
-  await writeHash(requirement, outPath);
+
+  if (isSubrecipe(requirement)) await assembleSubrecipe(requirement, scope);
+  else await assembleSource(requirement, scope, args);
+
+  await writeHash(requirement, scope);
   if (args.verbose) console.log(`Assembled ${requirement.name}.`);
+}
+
+async function assembleAll(requirements: RequirementsConfig, scope: Scope, args: AssembleArgs) {
+  await mkdir(scope.outDir, { recursive: true });
+
+  const results = await Promise.allSettled(
+    requirements.map((requirement) => assembleRequirementChecked(requirement, scope, args)),
+  );
+
+  const failures = results.flatMap((result, i) =>
+    result.status === "rejected" ? [{ name: requirements[i].name, reason: result.reason }] : [],
+  );
+  for (const { name, reason } of failures) {
+    console.error(`Failed to assemble ${name}:`, reason);
+  }
+  if (failures.length) {
+    throw new Error(`${failures.length} of ${results.length} requirements failed to assemble.`);
+  }
 }
 
 const assemble = defineCommand({
@@ -161,23 +249,8 @@ const assemble = defineCommand({
   args: assembleArgs,
   async run({ args }) {
     const start = performance.now();
-    const results = await Promise.allSettled(
-      requirementsConfig.map((requirement) => assembleRequirementChecked(requirement, args)),
-    );
+    await assembleAll(await loadRequirements(ROOT_SCOPE.recipeDir), ROOT_SCOPE, args);
     const end = performance.now();
-
-    const failures = results.flatMap((result, i) =>
-      result.status === "rejected"
-        ? [{ name: requirementsConfig[i].name, reason: result.reason }]
-        : [],
-    );
-    for (const { name, reason } of failures) {
-      console.error(`Failed to assemble ${name}:`, reason);
-    }
-    if (failures.length) {
-      throw new Error(`${failures.length} of ${results.length} requirements failed to assemble.`);
-    }
-
     console.log(`Assembled in ${(end - start).toFixed(2)} ms.`);
   },
 });

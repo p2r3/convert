@@ -7,7 +7,6 @@
   "type": "module",
   "main": "src/electron.cjs",
   "scripts": {
-    "postinstall": "bun run scripts/extract-material-icons.ts",
     "assemble": "bun run scripts/build.ts assemble",
     "dev": "bun run assemble && vite",
     "build": "bun run assemble && tsc && vite build",

@@ -57,4 +57,8 @@ export default [
     url: "https://github.com/typst/typst-assets/archive/ad8080d46d42fca909562572cfa14a86f00eb945.tar.gz",
     hash: ["sha256", "4988f3ddf26b1feea9f312f9a2194493ed042aebf21eb18cc39452f24d261ced"],
   },
+  {
+    name: "material-icons",
+    assemble: "assemble.ts",
+  },
 ] satisfies RequirementsConfig;

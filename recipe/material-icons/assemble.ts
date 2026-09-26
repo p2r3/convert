@@ -1,14 +1,12 @@
-import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, writeFileSync, readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { existsSync, writeFileSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import ts from "typescript";
 import { extraExtensionToIcon } from "./extra-language-extensions";
 
-const REPO_URL = "https://github.com/material-extensions/vscode-material-icon-theme.git";
-const CACHE_DIR = join(process.cwd(), ".cache/material-icon-theme");
-const ICONS_SRC = join(CACHE_DIR, "icons");
-const FILE_ICONS_TS = join(CACHE_DIR, "src/core/icons/fileIcons.ts");
-const OUT_BUNDLE = join(process.cwd(), "public/icons.json");
+const SOURCE_DIR = "vscode-material-icon-theme";
+const ICONS_SRC = join(SOURCE_DIR, "icons");
+const FILE_ICONS_TS = join(SOURCE_DIR, "src/core/icons/fileIcons.ts");
+const OUT_BUNDLE = join(process.env.OUT_DIR!, "icons.json");
 
 const FILE_SVG_PATH =
   "m8.668 6h3.6641l-3.6641-3.668v3.668m-4.668-4.668h5.332l4 4v8c0 0.73828-0.59375 1.3359-1.332 1.3359h-8c-0.73828 0-1.332-0.59766-1.332-1.3359v-10.664c0-0.74219 0.59375-1.3359 1.332-1.3359m3.332 1.3359h-3.332v10.664h8v-6h-4.668z";
@@ -18,27 +16,6 @@ interface FileIconEntry {
   name: string;
   fileExtensions: string[];
   cloneBase?: string;
-}
-
-function ensureRepo(): void {
-  if (existsSync(join(CACHE_DIR, ".git"))) {
-    const r = spawnSync("git", ["-C", CACHE_DIR, "pull", "--ff-only"], {
-      stdio: "inherit",
-      encoding: "utf-8",
-    });
-    if (r.status !== 0) {
-      console.warn("[material-icons] git pull failed; using cached tree");
-    }
-    return;
-  }
-  mkdirSync(join(process.cwd(), ".cache"), { recursive: true });
-  const r = spawnSync("git", ["clone", "--depth", "1", REPO_URL, CACHE_DIR], {
-    stdio: "inherit",
-    encoding: "utf-8",
-  });
-  if (r.status !== 0) {
-    throw new Error("[material-icons] git clone failed");
-  }
 }
 
 function extractFileIconEntries(sourcePath: string): FileIconEntry[] {
@@ -114,11 +91,6 @@ function resolveSourceIconPath(iconName: string, cloneBase: string | undefined):
 }
 
 function main(): void {
-  ensureRepo();
-  if (!existsSync(FILE_ICONS_TS)) {
-    throw new Error("[material-icons] missing fileIcons.ts after clone");
-  }
-
   const entries = extractFileIconEntries(FILE_ICONS_TS);
   const extToLogical = new Map<string, string>();
 
@@ -163,7 +135,6 @@ function main(): void {
     extensionMap[ext] = logical;
   }
 
-  mkdirSync(dirname(OUT_BUNDLE), { recursive: true });
   writeFileSync(OUT_BUNDLE, JSON.stringify({ extensions: extensionMap, icons }), "utf-8");
 
   console.log(

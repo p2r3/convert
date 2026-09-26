@@ -1,4 +1,5 @@
 import { useEffect, useState } from "preact/hooks";
+import iconsUrl from "built/material-icons/icons.json?url";
 import { getDefaultIconForCategory } from "./categoryDefaultIcons";
 import "./index.css";
 
@@ -21,7 +22,7 @@ let loadPromise: Promise<IconBundle> | null = null;
 function loadIconBundle(): Promise<IconBundle> {
   if (bundleCache) return Promise.resolve(bundleCache);
   if (!loadPromise) {
-    loadPromise = fetch(`${import.meta.env.BASE_URL}icons.json`)
+    loadPromise = fetch(iconsUrl)
       .then((r) => {
         if (!r.ok) throw new Error("icon bundle load failed");
         return r.json() as Promise<IconBundle>;
