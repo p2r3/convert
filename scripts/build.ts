@@ -95,13 +95,26 @@ async function assembleRequirement(requirement: Requirement, args: AssembleArgs)
   }
 }
 
-async function hashDir(dirPath: string) {
-  const paths = await readdir(dirPath, { recursive: true });
-  paths.sort();
+async function hashRequirement(requirement: Requirement) {
   const hash = new Bun.CryptoHasher("sha256");
 
+  hash.update(JSON.stringify(requirement));
+  hash.update("\0");
+
+  const subrecipePath = join(RECIPE_DIR, requirement.name);
+  for (const patch of requirement.patches || []) {
+    hash.update(patch);
+    hash.update("\0");
+    hash.update(await Bun.file(join(subrecipePath, patch)).bytes());
+    hash.update("\0");
+  }
+
+  const outPath = outPathOf(requirement);
+  const paths = await readdir(outPath, { recursive: true });
+  paths.sort();
+
   for (const path of paths) {
-    const s = await stat(join(dirPath, path));
+    const s = await stat(join(outPath, path));
     hash.update(path);
     hash.update("\0");
     hash.update(String(s.size));
@@ -115,7 +128,7 @@ async function hashDir(dirPath: string) {
 
 async function writeHash(requirement: Requirement) {
   const outHashPath = join(OUT_HASHES_DIR, requirement.name);
-  const actualHash = await hashDir(outPathOf(requirement));
+  const actualHash = await hashRequirement(requirement);
   await Bun.write(outHashPath, actualHash);
 }
 
@@ -124,7 +137,7 @@ async function checkHash(requirement: Requirement): Promise<boolean> {
 
   try {
     const outHash = (await Bun.file(outHashPath).text()).trim();
-    const actualHash = await hashDir(outPathOf(requirement));
+    const actualHash = await hashRequirement(requirement);
     return outHash === actualHash;
   } catch {
     return false;
