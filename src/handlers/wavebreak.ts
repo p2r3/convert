@@ -50,6 +50,28 @@ class wavebreakHandler implements FormatHandler {
       category: Category.AUDIO,
       lossless: true
     },
+    {
+      name: "PCM 32-bit floating-point little-endian",
+      format: "f32le",
+      extension: "f32le",
+      mime: "audio/f32le",
+      from: true,
+      to: false,
+      internal: "f32le",
+      category: Category.AUDIO,
+      lossless: true
+    },
+    {
+      name: "PCM 64-bit floating-point little-endian",
+      format: "f64le",
+      extension: "f64le",
+      mime: "audio/f64le",
+      from: true,
+      to: false,
+      internal: "f32le",
+      category: Category.AUDIO,
+      lossless: true
+    }
   ];
   public ready: boolean = false;
   public offload: boolean = true;
@@ -68,8 +90,8 @@ class wavebreakHandler implements FormatHandler {
     const outputFiles: FileData[] = [];
     // oxlint-disable-next-line unicorn/consistent-function-scoping
     const n32 = (t: number) => new Uint8Array(new Uint32Array([t]).buffer);
-    const me = _outputFormat.mime; let is8,bd;
-    [is8,bd] = [me.length<9,is8?8:+me.slice(7,9)]
+    const me = _outputFormat.mime; let is8,bd,fn;
+    [is8,bd,fn] = [me.length<9,is8?8:+me.slice(7,9),me[6]=='f']
     for (const file of inputFiles) {
       if (file.bytes.byteLength > 0xffffff00) {
         ctx?.log("data too large. maximum size 4,294,967,040 bytes.", "error");
@@ -81,7 +103,7 @@ class wavebreakHandler implements FormatHandler {
       const g = ((a,b=a) => !a.1 ? b.0*b.1/a.0 : g([a.1,a.0%a.1],b))(2,bd)
       const sz = g * Math.ceil(file.bytes.byteLength / g) // this actually can't change at all because of the whole umm.
       const head1 = new Uint8Array([82, 73, 70, 70, ...n32(sz + 36), 87, 65, 86, 69]);
-      const head2 = new Uint8Array([102, 109, 116, 32, 16, 0, 0, 0, 1, 0, 1, 0, ...n32(is8?22500:44100), ...n32(is8?22500:44100*bd/8)), bd/8, 0, bd, 0]);
+      const head2 = new Uint8Array([102, 109, 116, 32, 16, 0, 0, 0, (1+2*fn), 0, 1, 0, ...n32(is8?22500:44100), ...n32(is8?22500:44100*bd/8)), bd/8, 0, bd, 0]);
       const head3 = new Uint8Array([100, 97, 116, 97, ...n32(sz)]);
       const r = new Uint8Array(sz + 44);
       r.set(head1, 0);
