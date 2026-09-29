@@ -92,7 +92,7 @@ class wavebreakHandler implements FormatHandler {
     const n32 = (t: number) => new Uint8Array(new Uint32Array([t]).buffer);
     const me = _outputFormat.mime;
     let is8, bd, fn;
-    [is8, bd, fn] = [me.length < 9, is8 ? 8 : +me.slice(7, 9), me[6] == "f"];
+    [is8, bd, fn] = [me.length < 9, is8 ? 8 : +me.slice(7, 9), +(me[6] == "f")];
     for (const file of inputFiles) {
       if (file.bytes.byteLength > 0xffffff00) {
         ctx?.log("data too large. maximum size 4,294,967,040 bytes.", "error");
