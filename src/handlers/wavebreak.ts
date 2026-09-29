@@ -110,6 +110,7 @@ class wavebreakHandler implements FormatHandler {
       r.set(head2, 12);
       r.set(head3, 36);
       r.set(file.bytes, 44);
+      // eslint-disable-next-line no-unused-expressions
       sz-file.bytes.byteLength && (r[r.length-1] = 0)
       outputFiles.push({ name: file.name.split(".").slice(0, -1).join(".") + ".wav", bytes: r });
     }
