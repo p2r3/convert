@@ -17,6 +17,17 @@ class wavebreakHandler implements FormatHandler {
       category: Category.AUDIO,
       lossless: true,
     },
+    {
+      name: "PCM unsigned 8-bit",
+      format: "u8",
+      extension: "u8",
+      mime: "audio/u8", // once again interpreted as std. mono
+      from: true,
+      to: false,
+      internal: "u8",
+      category: Category.AUDIO,
+      lossless: true
+    }
   ];
   public ready: boolean = false;
   public offload: boolean = true;
@@ -35,6 +46,7 @@ class wavebreakHandler implements FormatHandler {
     const outputFiles: FileData[] = [];
     // oxlint-disable-next-line unicorn/consistent-function-scoping
     const n32 = (t: number) => new Uint8Array(new Uint32Array([t]).buffer);
+    const is16 = _outputFormat.name.includes(16)
     for (const file of inputFiles) {
       if (file.bytes.byteLength > 0xffffff00) {
         ctx?.log("data too large. maximum size 4,294,967,040 bytes.", "error");
@@ -43,11 +55,9 @@ class wavebreakHandler implements FormatHandler {
       if (file.bytes.byteLength > 0x7fffff00) {
         ctx?.log("data very large. successful conversion cannot be guaranteed.", "warn");
       }
-      const sz = 2 * Math.ceil(file.bytes.byteLength / 2);
+      const sz = 2 * Math.ceil(file.bytes.byteLength / 2) // this actually can't change at all because of the whole umm.
       const head1 = new Uint8Array([82, 73, 70, 70, ...n32(sz + 36), 87, 65, 86, 69]);
-      const head2 = new Uint8Array([
-        102, 109, 116, 32, 16, 0, 0, 0, 1, 0, 1, 0, 68, 172, 0, 0, 136, 88, 1, 0, 2, 0, 16, 0,
-      ]);
+      const head2 = new Uint8Array([102, 109, 116, 32, 16, 0, 0, 0, 1, 0, 1, 0, ...(is16? [68, 172, 0, 0]: [228,87,0,0]), ...(is16? [136, 88, 1, 0]: [228,87,0,0]), (is16?2:1), 0, (is16?16:8), 0,]);
       const head3 = new Uint8Array([100, 97, 116, 97, ...n32(sz)]);
       const r = new Uint8Array(sz + 44);
       r.set(head1, 0);
