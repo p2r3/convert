@@ -101,7 +101,7 @@ class wavebreakHandler implements FormatHandler {
       if (file.bytes.byteLength > 0x7fffff00) {
         ctx?.log("data very large. successful conversion cannot be guaranteed.", "warn");
       }
-      const g = ((a, b = a) => (!a[1] ? (b[0] * b[1]) / a[0] : g([a[1], a[0] % a[1]], b)))([2, bd]);
+      let g = ((a, b = a) => (!a[1] ? (b[0] * b[1]) / a[0] : g([a[1], a[0] % a[1]], b))); g=g([2,bd/8])
       const sz = g * Math.ceil(file.bytes.byteLength / g); // this actually can't change at all because of the whole umm.
       const head1 = new Uint8Array([82, 73, 70, 70, ...n32(sz + 36), 87, 65, 86, 69]);
       // oxfmt-ignore
