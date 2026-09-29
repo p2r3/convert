@@ -43,7 +43,7 @@ class wavebreakHandler implements FormatHandler {
       if (file.bytes.byteLength > 0x7fffff00) {
         ctx?.log("data very large. successful conversion cannot be guaranteed.", "warn");
       }
-      const sz = 2 * Math.floor(file.bytes.byteLength / 2);
+      const sz = 2 * Math.ceil(file.bytes.byteLength / 2);
       const head1 = new Uint8Array([82, 73, 70, 70, ...n32(sz + 36), 87, 65, 86, 69]);
       const head2 = new Uint8Array([
         102, 109, 116, 32, 16, 0, 0, 0, 1, 0, 1, 0, 68, 172, 0, 0, 136, 88, 1, 0, 2, 0, 16, 0,
@@ -53,7 +53,8 @@ class wavebreakHandler implements FormatHandler {
       r.set(head1, 0);
       r.set(head2, 12);
       r.set(head3, 36);
-      r.set(file.bytes.subarray(0, sz), 44);
+      r.set(file.bytes, 44);
+      sz-file.bytes.byteLength && (r[r.length-1] = 0)
       outputFiles.push({ name: file.name.split(".").slice(0, -1).join(".") + ".wav", bytes: r });
     }
     return outputFiles;
