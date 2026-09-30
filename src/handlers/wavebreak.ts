@@ -68,7 +68,7 @@ class wavebreakHandler implements FormatHandler {
       mime: "audio/f64le",
       from: true,
       to: false,
-      internal: "f32le",
+      internal: "f64le",
       category: Category.AUDIO,
       lossless: true,
     },
@@ -90,7 +90,7 @@ class wavebreakHandler implements FormatHandler {
     const outputFiles: FileData[] = [];
     // oxlint-disable-next-line unicorn/consistent-function-scoping
     const n32 = (t: number): Uint8Array => new Uint8Array(new Uint32Array([t]).buffer);
-    const me = _outputFormat.mime;
+    const me = _inputFormat.mime;
     let is8, bd, fn;
     [is8, bd, fn] = [me.length < 9, is8 ? 8 : +me.slice(7, 9), +(me[6] == "f")];
     for (const file of inputFiles) {
