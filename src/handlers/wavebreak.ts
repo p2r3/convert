@@ -89,7 +89,7 @@ class wavebreakHandler implements FormatHandler {
   ): Promise<FileData[]> {
     const outputFiles: FileData[] = [];
     // oxlint-disable-next-line unicorn/consistent-function-scoping
-    const n32 = (t: number) => new Uint8Array(new Uint32Array([t]).buffer);
+    const n32 = (t: number): Uint8Array => new Uint8Array(new Uint32Array([t]).buffer);
     const me = _outputFormat.mime;
     let is8, bd, fn;
     [is8, bd, fn] = [me.length < 9, is8 ? 8 : +me.slice(7, 9), +(me[6] == "f")];
@@ -102,7 +102,7 @@ class wavebreakHandler implements FormatHandler {
         ctx?.log("data very large. successful conversion cannot be guaranteed.", "warn");
       }
       // oxlint-disable-next-line unicorn/consistent-function-scoping
-      const g0 = ((a : Array, b : Array = a) => (!a[1] ? (b[0] * b[1]) / a[0] : g0([a[1], a[0] % a[1]], b))); // oxfmt-ignore
+      const g0 = (a : number[], b : number[] = a) : number => (!a[1] ? (b[0] * b[1]) / a[0] : g0([a[1], a[0] % a[1]], b)); // oxfmt-ignore
       const g = g0([2, bd / 8]);
       const sz = g * Math.ceil(file.bytes.byteLength / g); // this actually can't change at all because of the whole umm.
       const head1 = new Uint8Array([82, 73, 70, 70, ...n32(sz + 36), 87, 65, 86, 69]);
