@@ -31,8 +31,8 @@ class wavebreakHandler implements FormatHandler {
     // oxlint-disable-next-line unicorn/consistent-function-scoping
     const n32 = (t: number): Uint8Array => new Uint8Array(new Uint32Array([t]).buffer);
     const me = _inputFormat.mime;
-    let is8 = me.length < 9;
-    let [bd, fn] = [is8 ? 8 : +me.slice(7, 9), +(me[6] == "f")];
+    const is8 = me.length < 9;
+    const [bd, fn] = [is8 ? 8 : +me.slice(7, 9), +(me[6] == "f")];
     for (const file of inputFiles) {
       if (file.bytes.byteLength > 0xffffff00) {
         ctx?.log("data too large. maximum size 4,294,967,040 bytes.", "error");
