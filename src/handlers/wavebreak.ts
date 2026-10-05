@@ -15,7 +15,7 @@ class wavebreakHandler implements FormatHandler {
     Formats.S32LE.builder("s32le").lossless().from(),
     Formats.F32LE.builder("f32le").lossless().from(),
     Formats.F64LE.builder("f64le").lossless().from(),
-    // "technically supported" input formats
+    // "technically supported" input formats (sign doesn't actually matter so their fruits hang low)
     Formats.S8.builder("s8").lossless().from(),
     Formats.U16LE.builder("u16le").lossless().from(),
     Formats.U24LE.builder("u24le").lossless().from(),
