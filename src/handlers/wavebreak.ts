@@ -67,13 +67,13 @@ class wavebreakHandler implements FormatHandler {
       r.set(head1, 0);
       r.set(head2, 12);
       r.set(head3, 36);
-      let ps : (number|number[])[]|ArrayBufferView = [];
+      let ps = new Array();
       if (oe) {
         for (let b = 0; b < sz; b += bd/8) {
           ps.push(file.bytes.slice(b,b+bd/8));
         }
         ps = ps.map(x => x.toReversed()); // i don't need reverse because i'm using map
-        ps = ps.flat();
+        ps = new Uint8Array(ps.flat());
       }
       else {
         ps = file.bytes;
