@@ -56,7 +56,7 @@ class wavebreakHandler implements FormatHandler {
         ctx?.log("data very large. successful conversion cannot be guaranteed.", "warn");
       }
       // oxlint-disable-next-line unicorn/consistent-function-scoping
-      const g0 = (a : number[], b : number[] = a) : number => (!a[1] ? (b[0] * b[1]) / a[0] : g0([a[1], a[0] % a[1]], b)); // oxfmt-ignore
+      const g0 = (a : number[], b : number[] = a) : number => (!a[1] ? (b[0] * b[1]) / a[0] : g0([a[1], a[0] % a[1]], b));
       const g = g0([2, bd/8]);
       const sz = g * Math.ceil(file.bytes.byteLength / g); // this actually can't change at all because of the whole umm.
       const head1 = new Uint8Array([82, 73, 70, 70, ...n32(sz + 36), 87, 65, 86, 69]);
@@ -69,11 +69,13 @@ class wavebreakHandler implements FormatHandler {
       r.set(head3, 36);
       let ps = new Array();
       if (oe) {
-        for (let b = 0; b < sz; b += bd/8) {ps.push(file.bytes.slice(b,b+bd/8))} // oxfmt-ignore
+        // oxfmt-ignore
+        for (let b = 0; b < sz; b += bd/8) {ps.push(file.bytes.slice(b,b+bd/8))}
         ps = ps.map(x => x.toReversed()); // i don't need reverse because i'm using map
         ps = ps.flat();
       }
-      else {ps = file.bytes} // oxfmt-ignore
+      // oxfmt-ignore
+      else {ps = file.bytes}
       r.set(ps, 44);
       outputFiles.push({ name: changeExt(file.name, "wav"), bytes: r });
     }
