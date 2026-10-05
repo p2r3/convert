@@ -6,13 +6,20 @@ import { changeExt } from "src/common/index.ts";
 class wavebreakHandler implements FormatHandler {
   public readonly name = "wavebreak";
   public supportedFormats = [
+    // output format
     Formats.WAV.builder("wav").lossless().to(),
+    // reccommended input formats
     Formats.S16LE.builder("s16le").lossless().from(), // interpreted as 44.1 kHz mono
     Formats.U8.builder("u8").lossless().from(), // once again interpreted as std. mono
     Formats.S24LE.builder("s24le").lossless().from(),
     Formats.S32LE.builder("s32le").lossless().from(),
     Formats.F32LE.builder("f32le").lossless().from(),
     Formats.F64LE.builder("f64le").lossless().from(),
+    // "technically supported" input formats
+    Formats.S8.builder("s8").lossless().from(),
+    Formats.U16LE.builder("u16le").lossless().from(),
+    Formats.U24LE.builder("u24le").lossless().from(),
+    Formats.U32LE.builder("u32le").lossless().from(),
   ];
   public ready = false;
 
