@@ -73,6 +73,7 @@ const Formats = {
   RPGMVP: new FormatDefinition("RPG Maker MV PNG (RPGMVP)", "rpgmvp", "rpgmvp", "application/x-rpgmvp", Category.IMAGE),
 
   // vector
+  EMF: new FormatDefinition("Enhanced Metafile", "emf", "emf", "image/emf", [Category.IMAGE, Category.VECTOR, Category.DOCUMENT]),
   SVG: new FormatDefinition("Scalable Vector Graphics", "svg", "svg", "image/svg+xml", [Category.IMAGE, Category.VECTOR, Category.DOCUMENT]),
 
   // video
