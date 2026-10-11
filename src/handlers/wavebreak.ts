@@ -69,7 +69,7 @@ class wavebreakHandler implements FormatHandler {
       r.set(head3, 36);
       if (oe) {
         for (let b = 0; b < sz; b += bd / 8) {
-          r.set(file.bytes.slice(b, b + bd / 8).toReversed(), 44 + b); // oxfmt-ignore
+          r.set(file.bytes.slice(b, b + bd / 8).toReversed(), 44 + b);
         }
       } else {
         r.set(file.bytes, 44);
