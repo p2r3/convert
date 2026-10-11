@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import { Upload } from "lucide-preact";
 
-import { ConversionInProgress, LoadingToolsText } from "src/ui/AppState";
+import { ConversionInProgress, CurrentPage, LoadingToolsText, Pages } from "src/ui/AppState";
 import { selectFiles } from "src/main";
 
 import "./index.css";
+
+/** Files dropped or pasted onto an open selection join it, like the "+" badge does. */
+const addsToSelection = () => CurrentPage.value === Pages.Conversion;
 
 function getDraggedFiles(dataTransfer: DataTransfer | null): File[] | null {
   if (!dataTransfer) return null;
@@ -118,13 +121,13 @@ export default function FullPageDropOverlay() {
         return;
       }
 
-      selectFiles(files);
+      selectFiles(files, addsToSelection());
       setDraggedFileName(null);
     };
 
     const handlePaste = (event: ClipboardEvent) => {
       if (!canAcceptDrop) return;
-      selectFiles(Array.from(event.clipboardData?.files ?? []));
+      selectFiles(Array.from(event.clipboardData?.files ?? []), addsToSelection());
     };
 
     window.addEventListener("dragenter", handleDragEnter);
