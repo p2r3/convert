@@ -169,8 +169,10 @@ export interface FormatHandler extends HandlerDefinition {
   /**
    * Initializes the handler if necessary.
    * Should set {@link ready} to true.
+   * @param knownFormats The handler's formats from the format cache, when there is one.
+   * A handler whose format discovery is slow can skip it and use these instead.
    */
-  init: () => Promise<void>;
+  init: (knownFormats?: FileFormat[]) => Promise<void>;
   /**
    * Performs the actual file conversion.
    * @param inputFiles Array of {@link FileData} entries, one per input file.

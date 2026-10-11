@@ -98,8 +98,14 @@ class FFmpegHandler implements FormatHandler {
     }
   }
 
-  async init() {
+  async init(knownFormats?: FileFormat[]) {
     this.#ffmpeg = new FFmpeg();
+    // discovery below runs hundreds of FFmpeg commands; doConvert loads the core itself
+    if (knownFormats) {
+      this.supportedFormats = knownFormats;
+      this.ready = true;
+      return;
+    }
     await this.loadFFmpeg();
 
     const getMuxerDetails = async (muxer: string) => {

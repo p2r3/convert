@@ -74,7 +74,7 @@ export class Converter {
 
       if (!handler.ready) {
         ctx.log(`Initializing ${def.name}...`);
-        await handler.init();
+        await handler.init(def.supportedFormats);
         if (!handler.ready) throw new Error(`Handler "${def.name}" not ready after init.`);
       }
 
