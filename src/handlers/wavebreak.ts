@@ -67,13 +67,10 @@ class wavebreakHandler implements FormatHandler {
       r.set(head1, 0);
       r.set(head2, 12);
       r.set(head3, 36);
-      const ps: Uint8Array[] = new Array();
       if (oe) {
         for (let b = 0; b < sz; b += bd / 8) {
-          ps.push(file.bytes.slice(b, b + bd / 8)); // oxfmt-ignore
+          r.set(file.bytes.slice(b, b + bd / 8).toReversed(), 44 + b); // oxfmt-ignore
         }
-        // oxfmt-ignore
-        ps.forEach((el, tsi) => {r.set(el.toReversed(), 44 + tsi * bd / 8)}); // oxfmt-ignore
       } else {
         r.set(file.bytes, 44);
       }
