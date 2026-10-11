@@ -103,6 +103,8 @@ When you first open the page, it'll take a while to generate the list of support
 
 You can generate this list beforehand and save it into `dist/` by running `bun run cache:build` after `bun run build`. If you run into issues where your changes seem to not be applying, try deleting `dist/cache.json`.
 
+In this fork the development server also uses `dist/cache.json` when it exists, so `bun run dev` starts as fast as a build. A handler that is not in the cache yet is still picked up; after changing the formats of an existing handler, delete the file or run `bun run cache:build` again.
+
 ### Docker (prebuilt image)
 
 > [!NOTE]

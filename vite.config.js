@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 import preact from "@preact/preset-vite";
 import { fileURLToPath } from "node:url";
+import { createReadStream, existsSync } from "node:fs";
 
 export default defineConfig({
   publicDir: "public",
@@ -55,6 +56,17 @@ export default defineConfig({
         },
       ],
     }),
+    {
+      // without the format cache, every dev page load initialises all handlers (about 270 MB)
+      name: "serve-format-cache",
+      configureServer(server) {
+        server.middlewares.use("/cache.json", (_req, res, next) => {
+          if (!existsSync("dist/cache.json")) return next();
+          res.setHeader("Content-Type", "application/json");
+          createReadStream("dist/cache.json").pipe(res);
+        });
+      },
+    },
     preact({
       prefreshEnabled: false,
       reactAliasesEnabled: true,
