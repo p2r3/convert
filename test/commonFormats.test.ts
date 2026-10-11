@@ -451,6 +451,22 @@ test(
 );
 
 test(
+  "mp4 → mp4 respects the longest side setting",
+  async () => {
+    // a limit above the video's size changes nothing, but both runs skip the keep-smaller swap
+    const full = await attemptConversion(["doom.mp4"], Formats.MP4, Formats.MP4, {
+      maxSize: 10000,
+    });
+    const small = await attemptConversion(["doom.mp4"], Formats.MP4, Formats.MP4, { maxSize: 64 });
+
+    expect(full).toBeTruthy();
+    expect(small).toBeTruthy();
+    expect(small!.size).toBeLessThan(full!.size);
+  },
+  { timeout: 240000 },
+);
+
+test(
   "pdf → ocr reads the text on a scanned page",
   async () => {
     const ocr = { ...Formats.TEXT, format: "ocr" };
