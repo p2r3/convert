@@ -1,6 +1,24 @@
+<div align="center">
+
+<img src="docs/logo.png" alt="" width="96">
+
 # [Convert to it!](https://convert.to.it/)
 
 **Truly universal online file converter.**
+
+[What this fork adds](#what-this-fork-adds) · [Usage](#usage) · [Run it yourself](#deployment) · [Contributing](#contributing) · [Acknowledgements](#acknowledgements)
+
+![Licence: GPL-2.0](https://img.shields.io/badge/licence-GPL--2.0-blue)
+[![Fork of p2r3/convert](https://img.shields.io/badge/fork%20of-p2r3%2Fconvert-8250df)](https://github.com/p2r3/convert)
+![Runs in the browser](https://img.shields.io/badge/uploads-none-brightgreen)
+![Built with Bun and Vite](https://img.shields.io/badge/built%20with-Bun%20%2B%20Vite-black)
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshot-dark.png">
+  <img src="docs/screenshot-light.png" alt="An MP4 file loaded and GIF chosen as the output, out of 81 image formats; category filters run from Image and Video to 3D Model and Database" width="860">
+</picture>
+
+</div>
 
 Many online file conversion tools are **boring** and **insecure**. They only allow conversion between two formats in the same medium (images to images, videos to videos, etc.), and they require that you _upload your files to some server_.
 
@@ -10,9 +28,39 @@ This is not just terrible for privacy, it's also incredibly lame. What if you _r
 
 For a semi-technical overview of this tool, check out the video: https://youtu.be/btUbcsTbVA8
 
+## What this fork adds
+
+This is a fork of [p2r3/convert](https://github.com/p2r3/convert). The rest of this README is the original project's, apart from the notes that mention the fork. [CHANGELOG.md](CHANGELOG.md) lists every changed file.
+
+<img src="docs/settings.png" alt="The Output settings dialog for an MP4 to GIF conversion, with a frame rate field" width="350" align="right">
+
+- **Per-conversion output settings.** A Settings button next to Convert offers the options that fit the chosen format: image quality, frame rate, video and audio bitrate, longest side, start and end time, and removing metadata. Leave a field empty to use the default.
+- **Better GIFs.** GIF output from the FFmpeg handler generates its palette in a first pass and uses it in a second.
+- **Adding files to a selection that is already open.**
+
+<br clear="right">
+
+<img src="docs/multi-file.png" alt="Four files of three types in the file bar, each labelled with its own output: a JPG to JPEG, one PNG to OCR, another PNG to NOBG and an SVG to SVG" width="860">
+
+- **A different output for every file.** Files of different types can be added together. Click a file in the bar to choose its output. A choice applies to all files of that type unless you untick "All files".
+- **One download.** Several outputs arrive as one zip, built with [zip.js](https://github.com/gildas-lormeau/zip.js). A password in Settings encrypts it with AES-256.
+- **Compress.** Converts a file to its own format and makes it smaller: JPEG, WebP and AVIF are re-encoded, video and audio are transcoded, and SVG, HTML, CSS, JavaScript and JSON are minified. If the result is not smaller, you get the original back.
+- **Three new outputs.** "Recognised text (OCR)" reads English and Dutch text from images and PDF pages, "PNG with background removed" cuts out the subject of an image, and "Merged PDF" joins the selected PDFs in the order of the file bar.
+
+<details>
+<summary>Limits of these additions</summary>
+
+- The output settings are read by four of the conversion tools (FFmpeg, mediabunny, ImageMagick and the browser canvas). When a conversion ends in another tool, the result popup says the settings were not applied.
+- Background removal uses a small model (U2-Net "u2netp"). It works well on clear subjects and is rough on hair and fine edges. Its first use downloads about 19 MB.
+- OCR downloads about 10 MB on first use. A PDF with several pages gives one text file per page.
+- Windows Explorer and macOS Archive Utility cannot open AES-encrypted zips; 7-Zip and Keka can.
+- Compress has no effect on formats that are already lossless or compressed, such as PNG, ZIP and PDF.
+
+</details>
+
 ## Usage
 
-1. Go to [convert.to.it](https://convert.to.it/)
+1. Go to [convert.to.it](https://convert.to.it/). That is the original project's hosted version; to use this fork's additions, [run it yourself](#deployment).
 2. Click the big box to add your file (or just drag it on to the window).
 3. An input format should have been automatically selected (as shown at the top). If not, yikes! Try pressing "Show all" and searching for it, or if it's really not there, see the "Issues" section below.
 4. Press "Next" and select your output format.
@@ -44,7 +92,7 @@ Though please note, "converting X to Y doesn't work" is **not** a bug report. Ho
 
 ### Local development (Bun + Vite)
 
-1. Clone this repository with `git clone https://github.com/p2r3/convert`.
+1. Clone this repository.
 2. Install [Bun](https://bun.sh/).
 3. Run `bun install` to install dependencies.
 4. Run `bun run dev` to prepare and start the development server.
@@ -80,6 +128,27 @@ The first Docker build is expected to be slow because Chromium and related syste
 ### Manual
 
 Run `bun run build` and then `bun run cache:build`. Then serve the `dist/` folder on any HTTP server of your choice.
+
+## Acknowledgements
+
+Some features were inspired by other open source converters. The ideas were reimplemented here; no code was copied.
+
+- [VERT](https://github.com/VERT-sh/VERT): per-conversion output settings.
+- [CompressZ](https://github.com/ADJ189/CompressZ): two-pass GIF palette generation and bundling multiple outputs into one zip.
+- [Arachnidium](https://github.com/p2r3/Arachnidium): minifying web formats and keeping the original when the result is not smaller.
+
+The additions also use these projects:
+
+| Project                                                                                                                                | Used for                             | Licence           |
+| -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ | ----------------- |
+| [zip.js](https://github.com/gildas-lormeau/zip.js) by Gildas Lormeau                                                                   | Zip download and encryption          | BSD-3-Clause      |
+| [SVGO](https://github.com/svg/svgo)                                                                                                    | SVG minification                     | MIT               |
+| [html-minifier-terser](https://github.com/terser/html-minifier-terser) and [terser](https://github.com/terser/terser)                  | HTML and JavaScript minification     | MIT, BSD-2-Clause |
+| [tesseract.js](https://github.com/naptha/tesseract.js) and [Tesseract](https://github.com/tesseract-ocr/tesseract)                     | OCR                                  | Apache-2.0        |
+| [ONNX Runtime](https://github.com/microsoft/onnxruntime)                                                                               | Running the background removal model | MIT               |
+| [U2-Net](https://github.com/xuebinqin/U-2-Net) by Xuebin Qin and others, model file from [rembg](https://github.com/danielgatis/rembg) | Background removal model             | Apache-2.0        |
+
+This is a fork of [p2r3/convert](https://github.com/p2r3/convert). [NOTICE](NOTICE) says where it comes from and what is known about the licences of its dependencies; [CHANGELOG.md](CHANGELOG.md) lists what the fork changes.
 
 ## Contributing
 
