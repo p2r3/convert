@@ -70,12 +70,14 @@ class wavebreakHandler implements FormatHandler {
       r.set(head1, 0);
       r.set(head2, 12);
       r.set(head3, 36);
+      const w = bd / 8;
       if (oe) {
-        for (let b = 0; b < sz; b += bd / 8) {
-          r.set(file.bytes.slice(b, b + bd / 8).toReversed(), 44 + b);
-        }
+        for (let i = 0; i < file.bytes.length; i++) r[44 + i + w - 1 - 2 * (i % w)] = file.bytes[i];
       } else {
         r.set(file.bytes, 44);
+      }
+      if ((me[6] == "u") != is8) {
+        for (let b = 0; b < file.bytes.length; b += w) r[44 + b + w - 1] ^= 0x80;
       }
       outputFiles.push({ name: changeExt(file.name, "wav"), bytes: r });
     }
