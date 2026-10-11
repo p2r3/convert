@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security problem
+    url: https://github.com/Gitguy268/convert/blob/HEAD/SECURITY.md
+    about: Please report security problems privately. SECURITY.md says how.
+  - name: Contributing
+    url: https://github.com/Gitguy268/convert/blob/HEAD/CONTRIBUTING.md
+    about: How to set up, run the checks and send a pull request.

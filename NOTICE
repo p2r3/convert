@@ -1,0 +1,82 @@
+Convert (fork)
+
+This repository is a fork of p2r3/convert (https://github.com/p2r3/convert),
+"Convert to it!", by p2r3 and its contributors. It is licensed under the GNU
+General Public License, version 2. See LICENSE.
+
+Changes in this fork are Copyright (c) 2026 Lucas Van De Weerd and are
+licensed under the same licence. CHANGELOG.md lists the changed and added
+files with the date of the change.
+
+Acknowledgements
+----------------
+
+Two features of this fork were inspired by other open-source converters. The
+ideas were reimplemented on top of this project's own handlers; no code was
+taken from either.
+
+VERT (AGPL-3.0)          https://github.com/VERT-sh/VERT
+  Per-conversion output settings.
+CompressZ (Apache-2.0)   https://github.com/ADJ189/CompressZ
+  Two-pass GIF palette generation, and bundling several outputs in one zip.
+
+Third-party code and data added by this fork
+--------------------------------------------
+
+zip.js (BSD-3-Clause), Gildas Lormeau   https://github.com/gildas-lormeau/zip.js
+  Bundling several outputs in one zip, with optional AES encryption.
+SVGO (MIT)                              https://github.com/svg/svgo
+html-minifier-terser (MIT)              https://github.com/terser/html-minifier-terser
+terser (BSD-2-Clause)                   https://github.com/terser/terser
+  Minifying SVG, HTML and JavaScript when a file is converted to its own format.
+Arachnidium (MIT), p2r3                 https://github.com/p2r3/Arachnidium
+  The idea of minifying web formats and of keeping the original when the
+  result is not smaller. Reimplemented here; no code was taken.
+ONNX Runtime Web (MIT), Microsoft       https://github.com/microsoft/onnxruntime
+U2-Net "u2netp" model (Apache-2.0), Xuebin Qin et al.
+                                        https://github.com/xuebinqin/U-2-Net
+  Background removal. The model file is fetched at build time from the rembg
+  releases (https://github.com/danielgatis/rembg), see recipe/requirements.config.ts.
+tesseract.js and tesseract.js-core (Apache-2.0), naptha
+                                        https://github.com/naptha/tesseract.js
+Tesseract OCR and its language data (Apache-2.0)
+                                        https://github.com/tesseract-ocr/tesseract
+  Text recognition (English and Dutch).
+
+Merging PDFs, resizing, trimming and removing metadata use libraries the
+project already had: mupdf, ImageMagick, FFmpeg and mediabunny.
+
+Licensing notes
+---------------
+
+These concern the upstream project as much as this fork, and are recorded
+here so that anyone redistributing a build knows about them. They are not
+legal advice.
+
+The upstream repository carries the text of GPL version 2 and does not say
+whether it means "version 2 only" or "version 2 or any later version". That
+matters, because some of the libraries a build bundles have licences that the
+Free Software Foundation considers incompatible with GPL version 2 on its own,
+and compatible with GPL version 3:
+
+  mupdf                        AGPL-3.0-or-later
+  pdfjs-dist                   Apache-2.0
+  @imagemagick/magick-wasm     Apache-2.0
+  @sqlite.org/sqlite-wasm      Apache-2.0
+  @myriaddreamin/typst.ts      Apache-2.0 (with its renderer and compiler)
+  @aiden0z/pptx-renderer       Apache-2.0
+  bson, comlink, less, pdf-parse, wabt    Apache-2.0
+  tesseract.js, tesseract.js-core        Apache-2.0 (added by this fork)
+  U2-Net "u2netp" model weights          Apache-2.0 (added by this fork)
+
+@ffmpeg/core is GPL-2.0-or-later. The mediabunny packages are MPL-2.0, which
+can be combined with the GPL. The remaining dependencies are under MIT, ISC,
+BSD, OFL or similarly permissive licences.
+
+Which version of the GPL applies to the project is for its copyright holders
+to say. This fork does not change LICENSE and does not claim to settle the
+question. A build that includes mupdf also has to meet the terms of the
+AGPL for that library.
+
+Each dependency's own licence text is in its package under node_modules/
+after `bun install`.
