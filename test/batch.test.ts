@@ -2,7 +2,13 @@ import { expect, test } from "bun:test";
 import type { FileFormat, HandlerDefinition } from "../src/FormatHandler.js";
 import Formats from "../src/Formats.js";
 import type { HandlerName } from "../src/handlers/index.js";
-import { groupByTarget, keepSmaller, uniqueNames } from "../src/batch.js";
+import {
+  groupByTarget,
+  keepSmaller,
+  resolveTargets,
+  siblingKeys,
+  uniqueNames,
+} from "../src/batch.js";
 
 const option = (format: FileFormat, handler: string): [FileFormat, HandlerDefinition] => [
   format,
@@ -51,4 +57,71 @@ test("keepSmaller returns the input wherever the output didn't shrink", () => {
 test("keepSmaller leaves outputs alone when they don't pair up with the inputs", () => {
   const outputs = [file("merged.pdf", 500)];
   expect(keepSmaller([file("a.pdf", 10), file("b.pdf", 10)], outputs)).toBe(outputs);
+});
+
+const pick = (name: string, type = "") => new File([], name, { type });
+const pngIn = option(Formats.PNG.builder("png").from(), "a");
+const jpegIn = option(Formats.JPEG.builder("jpeg").from(), "a");
+const webpOut = option(Formats.WEBP.builder("webp").to(), "a");
+const pdfOut = option(Formats.PDF.builder("pdf").to(), "b");
+const options = new Map([pngIn, jpegIn, webpOut, pdfOut]);
+
+test("resolveTargets detects the input format and leaves the output open", () => {
+  const targets = resolveTargets(options, [["one", pick("one.png", "image/png")]], {}, true);
+
+  expect(targets.one.from).toEqual(pngIn);
+  expect(targets.one.to).toBeNull();
+});
+
+test("resolveTargets gives a new file the output already chosen for its format", () => {
+  const files: [string, File][] = [
+    ["one", pick("one.png", "image/png")],
+    ["two", pick("two.png", "image/png")],
+    ["three", pick("three.jpg", "image/jpeg")],
+  ];
+  const targets = resolveTargets(options, files, { one: { from: pngIn, to: pdfOut } }, true);
+
+  expect(targets.two).toEqual({ from: pngIn, to: pdfOut });
+  expect(targets.three).toEqual({ from: jpegIn, to: null });
+});
+
+test("resolveTargets keeps what the user chose, and guesses nothing for an unknown file", () => {
+  const files: [string, File][] = [
+    ["one", pick("one.png", "image/png")],
+    ["odd", pick("odd.xyz")],
+  ];
+  const stored = { one: { from: jpegIn, to: webpOut } };
+  const targets = resolveTargets(options, files, stored, true);
+
+  expect(targets.one).toBe(stored.one);
+  expect(targets.odd).toEqual({ from: null, to: null });
+});
+
+test("resolveTargets only auto-picks in advanced mode when one handler reads the format", () => {
+  const otherPng = option(Formats.PNG.builder("png").from(), "b");
+  const twoHandlers = new Map([pngIn, otherPng]);
+  const files: [string, File][] = [["one", pick("one.png", "image/png")]];
+
+  expect(resolveTargets(twoHandlers, files, {}, false).one.from).toBeNull();
+  expect(resolveTargets(twoHandlers, files, {}, true).one.from).toEqual(pngIn);
+});
+
+test("siblingKeys finds the files a choice also applies to", () => {
+  const files: [string, File][] = [
+    ["one", pick("one.png")],
+    ["two", pick("two.png")],
+    ["three", pick("three.jpg")],
+    ["four", pick("four.png")],
+  ];
+  const targets = {
+    one: { from: pngIn, to: null },
+    two: { from: pngIn, to: null },
+    three: { from: jpegIn, to: null },
+    // same extension, but the user said it is really a JPEG
+    four: { from: jpegIn, to: null },
+  };
+
+  expect(siblingKeys(files, targets, "one", "to")).toEqual(["two"]);
+  expect(siblingKeys(files, targets, "one", "from")).toEqual(["two", "four"]);
+  expect(siblingKeys(files, targets, "gone", "to")).toEqual([]);
 });

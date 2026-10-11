@@ -1,7 +1,6 @@
 import "./index.css";
 
 import { useState, useMemo, useEffect, useRef } from "preact/hooks";
-import mime from "mime";
 import {
   ConversionOptions,
   SelectedFiles,
@@ -10,8 +9,7 @@ import {
   type ConversionOptionsMap,
 } from "src/main";
 import { Mode, ModeEnum } from "src/ui/ModeStore";
-import normalizeMimeType from "src/normalizeMimeType";
-import type { FileData, FileFormat } from "src/FormatHandler";
+import type { FileData } from "src/FormatHandler";
 import {
   applicableSettings,
   compressorsFor,
@@ -21,7 +19,15 @@ import {
   SETTINGS_HANDLERS,
   type SettingKey,
 } from "src/ConversionSettings";
-import { groupByTarget, uniqueNames, type TargetGroup } from "src/batch";
+import {
+  getMatchingFromFormats,
+  groupByTarget,
+  resolveTargets,
+  siblingKeys,
+  uniqueNames,
+  type Target,
+  type TargetGroup,
+} from "src/batch";
 import { stripExt } from "src/common";
 
 import ConversionHeader from "src/ui/components/Conversion/ConversionHeader";
@@ -42,11 +48,6 @@ import ConversionSettingsForm, {
 
 type ConversionStep = "select-from" | "select-to" | "converting";
 
-/** What one selected file is converted from and to. */
-interface Target {
-  from: ConversionOption | null;
-  to: ConversionOption | null;
-}
 const NO_TARGET: Target = { from: null, to: null };
 
 function countAvailableFormats(
@@ -78,120 +79,6 @@ function countAvailableFormats(
 function getConversionOptions(): ConversionOptionsMap {
   if (ConversionOptions.size) return ConversionOptions;
   throw new Error("Can't build format list!", { cause: "UI got empty global format list" });
-}
-
-function expandVideoContainerMimes(candidates: string[]): string[] {
-  const out = new Set(candidates);
-  for (const c of candidates) {
-    if (c === "video/mp4" || c === "video/quicktime") {
-      out.add("video/mp4");
-      out.add("video/quicktime");
-    }
-  }
-  return [...out];
-}
-
-function getMimeCandidatesForFile(file: File): string[] {
-  const set = new Set<string>();
-  const raw = file.type?.trim();
-  if (raw) set.add(normalizeMimeType(raw));
-  const fromPath = mime.getType(file.name);
-  if (fromPath) set.add(normalizeMimeType(fromPath));
-  const extOnly = file.name.split(".").pop()?.toLowerCase();
-  if (extOnly) {
-    const fromExt = mime.getType(extOnly);
-    if (fromExt) set.add(normalizeMimeType(fromExt));
-  }
-  return expandVideoContainerMimes([...set]);
-}
-
-function formatMatchesUploadedFile(
-  format: FileFormat,
-  ext: string,
-  mimeCandidates: string[],
-): boolean {
-  if (mimeCandidates.some((m) => m === format.mime)) return true;
-  if (!ext) return false;
-  const e = ext.toLowerCase();
-  const fex = format.extension.toLowerCase();
-  const fmt = format.format.toLowerCase();
-  const intr = format.internal.toLowerCase();
-  return (
-    fex === e || fex.includes(e) || fmt === e || fmt.includes(e) || intr === e || intr.includes(e)
-  );
-}
-
-function getMatchingFromFormats(
-  options: ConversionOptionsMap,
-  files: File[],
-): ConversionOptionsMap {
-  if (files.length === 0) return new Map();
-
-  const file = files[0];
-  const mimeCandidates = getMimeCandidatesForFile(file);
-  const ext = file.name.split(".").pop()?.toLowerCase() || "";
-  const matched: ConversionOptionsMap = new Map();
-
-  for (const [format, handler] of options) {
-    if (!format.from) continue;
-    if (formatMatchesUploadedFile(format, ext, mimeCandidates)) {
-      matched.set(format, handler);
-    }
-  }
-
-  return matched;
-}
-
-function fileExt(file: File) {
-  return file.name.split(".").pop()?.toLowerCase() || "";
-}
-
-/** Picks the input format when the file leaves no real doubt about it. */
-function autoFromOption(
-  options: ConversionOptionsMap,
-  file: File,
-  simple: boolean,
-): ConversionOption | null {
-  const matching = getMatchingFromFormats(options, [file]);
-  if (!matching.size) return null;
-  const first = matching.entries().next().value ?? null;
-  if (!simple) return matching.size === 1 ? first : null;
-
-  const mimeCandidates = getMimeCandidatesForFile(file);
-  const ext = fileExt(file);
-
-  const uniqueFormats = new Set<string>();
-  for (const [format, handler] of matching) {
-    uniqueFormats.add(`${format.mime}|${format.format}`);
-
-    // chances are, this format is exactly what the user wants
-    if (ext === format.extension && mimeCandidates.includes(format.mime)) {
-      return [format, handler];
-    }
-  }
-  return uniqueFormats.size === 1 ? first : null;
-}
-
-/** Fills in a target for every selected file that `stored` doesn't cover yet. */
-function resolveTargets(
-  options: ConversionOptionsMap,
-  files: [string, File][],
-  stored: Record<string, Target>,
-): Record<string, Target> {
-  const simple = Mode.value === ModeEnum.Simple;
-  const targets: Record<string, Target> = {};
-  for (const [key, file] of files) {
-    if (stored[key]) {
-      targets[key] = stored[key];
-      continue;
-    }
-    const from = autoFromOption(options, file, simple);
-    // a new file takes the output already chosen for files of its format
-    const sibling =
-      from && Object.values(targets).find((t) => t.from && t.to && sameFormat(t.from[0], from[0]));
-    targets[key] = { from, to: sibling ? sibling.to : null };
-  }
-  return targets;
 }
 
 function downloadFile(data: Uint8Array | Blob, name: string, type: string) {
@@ -240,7 +127,7 @@ export default function Conversion() {
   // targets the user has touched; resolveTargets derives the rest
   const [stored, setStored] = useState<Record<string, Target>>({});
   const targets = useMemo(
-    () => resolveTargets(allOptions, entries, stored),
+    () => resolveTargets(allOptions, entries, stored, Mode.value === ModeEnum.Simple),
     [allOptions, entries, stored],
   );
 
@@ -268,24 +155,13 @@ export default function Conversion() {
     setShowAll(false);
   }, [activeKey]);
 
-  /** Keys of the other files that a choice for the active file also applies to. */
-  const siblingKeys = (kind: keyof Target) =>
-    entries
-      .filter(([key, file]) => {
-        if (key === activeKey || !activeFile) return false;
-        // the input format is a guess from the name, the output follows the input format
-        if (kind === "from") return fileExt(file) === fileExt(activeFile);
-        const from = targets[key].from;
-        return !!from && !!fromOption && sameFormat(from[0], fromOption[0]);
-      })
-      .map(([key]) => key);
-
-  const toSiblings = siblingKeys("to");
+  const toSiblings = siblingKeys(entries, targets, activeKey, "to");
 
   const setOption = (kind: keyof Target, option: ConversionOption | null) => {
     if (!activeKey) return;
     const next = { ...targets };
-    for (const key of [activeKey, ...(applyToAll ? siblingKeys(kind) : [])]) {
+    const siblings = applyToAll ? siblingKeys(entries, targets, activeKey, kind) : [];
+    for (const key of [activeKey, ...siblings]) {
       next[key] = { ...targets[key], [kind]: option };
     }
     setStored(next);
