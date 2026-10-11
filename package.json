@@ -136,7 +136,7 @@
     "*.{js,jsx,ts,tsx,mjs,cjs}": "bun run lint --no-error-on-unmatched-pattern"
   },
   "build": {
-    "appId": "com.p2r3.convert",
+    "appId": "com.gitguy268.convert",
     "executableName": "convert-to-it",
     "artifactName": "convert-to-it-${version}-${os}-${arch}.${ext}",
     "directories": {
