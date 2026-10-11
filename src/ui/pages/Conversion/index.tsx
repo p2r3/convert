@@ -522,6 +522,11 @@ export default function Conversion() {
               role="button"
               tabIndex={0}
               aria-label="Add more files"
+              onKeyDown={(e) => {
+                if (e.key !== "Enter" && e.key !== " ") return;
+                e.preventDefault();
+                addFileRef.current?.click();
+              }}
             >
               <input
                 ref={addFileRef}
