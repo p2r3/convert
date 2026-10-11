@@ -15,7 +15,7 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/screenshot-dark.png">
-  <img src="docs/screenshot-light.png" alt="An MP4 file loaded and GIF chosen as the output, out of 81 image formats; category filters run from Image and Video to 3D Model and Database" width="860">
+  <img src="docs/screenshot-light.png" alt="An MP4 file loaded and GIF chosen as the output, out of 82 image formats; category filters run from Image and Video to 3D Model and Database" width="860">
 </picture>
 
 </div>
@@ -32,7 +32,7 @@ For a semi-technical overview of this tool, check out the video: https://youtu.b
 
 This is a fork of [p2r3/convert](https://github.com/p2r3/convert). The rest of this README is the original project's, apart from the notes that mention the fork. [CHANGELOG.md](CHANGELOG.md) lists every changed file.
 
-<img src="docs/settings.png" alt="The Output settings dialog for an MP4 to GIF conversion, with a frame rate field" width="350" align="right">
+<img src="docs/settings.png" alt="The Output settings dialog for an MP4 to GIF conversion, with fields for frame rate, longest side, start, end and a zip password" width="350" align="right">
 
 - **Per-conversion output settings.** A Settings button next to Convert offers the options that fit the chosen format: image quality, frame rate, video and audio bitrate, longest side, start and end time, and removing metadata. Leave a field empty to use the default.
 - **Better GIFs.** GIF output from the FFmpeg handler generates its palette in a first pass and uses it in a second.
@@ -46,6 +46,8 @@ This is a fork of [p2r3/convert](https://github.com/p2r3/convert). The rest of t
 - **One download.** Several outputs arrive as one zip, built with [zip.js](https://github.com/gildas-lormeau/zip.js). A password in Settings encrypts it with AES-256.
 - **Compress.** Converts a file to its own format and makes it smaller: JPEG, WebP and AVIF are re-encoded, video and audio are transcoded, and SVG, HTML, CSS, JavaScript and JSON are minified. If the result is not smaller, you get the original back.
 - **Three new outputs.** "Recognised text (OCR)" reads English and Dutch text from images and PDF pages, "PNG with background removed" cuts out the subject of an image, and "Merged PDF" joins the selected PDFs in the order of the file bar.
+- **Liquid glass.** The action bar is a pane of glass that floats over the format list, and dialogs are glass sheets. The material comes from [LiquidGlass UI](https://github.com/hwyuanzi/LiquidGlass-UI).
+- **Faster start.** The first video, audio or GIF conversion no longer waits about six seconds while FFmpeg lists its formats, and the development server uses the format cache.
 
 <details>
 <summary>Limits of these additions</summary>
@@ -55,6 +57,7 @@ This is a fork of [p2r3/convert](https://github.com/p2r3/convert). The rest of t
 - OCR downloads about 10 MB on first use. A PDF with several pages gives one text file per page.
 - Windows Explorer and macOS Archive Utility cannot open AES-encrypted zips; 7-Zip and Keka can.
 - Compress has no effect on formats that are already lossless or compressed, such as PNG, ZIP and PDF.
+- The glass bends what is behind it at its edges only in Chromium-based browsers. Firefox and Safari show the frosted pane without that. With "reduce transparency" switched on in the system settings, the panes are opaque.
 
 </details>
 
@@ -152,6 +155,7 @@ The additions also use these projects:
 | [tesseract.js](https://github.com/naptha/tesseract.js) and [Tesseract](https://github.com/tesseract-ocr/tesseract)                     | OCR                                  | Apache-2.0        |
 | [ONNX Runtime](https://github.com/microsoft/onnxruntime)                                                                               | Running the background removal model | MIT               |
 | [U2-Net](https://github.com/xuebinqin/U-2-Net) by Xuebin Qin and others, model file from [rembg](https://github.com/danielgatis/rembg) | Background removal model             | Apache-2.0        |
+| [LiquidGlass UI](https://github.com/hwyuanzi/LiquidGlass-UI) by Hollan Yuan                                                            | Glass action bar and dialogs         | MIT               |
 
 This is a fork of [p2r3/convert](https://github.com/p2r3/convert). [NOTICE](NOTICE) says where it comes from and what is known about the licences of its dependencies; [CHANGELOG.md](CHANGELOG.md) lists what the fork changes.
 

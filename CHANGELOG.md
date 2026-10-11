@@ -23,7 +23,22 @@ This repository is a fork of [p2r3/convert](https://github.com/p2r3/convert). Th
 - Dependencies: `@zip.js/zip.js`, `svgo`, `html-minifier-terser`, `terser`, `tesseract.js`, `tesseract.js-core`, `@tesseract.js-data/eng`, `@tesseract.js-data/nld` and `onnxruntime-web`; the `u2netp` model in `recipe/requirements.config.ts`.
 - `docs/multi-file.png`.
 
+- A liquid glass action bar and dialogs, using LiquidGlass UI: `src/ui/glass.css`, with `liquid-glass-ui` in `recipe/requirements.config.ts`.
+- Tests for choosing a target per file (`test/batch.test.ts`) and for the longest side setting on a video (`test/commonFormats.test.ts`).
+
+#### Fixed
+
+- A file that was removed from the selection can be added again.
+- A single download no longer takes the type of another file whose conversion failed.
+- Removing the first file no longer clears the output settings and the zip password.
+- The button that adds files works from the keyboard.
+
 #### Changed
+
+- Files dropped or pasted onto an open selection are added to it. They used to replace it.
+- The first FFmpeg conversion skips format discovery when the format cache has the formats (`src/handlers/FFmpeg.ts`, `src/Converter.ts`, `src/FormatHandler.ts`), and the development server serves `dist/cache.json` (`vite.config.js`).
+- The target logic of the conversion page moved to `src/batch.ts`.
+- `.github/workflows/pages.yml` gives write permissions to the deploy job only, both Bun workflows pin Bun 1.3.8, and the desktop build has the app id `com.gitguy268.convert`.
 
 - The handlers and pages that pass those settings through: `src/Converter.ts`, `src/main.ts`, `src/common/canvas.ts`, `src/global.d.ts`, `src/handlers/FFmpeg.ts`, `src/handlers/ImageMagick.ts`, `src/handlers/canvasToBlob.ts`, `src/handlers/mediabunny.ts`, `src/ui/ProgressStore.ts`, `src/ui/components/FullPageDropOverlay/index.tsx`, `src/ui/pages/Conversion/index.tsx`, `src/ui/pages/Upload/index.tsx`, `test/commonFormats.test.ts`, `index.html`, `README.md` and `.gitignore`.
 - For the additions of 2026-10-11: `src/handlers/index.ts`, `src/ui/components/FileInfo/`, `src/ui/pages/Conversion/index.css`, `vite.config.js`, `recipe/requirements.config.ts`, `package.json`, `bun.lock` and `NOTICE`, next to the files already listed above.

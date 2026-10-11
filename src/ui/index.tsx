@@ -8,6 +8,9 @@ import FullPageDropOverlay from "./components/FullPageDropOverlay";
 import { initMode } from "./ModeStore";
 import { CurrentPage, Pages } from "./AppState";
 import "./components/StyledButton/index.css";
+import "built/liquid-glass-ui/src/liquid-glass.css";
+import "./glass.css";
+import "built/liquid-glass-ui/src/liquid-glass.js";
 export { CurrentPage, LoadingToolsText, Pages, PopupData } from "./AppState";
 
 console.log("Rendering UI");

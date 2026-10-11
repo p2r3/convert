@@ -1,5 +1,6 @@
 import "./index.css";
 
+import { h } from "preact";
 import { useState, useMemo, useEffect, useRef } from "preact/hooks";
 import {
   ConversionOptions,
@@ -376,92 +377,98 @@ export default function Conversion() {
         )}
       </main>
 
-      {step !== "converting" && (
-        <div className="conversion-action-bar">
-          <div className="conversion-action-files">
-            {entries.map(([key, file]) => (
-              <FileInfoBadge
-                key={key}
-                fileName={file.name}
-                fileSize={file.size}
-                extension={file.name.split(".").pop()}
-                mimeType={file.type}
-                onRemove={() => removeFile(key)}
-                active={multiple && key === activeKey}
-                target={multiple ? (targets[key]?.to?.[0].format.toUpperCase() ?? "?") : undefined}
-                onClick={multiple ? () => setChosenKey(key) : undefined}
-              />
-            ))}
-            <div
-              className="file-info-badge file-info-add"
-              onClick={handleAddClick}
-              role="button"
-              tabIndex={0}
-              aria-label="Add more files"
-              onKeyDown={(e) => {
-                if (e.key !== "Enter" && e.key !== " ") return;
-                e.preventDefault();
-                addFileRef.current?.click();
-              }}
-            >
-              <input
-                ref={addFileRef}
-                type="file"
-                multiple
-                hidden
-                onClick={(ev) => ev.stopPropagation()}
-                onChange={handleAddChange}
-              />
-              <Plus size={16} />
+      {step !== "converting" &&
+        // h() because Preact's JSX types don't know this custom element (built/liquid-glass-ui)
+        h(
+          "liquid-glass",
+          { class: "conversion-dock", refraction: true },
+          <div className="conversion-action-bar">
+            <div className="conversion-action-files">
+              {entries.map(([key, file]) => (
+                <FileInfoBadge
+                  key={key}
+                  fileName={file.name}
+                  fileSize={file.size}
+                  extension={file.name.split(".").pop()}
+                  mimeType={file.type}
+                  onRemove={() => removeFile(key)}
+                  active={multiple && key === activeKey}
+                  target={
+                    multiple ? (targets[key]?.to?.[0].format.toUpperCase() ?? "?") : undefined
+                  }
+                  onClick={multiple ? () => setChosenKey(key) : undefined}
+                />
+              ))}
+              <div
+                className="file-info-badge file-info-add"
+                onClick={handleAddClick}
+                role="button"
+                tabIndex={0}
+                aria-label="Add more files"
+                onKeyDown={(e) => {
+                  if (e.key !== "Enter" && e.key !== " ") return;
+                  e.preventDefault();
+                  addFileRef.current?.click();
+                }}
+              >
+                <input
+                  ref={addFileRef}
+                  type="file"
+                  multiple
+                  hidden
+                  onClick={(ev) => ev.stopPropagation()}
+                  onChange={handleAddChange}
+                />
+                <Plus size={16} />
+              </div>
             </div>
-          </div>
-          {step === "select-to" && toSiblings.length > 0 && (
-            <label
-              className="conversion-apply-all"
-              title="Untick to choose a different output for this file only"
-            >
-              <input
-                type="checkbox"
-                checked={applyToAll}
-                onChange={(ev) => setApplyToAll(ev.currentTarget.checked)}
-              />
-              All {toSiblings.length + 1} {fromOption?.[0].format.toUpperCase()} files
-            </label>
-          )}
-          {step === "select-to" && compressors.length > 0 && (
+            {step === "select-to" && toSiblings.length > 0 && (
+              <label
+                className="conversion-apply-all"
+                title="Untick to choose a different output for this file only"
+              >
+                <input
+                  type="checkbox"
+                  checked={applyToAll}
+                  onChange={(ev) => setApplyToAll(ev.currentTarget.checked)}
+                />
+                All {toSiblings.length + 1} {fromOption?.[0].format.toUpperCase()} files
+              </label>
+            )}
+            {step === "select-to" && compressors.length > 0 && (
+              <StyledButton
+                onClick={() => handleToSelect(compressors[0])}
+                title="Keep the format and make the file smaller"
+              >
+                <Minimize2 size={16} />
+                Compress
+              </StyledButton>
+            )}
+            {step === "select-to" && (
+              <StyledButton onClick={handleSettingsClick}>
+                <SlidersHorizontal size={16} />
+                Settings
+              </StyledButton>
+            )}
+            {step === "select-to" && (
+              <StyledButton onClick={handleBack}>
+                <ArrowLeft size={16} />
+                Back
+              </StyledButton>
+            )}
             <StyledButton
-              onClick={() => handleToSelect(compressors[0])}
-              title="Keep the format and make the file smaller"
+              variant={ButtonVariant.Primary}
+              disabled={!canProceed}
+              title={
+                step === "select-to" && !allReady ? "Choose an output for every file" : undefined
+              }
+              onClick={step === "select-from" ? handleNext : handleConvert}
             >
-              <Minimize2 size={16} />
-              Compress
+              {step === "select-from" ? "Next" : "Convert"}
+              {step === "select-from" && <ArrowRight size={16} />}
             </StyledButton>
-          )}
-          {step === "select-to" && (
-            <StyledButton onClick={handleSettingsClick}>
-              <SlidersHorizontal size={16} />
-              Settings
-            </StyledButton>
-          )}
-          {step === "select-to" && (
-            <StyledButton onClick={handleBack}>
-              <ArrowLeft size={16} />
-              Back
-            </StyledButton>
-          )}
-          <StyledButton
-            variant={ButtonVariant.Primary}
-            disabled={!canProceed}
-            title={
-              step === "select-to" && !allReady ? "Choose an output for every file" : undefined
-            }
-            onClick={step === "select-from" ? handleNext : handleConvert}
-          >
-            {step === "select-from" ? "Next" : "Convert"}
-            {step === "select-from" && <ArrowRight size={16} />}
-          </StyledButton>
-        </div>
-      )}
+          </div>,
+        )}
 
       <Footer />
     </div>

@@ -1,11 +1,16 @@
 #popup {
   max-width: 32rem;
   padding: 1.75rem 2rem;
-  background-color: var(--bg-card);
+  /* liquid glass, denser than the dock because it carries running text */
+  background: rgba(var(--lg-tint), 0.8);
+  -webkit-backdrop-filter: blur(var(--lg-blur)) saturate(var(--lg-saturate));
+  backdrop-filter: blur(var(--lg-blur)) saturate(var(--lg-saturate));
   color: var(--text-primary);
-  border: 1px solid var(--border-primary);
-  border-radius: 14px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  /* the pane is a little darker than a solid card, so soft text is darkened to keep its contrast */
+  --popup-text-soft: color-mix(in srgb, var(--text-secondary) 60%, var(--text-primary));
+  border: 1px solid var(--lg-border);
+  border-radius: var(--lg-radius);
+  box-shadow: var(--lg-shadow), var(--lg-specular), var(--lg-occlusion);
   flex-direction: column;
   gap: 0.75rem;
   margin: auto;
@@ -30,7 +35,7 @@
 
   p {
     font-size: 0.85rem;
-    color: var(--text-secondary);
+    color: var(--popup-text-soft);
     line-height: 1.6;
   }
 
@@ -38,7 +43,7 @@
   ul {
     padding-left: 1.25rem;
     font-size: 0.85rem;
-    color: var(--text-secondary);
+    color: var(--popup-text-soft);
     line-height: 1.7;
   }
 

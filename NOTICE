@@ -42,6 +42,10 @@ tesseract.js and tesseract.js-core (Apache-2.0), naptha
 Tesseract OCR and its language data (Apache-2.0)
                                         https://github.com/tesseract-ocr/tesseract
   Text recognition (English and Dutch).
+LiquidGlass UI (MIT), Copyright (c) 2026 Hollan Yuan
+                                        https://github.com/hwyuanzi/LiquidGlass-UI
+  The glass material of the action bar and the dialogs. Fetched at build time,
+  see recipe/requirements.config.ts.
 
 Merging PDFs, resizing, trimming and removing metadata use libraries the
 project already had: mupdf, ImageMagick, FFmpeg and mediabunny.

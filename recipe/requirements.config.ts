@@ -134,4 +134,9 @@ export default [
     url: "https://github.com/danielgatis/rembg/releases/download/v0.0.0/u2netp.onnx",
     hash: ["sha256", "309c8469258dda742793dce0ebea8e6dd393174f89934733ecc8b14c76f4ddd8"],
   },
+  {
+    name: "liquid-glass-ui",
+    url: "https://github.com/hwyuanzi/LiquidGlass-UI/archive/293328c3a983b55460b488bffb2caa6f25729c2f.tar.gz",
+    hash: ["sha256", "f49c27196a5197414be60c5a572ab1bbda72018ab14681da36c76239e218542f"],
+  },
 ] satisfies RequirementsConfig;

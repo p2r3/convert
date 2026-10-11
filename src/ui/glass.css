@@ -1,0 +1,38 @@
+/*
+ * Maps the tokens of LiquidGlass UI (built/liquid-glass-ui) onto this app's two themes.
+ * The library's defaults are a white pane for dark, colourful backdrops. Here the tint is the
+ * theme's own surface colour, so a pane that falls back to opaque still fits its text.
+ */
+:root {
+  --lg-font: inherit;
+  --lg-ink: inherit;
+  --lg-radius: 18px;
+  --lg-focus-ring: var(--primary);
+
+  --lg-tint: 250, 251, 253;
+  --lg-tint-strength: 0.55;
+  /* a dark hairline, because the library's white edge vanishes on a white page */
+  --lg-border: rgba(15, 20, 30, 0.1);
+  --lg-rim: rgba(255, 255, 255, 0.9);
+  --lg-specular: inset 0 1px 1px rgba(255, 255, 255, 0.7);
+  --lg-occlusion: inset 0 -1px 1px rgba(26, 31, 44, 0.06);
+  --lg-shadow: 0 1px 3px rgba(33, 39, 52, 0.08), 0 12px 30px rgba(33, 39, 52, 0.14);
+}
+
+:root[data-theme="dark"] {
+  --lg-tint: 46, 46, 48;
+  --lg-tint-strength: 0.36;
+  --lg-border: rgba(255, 255, 255, 0.12);
+  --lg-rim: rgba(255, 255, 255, 0.3);
+  --lg-specular: inset 0 1px 1px rgba(255, 255, 255, 0.16);
+  --lg-occlusion: inset 0 -1px 1px rgba(0, 0, 0, 0.3);
+  --lg-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 14px 34px rgba(0, 0, 0, 0.45);
+}
+
+/* the library sets this on :root too, and the rules above would otherwise win over it */
+@media (prefers-reduced-transparency: reduce) {
+  :root,
+  :root[data-theme="dark"] {
+    --lg-tint-strength: 0.96;
+  }
+}
