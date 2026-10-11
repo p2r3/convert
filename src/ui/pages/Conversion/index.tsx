@@ -248,7 +248,6 @@ export default function Conversion() {
   const activeKey = chosenKey && targets[chosenKey] ? chosenKey : entries[0]?.[0];
   const activeFile = entries.find(([key]) => key === activeKey)?.[1];
   const { from: fromOption, to: toOption } = targets[activeKey] ?? NO_TARGET;
-  const firstKey = entries[0]?.[0];
 
   const matchingFrom = useMemo(
     () => getMatchingFromFormats(allOptions, activeFile ? [activeFile] : []),
@@ -268,12 +267,6 @@ export default function Conversion() {
     setStep(fromOption ? "select-to" : "select-from");
     setShowAll(false);
   }, [activeKey]);
-
-  useEffect(() => {
-    // settings from a previous selection shouldn't silently apply to a new one
-    Settings.value = {};
-    ZipPassword.value = "";
-  }, [firstKey]);
 
   /** Keys of the other files that a choice for the active file also applies to. */
   const siblingKeys = (kind: keyof Target) =>

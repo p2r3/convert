@@ -21,6 +21,7 @@ import {
   type ConversionSettings,
 } from "./ConversionSettings.js";
 import { keepSmaller } from "./batch.js";
+import { Settings, ZipPassword } from "./ui/components/ConversionSettings/index.js";
 
 type FileRecord = Record<`${string}-${string}`, File>;
 
@@ -38,6 +39,11 @@ export const SelectedFiles = signal<FileRecord>({});
 export function selectFiles(newFiles: File[], append: boolean = false): boolean {
   if (newFiles.length === 0) return false;
   const files = append ? [...Object.values(SelectedFiles.value), ...newFiles] : newFiles;
+  if (!append) {
+    // settings from a previous selection shouldn't silently apply to a new one
+    Settings.value = {};
+    ZipPassword.value = "";
+  }
 
   SelectedFiles.value = Object.fromEntries(
     files.map((file) => [`${file.name}-${file.lastModified}`, file]),
