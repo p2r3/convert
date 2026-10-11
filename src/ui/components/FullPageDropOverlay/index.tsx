@@ -1,10 +1,8 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import { Upload } from "lucide-preact";
 
-import { ConversionInProgress, CurrentPage, LoadingToolsText, Pages } from "src/ui/AppState";
-import { SelectedFiles } from "src/main";
-import { PopupData } from "src/ui";
-import { openPopup } from "src/ui/PopupStore";
+import { ConversionInProgress, LoadingToolsText } from "src/ui/AppState";
+import { selectFiles } from "src/main";
 
 import "./index.css";
 
@@ -120,37 +118,27 @@ export default function FullPageDropOverlay() {
         return;
       }
 
-      const sameMime = files.every((file) => file.type === files[0].type);
-      if (!sameMime) {
-        PopupData.value = {
-          title: "Invalid selection",
-          text: "All input files must be of the same type.",
-          dismissible: true,
-          buttonText: "OK",
-        };
-        openPopup();
-        setDraggedFileName(null);
-        return;
-      }
-
-      SelectedFiles.value = files.reduce<Record<`${string}-${string}`, File>>((acc, file) => {
-        acc[`${file.name}-${file.lastModified}`] = file;
-        return acc;
-      }, {});
-      CurrentPage.value = Pages.Conversion;
+      selectFiles(files);
       setDraggedFileName(null);
+    };
+
+    const handlePaste = (event: ClipboardEvent) => {
+      if (!canAcceptDrop) return;
+      selectFiles(Array.from(event.clipboardData?.files ?? []));
     };
 
     window.addEventListener("dragenter", handleDragEnter);
     window.addEventListener("dragover", handleDragOver);
     window.addEventListener("dragleave", handleDragLeave);
     window.addEventListener("drop", handleDrop);
+    window.addEventListener("paste", handlePaste);
 
     return () => {
       window.removeEventListener("dragenter", handleDragEnter);
       window.removeEventListener("dragover", handleDragOver);
       window.removeEventListener("dragleave", handleDragLeave);
       window.removeEventListener("drop", handleDrop);
+      window.removeEventListener("paste", handlePaste);
     };
   }, [canAcceptDrop]);
 

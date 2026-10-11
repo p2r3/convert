@@ -108,7 +108,33 @@ class mediabunnyHandler implements FormatHandler {
         format: mbOutputFormat,
         target: new mb.BufferTarget(),
       });
-      const conversion = await mb.Conversion.init({ input, output });
+      const { fps, videoBitrate, audioBitrate, maxSize, start, end, stripMetadata } =
+        ctx?.settings ?? {};
+      // without a bitrate mediabunny copies the streams, which makes a same-format run pointless
+      const fallbackBitrate = inputFormat.internal === outputFormat.internal && mb.QUALITY_MEDIUM;
+      const conversion = await mb.Conversion.init({
+        input,
+        output,
+        video: (track) => {
+          const landscape = track.displayWidth >= track.displayHeight;
+          const tooLarge = maxSize && Math.max(track.displayWidth, track.displayHeight) > maxSize;
+          return {
+            frameRate: fps,
+            // settings are in kbps, mediabunny wants an integer of bits per second
+            bitrate:
+              (videoBitrate && Math.round(videoBitrate * 1000)) || fallbackBitrate || undefined,
+            // the other side follows from the aspect ratio
+            width: tooLarge && landscape ? maxSize : undefined,
+            height: tooLarge && !landscape ? maxSize : undefined,
+          };
+        },
+        audio: {
+          bitrate:
+            (audioBitrate && Math.round(audioBitrate * 1000)) || fallbackBitrate || undefined,
+        },
+        trim: { start, end },
+        tags: stripMetadata ? {} : undefined,
+      });
 
       conversion.onProgress = (progress, seconds) => {
         ctx?.progress(

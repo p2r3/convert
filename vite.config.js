@@ -44,6 +44,15 @@ export default defineConfig({
           src: "built/typst-assets/files/fonts/*",
           dest: "external/typst/",
         },
+        {
+          // only the LSTM cores: the OCR handler never asks for the legacy engine
+          src: [
+            "node_modules/tesseract.js/dist/worker.min.js",
+            "node_modules/tesseract.js-core/tesseract-core{,-simd,-relaxedsimd}-lstm.wasm.js",
+            "node_modules/@tesseract.js-data/{eng,nld}/4.0.0_best_int/*.traineddata.gz",
+          ],
+          dest: "external/tesseract/",
+        },
       ],
     }),
     preact({

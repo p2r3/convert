@@ -1,0 +1,29 @@
+.conversion-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+  }
+
+  input[type="checkbox"] {
+    width: auto;
+    flex-shrink: 0;
+  }
+
+  input {
+    width: 7rem;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--border-secondary);
+    border-radius: 8px;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font: inherit;
+  }
+}

@@ -14,6 +14,13 @@ import { CurrentPage, LoadingToolsText, Pages } from "./ui/AppState.js";
 import { signal } from "@preact/signals";
 import { Mode, ModeEnum } from "./ui/ModeStore.js";
 import { ProgressStore } from "./ui/ProgressStore.js";
+import {
+  altersContent,
+  compressorsFor,
+  sameFormat,
+  type ConversionSettings,
+} from "./ConversionSettings.js";
+import { keepSmaller } from "./batch.js";
 
 type FileRecord = Record<`${string}-${string}`, File>;
 
@@ -23,6 +30,21 @@ export type ConversionOption = ConversionOptionsMap extends Map<infer K, infer V
 export const ConversionOptions: ConversionOptionsMap = new Map();
 
 export const SelectedFiles = signal<FileRecord>({});
+
+/**
+ * Replaces (or appends to) the selected files and opens the conversion page.
+ * @returns Whether the selection was accepted.
+ */
+export function selectFiles(newFiles: File[], append: boolean = false): boolean {
+  if (newFiles.length === 0) return false;
+  const files = append ? [...Object.values(SelectedFiles.value), ...newFiles] : newFiles;
+
+  SelectedFiles.value = Object.fromEntries(
+    files.map((file) => [`${file.name}-${file.lastModified}`, file]),
+  );
+  CurrentPage.value = Pages.Conversion;
+  return true;
+}
 
 export function goToUploadHome(): void {
   CurrentPage.value = Pages.Upload;
@@ -75,6 +97,7 @@ async function attemptConvertPath(
   originalFiles: FileData[],
   path: ConvertPathNode[],
   abort?: AbortSignal,
+  settings?: ConversionSettings,
 ) {
   const pathString = path.map((c) => c.format.format).join(" → ");
 
@@ -136,6 +159,8 @@ async function attemptConvertPath(
         { currentStep: i + 1, totalSteps },
         comlink.proxy(ProgressStore),
         comlink.transfer(channel.port2, [channel.port2]),
+        // intermediate files shouldn't be degraded by the user's output settings
+        i === totalSteps - 1 ? settings : undefined,
       );
 
       for (const { original, inputIndex, offset, length } of restore) {
@@ -190,10 +215,28 @@ window.tryConvertByTraversing = async function (
   from: ConvertPathNode,
   to: ConvertPathNode,
   abort?: AbortSignal,
+  settings?: ConversionSettings,
 ) {
   deadEndAttempts = [];
   abort ??= ProgressStore.controller.signal;
   await window.traversionGraph.clearDeadEndPaths();
+
+  // the graph has no edge from a format to itself, so compressing takes a direct route
+  if (sameFormat(from.format, to.format)) {
+    for (const [format, handler] of compressorsFor(to.format, window.handlerDefs)) {
+      const attempt = await attemptConvertPath(files, [from, { format, handler }], abort, settings);
+      if (!attempt) continue;
+      // handlers name outputs after their own extension, which would turn photo.jpg into photo.jpeg
+      if (attempt.files.length === files.length) {
+        attempt.files = attempt.files.map((file, i) => ({ ...file, name: files[i].name }));
+      }
+      // a "compressed" file that grew is worse than the original
+      if (!altersContent(settings ?? {})) attempt.files = keepSmaller(files, attempt.files);
+      return attempt;
+    }
+    return null;
+  }
+
   const paths = await window.traversionGraph.searchPathProxied(
     from,
     to,
@@ -207,7 +250,7 @@ window.tryConvertByTraversing = async function (
     if (path.at(-1)?.handler.name === to.handler.name) {
       path[path.length - 1] = to;
     }
-    const attempt = await attemptConvertPath(files, path, abort);
+    const attempt = await attemptConvertPath(files, path, abort, settings);
     if (attempt) return attempt;
   }
 };

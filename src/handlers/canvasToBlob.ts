@@ -1,5 +1,6 @@
 import Formats from "src/Formats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
+import type { ConvertContext } from "../ui/ProgressStore.js";
 import { imageToText, rgbaToGrayscale } from "built/image-to-txt/src/convert.ts";
 import { InitializationError } from "src/errors.ts";
 import { blobToCanvas, canvasToBlob, createCanvas, type CanvasBundle } from "src/common/canvas.ts";
@@ -27,6 +28,8 @@ class canvasToBlobHandler implements FormatHandler {
     inputFiles: FileData[],
     inputFormat: FileFormat,
     outputFormat: FileFormat,
+    _args?: string[],
+    convertCtx?: ConvertContext,
   ): Promise<FileData[]> {
     if (!this.#bundle) {
       throw new InitializationError("Handler not initialized.");
@@ -67,7 +70,12 @@ class canvasToBlobHandler implements FormatHandler {
           ctx.strokeText(line, 0, fontSize * (i + 1));
         }
       } else {
-        await blobToCanvas(this.#bundle, inputFile.bytes, inputFormat.mime);
+        await blobToCanvas(
+          this.#bundle,
+          inputFile.bytes,
+          inputFormat.mime,
+          convertCtx?.settings.maxSize,
+        );
       }
 
       let bytes: Uint8Array;
@@ -93,7 +101,7 @@ class canvasToBlobHandler implements FormatHandler {
           }),
         );
       } else {
-        bytes = await canvasToBlob(this.#bundle, outputFormat.mime);
+        bytes = await canvasToBlob(this.#bundle, outputFormat.mime, convertCtx?.settings.quality);
       }
 
       const name = changeExt(inputFile.name, outputFormat.extension);

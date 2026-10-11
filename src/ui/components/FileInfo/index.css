@@ -17,6 +17,10 @@
     border-color: var(--border-secondary);
   }
 
+  &.file-info-active {
+    border-color: var(--primary);
+  }
+
   &.file-info-add {
     color: var(--text-primary);
     border: 1px dashed var(--border-secondary);

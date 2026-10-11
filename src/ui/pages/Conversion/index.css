@@ -36,3 +36,13 @@
   margin-inline-end: auto;
   overflow-x: auto;
 }
+
+.conversion-apply-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  cursor: pointer;
+}

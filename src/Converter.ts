@@ -2,6 +2,7 @@ import * as comlink from "comlink";
 import type { ConvertPathNode, FileData, HandlerDefinition } from "./FormatHandler";
 import { createRemoteContext, type IProgressStore } from "./ui/ProgressStore";
 import { getHandler } from "./handlers/index.js";
+import type { ConversionSettings } from "./ConversionSettings.js";
 
 if (!("window" in globalThis)) {
   (globalThis as unknown as { window: typeof globalThis }).window = globalThis;
@@ -41,6 +42,7 @@ export class Converter {
     { currentStep, totalSteps }: { currentStep: number; totalSteps: number },
     progressStore: IProgressStore,
     abortPort: MessagePort,
+    settings?: ConversionSettings,
   ): Promise<ConvertResult> {
     const controller = new AbortController();
     abortPort.addEventListener("message", ({ data }) => {
@@ -48,7 +50,7 @@ export class Converter {
     });
     abortPort.start();
 
-    const ctx = createRemoteContext(progressStore, handlerDef.name, controller.signal);
+    const ctx = createRemoteContext(progressStore, handlerDef.name, controller.signal, settings);
 
     try {
       if (!this.defs) throw new Error("Converter not ready.");

@@ -107,6 +107,14 @@ const HANDLERS = {
   mcModpack: [],
   azw3: [],
   wavebreak: [],
+  minifySvg: ["./minify.ts", "minifySvgHandler"],
+  minifyHtml: ["./minify.ts", "minifyHtmlHandler"],
+  minifyCss: ["./minify.ts", "minifyCssHandler"],
+  minifyJs: ["./minify.ts", "minifyJsHandler"],
+  minifyJson: ["./minify.ts", "minifyJsonHandler"],
+  mergePdf: [],
+  ocr: [],
+  removeBg: [],
 } as const;
 
 // handlers can only be named things listed above

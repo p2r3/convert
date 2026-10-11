@@ -11,6 +11,7 @@ import normalizeMimeType from "../normalizeMimeType.ts";
 import Formats, { Category, type CategoryType } from "src/Formats.ts";
 import { InitializationError } from "src/errors.ts";
 import { changeExt, encode } from "src/common/index.ts";
+import { ffmpegScaleFilter, ffmpegSettingsArgs, ffmpegTrimArgs } from "src/ConversionSettings.ts";
 
 class FFmpegHandler implements FormatHandler {
   static formatNames: Map<string, string> = new Map([
@@ -319,17 +320,32 @@ class FFmpegHandler implements FormatHandler {
     }
     await this.#ffmpeg.writeFile("list.txt", encode(listString));
 
-    const command = [
-      "-hide_banner",
-      "-f",
-      "concat",
-      "-safe",
-      "0",
-      "-i",
-      "list.txt",
-      "-f",
-      outputFormat.internal,
-    ];
+    const input = ["-hide_banner", "-f", "concat", "-safe", "0", "-i", "list.txt"];
+    const command = [...input];
+
+    // GIF's default palette causes heavy banding, so generate one from the input first.
+    // This takes two passes because a single-pass split filter buffers every frame in memory.
+    // Skipped on auto-fix retries that add "-vf", which can't be combined with "-lavfi".
+    const settings = ctx?.settings ?? {};
+    const scale = ffmpegScaleFilter(settings);
+    const usePalette =
+      outputFormat.internal === "gif" &&
+      !args?.includes("-vf") &&
+      // the palette only needs the colours of the section that is kept
+      (await this.#ffmpeg.exec([
+        ...input,
+        ...ffmpegTrimArgs(settings),
+        "-vf",
+        "palettegen",
+        "palette.png",
+      ])) === 0;
+    ctx?.throwIfAborted();
+    if (usePalette) {
+      const filter = scale ? `[0:v]${scale}[scaled];[scaled][1:v]paletteuse` : "paletteuse";
+      command.push("-i", "palette.png", "-lavfi", filter);
+    }
+
+    command.push("-f", outputFormat.internal);
     if (outputFormat.mime === "video/mp4") {
       command.push("-pix_fmt", "yuv420p");
     } else if (outputFormat.internal === "dvd") {
@@ -343,7 +359,14 @@ class FFmpegHandler implements FormatHandler {
     } else if (outputFormat.format === "ogg-opus") {
       command.push("-c:a", "libopus");
     }
+    command.push(...ffmpegSettingsArgs(settings));
     if (args) command.push(...args);
+    if (scale && !usePalette) {
+      // FFmpeg only honours the last "-vf", so join an existing one instead of adding another
+      const vf = command.lastIndexOf("-vf");
+      if (vf === -1) command.push("-vf", scale);
+      else command[vf + 1] = `${scale},${command[vf + 1]}`;
+    }
     command.push("output");
 
     const stdout = await this.getStdout(async () => {
@@ -444,6 +467,7 @@ class FFmpegHandler implements FormatHandler {
 
     await this.#ffmpeg.deleteFile("output");
     await this.#ffmpeg.deleteFile("list.txt");
+    if (usePalette) await this.#ffmpeg.deleteFile("palette.png");
 
     const name = changeExt(inputFiles[0].name, outputFormat.extension);
 

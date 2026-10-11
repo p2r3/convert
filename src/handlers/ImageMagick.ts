@@ -139,6 +139,14 @@ class ImageMagickHandler implements FormatHandler {
                 image.resize(geometry);
               }
 
+              const { quality, maxSize, stripMetadata } = ctx?.settings ?? {};
+              if (quality) image.quality = quality;
+              // a geometry without flags fits inside the box and keeps the aspect ratio
+              if (maxSize && Math.max(image.width, image.height) > maxSize) {
+                image.resize(new MagickGeometry(maxSize, maxSize));
+              }
+              if (stripMetadata) image.strip();
+
               outputCollection.push(image);
               frameIndex++;
             }

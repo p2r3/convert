@@ -1,9 +1,7 @@
-import { useEffect, useRef } from "preact/hooks";
-import { CurrentPage, LoadingToolsText, Pages } from "src/ui/AppState";
-import { goToUploadHome, SelectedFiles } from "src/main";
+import { useRef } from "preact/hooks";
+import { LoadingToolsText } from "src/ui/AppState";
+import { goToUploadHome, selectFiles } from "src/main";
 import { Upload } from "lucide-preact";
-import { PopupData } from "src/ui";
-import { openPopup } from "src/ui/PopupStore";
 
 import Logo from "src/ui/components/Logo";
 import HelpButton from "src/ui/components/HelpButton";
@@ -22,36 +20,9 @@ export default function UploadPage() {
 
   const formatsReady = LoadingToolsText.value === undefined;
 
-  const processFiles = (fileList: FileList | null | undefined) => {
-    if (!fileList || fileList.length === 0) return;
-    if (!formatsReady) return;
-
-    const files = Array.from(fileList);
-
-    const sameMime = files.every((file) => file.type === files[0].type);
-    if (!sameMime) {
-      PopupData.value = {
-        title: "Invalid selection",
-        text: "All input files must be of the same type.",
-        dismissible: true,
-        buttonText: "OK",
-      };
-      openPopup();
-      return;
-    }
-
-    SelectedFiles.value = Object.fromEntries(
-      files.map((file) => [`${file.name}-${file.lastModified}`, file]),
-    );
-    CurrentPage.value = Pages.Conversion;
-  };
-
   const handleChange = () => {
-    processFiles(fileRef.current?.files);
-  };
-
-  const handlePaste = (event: ClipboardEvent) => {
-    processFiles(event.clipboardData?.files);
+    if (!formatsReady) return;
+    selectFiles(Array.from(fileRef.current?.files ?? []));
   };
 
   const handleLogoClick = (event: MouseEvent) => {
@@ -64,11 +35,6 @@ export default function UploadPage() {
     goToUploadHome();
     if (fileRef.current) fileRef.current.value = "";
   };
-
-  useEffect(() => {
-    window.addEventListener("paste", handlePaste);
-    return () => window.removeEventListener("paste", handlePaste);
-  }, [formatsReady]);
 
   return (
     <div className="upload-page">
@@ -97,7 +63,7 @@ export default function UploadPage() {
             name="uploadFile"
             id="uploadFile"
             onClick={(ev) => ev.stopPropagation()}
-            tabIndex={0}
+            tabIndex={-1}
             disabled={!formatsReady}
             onChange={handleChange}
           />

@@ -11,6 +11,12 @@ interface FileInfoBadgeProps {
   category?: CategoryType | CategoryType[];
   onRemove?: () => void;
   className?: string;
+  /** Marks the badge as the file currently being configured. */
+  active?: boolean;
+  /** Short name of the format the file will be converted to. */
+  target?: string;
+  /** Makes the badge selectable. */
+  onClick?: () => void;
 }
 
 function formatFileSize(bytes: number): string {
@@ -28,16 +34,36 @@ export default function FileInfoBadge({
   category,
   onRemove,
   className = "",
+  active,
+  target,
+  onClick,
 }: FileInfoBadgeProps) {
   const ext = extension || fileName.split(".").pop() || "";
 
   return (
-    <div className={`file-info-badge ${className}`}>
+    <div
+      className={`file-info-badge ${className} ${active ? "file-info-active" : ""}`}
+      {...(onClick && {
+        onClick,
+        role: "button",
+        tabIndex: 0,
+        "aria-pressed": !!active,
+        style: { cursor: "pointer" },
+        onKeyDown: (e: KeyboardEvent) => {
+          if (e.target !== e.currentTarget || (e.key !== "Enter" && e.key !== " ")) return;
+          e.preventDefault();
+          onClick();
+        },
+      })}
+    >
       <FileIcon extension={ext} mimeType={mimeType} category={category} size={16} />
       <div className="file-info-text">
         <span className="file-info-name">{fileName}</span>
-        {typeof fileSize === "number" && (
-          <span className="file-info-size">{formatFileSize(fileSize)}</span>
+        {(typeof fileSize === "number" || target) && (
+          <span className="file-info-size">
+            {typeof fileSize === "number" && formatFileSize(fileSize)}
+            {target && ` → ${target}`}
+          </span>
         )}
       </div>
       {onRemove && (

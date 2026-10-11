@@ -129,4 +129,9 @@ export default [
     image:
       "emscripten/emsdk:6.0.10@sha256:e077d54e2b8970575ebc4f185ac1de0b95c05f2b266134d4ba27449af7aebf65",
   },
+  {
+    name: "u2netp",
+    url: "https://github.com/danielgatis/rembg/releases/download/v0.0.0/u2netp.onnx",
+    hash: ["sha256", "309c8469258dda742793dce0ebea8e6dd393174f89934733ecc8b14c76f4ddd8"],
+  },
 ] satisfies RequirementsConfig;

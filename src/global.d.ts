@@ -1,6 +1,7 @@
 import type { FileData, ConvertPathNode, HandlerDefinition } from "./FormatHandler.js";
 import type { TraversionGraph } from "./TraversionGraph.js";
 import type { Remote } from "comlink";
+import type { ConversionSettings } from "./ConversionSettings.js";
 
 declare global {
   interface Window {
@@ -14,6 +15,7 @@ declare global {
       from: ConvertPathNode,
       to: ConvertPathNode,
       signal?: AbortSignal,
+      settings?: ConversionSettings,
     ) => Promise<{
       files: FileData[];
       path: ConvertPathNode[];

@@ -1,30 +1,53 @@
 import "./index.css";
 
-import { useState, useMemo, useCallback, useEffect, useRef } from "preact/hooks";
+import { useState, useMemo, useEffect, useRef } from "preact/hooks";
 import mime from "mime";
 import {
   ConversionOptions,
   SelectedFiles,
+  selectFiles,
   type ConversionOption,
   type ConversionOptionsMap,
 } from "src/main";
 import { Mode, ModeEnum } from "src/ui/ModeStore";
 import normalizeMimeType from "src/normalizeMimeType";
-import type { FileFormat } from "src/FormatHandler";
+import type { FileData, FileFormat } from "src/FormatHandler";
+import {
+  applicableSettings,
+  compressorsFor,
+  COMPRESS_DEFAULTS,
+  sameFormat,
+  settingsFor,
+  SETTINGS_HANDLERS,
+  type SettingKey,
+} from "src/ConversionSettings";
+import { groupByTarget, uniqueNames, type TargetGroup } from "src/batch";
+import { stripExt } from "src/common";
 
 import ConversionHeader from "src/ui/components/Conversion/ConversionHeader";
 import FormatExplorer from "src/ui/components/Conversion/FormatExplorer";
 import LoadingScreen from "src/ui/components/LoadingScreen";
 import Footer from "src/ui/components/Footer";
-import { ArrowLeft, ArrowRight, Plus } from "lucide-preact";
+import { ArrowLeft, ArrowRight, Minimize2, Plus, SlidersHorizontal } from "lucide-preact";
 import { PopupData } from "src/ui";
 import { openPopup } from "src/ui/PopupStore";
 import FileInfoBadge from "src/ui/components/FileInfo";
 import { ConversionInProgress, CurrentPage, Pages } from "src/ui/AppState";
 import { ProgressStore } from "src/ui/ProgressStore";
 import StyledButton, { ButtonVariant } from "src/ui/components/StyledButton";
+import ConversionSettingsForm, {
+  Settings,
+  ZipPassword,
+} from "src/ui/components/ConversionSettings";
 
 type ConversionStep = "select-from" | "select-to" | "converting";
+
+/** What one selected file is converted from and to. */
+interface Target {
+  from: ConversionOption | null;
+  to: ConversionOption | null;
+}
+const NO_TARGET: Target = { from: null, to: null };
 
 function countAvailableFormats(
   options: ConversionOptionsMap,
@@ -119,12 +142,85 @@ function getMatchingFromFormats(
   return matched;
 }
 
-function downloadFile(bytes: Uint8Array, name: string, type: string) {
-  const blob = new Blob([bytes as BlobPart], { type: type });
+function fileExt(file: File) {
+  return file.name.split(".").pop()?.toLowerCase() || "";
+}
+
+/** Picks the input format when the file leaves no real doubt about it. */
+function autoFromOption(
+  options: ConversionOptionsMap,
+  file: File,
+  simple: boolean,
+): ConversionOption | null {
+  const matching = getMatchingFromFormats(options, [file]);
+  if (!matching.size) return null;
+  const first = matching.entries().next().value ?? null;
+  if (!simple) return matching.size === 1 ? first : null;
+
+  const mimeCandidates = getMimeCandidatesForFile(file);
+  const ext = fileExt(file);
+
+  const uniqueFormats = new Set<string>();
+  for (const [format, handler] of matching) {
+    uniqueFormats.add(`${format.mime}|${format.format}`);
+
+    // chances are, this format is exactly what the user wants
+    if (ext === format.extension && mimeCandidates.includes(format.mime)) {
+      return [format, handler];
+    }
+  }
+  return uniqueFormats.size === 1 ? first : null;
+}
+
+/** Fills in a target for every selected file that `stored` doesn't cover yet. */
+function resolveTargets(
+  options: ConversionOptionsMap,
+  files: [string, File][],
+  stored: Record<string, Target>,
+): Record<string, Target> {
+  const simple = Mode.value === ModeEnum.Simple;
+  const targets: Record<string, Target> = {};
+  for (const [key, file] of files) {
+    if (stored[key]) {
+      targets[key] = stored[key];
+      continue;
+    }
+    const from = autoFromOption(options, file, simple);
+    // a new file takes the output already chosen for files of its format
+    const sibling =
+      from && Object.values(targets).find((t) => t.from && t.to && sameFormat(t.from[0], from[0]));
+    targets[key] = { from, to: sibling ? sibling.to : null };
+  }
+  return targets;
+}
+
+function downloadFile(data: Uint8Array | Blob, name: string, type: string) {
+  const blob = new Blob([data as BlobPart], { type: type });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
   link.download = name;
   link.click();
+  // the download needs a moment to start before the URL can be freed
+  setTimeout(() => URL.revokeObjectURL(link.href), 60_000);
+}
+
+// browsers block all but the first of several automatic downloads, so bundle them
+async function downloadAsZip(files: FileData[], name: string, password: string) {
+  const { ZipWriter, BlobWriter, Uint8ArrayReader } = await import("@zip.js/zip.js");
+  const writer = new ZipWriter(
+    new BlobWriter("application/zip"),
+    password ? { password, encryptionStrength: 3 } : {},
+  );
+  // zip.js refuses a second entry with the same name
+  const names = uniqueNames(files.map((file) => file.name));
+  for (const [i, file] of files.entries()) {
+    await writer.add(names[i], new Uint8ArrayReader(file.bytes));
+  }
+  downloadFile(await writer.close(), name, "application/zip");
+}
+
+function totalSize(files: FileData[]) {
+  return files.reduce((sum, file) => sum + file.bytes.length, 0);
 }
 
 function removeFile(key: string) {
@@ -133,99 +229,77 @@ function removeFile(key: string) {
   if (Object.keys(rest).length === 0) CurrentPage.value = Pages.Upload;
 }
 
-function addFiles(fileList: FileList | null | undefined) {
-  if (!fileList || fileList.length === 0) return;
-
-  const files = [...Object.values(SelectedFiles.value), ...Array.from(fileList)];
-
-  const sameMime = files.every((file) => file.type === files[0].type);
-  if (!sameMime) {
-    PopupData.value = {
-      title: "Invalid selection",
-      text: "All input files must be of the same type.",
-      dismissible: true,
-      buttonText: "OK",
-    };
-    openPopup();
-    return;
-  }
-
-  SelectedFiles.value = Object.fromEntries(
-    files.map((file) => [`${file.name}-${file.lastModified}`, file]),
-  );
-}
-
 export default function Conversion() {
   const allOptions = getConversionOptions();
-  const files = useMemo(() => Object.values(SelectedFiles.value), [SelectedFiles.value]);
-  const firstFile = files[0];
+  const entries = useMemo(
+    () => Object.entries(SelectedFiles.value) as [string, File][],
+    [SelectedFiles.value],
+  );
   const isAdvanced = Mode.value === ModeEnum.Advanced;
 
+  // targets the user has touched; resolveTargets derives the rest
+  const [stored, setStored] = useState<Record<string, Target>>({});
+  const targets = useMemo(
+    () => resolveTargets(allOptions, entries, stored),
+    [allOptions, entries, stored],
+  );
+
+  const [chosenKey, setChosenKey] = useState<string>();
+  const activeKey = chosenKey && targets[chosenKey] ? chosenKey : entries[0]?.[0];
+  const activeFile = entries.find(([key]) => key === activeKey)?.[1];
+  const { from: fromOption, to: toOption } = targets[activeKey] ?? NO_TARGET;
+  const firstKey = entries[0]?.[0];
+
   const matchingFrom = useMemo(
-    () => getMatchingFromFormats(allOptions, files),
-    [allOptions, files],
+    () => getMatchingFromFormats(allOptions, activeFile ? [activeFile] : []),
+    [allOptions, activeFile],
   );
 
   const matchingFromSet = useMemo(() => new Set([...matchingFrom].map(([f]) => f)), [matchingFrom]);
 
-  const autoSelectOption = useMemo<ConversionOption | null>(() => {
-    if (!matchingFrom.size) return null;
-    const isSimple = Mode.value === ModeEnum.Simple;
-    if (!isSimple) {
-      if (matchingFrom.size === 1) return matchingFrom.entries().next().value ?? null;
-      else return null;
-    }
-
-    const mimeCandidates = getMimeCandidatesForFile(firstFile);
-    const ext = firstFile.name.split(".").pop()?.toLowerCase() || "";
-
-    const uniqueFormats = new Set<string>();
-    for (const [format, handler] of matchingFrom) {
-      uniqueFormats.add(`${format.mime}|${format.format}`);
-
-      // chances are, this format is exactly what the user wants
-      if (ext === format.extension && mimeCandidates.includes(format.mime)) {
-        return [format, handler];
-      }
-    }
-    if (uniqueFormats.size === 1) return matchingFrom.entries().next().value ?? null;
-
-    return null;
-  }, [matchingFrom, Mode.value, firstFile]);
-
-  const [step, setStep] = useState<ConversionStep>(() => {
-    if (autoSelectOption) return "select-to";
-    return "select-from";
-  });
-
-  const [fromOption, setFromOption] = useState<ConversionOption | null>(autoSelectOption);
+  const [step, setStep] = useState<ConversionStep>(fromOption ? "select-to" : "select-from");
   const [showAll, setShowAll] = useState(false);
-
-  const [toOption, setToOption] = useState<ConversionOption | null>(null);
+  const [applyToAll, setApplyToAll] = useState(true);
   const [isConverting, setIsConverting] = useState(false);
+  const [converting, setConverting] = useState<TargetGroup<{ file: File }> | null>(null);
 
   useEffect(() => {
-    if (!firstFile || isConverting) return;
-
-    if (autoSelectOption) {
-      setFromOption(autoSelectOption);
-      setStep("select-to");
-    } else {
-      setFromOption(null);
-      setStep("select-from");
-    }
-
-    setToOption(null);
+    if (!activeFile || isConverting) return;
+    setStep(fromOption ? "select-to" : "select-from");
     setShowAll(false);
-  }, [firstFile]);
+  }, [activeKey]);
 
-  const handleFromSelect = useCallback((option: ConversionOption | null) => {
-    setFromOption(option);
-  }, []);
+  useEffect(() => {
+    // settings from a previous selection shouldn't silently apply to a new one
+    Settings.value = {};
+    ZipPassword.value = "";
+  }, [firstKey]);
 
-  const handleToSelect = useCallback((option: ConversionOption | null) => {
-    setToOption(option);
-  }, []);
+  /** Keys of the other files that a choice for the active file also applies to. */
+  const siblingKeys = (kind: keyof Target) =>
+    entries
+      .filter(([key, file]) => {
+        if (key === activeKey || !activeFile) return false;
+        // the input format is a guess from the name, the output follows the input format
+        if (kind === "from") return fileExt(file) === fileExt(activeFile);
+        const from = targets[key].from;
+        return !!from && !!fromOption && sameFormat(from[0], fromOption[0]);
+      })
+      .map(([key]) => key);
+
+  const toSiblings = siblingKeys("to");
+
+  const setOption = (kind: keyof Target, option: ConversionOption | null) => {
+    if (!activeKey) return;
+    const next = { ...targets };
+    for (const key of [activeKey, ...(applyToAll ? siblingKeys(kind) : [])]) {
+      next[key] = { ...targets[key], [kind]: option };
+    }
+    setStored(next);
+  };
+
+  const handleFromSelect = (option: ConversionOption | null) => setOption("from", option);
+  const handleToSelect = (option: ConversionOption | null) => setOption("to", option);
 
   const handleNext = () => {
     if (step === "select-from" && fromOption) {
@@ -247,8 +321,11 @@ export default function Conversion() {
     setStep("select-to");
   };
 
+  const compressors = fromOption ? compressorsFor(fromOption[0], window.handlerDefs) : [];
+  const allReady = entries.every(([key]) => targets[key].from && targets[key].to);
+
   const handleConvert = async () => {
-    if (!fromOption || !toOption || !firstFile) return;
+    if (!allReady) return;
 
     setIsConverting(true);
     ConversionInProgress.value = true;
@@ -257,59 +334,89 @@ export default function Conversion() {
     const abortController = ProgressStore.controller;
 
     try {
-      const inputFileData = [];
-      for (const f of files) {
-        const buf = await f.arrayBuffer();
-        const bytes = new Uint8Array(buf);
+      const groups = groupByTarget(
+        entries.map(([key, file]) => ({ file, from: targets[key].from!, to: targets[key].to! })),
+      );
+      const outputs: FileData[] = [];
+      const summary: string[] = [];
+      let outputMime = "";
+      let failed = 0;
 
-        if (
-          fromOption[0].mime === toOption[0].mime &&
-          fromOption[0].format === toOption[0].format
-        ) {
-          downloadFile(bytes, f.name, toOption[0].mime);
+      for (const group of groups) {
+        abortController.signal.throwIfAborted();
+        setConverting(group);
+
+        const [fromFormat, fromHandler] = group.from;
+        const [toFormat, toHandler] = group.to;
+        const label = `${fromFormat.format.toUpperCase()} → ${toFormat.format.toUpperCase()}`;
+        const inputs: FileData[] = [];
+        for (const { file } of group.items) {
+          inputs.push({ name: file.name, bytes: new Uint8Array(await file.arrayBuffer()) });
+        }
+        const inputSize = totalSize(inputs);
+        outputMime = toFormat.mime;
+
+        const compress = sameFormat(fromFormat, toFormat);
+        if (compress && !compressorsFor(toFormat, window.handlerDefs).length) {
+          outputs.push(...inputs);
+          summary.push(`${label}: already in this format, returned as is.`);
           continue;
         }
-        inputFileData.push({ name: f.name, bytes });
+
+        const settings = settingsFor(Settings.value, toFormat, compress ? COMPRESS_DEFAULTS : {});
+        const output = await window.tryConvertByTraversing(
+          inputs,
+          { handler: fromHandler, format: fromFormat },
+          { handler: toHandler, format: toFormat },
+          abortController.signal,
+          settings,
+        );
+
+        if (!output) {
+          failed++;
+          summary.push(`${label}: failed, no working conversion route.`);
+          continue;
+        }
+        outputs.push(...output.files);
+
+        let line = `${label}: via ${output.path.map((c) => c.format.format).join(" → ")}.`;
+        if (compress) {
+          const saved = 1 - totalSize(output.files) / inputSize;
+          line =
+            saved > 0
+              ? `${label}: ${Math.round(saved * 100)}% smaller.`
+              : `${label}: could not be made smaller, original kept.`;
+        }
+        // a setting that silently did nothing is worse than no setting, above all "remove metadata"
+        const lastHandler = output.path.at(-1)?.handler.name ?? "";
+        if (Object.keys(settings).length && !SETTINGS_HANDLERS.has(lastHandler)) {
+          line += ` The output settings were not applied: ${lastHandler} does not support them.`;
+        }
+        summary.push(line);
       }
 
-      if (inputFileData.length === 0) {
-        setIsConverting(false);
-        setStep("select-to");
-        return;
+      const password = ZipPassword.value;
+      if (outputs.length > 1 || (outputs.length === 1 && password)) {
+        const zipName = `${stripExt(entries[0][1].name)}-converted.zip`;
+        await downloadAsZip(outputs, zipName, password);
+      } else if (outputs.length === 1) {
+        downloadFile(outputs[0].bytes, outputs[0].name, outputMime);
       }
 
-      const fromNode = { handler: fromOption[1], format: fromOption[0] };
-      const toNode = { handler: toOption[1], format: toOption[0] };
-
-      const output = await window.tryConvertByTraversing(
-        inputFileData,
-        fromNode,
-        toNode,
-        abortController.signal,
-      );
-
-      if (!output) {
-        setIsConverting(false);
-        setStep("select-to");
-        PopupData.value = {
-          title: "Conversion failed",
-          text: "Could not find a valid conversion route between these formats.",
-          dismissible: true,
-          buttonText: "OK",
-        };
-        openPopup();
-        return;
-      }
-
-      for (const file of output.files) {
-        downloadFile(file.bytes, file.name, toOption[0].mime);
-      }
-
+      let title = "Conversion complete!";
+      if (failed === groups.length) title = "Conversion failed";
+      else if (failed) title = "Converted, with failures";
       PopupData.value = {
-        title: "Conversion complete!",
-        text: `Converted ${fromOption[0].format.toUpperCase()} → ${toOption[0].format.toUpperCase()} via ${output.path.map((c) => c.format.format).join(" → ")}`,
         dismissible: true,
         buttonText: "OK",
+        contents: (
+          <>
+            <h1>{title}</h1>
+            {summary.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+          </>
+        ),
       };
       openPopup();
     } catch (e) {
@@ -327,6 +434,7 @@ export default function Conversion() {
       }
     } finally {
       setIsConverting(false);
+      setConverting(null);
       ConversionInProgress.value = false;
       setStep("select-to");
     }
@@ -340,10 +448,26 @@ export default function Conversion() {
   };
 
   const handleAddChange = () => {
-    addFiles(addFileRef.current?.files);
+    selectFiles(Array.from(addFileRef.current?.files ?? []), true);
   };
 
-  const canProceed = step === "select-from" ? !!fromOption : !!fromOption && !!toOption;
+  const settingKeys = [
+    ...new Set(
+      Object.values(targets).flatMap<SettingKey>((t) => (t.to ? applicableSettings(t.to[0]) : [])),
+    ),
+  ];
+
+  const handleSettingsClick = () => {
+    PopupData.value = {
+      dismissible: true,
+      buttonText: "Done",
+      contents: <ConversionSettingsForm keys={settingKeys} />,
+    };
+    openPopup();
+  };
+
+  const canProceed = step === "select-from" ? !!fromOption : allReady;
+  const multiple = entries.length > 1;
 
   return (
     <div className="conversion-body">
@@ -352,10 +476,10 @@ export default function Conversion() {
       <main className="conversion-main">
         {step === "converting" ? (
           <LoadingScreen
-            fileName={firstFile?.name || "file"}
-            fileSize={firstFile?.size}
-            from={fromOption?.[0]}
-            to={toOption?.[0]}
+            fileName={converting?.items[0].file.name || "file"}
+            fileSize={converting?.items[0].file.size}
+            from={converting?.from[0]}
+            to={converting?.to[0]}
           />
         ) : (
           <FormatExplorer
@@ -382,7 +506,7 @@ export default function Conversion() {
       {step !== "converting" && (
         <div className="conversion-action-bar">
           <div className="conversion-action-files">
-            {Object.entries(SelectedFiles.value).map(([key, file]) => (
+            {entries.map(([key, file]) => (
               <FileInfoBadge
                 key={key}
                 fileName={file.name}
@@ -390,6 +514,9 @@ export default function Conversion() {
                 extension={file.name.split(".").pop()}
                 mimeType={file.type}
                 onRemove={() => removeFile(key)}
+                active={multiple && key === activeKey}
+                target={multiple ? (targets[key]?.to?.[0].format.toUpperCase() ?? "?") : undefined}
+                onClick={multiple ? () => setChosenKey(key) : undefined}
               />
             ))}
             <div
@@ -410,6 +537,34 @@ export default function Conversion() {
               <Plus size={16} />
             </div>
           </div>
+          {step === "select-to" && toSiblings.length > 0 && (
+            <label
+              className="conversion-apply-all"
+              title="Untick to choose a different output for this file only"
+            >
+              <input
+                type="checkbox"
+                checked={applyToAll}
+                onChange={(ev) => setApplyToAll(ev.currentTarget.checked)}
+              />
+              All {toSiblings.length + 1} {fromOption?.[0].format.toUpperCase()} files
+            </label>
+          )}
+          {step === "select-to" && compressors.length > 0 && (
+            <StyledButton
+              onClick={() => handleToSelect(compressors[0])}
+              title="Keep the format and make the file smaller"
+            >
+              <Minimize2 size={16} />
+              Compress
+            </StyledButton>
+          )}
+          {step === "select-to" && (
+            <StyledButton onClick={handleSettingsClick}>
+              <SlidersHorizontal size={16} />
+              Settings
+            </StyledButton>
+          )}
           {step === "select-to" && (
             <StyledButton onClick={handleBack}>
               <ArrowLeft size={16} />
@@ -419,6 +574,9 @@ export default function Conversion() {
           <StyledButton
             variant={ButtonVariant.Primary}
             disabled={!canProceed}
+            title={
+              step === "select-to" && !allReady ? "Choose an output for every file" : undefined
+            }
             onClick={step === "select-from" ? handleNext : handleConvert}
           >
             {step === "select-from" ? "Next" : "Convert"}

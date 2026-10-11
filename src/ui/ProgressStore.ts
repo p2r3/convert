@@ -1,4 +1,5 @@
 import { signal } from "@preact/signals";
+import type { ConversionSettings } from "src/ConversionSettings";
 
 export type LogLevel = "log" | "error" | "debug" | "warn";
 
@@ -14,6 +15,8 @@ export interface ConvertContext {
   log: (message: string, level?: LogLevel) => void;
   signal: AbortSignal;
   throwIfAborted: () => void;
+  /** User-chosen output settings. Only set on the last step of a conversion path. */
+  settings: ConversionSettings;
 }
 
 export interface IProgressStore {
@@ -61,6 +64,7 @@ export function createRemoteContext(
   store: IProgressStore,
   pluginName: string,
   abort: AbortSignal,
+  settings: ConversionSettings = {},
 ): ConvertContext {
   let prevVal = 0;
 
@@ -75,6 +79,7 @@ export function createRemoteContext(
       console[level](`[${pluginName}] ${msg}`);
     },
     signal: abort,
+    settings,
     throwIfAborted() {
       if (abort.aborted) throw new DOMException("Conversion cancelled", "AbortError");
     },
