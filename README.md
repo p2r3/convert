@@ -105,6 +105,9 @@ You can generate this list beforehand and save it into `dist/` by running `bun r
 
 ### Docker (prebuilt image)
 
+> [!NOTE]
+> The prebuilt image is the original project's and does not have this fork's additions. For those, use the [local build](#docker-local-build-for-development) below.
+
 Docker compose files live in the `docker/` directory, so run compose with `-f` from the repository root:
 
 ```bash

@@ -29,9 +29,12 @@ Report security problems privately: see [SECURITY.md](SECURITY.md).
 ```sh
 bun run lint
 bun run fmt:check
-bun test
 bun run build
+bun run cache:build
+bun test ./test/
 ```
+
+The tests come last because the conversion tests open the build in `dist/` in a browser.
 
 Adding a file format? The README's [Contributing](README.md#contributing) section explains how a handler is written and what a format request needs.
 
