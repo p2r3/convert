@@ -59,3 +59,14 @@
   white-space: nowrap;
   cursor: pointer;
 }
+
+/* on a phone the glass gives its side margins back to the file badges */
+@media (max-width: 600px) {
+  .conversion-dock {
+    margin-inline: 0.5rem;
+  }
+
+  .conversion-action-bar {
+    padding-inline: 0.5rem;
+  }
+}

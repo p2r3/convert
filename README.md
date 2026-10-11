@@ -47,7 +47,7 @@ This is a fork of [p2r3/convert](https://github.com/p2r3/convert). The rest of t
 - **Compress.** Converts a file to its own format and makes it smaller: JPEG, WebP and AVIF are re-encoded, video and audio are transcoded, and SVG, HTML, CSS, JavaScript and JSON are minified. If the result is not smaller, you get the original back.
 - **Three new outputs.** "Recognised text (OCR)" reads English and Dutch text from images and PDF pages, "PNG with background removed" cuts out the subject of an image, and "Merged PDF" joins the selected PDFs in the order of the file bar.
 - **Liquid glass.** The action bar is a pane of glass that floats over the format list, and dialogs are glass sheets. The material comes from [LiquidGlass UI](https://github.com/hwyuanzi/LiquidGlass-UI).
-- **Faster start.** The first video, audio or GIF conversion no longer waits about six seconds while FFmpeg lists its formats, and the development server uses the format cache.
+- **Less waiting.** The first conversion that uses FFmpeg no longer spends about six seconds listing its formats, and the development server uses the format cache.
 
 <details>
 <summary>Limits of these additions</summary>
