@@ -46,7 +46,7 @@ class wavebreakHandler implements FormatHandler {
     const n32 = (t: number): Uint8Array => new Uint8Array(new Uint32Array([t]).buffer);
     const me = _inputFormat.mime;
     const is8 = me.length < 9;
-    const [bd, fn, oe] = [is8 ? 8 : +me.slice(7, 9), +(me[6] == "f"), is8 ? null : (me[9] == "b")];
+    const [bd, fn, oe] = [is8 ? 8 : +me.slice(7, 9), +(me[6] == "f"), is8 ? null : me[9] == "b"];
     for (const file of inputFiles) {
       if (file.bytes.byteLength > 0xffffff00) {
         ctx?.log("data too large. maximum size 4,294,967,040 bytes.", "error");
@@ -56,8 +56,8 @@ class wavebreakHandler implements FormatHandler {
         ctx?.log("data very large. successful conversion cannot be guaranteed.", "warn");
       }
       // oxlint-disable-next-line unicorn/consistent-function-scoping
-      const g0 = (a : number[], b : number[] = a) : number => (!a[1] ? (b[0] * b[1]) / a[0] : g0([a[1], a[0] % a[1]], b)); // oxfmt-ignore
-      const g = g0([2, bd/8]);
+      const g0 = (a: number[], b: number[] = a): number => !a[1] ? (b[0] * b[1]) / a[0] : g0([a[1], a[0] % a[1]], b); // oxfmt-ignore
+      const g = g0([2, bd / 8]);
       const sz = g * Math.ceil(file.bytes.byteLength / g); // this actually can't change at all because of the whole umm.
       const head1 = new Uint8Array([82, 73, 70, 70, ...n32(sz + 36), 87, 65, 86, 69]);
       // oxfmt-ignore
@@ -67,18 +67,16 @@ class wavebreakHandler implements FormatHandler {
       r.set(head1, 0);
       r.set(head2, 12);
       r.set(head3, 36);
-      let ps = new Array();
+      const ps: Uint8Array[] = new Array();
       if (oe) {
-        for (let b = 0; b < sz; b += bd/8) {
-          ps.push(file.bytes.slice(b,b+bd/8));
+        for (let b = 0; b < sz; b += bd / 8) {
+          ps.push(file.bytes.slice(b, b + bd / 8)); // oxfmt-ignore
         }
-        ps = ps.map(x => x.toReversed()); // i don't need reverse because i'm using map
-        ps = new Uint8Array(ps.flat());
+        // oxfmt-ignore
+        ps.forEach((el, tsi) => {r.set(el.toReversed(), 44 + tsi * bd / 8)}); // oxfmt-ignore
+      } else {
+        r.set(file.bytes, 44);
       }
-      else {
-        ps = file.bytes;
-      }
-      r.set(ps, 44);
       outputFiles.push({ name: changeExt(file.name, "wav"), bytes: r });
     }
     return outputFiles;
