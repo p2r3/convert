@@ -449,6 +449,8 @@ export default function Conversion() {
 
   const handleAddChange = () => {
     selectFiles(Array.from(addFileRef.current?.files ?? []), true);
+    // otherwise picking a file that was removed again fires no change event
+    if (addFileRef.current) addFileRef.current.value = "";
   };
 
   const settingKeys = [
