@@ -26,7 +26,10 @@ class wavebreakHandler implements FormatHandler {
     Formats.S32BE.builder("s32be").lossless().from(),
     Formats.F32BE.builder("f32be").lossless().from(),
     Formats.F64BE.builder("f64be").lossless().from(),
-    // last group will not be implemented until be starts to be.
+    // other-end other-sign (preferrably don't use these)
+    Formats.U16BE.builder("u16be").from(),
+    Formats.U24BE.builder("u24be").from(),
+    Formats.U32BE.builder("u32be").from(),
   ];
   public ready = false;
 
