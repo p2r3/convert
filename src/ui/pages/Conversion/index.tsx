@@ -354,11 +354,11 @@ export default function Conversion() {
           inputs.push({ name: file.name, bytes: new Uint8Array(await file.arrayBuffer()) });
         }
         const inputSize = totalSize(inputs);
-        outputMime = toFormat.mime;
 
         const compress = sameFormat(fromFormat, toFormat);
         if (compress && !compressorsFor(toFormat, window.handlerDefs).length) {
           outputs.push(...inputs);
+          outputMime = toFormat.mime;
           summary.push(`${label}: already in this format, returned as is.`);
           continue;
         }
@@ -378,6 +378,8 @@ export default function Conversion() {
           continue;
         }
         outputs.push(...output.files);
+        // set here, not earlier, so a group that failed can't label another group's file
+        outputMime = toFormat.mime;
 
         let line = `${label}: via ${output.path.map((c) => c.format.format).join(" → ")}.`;
         if (compress) {
