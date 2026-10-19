@@ -35,6 +35,10 @@ class canvasToBlobHandler implements FormatHandler {
       throw new InitializationError("Handler not initialized.");
     }
     const { ctx, canvas } = this.#bundle;
+    // a canvas can't write a palette, so this sends the conversion on to ImageMagick
+    if (convertCtx?.settings.colors && outputFormat.mime === "image/png") {
+      throw new Error("canvasToBlob can't reduce the colours of a PNG.");
+    }
 
     const outputFiles: FileData[] = [];
     for (const inputFile of inputFiles) {

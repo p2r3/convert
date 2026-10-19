@@ -5,7 +5,10 @@ import {
   MagickImageCollection,
   MagickReadSettings,
   MagickGeometry,
+  QuantizeSettings,
+  DitherMethod,
 } from "@imagemagick/magick-wasm";
+import { optimise } from "@jsquash/oxipng";
 
 import mime from "mime";
 import magickWasmUrl from "@imagemagick/magick-wasm/magick.wasm?url";
@@ -14,6 +17,23 @@ import Formats, { Category, isCategory } from "src/Formats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import type { ConvertContext } from "../ui/ProgressStore.js";
 import { changeExt } from "src/common/index.ts";
+
+/**
+ * File formats ImageMagick handles that have no registered MIME type, and that `init` would
+ * otherwise skip for that reason. An explicit list, because most of what ImageMagick calls a
+ * format without a MIME type is not a file at all: generators ("gradient", "plasma"), dumps
+ * of raw samples ("rgb", "gray") and protocols ("http").
+ */
+const UNREGISTERED_FORMATS = new Set(
+  [
+    // camera raw, developed by the LibRaw that is part of ImageMagick
+    "3fr arw cr2 cr3 crw erf fff iiq k25 kdc mdc mef mos mrw nef nrw orf pef raf rw2 rwl sr2 srf",
+    "srw x3f",
+    // everything else
+    "aai art avs cals cin cut dcx farbfeld fax fl32 fts g4 hdr hrz jnx mac mat miff mtv otb palm",
+    "pcd pes pgx phm picon pict pix pwp rla rle scr sct sfw sixel sun tim tm2 vicar viff vips wpg",
+  ].flatMap((names) => names.split(" ")),
+);
 
 class ImageMagickHandler implements FormatHandler {
   public readonly name = "ImageMagick";
@@ -34,6 +54,7 @@ class ImageMagickHandler implements FormatHandler {
       if (formatName === "ttf") return;
       if (formatName === "otf") return;
       let mimeType = format.mimeType || mime.getType(formatName);
+      if (!mimeType && UNREGISTERED_FORMATS.has(formatName)) mimeType = `image/x-${formatName}`;
       if (
         !mimeType ||
         mimeType.startsWith("text/") ||
@@ -92,6 +113,14 @@ class ImageMagickHandler implements FormatHandler {
     args?: string[],
     ctx?: ConvertContext,
   ): Promise<FileData[]> {
+    // all inputs go into one image collection and one output, which a palette doesn't ask for
+    if (ctx?.settings.colors && inputFiles.length > 1) {
+      const outputs: FileData[] = [];
+      for (const file of inputFiles) {
+        outputs.push(...(await this.doConvert([file], inputFormat, outputFormat, args, ctx)));
+      }
+      return outputs;
+    }
     const inputMagickFormat = inputFormat.internal as MagickFormat;
     const outputMagickFormat = outputFormat.internal as MagickFormat;
 
@@ -100,7 +129,7 @@ class ImageMagickHandler implements FormatHandler {
 
     ctx?.log(`Initialising ImageMagick for ${inputFiles.length} files...`);
 
-    const bytes: Uint8Array = await new Promise((resolve) => {
+    let bytes: Uint8Array = await new Promise((resolve) => {
       MagickImageCollection.use((outputCollection) => {
         let processedCount = 0;
         for (const inputFile of inputFiles) {
@@ -139,13 +168,20 @@ class ImageMagickHandler implements FormatHandler {
                 image.resize(geometry);
               }
 
-              const { quality, maxSize, stripMetadata } = ctx?.settings ?? {};
+              const { quality, maxSize, stripMetadata, colors } = ctx?.settings ?? {};
               if (quality) image.quality = quality;
               // a geometry without flags fits inside the box and keeps the aspect ratio
               if (maxSize && Math.max(image.width, image.height) > maxSize) {
                 image.resize(new MagickGeometry(maxSize, maxSize));
               }
               if (stripMetadata) image.strip();
+              if (colors) {
+                // after resizing, which would blend new colours back in
+                const palette = new QuantizeSettings();
+                palette.colors = colors;
+                palette.ditherMethod = DitherMethod.FloydSteinberg;
+                image.quantize(palette);
+              }
 
               outputCollection.push(image);
               frameIndex++;
@@ -163,6 +199,12 @@ class ImageMagickHandler implements FormatHandler {
         });
       });
     });
+
+    // quantising then optimising, as limitPNG chains pngquant and the lossless optimisers
+    if (ctx?.settings.colors && outputFormat.mime === "image/png") {
+      ctx.progress("Optimising the PNG...", 0.95);
+      bytes = new Uint8Array(await optimise(new Uint8Array(bytes).buffer));
+    }
 
     const name = changeExt(inputFiles[0].name, outputFormat.extension);
 

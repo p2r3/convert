@@ -33,6 +33,8 @@
 /* a pane of liquid glass that floats over the end of the format list */
 .conversion-dock {
   --lg-pad: 0;
+  /* clear enough to see the list bend at the edges; the controls on it have their own surfaces */
+  --lg-blur: 4px;
   flex-shrink: 0;
   position: relative;
   z-index: 2;

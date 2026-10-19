@@ -80,6 +80,10 @@ const Formats = {
   WMV: new FormatDefinition("Windows Media Video", "wmv", "wmv", "video/x-ms-asf", Category.VIDEO),
   MTS: new FormatDefinition("AVCHD Video", "mts", "mts", "video/mp2t", Category.VIDEO),
   M2TS: new FormatDefinition("Blu-ray BDMV Video", "m2ts", "m2ts", "video/mp2t", Category.VIDEO),
+  MOV: new FormatDefinition("QuickTime / MOV", "mov", "mov", "video/quicktime", Category.VIDEO),
+  MKV: new FormatDefinition("Matroska / WebM", "matroska", "mkv", "video/x-matroska", Category.VIDEO),
+  WEBM: new FormatDefinition("WebM", "webm", "webm", "video/webm", Category.VIDEO),
+  AVI: new FormatDefinition("AVI (Audio Video Interleaved)", "avi", "avi", "video/x-msvideo", Category.VIDEO),
 
   // audio
   MP3: new FormatDefinition("MP3 Audio", "mp3", "mp3", "audio/mpeg", Category.AUDIO),
@@ -88,6 +92,9 @@ const Formats = {
   OGG_VORBIS: new FormatDefinition("Ogg Vorbis Audio", "ogg-vorbis", "ogg", "audio/ogg", Category.AUDIO),
   OGG_OPUS: new FormatDefinition("Ogg Opus Audio", "ogg-opus", "ogg", "audio/ogg", Category.AUDIO),
   FLAC: new FormatDefinition("Free Lossless Audio Codec", "flac", "flac", "audio/flac", Category.AUDIO),
+  M4A: new FormatDefinition("MPEG-4 Audio", "m4a", "m4a", "audio/mp4", Category.AUDIO),
+  AAC: new FormatDefinition("raw ADTS AAC (Advanced Audio Coding)", "aac", "aac", "audio/aac", Category.AUDIO),
+  AIFF: new FormatDefinition("Audio IFF", "aiff", "aif", "audio/aiff", Category.AUDIO),
   QTA: new FormatDefinition("QuickTime Audio", "qta", "qta", "video/quicktime", Category.AUDIO),
   QOA: new FormatDefinition("Quite OK Audio", "qoa", "qoa", "audio/x-qoa", Category.AUDIO),
   FLO: new FormatDefinition("Flo Audio", "flo", "flo", "audio/flo", Category.AUDIO),
@@ -109,6 +116,9 @@ const Formats = {
 
   // text
   TEXT: new FormatDefinition("Plain Text", "text", "txt", "text/plain", Category.TEXT),
+  SRT: new FormatDefinition("SubRip Subtitles", "srt", "srt", "application/x-subrip", Category.TEXT),
+  VTT: new FormatDefinition("WebVTT Subtitles", "vtt", "vtt", "text/vtt", Category.TEXT),
+  ASS: new FormatDefinition("Advanced SubStation Alpha Subtitles", "ass", "ass", "text/x-ass", Category.TEXT),
   TEXT_UTF8_NO_BOM: new FormatDefinition("Plain Text (UTF-8 without BOM)", "UTF-8 without BOM", "txt", "text/plain; charset=UTF-8 without BOM", Category.TEXT),
   TEXT_UTF8_BOM: new FormatDefinition("Plain Text (UTF-8 with BOM)", "UTF-8 with BOM", "txt", "text/plain; charset=UTF-8 with BOM", Category.TEXT),
   TEXT_UTF16LE: new FormatDefinition("Plain Text (UTF-16 LE)", "UTF-16 LE", "txt", "text/plain; charset=UTF-16LE", Category.TEXT),
@@ -128,6 +138,7 @@ const Formats = {
   TOML: new FormatDefinition("Tom's Obvious, Minimal Language", "toml", "toml", "application/toml", Category.DATA),
   INI: new FormatDefinition("Initialization file", "ini", "ini", "text/plain", Category.DATA),
   CSV: new FormatDefinition("Comma Separated Values", "csv", "csv", "text/csv", Category.DATA),
+  VCF: new FormatDefinition("vCard Contacts", "vcf", "vcf", "text/x-vcard", Category.DATA),
 
   // code
   PYTHON: new FormatDefinition("Python Script", "py", "py", "text/x-python", Category.CODE),
@@ -164,6 +175,7 @@ const Formats = {
   FB2: new FormatDefinition("FictionBook 2", "fb2", "fb2", "application/x-fictionbook+xml", Category.DOCUMENT),
   // documents - office
   DOCX: new FormatDefinition("WordprocessingML Document", "docx", "docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", Category.DOCUMENT),
+  XLS: new FormatDefinition("Microsoft Excel 97-2003 Workbook", "xls", "xls", "application/vnd.ms-excel", Category.SPREADSHEET),
   XLSX: new FormatDefinition("SpreadsheetML Workbook", "xlsx", "xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", [Category.SPREADSHEET, Category.DOCUMENT]),
   PPTX: new FormatDefinition("PresentationML Presentation", "pptx", "pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation", [Category.PRESENTATION, Category.DOCUMENT]),
   ODT: new FormatDefinition("OpenDocument Text", "odt", "odt", "application/vnd.oasis.opendocument.text", Category.DOCUMENT),
@@ -206,6 +218,13 @@ const Formats = {
   GLB: new FormatDefinition("GL Transmission Format Binary", "glb", "glb", "model/gltf-binary", Category.MODEL),
   GLTF: new FormatDefinition("GL Transmission Format", "gltf", "gltf", "model/gltf+json", Category.MODEL),
   OBJ: new FormatDefinition("Wavefront OBJ", "obj", "obj", "model/obj", Category.MODEL),
+  STL: new FormatDefinition("Stereolithography", "stl", "stl", "model/stl", Category.MODEL),
+  PLY: new FormatDefinition("Polygon File Format", "ply", "ply", "model/x-ply", Category.MODEL),
+  USDZ: new FormatDefinition("Universal Scene Description Package", "usdz", "usdz", "model/vnd.usdz+zip", Category.MODEL),
+  THREE_MF: new FormatDefinition("3D Manufacturing Format", "3mf", "3mf", "model/3mf", Category.MODEL),
+  FBX: new FormatDefinition("Autodesk Filmbox", "fbx", "fbx", "application/vnd.autodesk.fbx", Category.MODEL),
+  DAE: new FormatDefinition("Collada Digital Asset Exchange", "dae", "dae", "model/vnd.collada+xml", Category.MODEL),
+  TDS: new FormatDefinition("Autodesk 3D Studio", "3ds", "3ds", "image/x-3ds", Category.MODEL),
   BBMODEL: new FormatDefinition("Blockbench Project", "bbmodel", "bbmodel", "application/json", Category.MODEL),
 
   // databases
@@ -248,3 +267,18 @@ const Formats = {
 };
 
 export default Formats;
+
+/**
+ * Audio files that tools such as "Check audio" read as they are, so that the codec and
+ * header they judge are the file's own and not those of a converted copy.
+ * Their strings match FFmpeg's, which joins them to the same nodes of the conversion graph.
+ */
+export const AUDIO_FILES = [
+  Formats.MP3.builder("mp3"),
+  Formats.WAV.builder("wav"),
+  Formats.FLAC.builder("flac"),
+  Formats.OGG.builder("ogg"),
+  Formats.M4A.builder("m4a"),
+  Formats.AAC.builder("aac"),
+  Formats.AIFF.builder("aiff"),
+].map((format) => format.from());

@@ -1,0 +1,161 @@
+.audio-report {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.audio-report-files {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  /* several files scroll inside the dialog rather than pushing its button off screen */
+  max-height: 65vh;
+  overflow-y: auto;
+}
+
+.audio-report-file {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+/* the picture stays dark in both themes, as a spectrum analyser's screen does */
+.audio-report-scope {
+  position: relative;
+  margin: 0 0 0.5rem;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #0a0b18;
+  color: #c9cce6;
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+
+  img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 3 / 1;
+    image-rendering: pixelated;
+  }
+}
+
+/* #popup's own list styles would otherwise win, and grey the labels out in the light theme */
+#popup .audio-report-axis {
+  position: absolute;
+  inset: 0.25rem 0.25rem 0.25rem auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.7rem;
+  line-height: 1;
+  color: #c9cce6;
+
+  li {
+    margin: 0;
+    padding: 0.15rem 0.3rem;
+    border-radius: 4px;
+    /* the loud end of the picture is nearly white, so the labels carry their own dark ground */
+    background: rgb(10 11 24 / 0.7);
+  }
+}
+
+.audio-report-cutoff {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed #fff3c4;
+
+  span {
+    position: absolute;
+    left: 0.25rem;
+    bottom: 0.2rem;
+    padding: 0.15rem 0.3rem;
+    border-radius: 4px;
+    background: rgb(10 11 24 / 0.7);
+    color: #fff3c4;
+    font-weight: 600;
+    line-height: 1;
+  }
+}
+
+#popup .audio-report-file h2 {
+  margin-top: 0;
+  overflow-wrap: anywhere;
+}
+
+#popup .audio-report-format {
+  margin-top: -0.35rem;
+}
+
+.audio-report-verdict {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+/* the verdict and finding colours, darkened or lightened enough to read as text */
+.level-ok {
+  --level: var(--ok);
+}
+.level-note {
+  --level: var(--primary);
+}
+.level-warn {
+  --level: var(--warning);
+}
+.level-bad {
+  --level: color-mix(in srgb, var(--danger) 75%, var(--text-primary));
+}
+
+#popup .audio-report-verdict,
+.audio-report-findings span[aria-hidden] {
+  color: var(--level);
+}
+
+#popup .audio-report-findings {
+  list-style: none;
+  padding: 0;
+
+  li {
+    display: grid;
+    grid-template-columns: 1rem 1fr;
+    gap: 0.4rem;
+  }
+
+  span[aria-hidden] {
+    font-weight: 700;
+    text-align: center;
+  }
+}
+
+.audio-report-numbers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: 0.5rem 1rem;
+  margin: 0.25rem 0 0;
+
+  dt {
+    font-size: 0.75rem;
+    color: var(--popup-text-soft);
+  }
+
+  dd {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+#popup .audio-report-save {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+
+  &:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+}

@@ -86,12 +86,15 @@ export class Converter {
         (currentStep - 1) / totalSteps,
       );
 
-      const outputFiles = (
-        await Promise.all([
-          handler.doConvert(inputFiles, inputFormat, path[1].format, undefined, ctx),
-          new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
-        ])
-      )[0];
+      // no waiting for animation frames here: a tab in the background gets none, and the
+      // conversion would stand still until the user came back to it
+      const outputFiles = await handler.doConvert(
+        inputFiles,
+        inputFormat,
+        path[1].format,
+        undefined,
+        ctx,
+      );
 
       ctx.log(`Step ${currentStep}/${totalSteps} complete`);
       if (outputFiles.some((c) => !c.bytes.length)) throw "Output is empty.";

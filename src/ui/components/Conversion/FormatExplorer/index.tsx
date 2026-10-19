@@ -47,6 +47,8 @@ interface FormatExplorerProps {
   onClickTo?: () => void;
   showAll?: boolean;
   onShowAll?: () => void;
+  /** Shortcuts shown under the category chips. */
+  tools?: preact.ComponentChildren;
 }
 
 type SearchIndex = Map<string, ConversionOption>;
@@ -176,6 +178,7 @@ export default function FormatExplorer({
   onClickTo,
   showAll = false,
   onShowAll,
+  tools,
 }: FormatExplorerProps) {
   const isAdvanced = Mode.value === ModeEnum.Advanced;
 
@@ -278,6 +281,13 @@ export default function FormatExplorer({
               />
             ))}
           </div>
+
+          {tools && (
+            <div className="chip-filters tool-shortcuts">
+              <span>Tools</span>
+              {tools}
+            </div>
+          )}
         </div>
 
         <div className="format-list-container scroller">

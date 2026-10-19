@@ -10,8 +10,24 @@ import mime from "mime";
 import normalizeMimeType from "../normalizeMimeType.ts";
 import Formats, { Category, type CategoryType } from "src/Formats.ts";
 import { InitializationError } from "src/errors.ts";
-import { changeExt, encode } from "src/common/index.ts";
-import { ffmpegScaleFilter, ffmpegSettingsArgs, ffmpegTrimArgs } from "src/ConversionSettings.ts";
+import { changeExt, encode, stalls } from "src/common/index.ts";
+import {
+  type ConversionSettings,
+  ffmpegAudioFilter,
+  ffmpegCopyArgs,
+  ffmpegScaleFilter,
+  ffmpegSettingsArgs,
+  ffmpegTrimArgs,
+  sameFormat,
+} from "src/ConversionSettings.ts";
+
+/**
+ * Output formats that are encoded with libx264 by default, which works with threads.
+ * Not every encoder does: libvpx, for one, deadlocks in the multithreaded core.
+ */
+const THREADED_OUTPUTS = new Set(["mp4", "mov", "matroska"]);
+/** How long the multithreaded core may log nothing before it counts as hung. */
+const STALL_MS = 20_000;
 
 class FFmpegHandler implements FormatHandler {
   static formatNames: Map<string, string> = new Map([
@@ -33,6 +49,10 @@ class FFmpegHandler implements FormatHandler {
   public ready = false;
 
   #ffmpeg?: FFmpeg;
+  /** Whether the next load takes the multithreaded core. */
+  #threads = false;
+  /** Set when that core has hung once; it is not tried again in this session. */
+  #threadsHung = false;
 
   #stdout: string = "";
   #boundStdoutHandler = (log: LogEvent) => {
@@ -52,6 +72,17 @@ class FFmpegHandler implements FormatHandler {
 
   async loadFFmpeg() {
     if (!this.#ffmpeg) return;
+    if (this.#threads) {
+      // Copied as they are by vite.config.js and not imported with "?url": the core starts its
+      // threads from the worker script as a classic worker, which Vite would break in two ways,
+      // by inlining so small a script as a "data:" URL and, in development, by adding an import.
+      const threaded = new URL("external/ffmpeg-mt/", globalThis.baseUrl).href;
+      return await this.#ffmpeg.load({
+        coreURL: `${threaded}ffmpeg-core.js`,
+        wasmURL: `${threaded}ffmpeg-core.wasm`,
+        workerURL: `${threaded}ffmpeg-core.worker.js`,
+      });
+    }
     return await this.#ffmpeg.load({
       coreURL: ffmpegCoreUrl,
       wasmURL: ffmpegWasmUrl,
@@ -269,6 +300,60 @@ class FFmpegHandler implements FormatHandler {
     this.ready = true;
   }
 
+  /**
+   * Cuts each file without re-encoding it, and returns one output per input.
+   * Each file is read on its own and not through the concat list of {@link doConvert}:
+   * seeking in that list loses every frame of a copied stream.
+   */
+  async #copyStreams(
+    inputFiles: FileData[],
+    format: FileFormat,
+    settings: ConversionSettings,
+    ctx?: ConvertContext,
+  ): Promise<FileData[]> {
+    const ffmpeg = this.#ffmpeg!;
+    const { input, output } = ffmpegCopyArgs(settings);
+    const entryName = `input.${format.extension}`;
+    const outputFiles: FileData[] = [];
+
+    for (const file of inputFiles) {
+      ctx?.throwIfAborted();
+      await ffmpeg.writeFile(entryName, new Uint8Array(file.bytes));
+      let code = -1;
+      const stdout = await this.getStdout(async () => {
+        code = await ffmpeg.exec([
+          "-hide_banner",
+          ...input,
+          "-i",
+          entryName,
+          "-f",
+          format.internal,
+          ...output,
+          "output",
+        ]);
+      });
+      ctx?.throwIfAborted();
+      await ffmpeg.deleteFile(entryName);
+
+      if (code !== 0) throw new Error(`FFmpeg could not copy the streams of ${file.name}.`);
+      // a start past the end makes FFmpeg seek back to the last keyframe and copy from there,
+      // and it calls a file without a single packet a success
+      const [, hours, minutes, seconds] = /Duration: (\d+):(\d+):([\d.]+)/.exec(stdout) ?? [];
+      const duration = Number(hours) * 3600 + Number(minutes) * 60 + Number(seconds);
+      if ((settings.start ?? 0) >= duration || stdout.includes("video:0kB audio:0kB")) {
+        throw new Error(
+          `Nothing of ${file.name} lies between the start and the end that were set.`,
+        );
+      }
+      const bytes = (await ffmpeg.readFile("output")) as Uint8Array;
+      await ffmpeg.deleteFile("output");
+      outputFiles.push({ name: file.name, bytes: new Uint8Array(bytes) });
+    }
+
+    ctx?.progress("Conversion complete!", 1);
+    return outputFiles;
+  }
+
   async doConvert(
     inputFiles: FileData[],
     inputFormat: FileFormat,
@@ -281,7 +366,12 @@ class FFmpegHandler implements FormatHandler {
     }
 
     ctx?.throwIfAborted();
-    ctx?.log("Reloading FFmpeg...");
+    // threads need SharedArrayBuffer, which a page only has when it is cross-origin isolated
+    this.#threads =
+      !this.#threadsHung &&
+      globalThis.crossOriginIsolated === true &&
+      THREADED_OUTPUTS.has(outputFormat.internal);
+    ctx?.log(this.#threads ? "Reloading FFmpeg with threads..." : "Reloading FFmpeg...");
     await this.reloadFFmpeg();
 
     if (ctx) {
@@ -309,6 +399,20 @@ class FFmpegHandler implements FormatHandler {
       });
     }
 
+    const settings = ctx?.settings ?? {};
+    // copied streams fit the container they came from, so this is limited to the same format
+    if (settings.copyStreams && sameFormat(inputFormat, outputFormat)) {
+      return this.#copyStreams(inputFiles, outputFormat, settings, ctx);
+    }
+    // the concat input below joins the files into one, which would get a single fade or cut
+    if (ffmpegAudioFilter(settings) && inputFiles.length > 1) {
+      const outputs: FileData[] = [];
+      for (const file of inputFiles) {
+        outputs.push(...(await this.doConvert([file], inputFormat, outputFormat, args, ctx)));
+      }
+      return outputs;
+    }
+
     let forceFPS = 0;
     if (inputFormat.mime === "image/png" || inputFormat.mime === "image/jpeg") {
       forceFPS = inputFiles.length < 30 ? 1 : 30;
@@ -332,7 +436,6 @@ class FFmpegHandler implements FormatHandler {
     // GIF's default palette causes heavy banding, so generate one from the input first.
     // This takes two passes because a single-pass split filter buffers every frame in memory.
     // Skipped on auto-fix retries that add "-vf", which can't be combined with "-lavfi".
-    const settings = ctx?.settings ?? {};
     const scale = ffmpegScaleFilter(settings);
     const usePalette =
       outputFormat.internal === "gif" &&
@@ -358,6 +461,9 @@ class FFmpegHandler implements FormatHandler {
       command.push("-vf", "setsar=1", "-target", "ntsc-dvd", "-pix_fmt", "rgb24");
     } else if (outputFormat.internal === "vcd") {
       command.push("-vf", "scale=352:288,setsar=1", "-target", "pal-vcd", "-pix_fmt", "rgb24");
+    } else if (outputFormat.internal === "webm") {
+      // VP8: the VP9 encoder this core picks by default crashes on its first frame
+      command.push("-c:v", "libvpx");
     } else if (outputFormat.internal === "asf") {
       command.push("-b:v", "15M", "-b:a", "192k");
     } else if (outputFormat.format === "ogg-vorbis") {
@@ -366,6 +472,18 @@ class FFmpegHandler implements FormatHandler {
       command.push("-c:a", "libopus");
     }
     command.push(...ffmpegSettingsArgs(settings));
+    const audioFilter = ffmpegAudioFilter(settings);
+    if (audioFilter) command.push("-af", audioFilter);
+    if (settings.normalize && !args?.includes("-ar")) {
+      // loudnorm works at 192 kHz and hands that on, so ask for the rate the file came in
+      const probe = await this.getStdout(async () => {
+        await this.#ffmpeg!.exec(["-hide_banner", "-i", `file_0.${inputFormat.extension}`]);
+      });
+      command.push("-ar", /Audio: .*?, (\d+) Hz/.exec(probe)?.[1] ?? "48000");
+    }
+    // FFmpeg gives the filters one thread per core, and with ten the multithreaded core hangs
+    // before the first frame (eight still work). The encoder keeps its own threads.
+    if (this.#threads) command.push("-filter_threads", "4");
     if (args) command.push(...args);
     if (scale && !usePalette) {
       // FFmpeg only honours the last "-vf", so join an existing one instead of adding another
@@ -375,11 +493,28 @@ class FFmpegHandler implements FormatHandler {
     }
     command.push("output");
 
+    let hung = false;
     const stdout = await this.getStdout(async () => {
-      await this.#ffmpeg!.exec(command);
+      const ffmpeg = this.#ffmpeg!;
+      const run = ffmpeg.exec(command);
+      if (!this.#threads) return void (await run);
+      hung = await stalls(
+        run,
+        (alive) => {
+          ffmpeg.on("log", alive);
+          return () => ffmpeg.off("log", alive);
+        },
+        STALL_MS,
+      );
     });
 
     ctx?.throwIfAborted();
+    if (hung) {
+      // the reload at the start of the next attempt ends the hung core
+      ctx?.log("FFmpeg stopped responding with threads, starting again without.", "warn");
+      this.#threadsHung = true;
+      return this.doConvert(inputFiles, inputFormat, outputFormat, args, ctx);
+    }
     ctx?.log("Cleaning up input files...");
     for (let i = 0; i < fileIndex; i++) {
       const entryName = `file_${i}.${inputFormat.extension}`;

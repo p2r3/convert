@@ -4,6 +4,7 @@ import type { ConvertContext } from "src/ui/ProgressStore.ts";
 import normalizeMimeType from "src/normalizeMimeType.ts";
 import * as mb from "mediabunny";
 import { changeExt } from "src/common/index.ts";
+import { hasAudioEdits } from "src/ConversionSettings.ts";
 
 const FORMATS = new Map<string, [name: string, input: mb.InputFormat, output: mb.OutputFormat]>([
   ["mp4", ["MPEG-4 Part 14", mb.MP4, new mb.Mp4OutputFormat()]],
@@ -78,6 +79,8 @@ class mediabunnyHandler implements FormatHandler {
     _args?: string[],
     ctx?: ConvertContext,
   ): Promise<FileData[]> {
+    // failing here sends the conversion on to a route through FFmpeg, which has the filters
+    if (hasAudioEdits(ctx?.settings ?? {})) throw new Error("mediabunny has no audio filters.");
     const outputFiles: FileData[] = [];
     const mbInputFormat = FORMATS.get(inputFormat.internal)?.[1];
     if (!mbInputFormat) throw new Error(`could not get format: ${inputFormat.internal}`);

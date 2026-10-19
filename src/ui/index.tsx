@@ -10,7 +10,7 @@ import { CurrentPage, Pages } from "./AppState";
 import "./components/StyledButton/index.css";
 import "built/liquid-glass-ui/src/liquid-glass.css";
 import "./glass.css";
-import "built/liquid-glass-ui/src/liquid-glass.js";
+import "./glass.ts";
 export { CurrentPage, LoadingToolsText, Pages, PopupData } from "./AppState";
 
 console.log("Rendering UI");

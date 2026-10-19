@@ -7,6 +7,7 @@ import {
   keepSmaller,
   resolveTargets,
   siblingKeys,
+  toolsFor,
   uniqueNames,
 } from "../src/batch.js";
 
@@ -124,4 +125,30 @@ test("siblingKeys finds the files a choice also applies to", () => {
   expect(siblingKeys(files, targets, "one", "to")).toEqual(["two"]);
   expect(siblingKeys(files, targets, "one", "from")).toEqual(["two", "four"]);
   expect(siblingKeys(files, targets, "gone", "to")).toEqual([]);
+});
+
+test("toolsFor offers the tools that fit the input", () => {
+  const png = Formats.PNG.builder("png").from();
+  const pdf = Formats.PDF.builder("pdf").from();
+  const mp4 = Formats.MP4.builder("mp4").from();
+
+  expect(toolsFor(png, 1, true)).toEqual(["ocr", "nobg", "upscaled-photo", "upscaled-drawing"]);
+  expect(toolsFor(pdf, 1, true)).toEqual(["ocr", "pdf-pages"]);
+  expect(toolsFor(mp4, 1, true)).toEqual(["contact-sheet", "upscaled-film", "upscaled-animation"]);
+  expect(toolsFor(Formats.MP3.builder("mp3").from(), 1, true)).toEqual([
+    "audio-check",
+    "audio-video",
+  ]);
+  expect(toolsFor(png, 3, false)).toEqual(["ocr", "nobg", "pdf-from-images"]);
+});
+
+test("toolsFor leaves out what cannot work: merging one PDF, upscaling without WebGPU", () => {
+  expect(toolsFor(Formats.PDF.builder("pdf").from(), 2, true)).toContain("pdf-merged");
+  expect(toolsFor(Formats.PNG.builder("png").from(), 1, false)).toEqual(["ocr", "nobg"]);
+  expect(toolsFor(Formats.MP4.builder("mp4").from(), 1, false)).toEqual(["contact-sheet"]);
+  // the check judges the file as it is, which a MIDI file has to be converted for first
+  expect(toolsFor(Formats.MIDI.builder("midi").from(), 1, true)).toEqual(["audio-video"]);
+  // a vector image has no pixels to read or cut out, and a GIF counts as video
+  expect(toolsFor(Formats.SVG.builder("svg").from(), 1, true)).toEqual([]);
+  expect(toolsFor(Formats.GIF.builder("gif").from(), 1, false)).toEqual([]);
 });

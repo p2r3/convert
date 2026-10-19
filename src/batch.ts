@@ -1,6 +1,7 @@
 import type { FileData, FileFormat, HandlerDefinition } from "./FormatHandler.js";
 import { stripExt } from "./common/index.js";
-import { sameFormat } from "./ConversionSettings.js";
+import { categoriesOf, sameFormat } from "./ConversionSettings.js";
+import { AUDIO_FILES, Category } from "./Formats.js";
 import normalizeMimeType from "./normalizeMimeType.js";
 import mime from "mime";
 
@@ -191,4 +192,39 @@ export function siblingKeys(
       return !!from && !!activeFrom && sameFormat(from[0], activeFrom[0]);
     })
     .map(([key]) => key);
+}
+
+/**
+ * The special outputs that fit an input and deserve a shortcut, as the `format` of their
+ * output: a list of 447 formats does not tell anyone that a PNG can be read or cut out.
+ * @param sameTypeCount How many of the selected files have this input format.
+ * @param hasWebGpu Whether the browser can run the upscalers at all.
+ */
+export function toolsFor(from: FileFormat, sameTypeCount: number, hasWebGpu: boolean): string[] {
+  if (from.mime === "application/pdf") {
+    return ["ocr", "pdf-pages", ...(sameTypeCount > 1 ? ["pdf-merged"] : [])];
+  }
+  const categories = categoriesOf(from);
+  // a GIF is both: it goes with video, where a single still is not what is asked for
+  if (categories.includes(Category.VIDEO)) {
+    return [
+      // a GIF is short and already shows its frames
+      ...(categories.includes(Category.IMAGE) ? [] : ["contact-sheet"]),
+      ...(hasWebGpu ? ["upscaled-film", "upscaled-animation"] : []),
+    ];
+  }
+  if (categories.includes(Category.IMAGE) && !categories.includes(Category.VECTOR)) {
+    return [
+      "ocr",
+      "nobg",
+      ...(hasWebGpu ? ["upscaled-photo", "upscaled-drawing"] : []),
+      ...(sameTypeCount > 1 ? ["pdf-from-images"] : []),
+    ];
+  }
+  if (categories.includes(Category.AUDIO)) {
+    // judged on the file itself, so only for the formats the check reads as they are
+    const direct = AUDIO_FILES.some((f) => sameFormat(f, from));
+    return [...(direct ? ["audio-check"] : []), "audio-video"];
+  }
+  return [];
 }

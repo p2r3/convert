@@ -13,7 +13,7 @@ import ConverterWorker from "./Converter.js?worker";
 import { CurrentPage, LoadingToolsText, Pages } from "./ui/AppState.js";
 import { signal } from "@preact/signals";
 import { Mode, ModeEnum } from "./ui/ModeStore.js";
-import { ProgressStore } from "./ui/ProgressStore.js";
+import { ProgressStore, ROUTE_FAILED } from "./ui/ProgressStore.js";
 import {
   altersContent,
   compressorsFor,
@@ -193,7 +193,7 @@ async function attemptConvertPath(
       abort.throwIfAborted();
 
       ProgressStore.log(
-        `Conversion path failed: ${pathString} (${handlerDef.name}: ${path[i].format.format} → ${path[i + 1].format.format}): ${e instanceof Error ? e.message : String(e)}`,
+        `${ROUTE_FAILED}${pathString} (${handlerDef.name}: ${path[i].format.format} → ${path[i + 1].format.format}): ${e instanceof Error ? e.message : String(e)}`,
         "error",
         handlerDef.name,
       );
@@ -203,7 +203,6 @@ async function attemptConvertPath(
       await window.traversionGraph.addDeadEndPath(path.slice(0, i + 2));
 
       ProgressStore.progress("Looking for a valid path...", 0);
-      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
       return null;
     } finally {
@@ -229,7 +228,7 @@ window.tryConvertByTraversing = async function (
 
   // the graph has no edge from a format to itself, so compressing takes a direct route
   if (sameFormat(from.format, to.format)) {
-    for (const [format, handler] of compressorsFor(to.format, window.handlerDefs)) {
+    for (const [format, handler] of compressorsFor(to.format, window.handlerDefs, settings)) {
       const attempt = await attemptConvertPath(files, [from, { format, handler }], abort, settings);
       if (!attempt) continue;
       // handlers name outputs after their own extension, which would turn photo.jpg into photo.jpeg

@@ -122,7 +122,8 @@ export async function extractSource(
   outPath: string,
 ) {
   const urlPath = new URL(requirement.url).pathname;
-  if (urlPath.endsWith(".tar.gz")) {
+  // ".tgz" is what npm-style package archives are called
+  if (urlPath.endsWith(".tar.gz") || urlPath.endsWith(".tgz")) {
     await extractTarball(outPath, bytes);
   } else if (urlPath.endsWith(".zip")) {
     await extractZip(outPath, bytes);

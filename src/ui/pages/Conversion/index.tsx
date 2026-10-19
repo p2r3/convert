@@ -12,6 +12,7 @@ import {
 import { Mode, ModeEnum } from "src/ui/ModeStore";
 import type { FileData } from "src/FormatHandler";
 import {
+  altersContent,
   applicableSettings,
   compressorsFor,
   COMPRESS_DEFAULTS,
@@ -25,6 +26,7 @@ import {
   groupByTarget,
   resolveTargets,
   siblingKeys,
+  toolsFor,
   uniqueNames,
   type Target,
   type TargetGroup,
@@ -35,12 +37,29 @@ import ConversionHeader from "src/ui/components/Conversion/ConversionHeader";
 import FormatExplorer from "src/ui/components/Conversion/FormatExplorer";
 import LoadingScreen from "src/ui/components/LoadingScreen";
 import Footer from "src/ui/components/Footer";
-import { ArrowLeft, ArrowRight, Minimize2, Plus, SlidersHorizontal } from "lucide-preact";
+import {
+  ArrowLeft,
+  ArrowRight,
+  AudioLines,
+  Clapperboard,
+  Combine,
+  Eraser,
+  ImageUpscale,
+  Images,
+  LayoutGrid,
+  Minimize2,
+  Plus,
+  ScanText,
+  Scissors,
+  SlidersHorizontal,
+} from "lucide-preact";
+import Chip from "src/ui/components/Chip";
 import { PopupData } from "src/ui";
 import { openPopup } from "src/ui/PopupStore";
-import FileInfoBadge from "src/ui/components/FileInfo";
+import FileInfoBadge, { formatFileSize } from "src/ui/components/FileInfo";
+import AudioReport, { readSummaries } from "src/ui/components/AudioReport";
 import { ConversionInProgress, CurrentPage, Pages } from "src/ui/AppState";
-import { ProgressStore } from "src/ui/ProgressStore";
+import { ProgressStore, ROUTE_FAILED } from "src/ui/ProgressStore";
 import StyledButton, { ButtonVariant } from "src/ui/components/StyledButton";
 import ConversionSettingsForm, {
   Settings,
@@ -50,6 +69,22 @@ import ConversionSettingsForm, {
 type ConversionStep = "select-from" | "select-to" | "converting";
 
 const NO_TARGET: Target = { from: null, to: null };
+
+/** How the shortcuts of {@link toolsFor} are shown, by the `format` of their output. */
+const TOOLS: Record<string, { label: string; icon: preact.JSX.Element }> = {
+  ocr: { label: "Read text (OCR)", icon: <ScanText size={14} /> },
+  nobg: { label: "Remove background", icon: <Eraser size={14} /> },
+  "upscaled-photo": { label: "Upscale photo 2×", icon: <ImageUpscale size={14} /> },
+  "upscaled-drawing": { label: "Upscale drawing 2×", icon: <ImageUpscale size={14} /> },
+  "upscaled-film": { label: "Upscale film 2×", icon: <ImageUpscale size={14} /> },
+  "upscaled-animation": { label: "Upscale animation 2×", icon: <ImageUpscale size={14} /> },
+  "pdf-pages": { label: "Split into pages", icon: <Scissors size={14} /> },
+  "pdf-merged": { label: "Merge PDFs", icon: <Combine size={14} /> },
+  "pdf-from-images": { label: "Combine into one PDF", icon: <Images size={14} /> },
+  "contact-sheet": { label: "Contact sheet", icon: <LayoutGrid size={14} /> },
+  "audio-check": { label: "Check audio", icon: <AudioLines size={14} /> },
+  "audio-video": { label: "Make a video", icon: <Clapperboard size={14} /> },
+};
 
 function countAvailableFormats(
   options: ConversionOptionsMap,
@@ -233,7 +268,13 @@ export default function Conversion() {
           continue;
         }
 
-        const settings = settingsFor(Settings.value, toFormat, compress ? COMPRESS_DEFAULTS : {});
+        const settings = settingsFor(
+          Settings.value,
+          toFormat,
+          compress ? COMPRESS_DEFAULTS : {},
+          fromFormat,
+        );
+        const logStart = ProgressStore.logs.value.length;
         const output = await window.tryConvertByTraversing(
           inputs,
           { handler: fromHandler, format: fromFormat },
@@ -244,7 +285,16 @@ export default function Conversion() {
 
         if (!output) {
           failed++;
-          summary.push(`${label}: failed, no working conversion route.`);
+          // the route tried first is the most direct one, so its error says most about why
+          const reason = ProgressStore.logs.value
+            .slice(logStart)
+            .find((log) => log.message.startsWith(ROUTE_FAILED))
+            ?.message.slice(ROUTE_FAILED.length)
+            .split("\n")[0];
+          summary.push(
+            `${label}: failed, no working conversion route.` +
+              (reason ? ` The first route gave: ${reason}` : ""),
+          );
           continue;
         }
         outputs.push(...output.files);
@@ -253,11 +303,14 @@ export default function Conversion() {
 
         let line = `${label}: via ${output.path.map((c) => c.format.format).join(" → ")}.`;
         if (compress) {
-          const saved = 1 - totalSize(output.files) / inputSize;
-          line =
-            saved > 0
-              ? `${label}: ${Math.round(saved * 100)}% smaller.`
-              : `${label}: could not be made smaller, original kept.`;
+          const outputSize = totalSize(output.files);
+          const saved = 1 - outputSize / inputSize;
+          const sizes = `${formatFileSize(inputSize)} → ${formatFileSize(outputSize)}`;
+          if (saved > 0) line = `${label}: ${Math.round(saved * 100)}% smaller (${sizes}).`;
+          else if (altersContent(settings)) line = `${label}: done (${sizes}).`;
+          else line = `${label}: could not be made smaller, original kept.`;
+          if (settings.protect) line += " Protected with a password.";
+          else if (settings.password) line += " Unlocked: it opens without a password now.";
         }
         // a setting that silently did nothing is worse than no setting, above all "remove metadata"
         const lastHandler = output.path.at(-1)?.handler.name ?? "";
@@ -268,12 +321,19 @@ export default function Conversion() {
       }
 
       const password = ZipPassword.value;
-      if (outputs.length > 1 || (outputs.length === 1 && password)) {
-        const zipName = `${stripExt(entries[0][1].name)}-converted.zip`;
-        await downloadAsZip(outputs, zipName, password);
-      } else if (outputs.length === 1) {
-        downloadFile(outputs[0].bytes, outputs[0].name, outputMime);
-      }
+      const save = async () => {
+        if (outputs.length > 1 || (outputs.length === 1 && password)) {
+          const zipName = `${stripExt(entries[0][1].name)}-converted.zip`;
+          await downloadAsZip(outputs, zipName, password);
+        } else if (outputs.length === 1) {
+          downloadFile(outputs[0].bytes, outputs[0].name, outputMime);
+        }
+      };
+      // a report is read here first, and saved only when asked for
+      const reports = groups.every((group) => group.to[0].format === "audio-check")
+        ? readSummaries(outputs)
+        : [];
+      if (!reports.length) await save();
 
       let title = "Conversion complete!";
       if (failed === groups.length) title = "Conversion failed";
@@ -284,9 +344,8 @@ export default function Conversion() {
         contents: (
           <>
             <h1>{title}</h1>
-            {summary.map((line) => (
-              <p key={line}>{line}</p>
-            ))}
+            {reports.length > 0 && <AudioReport summaries={reports} onSave={save} />}
+            {(!reports.length || failed > 0) && summary.map((line) => <p key={line}>{line}</p>)}
           </>
         ),
       };
@@ -327,7 +386,9 @@ export default function Conversion() {
 
   const settingKeys = [
     ...new Set(
-      Object.values(targets).flatMap<SettingKey>((t) => (t.to ? applicableSettings(t.to[0]) : [])),
+      Object.values(targets).flatMap<SettingKey>((t) =>
+        t.to ? applicableSettings(t.to[0], t.from?.[0]) : [],
+      ),
     ),
   ];
 
@@ -339,6 +400,14 @@ export default function Conversion() {
     };
     openPopup();
   };
+
+  const tools =
+    step === "select-to" && fromOption
+      ? toolsFor(fromOption[0], toSiblings.length + 1, "gpu" in navigator).flatMap((id) => {
+          const option = [...allOptions].find(([format]) => format.to && format.format === id);
+          return option ? [{ id, option }] : [];
+        })
+      : [];
 
   const canProceed = step === "select-from" ? !!fromOption : allReady;
   const multiple = entries.length > 1;
@@ -373,15 +442,30 @@ export default function Conversion() {
             onClickTo={handleFromToClickTo}
             showAll={showAll}
             onShowAll={() => setShowAll(true)}
+            tools={
+              tools.length > 0 &&
+              tools.map(({ id, option }) => {
+                const selected = toOption?.[0].format === id;
+                return (
+                  <Chip
+                    key={id}
+                    label={TOOLS[id].label}
+                    icon={TOOLS[id].icon}
+                    selected={selected}
+                    onClick={() => handleToSelect(selected ? null : option)}
+                  />
+                );
+              })
+            }
           />
         )}
       </main>
 
       {step !== "converting" &&
-        // h() because Preact's JSX types don't know this custom element (built/liquid-glass-ui)
+        // h() because Preact's JSX types don't know this custom element (src/ui/glass.ts)
         h(
-          "liquid-glass",
-          { class: "conversion-dock", refraction: true },
+          "dispersive-glass",
+          { class: "conversion-dock", refraction: true, "refraction-scale": 28 },
           <div className="conversion-action-bar">
             <div className="conversion-action-files">
               {entries.map(([key, file]) => (

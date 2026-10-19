@@ -6,6 +6,7 @@
   --danger: #ef4444;
   --danger-transparent: color-mix(in srgb, var(--danger) 10%, transparent);
   --warning: #b45309;
+  --ok: #0b6652;
   --log-plugin: #9333ea;
 
   /* Background */
@@ -37,6 +38,7 @@
 
 :root[data-theme="dark"] {
   --warning: #f59e0b;
+  --ok: #6fd3b8;
   --log-plugin: #a855f7;
 
   /* Background */

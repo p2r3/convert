@@ -130,13 +130,22 @@ export default [
       "emscripten/emsdk:6.0.10@sha256:e077d54e2b8970575ebc4f185ac1de0b95c05f2b266134d4ba27449af7aebf65",
   },
   {
-    name: "u2netp",
-    url: "https://github.com/danielgatis/rembg/releases/download/v0.0.0/u2netp.onnx",
-    hash: ["sha256", "309c8469258dda742793dce0ebea8e6dd393174f89934733ecc8b14c76f4ddd8"],
+    name: "silueta",
+    url: "https://github.com/danielgatis/rembg/releases/download/v0.0.0/silueta.onnx",
+    hash: ["sha256", "75da6c8d2f8096ec743d071951be73b4a8bc7b3e51d9a6625d63644f90ffeedb"],
   },
   {
     name: "liquid-glass-ui",
     url: "https://github.com/hwyuanzi/LiquidGlass-UI/archive/293328c3a983b55460b488bffb2caa6f25729c2f.tar.gz",
     hash: ["sha256", "f49c27196a5197414be60c5a572ab1bbda72018ab14681da36c76239e218542f"],
+  },
+  {
+    // from SheetJS's own server: the "xlsx" package on npm stopped at 0.18.5, which has known holes
+    name: "sheetjs",
+    url: "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
+    hash: ["sha256", "8dc73fc3b00203e72d176e85b50938627c7b086e607c682e8d3c22c02bb99fe8"],
+    copy: {
+      "xlsx.d.mts": "xlsx.d.mts",
+    },
   },
 ] satisfies RequirementsConfig;

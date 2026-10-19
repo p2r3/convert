@@ -3,12 +3,51 @@
   <head>
     <meta charset="UTF-8" />
     <script>
+      // Opened straight from disk, a browser blocks the page's own scripts, workers and
+      // WebAssembly. Say so, where the page would otherwise stay blank.
+      if (location.protocol === "file:") {
+        document.write(
+          '<body style="font: 16px/1.5 system-ui, sans-serif; margin: 3em auto; max-width: 34em; padding: 0 1em">' +
+            "<h1>This app can't run from a file</h1>" +
+            "<p>Double-click <b>start.command</b> in the project folder (macOS), " +
+            "or run <code>bun run start</code> there. Both open the app at a web address.</p>",
+        );
+      }
+    </script>
+    <script>
       // we shouldnt be on /convert but some weird servers may allow us there
       if (!location.pathname.endsWith("/") && !location.pathname.endsWith(".html")) {
         location.replace(location.pathname + "/" + location.search + location.hash);
       }
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      // A host that cannot send the cross-origin isolation headers, such as GitHub Pages, gets
+      // them from a service worker, so that conversions can use threads. Not on localhost:
+      // there the server sends them (vite.config.js), and a worker would stay behind on the
+      // port and get in the way of whatever is served from it next.
+      window.coi = {
+        shouldRegister: () => !["localhost", "127.0.0.1", "[::1]"].includes(location.hostname),
+        quiet: true,
+      };
+    </script>
+    <script src="coi-serviceworker.min.js"></script>
+    <script>
+      // The worker can take this page over just after the page itself was loaded without it,
+      // and coi-serviceworker then leaves it as it is, not isolated. Reload it, but only once
+      // per tab: a browser that cannot be isolated this way must not reload forever.
+      const reloadUnderWorker = () => {
+        const worker = navigator.serviceWorker;
+        if (window.crossOriginIsolated !== false || !worker.controller) return;
+        if (sessionStorage.getItem("reloaded-under-worker")) return;
+        sessionStorage.setItem("reloaded-under-worker", "1");
+        location.reload();
+      };
+      if (navigator.serviceWorker) {
+        navigator.serviceWorker.addEventListener("controllerchange", reloadUnderWorker);
+        reloadUnderWorker();
+      }
+    </script>
     <script type="module" src="./src/ui/scripts/theme-detection.ts"></script>
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="base.css" />
@@ -34,4 +73,22 @@
     <div id="app"></div>
   </body>
   <script type="module" src="src/ui/index.tsx"></script>
+  <script>
+    // A plain file server (python -m http.server, ...) hands this source page out as it is, and
+    // a browser cannot run its TypeScript: the page stays blank. Open the build instead. The
+    // build drops the .tsx tag and the development server adds its client, so neither gets here.
+    if (
+      document.querySelector('script[src="src/ui/index.tsx"]') &&
+      !document.querySelector('script[src$="@vite/client"]')
+    ) {
+      fetch("dist/index.html", { method: "HEAD" }).then((response) => {
+        if (response.ok) return location.replace("dist/");
+        document.body.innerHTML =
+          '<div style="font: 16px/1.5 system-ui, sans-serif; margin: 3em auto; max-width: 34em; padding: 0 1em">' +
+          "<h1>This folder holds the app's source, not the app</h1>" +
+          "<p>Double-click <b>start.command</b> in the project folder (macOS), or run " +
+          "<code>bun run build</code> there and serve the <code>dist</code> folder.</p></div>";
+      });
+    }
+  </script>
 </html>

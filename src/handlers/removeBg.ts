@@ -6,9 +6,9 @@ import { canvasToBlob, createCanvas } from "src/common/canvas.ts";
 import { changeExt } from "src/common/index.ts";
 import * as ort from "onnxruntime-web/wasm";
 import wasmUrl from "onnxruntime-web/ort-wasm-simd-threaded.wasm?url";
-// shortcut: u2netp is 4.6 MB and rough on hair and fine edges; rembg's silueta.onnx (44 MB) takes
-// the same input and output, so swapping the recipe and this path is all an upgrade needs
-import modelUrl from "built/u2netp/u2netp.onnx?url";
+// silueta is U²-Net reduced from 176 MB to 44 MB. It takes the same input and gives the same
+// output as the 4.6 MB u2netp that was here before, with cleaner edges.
+import modelUrl from "built/silueta/silueta.onnx?url";
 
 // its own format, so that picking it is a request to cut out the subject rather than a plain PNG
 const NO_BACKGROUND = new FormatDefinition(
@@ -50,8 +50,6 @@ class removeBgHandler implements FormatHandler {
       ctx?.progress("Loading the background removal model...", 0);
       // served by this site instead of the CDN the runtime would otherwise look at
       ort.env.wasm.wasmPaths = { wasm: wasmUrl };
-      // more threads need cross-origin isolation, which static hosts like GitHub Pages don't send
-      ort.env.wasm.numThreads = 1;
       this.#session = ort.InferenceSession.create(modelUrl, { executionProviders: ["wasm"] });
       this.#session.catch(() => (this.#session = undefined));
     }

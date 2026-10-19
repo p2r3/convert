@@ -24,6 +24,9 @@ export interface IProgressStore {
   log: (message: string, level?: LogLevel, pluginName?: string, relayToConsole?: boolean) => void;
 }
 
+/** How the log line of a route that did not work starts. */
+export const ROUTE_FAILED = "Conversion path failed: ";
+
 export const ProgressStore = {
   percent: signal(0),
   message: signal(""),

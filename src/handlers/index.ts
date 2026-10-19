@@ -113,8 +113,22 @@ const HANDLERS = {
   minifyJs: ["./minify.ts", "minifyJsHandler"],
   minifyJson: ["./minify.ts", "minifyJsonHandler"],
   mergePdf: [],
+  compressPdf: ["./pdfTools.ts", "compressPdfHandler"],
+  splitPdf: ["./pdfTools.ts", "splitPdfHandler"],
+  imagesToPdf: ["./pdfTools.ts", "imagesToPdfHandler"],
+  oxipng: [],
+  threeModels: [],
+  subtitles: [],
+  sheetjs: [],
+  vcard: [],
+  outlookMsg: [],
+  upscale: [],
+  upscaleVideo: ["./upscale.ts", "upscaleVideoHandler"],
   ocr: [],
   removeBg: [],
+  contactSheet: ["./videoTools.ts", "contactSheetHandler"],
+  audioVideo: ["./videoTools.ts", "audioVideoHandler"],
+  audioCheck: [],
 } as const;
 
 // handlers can only be named things listed above

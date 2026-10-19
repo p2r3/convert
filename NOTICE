@@ -11,14 +11,57 @@ files with the date of the change.
 Acknowledgements
 ----------------
 
-Two features of this fork were inspired by other open-source converters. The
+Several features of this fork were inspired by other open-source projects. The
 ideas were reimplemented on top of this project's own handlers; no code was
-taken from either.
+taken from any of them.
 
 VERT (AGPL-3.0)          https://github.com/VERT-sh/VERT
   Per-conversion output settings.
 CompressZ (Apache-2.0)   https://github.com/ADJ189/CompressZ
   Two-pass GIF palette generation, and bundling several outputs in one zip.
+Stirling-PDF (MIT, with separately licensed directories)
+                         https://github.com/Stirling-Tools/Stirling-PDF
+  Splitting a PDF into pages, compressing it, rotating its pages and keeping
+  a selection of pages. Written here on mupdf; no code was taken.
+LosslessCut (GPL-2.0-only), Mikael Finstad
+                         https://github.com/mifi/lossless-cut
+  Cutting video and audio by copying the streams instead of re-encoding them.
+Liquid Glass Studio (MIT), Copyright (c) 2024 Charles Yin
+                         https://github.com/iyinchao/liquid-glass-studio
+  The colour dispersion at the edge of the glass, done here in an SVG filter
+  instead of a shader.
+ConvertX (AGPL-3.0)      https://github.com/C4illin/ConvertX
+  Its lists of supported formats showed which formats this project lacked,
+  and its converters for vCard and Outlook messages were read to see what
+  they produce. The conversions here are written on other libraries; no
+  code was taken.
+Upscayl (AGPL-3.0)       https://github.com/upscayl/upscayl
+Enhance (MIT), Addy Osmani
+                         https://github.com/addyosmani/enhance
+Upscaler Studio (MIT)    https://github.com/avelinocarloscorrea/upscaler-studio
+  Upscaling images and video in the browser. From Upscaler Studio comes the
+  combination of WebSR with mediabunny for video. No code was taken from
+  any of the three.
+background-removal-js (AGPL-3.0), IMG.LY
+                         https://github.com/imgly/background-removal-js
+  The reason this fork moved to a larger background removal model. Neither
+  its code nor its models are included: AGPL-3.0 cannot be combined with a
+  work under GPL version 2 only.
+audiosaw (AGPL-3.0)      https://github.com/andrewnakas/audiosaw
+AudioMass (MIT)          https://github.com/pkalogiros/AudioMass
+  The audio edits: evening out loudness, fades, mono, reversing, cutting
+  silence and changing speed. Done here with FFmpeg's filters.
+PDFCraft (AGPL-3.0)      https://github.com/PDFCraftTool/pdfcraft
+pdfToPng (MIT)           https://github.com/Durgeshwar-AI/pdfToPng
+  Opening and setting PDF passwords, page numbers, watermarks and putting
+  pictures into one PDF. Written here on mupdf.
+limitPNG (no clear licence)
+                         https://github.com/nullice/limitPNG
+  Reducing the colours of a PNG and then optimising it, and showing the size
+  before and after. Done here with ImageMagick and OxiPNG.
+awesome-video (CC0-1.0)  https://github.com/krzemienski/awesome-video
+  The list where the contact sheet and the song-to-video tool were found.
+  No code was taken from any of these six.
 
 Third-party code and data added by this fork
 --------------------------------------------
@@ -33,10 +76,21 @@ Arachnidium (MIT), p2r3                 https://github.com/p2r3/Arachnidium
   The idea of minifying web formats and of keeping the original when the
   result is not smaller. Reimplemented here; no code was taken.
 ONNX Runtime Web (MIT), Microsoft       https://github.com/microsoft/onnxruntime
-U2-Net "u2netp" model (Apache-2.0), Xuebin Qin et al.
-                                        https://github.com/xuebinqin/U-2-Net
-  Background removal. The model file is fetched at build time from the rembg
-  releases (https://github.com/danielgatis/rembg), see recipe/requirements.config.ts.
+"silueta" model, Kikedao, after U2-Net (Apache-2.0) by Xuebin Qin et al.
+                                        https://github.com/xuebinqin/U-2-Net/issues/295
+  Background removal. A copy of the U2-Net weights reduced from 176 MB to
+  44 MB. Its author published it in the U2-Net issue tracker for others to
+  use and add to the pretrained models, without a licence statement of its
+  own; the weights it derives from are Apache-2.0. The file is fetched at
+  build time from the rembg releases (https://github.com/danielgatis/rembg,
+  MIT), see recipe/requirements.config.ts.
+jSquash OxiPNG (Apache-2.0), Jamie Sinclair
+                                        https://github.com/jamsinclair/jSquash
+Squoosh (Apache-2.0), Google            https://github.com/GoogleChromeLabs/squoosh
+OxiPNG (MIT), Copyright (c) 2016 Joshua Holmer
+                                        https://github.com/oxipng/oxipng
+  Making a PNG smaller when it is converted to its own format. jSquash
+  packages the codec that Squoosh built from OxiPNG.
 tesseract.js and tesseract.js-core (Apache-2.0), naptha
                                         https://github.com/naptha/tesseract.js
 Tesseract OCR and its language data (Apache-2.0)
@@ -47,8 +101,48 @@ LiquidGlass UI (MIT), Copyright (c) 2026 Hollan Yuan
   The glass material of the action bar and the dialogs. Fetched at build time,
   see recipe/requirements.config.ts.
 
-Merging PDFs, resizing, trimming and removing metadata use libraries the
-project already had: mupdf, ImageMagick, FFmpeg and mediabunny.
+WebSR (MIT), Copyright (c) 2023 Sam Bhattacharyya
+                                        https://github.com/sb2702/websr
+Anime4K (MIT), Copyright (c) 2019 bloc97
+                                        https://github.com/bloc97/Anime4K
+  Upscaling images and video. WebSR implements the Anime4K networks for
+  WebGPU and comes with their weights, and with weights its author trained
+  for filmed footage.
+SheetJS Community Edition (Apache-2.0)  https://git.sheetjs.com/sheetjs/sheetjs
+  Reading and writing spreadsheets. Fetched at build time from SheetJS's own
+  server, see recipe/requirements.config.ts.
+msgreader (Apache-2.0), HiraokaHyperTools
+                                        https://github.com/HiraokaHyperTools/msgreader
+iconv-lite (MIT), decompressrtf (BSD-2-Clause)
+  Reading Outlook messages.
+coi-serviceworker (MIT), Guido Zuidhof and contributors
+                                        https://github.com/gzuidhof/coi-serviceworker
+  The service worker that makes the page cross-origin isolated on hosts that
+  cannot send the headers for it.
+ffmpeg.wasm multithreaded core (GPL-2.0-or-later)
+                                        https://github.com/ffmpegwasm/ffmpeg.wasm
+  H.264 encoding on several threads.
+audiocheck (MIT), Copyright (c) 2026 Lucas Van De Weerd
+                                        https://github.com/Gitguy268/audiocheck
+  "Check audio". src/handlers/audiocheck/ is a copy of its analysis and
+  decoding code with two marked changes, and test/handlers/audiocheck.test.ts
+  a copy of its tests.
+music-metadata (MIT), Borewit           https://github.com/Borewit/music-metadata
+  with its dependencies, MIT except ieee754 (BSD-3-Clause)
+fft.js (MIT), Fedor Indutny             https://github.com/indutny/fft.js
+loudness-worklet (MIT), lcweden         https://github.com/lcweden/loudness-worklet
+  The worklet file is copied unmodified into the build, see vite.config.js.
+@noble/hashes (MIT), Paul Miller        https://github.com/paulmillr/noble-hashes
+  Reading the header of a music file, its spectrum, its loudness and true
+  peak, and the MD5 of its samples, for "Check audio".
+
+3D model formats use the loaders and exporters of three.js (MIT), subtitles
+use FFmpeg, and the image formats added in this round use ImageMagick with
+its LibRaw; the project had all three already.
+
+Merging, splitting, compressing and rotating PDFs, resizing, trimming, cutting
+without re-encoding and removing metadata use libraries the project already
+had: mupdf, ImageMagick, FFmpeg (ffmpeg.wasm) and mediabunny.
 
 Licensing notes
 ---------------
@@ -71,9 +165,13 @@ and compatible with GPL version 3:
   @aiden0z/pptx-renderer       Apache-2.0
   bson, comlink, less, pdf-parse, wabt    Apache-2.0
   tesseract.js, tesseract.js-core        Apache-2.0 (added by this fork)
-  U2-Net "u2netp" model weights          Apache-2.0 (added by this fork)
+  @jsquash/oxipng, wasm-feature-detect   Apache-2.0 (added by this fork)
+  SheetJS, @kenjiuno/msgreader           Apache-2.0 (added by this fork)
+  "silueta" model weights                derived from Apache-2.0 weights, no
+                                         licence statement of its own (added
+                                         by this fork, see above)
 
-@ffmpeg/core is GPL-2.0-or-later. The mediabunny packages are MPL-2.0, which
+@ffmpeg/core and @ffmpeg/core-mt are GPL-2.0-or-later. The mediabunny packages are MPL-2.0, which
 can be combined with the GPL. The remaining dependencies are under MIT, ISC,
 BSD, OFL or similarly permissive licences.
 

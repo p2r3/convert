@@ -32,9 +32,10 @@ bun run fmt:check
 bun run build
 bun run cache:build
 bun test ./test/
+ISOLATED=1 bun test ./test/commonFormats.test.ts
 ```
 
-The tests come last because the conversion tests open the build in `dist/` in a browser.
+The tests come last because the conversion tests open the build in `dist/` in a browser. The last line runs them once more on a cross-origin isolated page, where FFmpeg, ONNX Runtime and OxiPNG use threads; that is how the site is served.
 
 Adding a file format? The README's [Contributing](README.md#contributing) section explains how a handler is written and what a format request needs.
 

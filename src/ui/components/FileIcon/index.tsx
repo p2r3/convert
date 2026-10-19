@@ -32,6 +32,8 @@ function loadIconBundle(): Promise<IconBundle> {
         bundleCache = bundle;
         return bundle;
       });
+    // a failed load must not be kept, or no icon shows until the page is reloaded
+    loadPromise.catch(() => (loadPromise = null));
   }
   return loadPromise;
 }
@@ -95,7 +97,8 @@ export default function FileIcon({
   const [bundle, setBundle] = useState<IconBundle | null>(bundleCache);
 
   useEffect(() => {
-    loadIconBundle().then(setBundle);
+    // without the bundle the icon stays empty; the next icon to mount tries again
+    loadIconBundle().then(setBundle, () => {});
   }, []);
 
   const logical = resolveLogical(extension, mimeType, bundle?.extensions ?? null, category);

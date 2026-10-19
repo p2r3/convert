@@ -8,7 +8,7 @@ The build system is based on **recipes**. Each recipe declares its `requirements
 bun run build:add <requirement_name> <source_url>
 ```
 
-The source url should be a plain file, .tar.gz (.xz, .zst, .bz2), or .zip. It's either unpacked or put directly into the `built/<requirement_name>` folder.
+The source url should be a plain file, .tar.gz (.tgz, .xz, .zst, .bz2), or .zip. It's either unpacked or put directly into the `built/<requirement_name>` folder.
 
 Examples:
 

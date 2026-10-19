@@ -23,6 +23,16 @@ declare global {
   }
 }
 
+// With ISOLATED=1 the build is served the way its real hosts serve it, cross-origin isolated,
+// which switches FFmpeg, ONNX Runtime and OxiPNG to threads. Without it, as a host that sends
+// no such headers would, before the service worker has taken over.
+const headers: Record<string, string> = process.env.ISOLATED
+  ? {
+      "Cross-Origin-Opener-Policy": "same-origin",
+      "Cross-Origin-Embedder-Policy": "require-corp",
+    }
+  : {};
+
 // Set up a basic webserver to host the distribution build
 const server = Bun.serve({
   async fetch(req) {
@@ -31,7 +41,7 @@ const server = Bun.serve({
     if (path.startsWith("/test/")) path = "../test/resources/" + path.slice(6);
     const file = Bun.file(`${__dirname}/../dist/${path}`);
     if (!(await file.exists())) return new Response("Not Found", { status: 404 });
-    return new Response(file);
+    return new Response(file, { headers });
   },
   port: 0,
 });
@@ -53,7 +63,8 @@ await Promise.all([
   page.goto(`http://localhost:${server.port}/convert/index.html`),
 ]);
 
-console.log("Setup finished.");
+const isolated = await page.evaluate(() => crossOriginIsolated);
+console.log(`Setup finished, ${isolated ? "cross-origin isolated" : "not isolated"}.`);
 
 const dummyHandler: FormatHandler = {
   name: "dummy" as HandlerName,
@@ -270,7 +281,7 @@ test(
  * @param input Text, or `"photo"` for a noisy JPEG, `"photo-low"` for the same at low quality,
  * `"photo-exif"` for the same with an EXIF block, `"words"` for a PNG of black text on white,
  * `"words-pdf"` for that PNG as a PDF, `"two-pdfs"` for two of those PDFs, `"disc"` for a PNG of
- * a dark disc on white.
+ * a dark disc on white, `"disc-clear"` for that disc on a transparent background.
  */
 function convertGenerated(
   input: string,
@@ -305,9 +316,11 @@ function convertGenerated(
         ctx.font = "64px sans-serif";
         ctx.fillText("Convert 2026", 40, 120);
         bytes = await toBytes("image/png");
-      } else if (input === "disc") {
-        ctx.fillStyle = "white";
-        ctx.fillRect(0, 0, 600, 200);
+      } else if (input.startsWith("disc")) {
+        if (input === "disc") {
+          ctx.fillStyle = "white";
+          ctx.fillRect(0, 0, 600, 200);
+        }
         ctx.fillStyle = "black";
         ctx.arc(300, 100, 80, 0, 2 * Math.PI);
         ctx.fill();
@@ -343,6 +356,8 @@ function convertGenerated(
         width: 0,
         cornerAlpha: -1,
         centreAlpha: -1,
+        cornerRed: -1,
+        centreRed: -1,
       };
       try {
         const image = await createImageBitmap(new Blob([output as BlobPart]));
@@ -350,8 +365,10 @@ function convertGenerated(
         canvas.height = image.height;
         ctx.drawImage(image, 0, 0);
         description.width = image.width;
-        description.cornerAlpha = ctx.getImageData(2, 2, 1, 1).data[3];
-        description.centreAlpha = ctx.getImageData(image.width / 2, image.height / 2, 1, 1).data[3];
+        const corner = ctx.getImageData(2, 2, 1, 1).data;
+        const centre = ctx.getImageData(image.width / 2, image.height / 2, 1, 1).data;
+        [description.cornerRed, , , description.cornerAlpha] = corner;
+        [description.centreRed, , , description.centreAlpha] = centre;
       } catch {
         // not an image
       }
@@ -416,6 +433,253 @@ test(
     expect(clip!.size).toBeLessThan(whole!.size / 2);
   },
   { timeout: 120000 },
+);
+
+test(
+  "mp4 → mp4 with the copy setting cuts without re-encoding",
+  async () => {
+    const input = Bun.file(`${__dirname}/resources/doom.mp4`).size;
+    const copy = await attemptConversion(["doom.mp4"], Formats.MP4, Formats.MP4, {
+      copyStreams: true,
+      end: 1,
+    });
+    const pastTheEnd = await attemptConversion(["doom.mp4"], Formats.MP4, Formats.MP4, {
+      copyStreams: true,
+      start: 30,
+    });
+
+    expect(copy).toBeTruthy();
+    // mediabunny is first in line for MP4, and it would re-encode
+    expect(copy!.path.at(-1)!.handler.name).toBe("FFmpeg");
+    expect(copy!.files.map((file) => file.name)).toEqual(["doom.mp4"]);
+    // 1 of 2.4 seconds at the bitrate of the original; a re-encode comes out far smaller
+    expect(copy!.size).toBeGreaterThan(input * 0.4);
+    expect(copy!.size).toBeLessThan(input * 0.7);
+    // an empty file is not a result
+    expect(pastTheEnd).toBeNull();
+  },
+  { timeout: 120000 },
+);
+
+// a tetrahedron as an ASCII STL
+const STL = `solid tetrahedron
+${["0 0 0|0 1 0|1 0 0", "0 0 0|1 0 0|0 0 1", "0 0 0|0 0 1|0 1 0", "1 0 0|0 1 0|0 0 1"]
+  .map(
+    (facet) =>
+      `facet normal 0 0 0\nouter loop\nvertex ${facet.replaceAll("|", "\nvertex ")}\nendloop\nendfacet`,
+  )
+  .join("\n")}
+endsolid tetrahedron`;
+
+test(
+  "stl → obj, glb, ply and usdz through the three.js exporters",
+  async () => {
+    const obj = await convertGenerated(STL, Formats.STL, Formats.OBJ);
+    const glb = await convertGenerated(STL, Formats.STL, Formats.GLB);
+    const ply = await convertGenerated(STL, Formats.STL, Formats.PLY);
+    const usdz = await convertGenerated(STL, Formats.STL, Formats.USDZ);
+
+    expect(obj!.handlers.at(-1)).toBe("threeModels");
+    // four triangles, each with its own three corners
+    expect(obj!.text.match(/^v /gm)).toHaveLength(12);
+    expect(obj!.text.match(/^f /gm)).toHaveLength(4);
+    expect(glb!.text.startsWith("glTF")).toBe(true);
+    expect(ply!.text.startsWith("ply")).toBe(true);
+    expect(ply!.text).toContain("element face 4");
+    // a USDZ is a zip
+    expect(usdz!.text.startsWith("PK")).toBe(true);
+  },
+  { timeout: 60000 },
+);
+
+test(
+  "stl → png goes on from the model handler to the renderer",
+  async () => {
+    const image = await convertGenerated(STL, Formats.STL, Formats.PNG);
+
+    expect(image!.handlers.slice(-2)).toEqual(["threeModels", "threejs"]);
+    expect(image!.width).toBe(960);
+  },
+  { timeout: 60000 },
+);
+
+const SRT = "1\n00:00:01,000 --> 00:00:02,500\nHello\n\n2\n00:00:03,000 --> 00:00:04,000\nWorld\n";
+
+test(
+  "srt ↔ vtt and srt → ass keep the cues and their times",
+  async () => {
+    const vtt = await convertGenerated(SRT, Formats.SRT, Formats.VTT);
+    const ass = await convertGenerated(SRT, Formats.SRT, Formats.ASS);
+    const back = await convertGenerated(vtt!.text, Formats.VTT, Formats.SRT);
+
+    expect(vtt!.handlers.at(-1)).toBe("subtitles");
+    expect(vtt!.text.startsWith("WEBVTT")).toBe(true);
+    expect(vtt!.text).toContain("00:01.000 --> 00:02.500\nHello");
+    expect(ass!.text).toContain("[Script Info]");
+    expect(ass!.text).toMatch(/Dialogue: .*0:00:03\.00,0:00:04\.00.*World/);
+    expect(back!.text).toContain("00:00:03,000 --> 00:00:04,000\nWorld");
+  },
+  { timeout: 60000 },
+);
+
+test(
+  "png → hdr uses a format ImageMagick has no MIME type for",
+  async () => {
+    const hdr = await convertGenerated("words", Formats.PNG, {
+      mime: "image/x-hdr",
+      format: "hdr",
+    });
+
+    expect(hdr!.handlers.at(-1)).toBe("ImageMagick");
+    expect(hdr!.text.startsWith("#?RADIANCE")).toBe(true);
+  },
+  { timeout: 60000 },
+);
+
+// one textured triangle as Collada; the texture is a file that does not exist
+const DAE = `<?xml version="1.0"?>
+<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">
+<asset><up_axis>Y_UP</up_axis></asset>
+<library_images><image id="img"><init_from>missing.png</init_from></image></library_images>
+<library_effects><effect id="fx"><profile_COMMON>
+<newparam sid="surf"><surface type="2D"><init_from>img</init_from></surface></newparam>
+<newparam sid="samp"><sampler2D><source>surf</source></sampler2D></newparam>
+<technique sid="common"><lambert><diffuse><texture texture="samp" texcoord="UV"/></diffuse></lambert></technique>
+</profile_COMMON></effect></library_effects>
+<library_materials><material id="mat"><instance_effect url="#fx"/></material></library_materials>
+<library_geometries><geometry id="geo"><mesh>
+<source id="pos"><float_array id="pos-a" count="9">0 0 0 1 0 0 0 1 0</float_array><technique_common><accessor source="#pos-a" count="3" stride="3"><param name="X" type="float"/><param name="Y" type="float"/><param name="Z" type="float"/></accessor></technique_common></source>
+<source id="uv"><float_array id="uv-a" count="6">0 0 1 0 0 1</float_array><technique_common><accessor source="#uv-a" count="3" stride="2"><param name="S" type="float"/><param name="T" type="float"/></accessor></technique_common></source>
+<vertices id="vtx"><input semantic="POSITION" source="#pos"/></vertices>
+<triangles count="1" material="m"><input semantic="VERTEX" source="#vtx" offset="0"/><input semantic="TEXCOORD" source="#uv" offset="1" set="0"/><p>0 0 1 1 2 2</p></triangles>
+</mesh></geometry></library_geometries>
+<library_visual_scenes><visual_scene id="scene"><node id="n"><instance_geometry url="#geo"><bind_material><technique_common><instance_material symbol="m" target="#mat"/></technique_common></bind_material></instance_geometry></node></visual_scene></library_visual_scenes>
+<scene><instance_visual_scene url="#scene"/></scene>
+</COLLADA>`;
+
+test(
+  "dae → glb converts directly when a texture file is missing",
+  async () => {
+    const glb = await convertGenerated(DAE, Formats.DAE, Formats.GLB);
+
+    expect(glb!.text.startsWith("glTF")).toBe(true);
+    // one step: an exporter that gave up on the texture would send this through OBJ, without materials
+    expect(glb!.handlers.slice(1)).toEqual(["threeModels"]);
+  },
+  { timeout: 60000 },
+);
+
+test(
+  "csv → xlsx and vcf → csv use the spreadsheet and contact handlers",
+  async () => {
+    const xlsx = await convertGenerated("name,total\nAnna,12", Formats.CSV, Formats.XLSX);
+    const vcard = "BEGIN:VCARD\nFN:Anna de Vries\nEMAIL:anna@example.com\nEND:VCARD\n";
+    const csv = await convertGenerated(vcard, Formats.VCF, Formats.CSV);
+
+    expect(xlsx!.handlers.at(-1)).toBe("sheetjs");
+    // an XLSX is a zip
+    expect(xlsx!.text.startsWith("PK")).toBe(true);
+    // contacts go to JSON first, and the JSON handler makes the table
+    expect(csv!.handlers.slice(1)).toEqual(["vcard", "fromJson"]);
+    expect(csv!.text.split("\n")[0]).toContain("Name,");
+    expect(csv!.text).toContain("Anna de Vries");
+    expect(csv!.text).toContain("anna@example.com");
+  },
+  { timeout: 60000 },
+);
+
+// headless Chrome has WebGPU on a developer's machine, and usually none on a CI runner
+const hasWebGpu = await page.evaluate(async () => !!(await navigator.gpu?.requestAdapter()));
+
+test.skipIf(!hasWebGpu)(
+  "png → upscaled png is twice the size and keeps transparency",
+  async () => {
+    const photo = await convertGenerated("words", Formats.PNG, {
+      mime: "image/png",
+      format: "upscaled-photo",
+    });
+    const drawing = await convertGenerated("disc-clear", Formats.PNG, {
+      mime: "image/png",
+      format: "upscaled-drawing",
+    });
+
+    expect(photo!.handlers.at(-1)).toBe("upscale");
+    expect(photo!.width).toBe(1200);
+    // still a white page: a network that drew nothing would leave it black
+    expect(photo!.cornerRed).toBeGreaterThan(240);
+    expect(drawing!.width).toBe(1200);
+    // the disc is still dark and opaque, and what was transparent around it still is
+    expect(drawing!.centreRed).toBeLessThan(30);
+    expect(drawing!.centreAlpha).toBe(255);
+    expect(drawing!.cornerAlpha).toBe(0);
+  },
+  { timeout: 120000 },
+);
+
+test.skipIf(!hasWebGpu)(
+  "mp4 → upscaled mp4 doubles the frame and keeps the length",
+  async () => {
+    const result = await page.evaluate(
+      async (from, to) => {
+        const bytes = await fetch("/test/doom.mp4").then((r) => r.bytes());
+        const files = [{ name: "doom.mp4", bytes }];
+        const output = await window.tryConvertByTraversing(files, from, to);
+        if (!output) return null;
+        // Opens a video and measures the brightness of its frame at one second. Declared in
+        // here because this function runs in the page, where nothing outside it exists.
+        // oxlint-disable-next-line unicorn/consistent-function-scoping
+        const inspect = async (data: Uint8Array) => {
+          const video = document.createElement("video");
+          video.muted = true;
+          video.src = URL.createObjectURL(new Blob([data as BlobPart]));
+          const once = (event: string) =>
+            new Promise((resolve, reject) => {
+              video.addEventListener(event, resolve, { once: true });
+              video.addEventListener("error", () => reject(new Error("the video does not play")));
+            });
+          await once("loadedmetadata");
+          video.currentTime = 1;
+          await once("seeked");
+          const canvas = new OffscreenCanvas(32, 20);
+          const ctx = canvas.getContext("2d")!;
+          ctx.drawImage(video, 0, 0, 32, 20);
+          const pixels = ctx.getImageData(0, 0, 32, 20).data;
+          const brightness = pixels.reduce((sum, value) => sum + value, 0) / pixels.length;
+          return {
+            width: video.videoWidth,
+            height: video.videoHeight,
+            duration: video.duration,
+            brightness,
+          };
+        };
+        const original = await inspect(await fetch("/test/doom.mp4").then((r) => r.bytes()));
+        return {
+          name: output.files[0].name,
+          handler: output.path.at(-1)!.handler.name as string,
+          original: original.brightness,
+          ...(await inspect(output.files[0].bytes)),
+        };
+      },
+      { format: Formats.MP4, handler: dummyHandler } as never,
+      {
+        format: { mime: "video/mp4", format: "upscaled-film" },
+        handler: dummyHandler,
+      } as never,
+    );
+
+    // doom.mp4 is 320 × 200 and 2.4 seconds long
+    expect(result).toMatchObject({
+      name: "doom-2x.mp4",
+      handler: "upscaleVideo",
+      width: 640,
+      height: 400,
+    });
+    expect(result!.duration).toBeCloseTo(2.4, 0);
+    // the same picture, only larger: frames that came out black or blank would not be as bright
+    expect(Math.abs(result!.brightness - result!.original)).toBeLessThan(12);
+    expect(result!.brightness).toBeGreaterThan(20);
+  },
+  { timeout: 180000 },
 );
 
 test(
@@ -537,6 +801,204 @@ test(
     expect(output!.handlers.at(-1)).toBe("removeBg");
     expect(output!.cornerAlpha).toBeLessThan(40);
     expect(output!.centreAlpha).toBeGreaterThan(215);
+  },
+  { timeout: 120000 },
+);
+
+/** Converts one of the files in test/resources and describes the first output. */
+function convertResource(
+  name: string,
+  from: Pick<FileFormat, "mime" | "format">,
+  to: Pick<FileFormat, "mime" | "format">,
+  settings?: ConversionSettings,
+) {
+  return page.evaluate(
+    async (name, from, to, settings) => {
+      const bytes = await fetch("/test/" + name).then((r) => r.bytes());
+      const inputSize = bytes.length;
+      const result = await window.tryConvertByTraversing(
+        [{ name, bytes }],
+        from,
+        to,
+        undefined,
+        settings,
+      );
+      if (!result) return null;
+      const output = result.files[0];
+      return {
+        handlers: result.path.map((c) => c.handler.name as string),
+        name: output.name,
+        inputSize,
+        outputSize: output.bytes.length,
+        text: new TextDecoder("latin1").decode(output.bytes),
+      };
+    },
+    name,
+    { format: from, handler: dummyHandler },
+    { format: to, handler: dummyHandler },
+    settings,
+  );
+}
+
+test(
+  "mp3 → audio check reports a verdict, loudness and a spectrogram",
+  async () => {
+    const output = await convertResource("gaster.mp3", Formats.MP3, {
+      ...Formats.HTML,
+      format: "audio-check",
+    });
+
+    expect(output!.handlers).toEqual(["dummy", "audioCheck"]);
+    const json = /<script type="application\/json" id="audio-check">(.*?)<\/script>/s.exec(
+      output!.text,
+    )![1];
+    const [summary] = JSON.parse(json);
+    expect(summary.format).toContain("MP3");
+    expect(["ok", "note", "warn", "bad"]).toContain(summary.level);
+    expect(summary.verdict.length).toBeGreaterThan(0);
+    // what `ffmpeg -af ebur128=peak=true` reads, with and without cross-origin isolation, where
+    // the meter reports through shared memory instead of messages
+    expect(summary.loudness.lufs).toBeCloseTo(-17.4, 0);
+    expect(summary.loudness.truePeak).toBeCloseTo(-5.6, 0);
+    expect(summary.spectrogram).toStartWith("data:image/png;base64,");
+  },
+  { timeout: 120000 },
+);
+
+test(
+  "mp4 → contact sheet is one PNG of 4 × 4 stills",
+  async () => {
+    const output = await convertResource("doom.mp4", Formats.MP4, {
+      ...Formats.PNG,
+      format: "contact-sheet",
+    });
+
+    expect(output!.handlers.at(-1)).toBe("contactSheet");
+    expect(output!.name).toBe("doom-contact-sheet.png");
+    expect(output!.text.slice(1, 4)).toBe("PNG");
+  },
+  { timeout: 120000 },
+);
+
+test(
+  "mp3 → make a video gives an MP4",
+  async () => {
+    const output = await convertResource("gaster.mp3", Formats.MP3, {
+      ...Formats.MP4,
+      format: "audio-video",
+    });
+
+    expect(output!.handlers.at(-1)).toBe("audioVideo");
+    expect(output!.text.slice(4, 8)).toBe("ftyp");
+  },
+  { timeout: 300000 },
+);
+
+/** Sample-rate bits and channel mode of the first MPEG audio frame, after any ID3 tag. */
+function mp3Header(bytes: Uint8Array) {
+  let at = 0;
+  if (bytes[0] === 0x49 && bytes[1] === 0x44 && bytes[2] === 0x33) {
+    // the tag size is "syncsafe": seven bits per byte
+    at = 10 + ((bytes[6] << 21) | (bytes[7] << 14) | (bytes[8] << 7) | bytes[9]);
+  }
+  while (!(bytes[at] === 0xff && (bytes[at + 1] & 0xe0) === 0xe0)) at++;
+  return { rate: (bytes[at + 2] >> 2) & 3, mono: bytes[at + 3] >> 6 === 3 };
+}
+
+test(
+  "mp3 → mp3 with audio edits goes through FFmpeg and keeps the sample rate",
+  async () => {
+    const edited = await convertResource("gaster.mp3", Formats.MP3, Formats.MP3, {
+      normalize: true,
+      fadeIn: 0.5,
+      fadeOut: 0.5,
+      mono: true,
+    });
+
+    expect(edited!.handlers.at(-1)).toBe("FFmpeg");
+    const before = mp3Header(await Bun.file(`${__dirname}/resources/gaster.mp3`).bytes());
+    const after = mp3Header(Uint8Array.from(edited!.text, (c) => c.charCodeAt(0)));
+    // loudnorm would hand on 192 kHz if the handler didn't ask for the input's rate
+    expect(after.rate).toBe(before.rate);
+    expect(after.mono).toBe(true);
+  },
+  { timeout: 120000 },
+);
+
+test(
+  "jpeg → png with fewer colours quantises in ImageMagick and comes out smaller",
+  async () => {
+    const full = await convertGenerated("photo", Formats.JPEG, Formats.PNG);
+    const fewer = await convertGenerated("photo", Formats.JPEG, Formats.PNG, { colors: 16 });
+
+    // canvasToBlob can't write a palette, so the route goes on to ImageMagick
+    expect(fewer!.handlers.at(-1)).toBe("ImageMagick");
+    expect(fewer!.outputSize).toBeLessThan(full!.outputSize / 2);
+  },
+  { timeout: 120000 },
+);
+
+test(
+  "png → png with fewer colours keeps the original when that is smaller",
+  async () => {
+    const output = await convertResource("colors_50x50.png", Formats.PNG, Formats.PNG, {
+      colors: 8,
+    });
+
+    expect(output!.outputSize).toBeLessThanOrEqual(output!.inputSize);
+  },
+  { timeout: 120000 },
+);
+
+test(
+  "a batch of mp3s with audio edits gives one edited file per input",
+  async () => {
+    const result = await page.evaluate(
+      async (from, to) => {
+        const bytes = await fetch("/test/gaster.mp3").then((r) => r.bytes());
+        const files = [
+          { name: "a.mp3", bytes },
+          { name: "b.mp3", bytes: bytes.slice() },
+        ];
+        const settings = { fadeIn: 0.5, speed: 1.5, reverse: true, trimSilence: true };
+        const output = await window.tryConvertByTraversing(files, from, to, undefined, settings);
+        return (
+          output && {
+            names: output.files.map((f) => f.name),
+            handler: output.path.at(-1)!.handler.name,
+          }
+        );
+      },
+      { format: Formats.MP3, handler: dummyHandler },
+      { format: Formats.MP3, handler: dummyHandler },
+    );
+
+    expect(result!.handler).toBe("FFmpeg");
+    expect(result!.names).toEqual(["a.mp3", "b.mp3"]);
+  },
+  { timeout: 120000 },
+);
+
+test(
+  "a batch of pngs with fewer colours gives one file per input",
+  async () => {
+    const result = await page.evaluate(
+      async (from, to) => {
+        const bytes = await fetch("/test/colors_50x50.png").then((r) => r.bytes());
+        const files = [
+          { name: "a.png", bytes },
+          { name: "b.png", bytes: bytes.slice() },
+        ];
+        const output = await window.tryConvertByTraversing(files, from, to, undefined, {
+          colors: 4,
+        });
+        return output && output.files.map((f) => f.name);
+      },
+      { format: Formats.PNG, handler: dummyHandler },
+      { format: Formats.PNG, handler: dummyHandler },
+    );
+
+    expect(result).toEqual(["a.png", "b.png"]);
   },
   { timeout: 120000 },
 );
