@@ -8,13 +8,22 @@ import { PopupData } from "src/ui";
 
 export default function Popup() {
   const ref = useRef<HTMLDialogElement>(null);
+  const previousFocus = useRef<HTMLElement | null>(null);
 
   useSignalEffect(() => {
     const elem = ref.current!;
     if (popupOpen.value) {
+      previousFocus.current = (document.activeElement as HTMLElement) ?? null;
       if (!elem.open) elem.showModal();
     } else {
       if (elem.open) elem.close();
+      // Restore focus to the element that opened the popup (accessibility).
+      const target = previousFocus.current;
+      if (target && typeof target.focus === "function") {
+        // Defer so the dialog has fully closed before refocusing.
+        requestAnimationFrame(() => target.focus());
+      }
+      previousFocus.current = null;
     }
   });
 
