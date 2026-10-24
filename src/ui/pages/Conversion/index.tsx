@@ -199,7 +199,8 @@ export default function Conversion() {
   });
 
   const [fromOption, setFromOption] = useState<ConversionOption | null>(autoSelectOption);
-  const [showAll, setShowAll] = useState(false);
+  // Browse mode (no files yet): list every format instead of matches only.
+  const [showAll, setShowAll] = useState(files.length === 0);
 
   const [toOption, setToOption] = useState<ConversionOption | null>(null);
   const [isConverting, setIsConverting] = useState(false);
@@ -248,7 +249,20 @@ export default function Conversion() {
   };
 
   const handleConvert = async () => {
-    if (!fromOption || !toOption || !firstFile) return;
+    if (!fromOption || !toOption || !firstFile) {
+      // Reachable in browse mode (formats selected, no file yet): point at
+      // the + button instead of failing silently.
+      if (!firstFile && fromOption && toOption) {
+        PopupData.value = {
+          title: "No file selected",
+          text: "Add a file with the + button below to convert between the selected formats.",
+          dismissible: true,
+          buttonText: "OK",
+        };
+        openPopup();
+      }
+      return;
+    }
 
     setIsConverting(true);
     ConversionInProgress.value = true;
