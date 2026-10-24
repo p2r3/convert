@@ -122,7 +122,7 @@ export default function UploadPage() {
             }}
             disabled={!formatsReady}
           >
-            Browse all formats
+            View formats
           </StyledButton>
         </div>
       </div>
