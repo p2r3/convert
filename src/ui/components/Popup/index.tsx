@@ -17,10 +17,8 @@ export default function Popup() {
       if (!elem.open) elem.showModal();
     } else {
       if (elem.open) elem.close();
-      // Restore focus to the element that opened the popup (accessibility).
       const target = previousFocus.current;
       if (target && typeof target.focus === "function") {
-        // Defer so the dialog has fully closed before refocusing.
         requestAnimationFrame(() => target.focus());
       }
       previousFocus.current = null;
