@@ -199,7 +199,7 @@ export default function Conversion() {
   });
 
   const [fromOption, setFromOption] = useState<ConversionOption | null>(autoSelectOption);
-  const [showAll, setShowAll] = useState(false);
+  const [showAll, setShowAll] = useState(files.length === 0);
 
   const [toOption, setToOption] = useState<ConversionOption | null>(null);
   const [isConverting, setIsConverting] = useState(false);
@@ -343,7 +343,8 @@ export default function Conversion() {
     addFiles(addFileRef.current?.files);
   };
 
-  const canProceed = step === "select-from" ? !!fromOption : !!fromOption && !!toOption;
+  const canProceed =
+    step === "select-from" ? !!fromOption : !!fromOption && !!toOption && !!firstFile;
 
   return (
     <div className="conversion-body">

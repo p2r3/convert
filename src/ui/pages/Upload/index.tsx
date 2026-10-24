@@ -8,6 +8,7 @@ import { openPopup } from "src/ui/PopupStore";
 import Logo from "src/ui/components/Logo";
 import HelpButton from "src/ui/components/HelpButton";
 import Footer from "src/ui/components/Footer";
+import StyledButton from "src/ui/components/StyledButton";
 
 import "./index.css";
 
@@ -114,6 +115,15 @@ export default function UploadPage() {
 
         <div className="upload-card-actions">
           <HelpButton />
+          <StyledButton
+            onClick={() => {
+              if (!formatsReady) return;
+              CurrentPage.value = Pages.Conversion;
+            }}
+            disabled={!formatsReady}
+          >
+            View formats
+          </StyledButton>
         </div>
       </div>
 
