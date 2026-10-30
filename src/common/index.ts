@@ -3,6 +3,11 @@ export function stripExt(name: string): string {
   return idx > 0 ? name.slice(0, idx) : name;
 }
 
+export function getExt(name: string): string {
+  const idx = name.lastIndexOf(".");
+  return idx > 0 ? name.slice(idx + 1) : "";
+}
+
 export function changeExt(name: string, newExt: string, suffix: string = ""): string {
   return `${stripExt(name)}${suffix}.${newExt}`;
 }

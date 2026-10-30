@@ -10,6 +10,7 @@ import {
 } from "src/main";
 import { Mode, ModeEnum } from "src/ui/ModeStore";
 import normalizeMimeType from "src/normalizeMimeType";
+import { getExt } from "src/common/index.ts";
 import type { FileFormat } from "src/FormatHandler";
 
 import ConversionHeader from "src/ui/components/Conversion/ConversionHeader";
@@ -23,6 +24,12 @@ import FileInfoBadge from "src/ui/components/FileInfo";
 import { ConversionInProgress, CurrentPage, Pages } from "src/ui/AppState";
 import { ProgressStore } from "src/ui/ProgressStore";
 import StyledButton, { ButtonVariant } from "src/ui/components/StyledButton";
+
+let previousSelection: {
+  fileExt: string;
+  from: ConversionOption;
+  to: ConversionOption;
+} | null = null;
 
 type ConversionStep = "select-from" | "select-to" | "converting";
 
@@ -166,6 +173,7 @@ export default function Conversion() {
   const files = useMemo(() => Object.values(SelectedFiles.value), [SelectedFiles.value]);
   const firstFile = files[0];
   const isAdvanced = Mode.value === ModeEnum.Advanced;
+  const fileExt = firstFile ? getExt(firstFile.name).toLowerCase() : null;
 
   const matchingFrom = useMemo(
     () => getMatchingFromFormats(allOptions, files),
@@ -213,17 +221,32 @@ export default function Conversion() {
   useEffect(() => {
     if (!firstFile || isConverting) return;
 
-    if (autoSelectOption) {
+    const remembered = previousSelection;
+    const sameInput = remembered && remembered.fileExt === fileExt;
+
+    if (sameInput) {
+      setFromOption(remembered.from);
+      setToOption(remembered.to);
+      setStep("select-to");
+    } else if (autoSelectOption) {
       setFromOption(autoSelectOption);
+      setToOption(null);
       setStep("select-to");
     } else {
       setFromOption(null);
+      setToOption(null);
       setStep("select-from");
     }
 
-    setToOption(null);
+    if (!sameInput) previousSelection = null;
     setShowAll(false);
   }, [firstFile]);
+
+  useEffect(() => {
+    if (fileExt && fromOption && toOption) {
+      previousSelection = { fileExt, from: fromOption, to: toOption };
+    }
+  }, [fromOption, toOption]);
 
   useEffect(() => {
     if (previousStep.current === "converting" && step !== "converting" && !popupOpen.peek()) {
