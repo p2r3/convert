@@ -41,6 +41,9 @@ jobs:
       - name: Check prebuilts
         run: bun run build:check
 
+      - name: Set version
+        run: bun pm pkg set version=0.0.${{ github.run_number }}
+
       - name: Build Distribution for ${{ matrix.platform }}
         run: bun run desktop:dist:${{ matrix.platform }}
 
@@ -59,4 +62,6 @@ jobs:
             release/*.zip
             release/*.snap
             release/*.deb
+            release/*.blockmap
+            release/latest*.yml
           body: "This release contains offline Electron builds of convert.to.it, built from the latest commit on the `master` branch."

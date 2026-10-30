@@ -5,7 +5,7 @@
   "description": "Truly universal browser-based file converter",
   "author": "PortalRunner",
   "type": "module",
-  "main": "src/electron.cjs",
+  "main": "dist-electron/main.cjs",
   "scripts": {
     "build:assemble": "bun run scripts/build.ts assemble",
     "build:prebuild": "bun run scripts/build.ts prebuild",
@@ -21,8 +21,9 @@
     "docker": "bun run docker:build && bun run docker:up",
     "docker:build": "docker compose -f docker/docker-compose.yml -f docker/docker-compose.override.yml build --build-arg VITE_COMMIT_SHA=$(git rev-parse HEAD)",
     "docker:up": "docker compose -f docker/docker-compose.yml -f docker/docker-compose.override.yml up -d",
-    "desktop:build": "bun run build:assemble --all && tsc && IS_DESKTOP=true vite build && bun run cache:build",
-    "desktop:preview": "electron .",
+    "desktop:build": "bun run build:assemble --all && tsc && IS_DESKTOP=true vite build && bun run cache:build && bun run desktop:main",
+    "desktop:main": "bun build src/electron.cjs --target=node --format=cjs --external electron --outfile dist-electron/main.cjs",
+    "desktop:preview": "bun run desktop:main && electron .",
     "desktop:start": "bun run desktop:build && bun run desktop:preview",
     "desktop:dist:win": "bun run desktop:build && electron-builder --win --publish never",
     "desktop:dist:mac": "bun run desktop:build && electron-builder --mac --publish never",
@@ -65,6 +66,7 @@
     "comlink": "^4.4.2",
     "confbox": "^0.3.1",
     "dom-to-svg": "^0.12.2",
+    "electron-updater": "^6.8.11",
     "epubjs": "^0.3.93",
     "html2canvas": "^1.4.1",
     "imagetracer": "^0.2.2",
@@ -127,20 +129,30 @@
   "build": {
     "appId": "com.p2r3.convert",
     "executableName": "convert-to-it",
-    "artifactName": "convert-to-it-${version}-${os}-${arch}.${ext}",
+    "artifactName": "convert-to-it-${os}-${arch}.${ext}",
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://github.com/p2r3/convert/releases/download/latest"
+      }
+    ],
     "directories": {
       "output": "release"
     },
     "files": [
       "dist/**/*",
-      "src/electron.cjs",
+      "dist-electron/main.cjs",
+      "src/electron-preload.cjs",
       "!node_modules/**/*"
     ],
     "win": {
       "target": "nsis"
     },
     "mac": {
-      "target": "dmg"
+      "target": [
+        "dmg",
+        "zip"
+      ]
     },
     "linux": {
       "target": "AppImage"

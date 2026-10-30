@@ -7,3 +7,4 @@ dist
 release
 cache.json
 built
+dist-electron

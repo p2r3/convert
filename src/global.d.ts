@@ -1,6 +1,7 @@
 import type { FileData, ConvertPathNode, HandlerDefinition } from "./FormatHandler.js";
 import type { TraversionGraph } from "./TraversionGraph.js";
 import type { Remote } from "comlink";
+import type { DesktopUpdater } from "./ui/UpdateStore.js";
 
 declare global {
   interface Window {
@@ -18,6 +19,8 @@ declare global {
       files: FileData[];
       path: ConvertPathNode[];
     } | null>;
+    /** Only defined in the desktop app, exposed by src/electron-preload.cjs */
+    desktopUpdater?: DesktopUpdater;
   }
 
   var baseUrl: string | undefined;
