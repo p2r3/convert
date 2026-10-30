@@ -8,7 +8,21 @@ const isolationHeaders = {
   "Cross-Origin-Embedder-Policy": "require-corp",
 };
 
+const excludedHandlers = process.env.IS_DESKTOP === "true" ? ["clang"] : [];
+const excludedHandlerFiles = excludedHandlers.map((name) =>
+  fileURLToPath(new URL(`./src/handlers/${name}.ts`, import.meta.url)),
+);
+
+const excludeHandlers = {
+  name: "exclude-handlers",
+  enforce: "pre",
+  load(id) {
+    if (excludedHandlerFiles.includes(id)) return "export {};";
+  },
+};
+
 export default defineConfig({
+  define: { __EXCLUDED_HANDLERS__: JSON.stringify(excludedHandlers) },
   server: { headers: isolationHeaders, watch: { ignored: ["**/.cache/**"] } },
   preview: { headers: isolationHeaders },
   publicDir: "public",
@@ -19,6 +33,7 @@ export default defineConfig({
   base: "./",
   worker: {
     format: "es",
+    plugins: () => [excludeHandlers],
   },
   resolve: {
     tsconfigPaths: true,
@@ -33,6 +48,7 @@ export default defineConfig({
     },
   },
   plugins: [
+    excludeHandlers,
     viteStaticCopy({
       targets: [
         {

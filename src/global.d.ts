@@ -24,4 +24,5 @@ declare global {
   }
 
   var baseUrl: string | undefined;
+  const __EXCLUDED_HANDLERS__: string[];
 }

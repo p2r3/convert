@@ -113,7 +113,8 @@ const HANDLERS = {
 // handlers can only be named things listed above
 export type HandlerName = keyof typeof HANDLERS;
 
-const HANDLER_NAMES = Object.keys(HANDLERS) as HandlerName[];
+const HANDLER_NAMES = (Object.keys(HANDLERS) as HandlerName[])
+  .filter(name => !__EXCLUDED_HANDLERS__.includes(name));
 
 type HandlerModule = Partial<
   Record<
@@ -139,6 +140,7 @@ export async function getHandler(name: HandlerName) {
 
     const [modulePath = `./${name}.ts`, exportName = "default"] = handlerEntry;
 
+    if (__EXCLUDED_HANDLERS__.includes(name)) throw new Error(`Handler ${name} is not included in this build!`);
     const module = modules[modulePath];
     const HandlerClass = (await module())[exportName];
     if (!HandlerClass) throw new Error(`Handler ${modulePath} did not have an export ${exportName}!`);
