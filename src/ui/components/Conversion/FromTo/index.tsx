@@ -40,7 +40,10 @@ function ExtPill({
       aria-label={placeholder ? label : `Selected ${kind} format: ${ext}`}
     >
       {placeholder ? (
-        <span className="fromto-count">{label}</span>
+        <span className="fromto-count">
+          {count} <span className="fromto-count-kind">{kind} </span>
+          {`format${count === 1 ? "" : "s"}`}
+        </span>
       ) : (
         <>
           <FileIcon

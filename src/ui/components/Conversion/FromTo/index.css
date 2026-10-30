@@ -77,6 +77,10 @@
 }
 
 @media (max-width: 600px) {
+  .fromto-count-kind {
+    display: none;
+  }
+
   .fromto {
     gap: 0.5rem;
   }
