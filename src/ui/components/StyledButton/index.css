@@ -17,8 +17,8 @@
   align-items: center;
   gap: 0.35rem;
 
-  &:hover,
-  &:focus-visible {
+  &:enabled:hover,
+  &:enabled:focus-visible {
     color: var(--text-primary);
     background: var(--bg-section);
     border-color: var(--border-secondary);
@@ -32,7 +32,7 @@
     justify-content: center;
     color: var(--text-muted);
 
-    &:hover {
+    &:enabled:hover {
       color: var(--primary);
     }
   }
@@ -42,8 +42,8 @@
     color: var(--text-on-primary);
     border-color: transparent;
 
-    &:hover,
-    &:focus-visible {
+    &:enabled:hover,
+    &:enabled:focus-visible {
       opacity: 0.9;
     }
   }
