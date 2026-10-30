@@ -70,7 +70,7 @@ export default function Popup() {
   };
 
   return (
-    <dialog id="popup" ref={ref} onClick={clickHandler}>
+    <dialog id="popup" className={PopupData.value.className} ref={ref} onClick={clickHandler}>
       {getPopupContents()}
       {PopupData.value.buttonText && (
         <button onClick={handleButtonClick}>{PopupData.value.buttonText}</button>

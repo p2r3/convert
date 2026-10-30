@@ -23,6 +23,8 @@ export interface PopupDataContainer {
    * If this is declared, properties `title` and `text` are ignored
    */
   contents?: preact.JSX.Element;
+  /** Extra class name for the popup element, for popups that need their own sizing */
+  className?: string;
 }
 
 export const popupOpen = signal(false);

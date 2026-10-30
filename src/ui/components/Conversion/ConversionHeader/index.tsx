@@ -1,5 +1,5 @@
 import Logo from "src/ui/components/Logo";
-import AdvancedModeToggle from "src/ui/components/AdvancedModeToggle";
+import SettingsButton from "src/ui/components/SettingsButton";
 import { goToUploadHome } from "src/main";
 
 import "./index.css";
@@ -21,7 +21,7 @@ export default function ConversionHeader({
       </div>
 
       <div className="header-right">
-        <AdvancedModeToggle compact={false} />
+        <SettingsButton />
       </div>
     </header>
   );

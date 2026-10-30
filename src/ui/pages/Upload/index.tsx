@@ -8,6 +8,7 @@ import { openPopup } from "src/ui/PopupStore";
 
 import Logo from "src/ui/components/Logo";
 import HelpButton from "src/ui/components/HelpButton";
+import SettingsButton from "src/ui/components/SettingsButton";
 import Footer from "src/ui/components/Footer";
 import StyledButton from "src/ui/components/StyledButton";
 
@@ -130,6 +131,7 @@ export default function UploadPage() {
           >
             View formats
           </StyledButton>
+          <SettingsButton />
         </div>
       </div>
 

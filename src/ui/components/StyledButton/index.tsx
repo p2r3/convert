@@ -10,6 +10,7 @@ interface StyledButtonProps {
   variant?: ButtonVariant;
   onClick?: (ev: preact.TargetedMouseEvent<HTMLButtonElement>) => void;
   title?: string;
+  ariaLabel?: string;
   tabIndex?: number;
   disabled?: boolean;
   buttonRef?: preact.Ref<HTMLButtonElement>;
@@ -23,6 +24,7 @@ export default function StyledButton({
   variant = ButtonVariant.Default,
   onClick,
   title,
+  ariaLabel,
   tabIndex,
   disabled = false,
   buttonRef,
@@ -40,6 +42,7 @@ export default function StyledButton({
       className={combinedClassName}
       onClick={onClick}
       title={title}
+      aria-label={ariaLabel}
       tabIndex={tabIndex}
       disabled={disabled}
     >
