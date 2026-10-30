@@ -50,10 +50,10 @@
   --bg-overlay: rgba(0, 0, 0, 0.6);
 
   /* Text */
-  --text-primary: rgba(255, 255, 255, 0.81);
-  --text-secondary: rgba(255, 255, 255, 0.44);
-  --text-tertiary: rgba(255, 255, 255, 0.28);
-  --text-muted: rgba(255, 255, 255, 0.28);
+  --text-primary: color-mix(in srgb, white 80%, var(--bg-page));
+  --text-secondary: color-mix(in srgb, white 45%, var(--bg-page));
+  --text-tertiary: color-mix(in srgb, white 30%, var(--bg-page));
+  --text-muted: var(--text-tertiary);
 
   /* Border */
   --border-primary: #373737;

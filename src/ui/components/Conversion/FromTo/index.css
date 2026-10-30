@@ -59,8 +59,8 @@
 }
 
 .fromto-pill.active {
-  border-color: var(--text-muted);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--text-muted) 15%, transparent);
+  border-color: var(--text-secondary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--text-secondary) 15%, transparent);
 }
 
 .fromto-pill:focus-visible {
