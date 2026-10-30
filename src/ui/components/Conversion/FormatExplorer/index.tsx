@@ -3,7 +3,7 @@ import useFirstTabTarget from "src/ui/scripts/useFirstTabTarget";
 import useTypeToSearch from "src/ui/scripts/useTypeToSearch";
 import { hasModifier, moveFocus } from "src/ui/scripts/keyboard";
 import Chip from "src/ui/components/Chip";
-import { Search, X } from "lucide-preact";
+import { ChevronDown, Search, X } from "lucide-preact";
 import {
   Braces,
   Image,
@@ -206,6 +206,7 @@ export default function FormatExplorer({
   const resultsRef = useRef<HTMLDivElement>(null);
   const [activeCard, setActiveCard] = useState<string | null>(null);
   const [activeChip, setActiveChip] = useState(0);
+  const [categoriesExpanded, setCategoriesExpanded] = useState(false);
   const [focusGrid, setFocusGrid] = useState(false);
 
   const activeCategories = SelectedCategories.value;
@@ -313,45 +314,58 @@ export default function FormatExplorer({
               requestAnimationFrame(() => searchInputRef.current?.focus());
             }}
           />
-          <div className="search-input-wrapper">
-            <Search size={16} className="search-icon" />
-            <input
-              ref={searchInputRef}
-              type="text"
-              aria-label={`Search ${direction === "from" ? "input" : "output"} formats`}
-              onKeyDown={(event) => {
-                if (hasModifier(event)) return;
-                if (event.key === "Enter" || event.key === "ArrowDown") {
-                  event.preventDefault();
-                  handleDebounceSearch.cancel();
-                  setSearchTerm(searchInputValue);
-                  setFocusGrid(true);
-                }
-              }}
-              placeholder="Search formats..."
-              value={searchInputValue}
-              onInput={(ev) => {
-                const val = ev.currentTarget.value;
-                setSearchInputValue(val);
-                handleDebounceSearch(val);
-              }}
-            />
-            {searchInputValue && (
-              <button
-                className="search-clear"
-                aria-label="Clear search"
-                onClick={() => {
-                  clearSearch();
-                  focusSearch();
+          <div className="search-row">
+            <div className="search-input-wrapper">
+              <Search size={16} className="search-icon" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                aria-label={`Search ${direction === "from" ? "input" : "output"} formats`}
+                onKeyDown={(event) => {
+                  if (hasModifier(event)) return;
+                  if (event.key === "Enter" || event.key === "ArrowDown") {
+                    event.preventDefault();
+                    handleDebounceSearch.cancel();
+                    setSearchTerm(searchInputValue);
+                    setFocusGrid(true);
+                  }
                 }}
-              >
-                <X size={14} />
-              </button>
-            )}
-          </div>
+                placeholder="Search formats..."
+                value={searchInputValue}
+                onInput={(ev) => {
+                  const val = ev.currentTarget.value;
+                  setSearchInputValue(val);
+                  handleDebounceSearch(val);
+                }}
+              />
+              {searchInputValue && (
+                <button
+                  className="search-clear"
+                  aria-label="Clear search"
+                  onClick={() => {
+                    clearSearch();
+                    focusSearch();
+                  }}
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
 
+            <button
+              type="button"
+              className="category-toggle"
+              aria-label="Toggle categories"
+              aria-expanded={categoriesExpanded}
+              aria-controls={`category-filters-${direction}`}
+              onClick={() => setCategoriesExpanded((expanded) => !expanded)}
+            >
+              <ChevronDown size={16} />
+            </button>
+          </div>
           <div
-            className="chip-filters"
+            id={`category-filters-${direction}`}
+            className={`chip-filters${categoriesExpanded ? " is-expanded" : ""}`}
             role="group"
             aria-label="Filter by category"
             onKeyDown={(event) =>

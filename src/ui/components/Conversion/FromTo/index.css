@@ -75,3 +75,25 @@
   letter-spacing: 0.01em;
   color: var(--text-muted);
 }
+
+@media (max-width: 600px) {
+  .fromto {
+    gap: 0.5rem;
+  }
+
+  .fromto-pill {
+    flex: 1;
+    min-width: 0;
+    padding: 0 0.5rem;
+  }
+
+  .fromto-arrow {
+    flex-shrink: 0;
+  }
+
+  .fromto-count,
+  .fromto-ext {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}
