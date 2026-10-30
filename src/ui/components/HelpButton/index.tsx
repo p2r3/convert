@@ -3,7 +3,7 @@ import { popupOpen } from "src/ui/PopupStore";
 import { HelpCircle } from "lucide-preact";
 import tippy from "tippy.js";
 import { useEffect, useRef } from "preact/hooks";
-import StyledButton from "src/ui/components/StyledButton";
+import StyledButton, { ButtonVariant } from "src/ui/components/StyledButton";
 
 export default function HelpButton() {
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -72,9 +72,13 @@ export default function HelpButton() {
   };
 
   return (
-    <StyledButton buttonRef={btnRef} onClick={onHelpClick}>
-      <HelpCircle size={16} />
-      {" Help"}
+    <StyledButton
+      buttonRef={btnRef}
+      variant={ButtonVariant.Icon}
+      ariaLabel="Help & Info"
+      onClick={onHelpClick}
+    >
+      <HelpCircle size={18} aria-hidden="true" />
     </StyledButton>
   );
 }

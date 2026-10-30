@@ -70,7 +70,7 @@ export default function SettingsButton() {
       ariaLabel="App settings"
       onClick={onSettingsClick}
     >
-      <Settings size={18} />
+      <Settings size={18} aria-hidden="true" />
     </StyledButton>
   );
 }
