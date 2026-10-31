@@ -1,3 +1,4 @@
+import "./polyfills.ts";
 import * as comlink from "comlink";
 import type { ConvertPathNode, FileData, HandlerDefinition } from "./FormatHandler";
 import { createRemoteContext, type IProgressStore } from "./ui/ProgressStore";

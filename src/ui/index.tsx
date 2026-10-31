@@ -1,3 +1,4 @@
+import "../polyfills.ts";
 import { render } from "preact";
 
 import UploadPage from "./pages/Upload";

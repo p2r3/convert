@@ -1,3 +1,4 @@
+import "./polyfills.ts";
 import { ConvertPathNode, type FileFormat, type HandlerDefinition } from "./FormatHandler.ts";
 import type { CategoryType } from "./Formats.ts";
 import { PriorityQueue } from "./PriorityQueue.ts";
