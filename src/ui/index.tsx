@@ -1,5 +1,6 @@
 import "../polyfills.ts";
 import { render } from "preact";
+import { initCompatibilityLayout } from "./compatibility-layout";
 
 import UploadPage from "./pages/Upload";
 import ConversionPage from "./pages/Conversion";
@@ -26,3 +27,4 @@ function App() {
 render(<App />, document.getElementById("app")!);
 
 initTheme();
+initCompatibilityLayout();

@@ -24,6 +24,7 @@
       text-transform: uppercase;
       letter-spacing: 0.06em;
       color: var(--primary);
+      background: var(--primary);
       background: color-mix(in srgb, var(--primary) 10%, transparent);
       padding: 0.2rem 0.55rem;
       border-radius: 4px;

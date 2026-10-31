@@ -1,6 +1,9 @@
 import { defineConfig } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 import preact from "@preact/preset-vite";
+import legacy from "@vitejs/plugin-legacy";
+import cssCompatibility from "./scripts/vite/css-compatibility.js";
+import legacySyntax from "./scripts/vite/legacy-syntax.js";
 import { fileURLToPath } from "node:url";
 
 const isolationHeaders = {
@@ -26,11 +29,13 @@ export default defineConfig({
   server: { headers: isolationHeaders, watch: { ignored: ["**/.cache/**"] } },
   preview: { headers: isolationHeaders },
   publicDir: "public",
+  build: { cssTarget: ["chrome49", "firefox52", "safari10"] },
   optimizeDeps: {
     include: ["turbowarp-packager", "turbowarp-unpackager"],
     exclude: ["@sqlite.org/sqlite-wasm", "@bokuweb/zstd-wasm"],
   },
   base: "./",
+  css: { postcss: { plugins: [cssCompatibility()] } },
   worker: {
     format: "es",
     plugins: () => [excludeHandlers],
@@ -49,6 +54,16 @@ export default defineConfig({
   },
   plugins: [
     excludeHandlers,
+    legacySyntax(),
+    legacy({
+      targets: ["Chrome >= 49", "Firefox >= 52", "Safari >= 10", "iOS >= 10"],
+      modernTargets: ["Chrome >= 111", "Edge >= 111", "Firefox >= 114", "Safari >= 16.4"],
+      // The app already imports core-js in both builds.
+      polyfills: false,
+      additionalLegacyPolyfills: [
+        fileURLToPath(new URL("./src/legacy-polyfills.ts", import.meta.url)),
+      ],
+    }),
     viteStaticCopy({
       targets: [
         {

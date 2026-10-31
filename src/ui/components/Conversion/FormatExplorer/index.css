@@ -54,6 +54,7 @@
       &:focus {
         background-color: var(--bg-card);
         border-color: var(--primary);
+        box-shadow: 0 0 0 2px var(--primary);
         box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 15%, transparent);
       }
     }
@@ -199,6 +200,7 @@
       outline: none;
       background: var(--bg-card);
       border-color: var(--primary);
+      box-shadow: 0 0 0 2px var(--primary);
       box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 15%, transparent);
     }
   }

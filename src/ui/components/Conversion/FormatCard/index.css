@@ -20,6 +20,7 @@
 
   &.active {
     border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
   }
 
@@ -103,6 +104,7 @@
   }
 
   .format-card-plugin {
+    background: var(--primary);
     background: color-mix(in srgb, var(--primary) 12%, transparent);
     color: var(--primary);
     font-weight: 600;

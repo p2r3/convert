@@ -6,6 +6,7 @@
   align-items: center;
   justify-content: center;
   padding: clamp(1rem, 3vw, 2.5rem);
+  background: var(--bg-overlay);
   background: color-mix(in srgb, var(--bg-overlay) 25%, transparent);
   backdrop-filter: blur(4px);
   pointer-events: none;

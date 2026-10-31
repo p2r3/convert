@@ -74,7 +74,7 @@ export default function UploadPage() {
   const handleLogoClick = (event: MouseEvent) => {
     (event.currentTarget as HTMLButtonElement)
       .querySelector(".logo-icon svg")
-      ?.animate([{ transform: "rotate(0deg)" }, { transform: "rotate(-720deg)" }], {
+      ?.animate?.([{ transform: "rotate(0deg)" }, { transform: "rotate(-720deg)" }], {
         duration: 1000,
         easing: "cubic-bezier(0.33, 1, 0.68, 1)",
       });

@@ -1,10 +1,15 @@
 :root {
   /* Globals */
   --primary: #2383e2;
-  --primary-transparent: color-mix(in srgb, var(--primary) 30%, transparent);
-  --selection-color: color-mix(in srgb, var(--primary) 14%, transparent);
+  --primary-transparent: rgba(35, 131, 226, 0.3);
+  --selection-color: rgba(35, 131, 226, 0.14);
+  --danger-transparent: rgba(239, 68, 68, 0.1);
+  @supports (color: color-mix(in srgb, white, black)) {
+    --primary-transparent: color-mix(in srgb, var(--primary) 30%, transparent);
+    --selection-color: color-mix(in srgb, var(--primary) 14%, transparent);
+    --danger-transparent: color-mix(in srgb, var(--danger) 10%, transparent);
+  }
   --danger: #ef4444;
-  --danger-transparent: color-mix(in srgb, var(--danger) 10%, transparent);
   --warning: #b45309;
   --log-plugin: #9333ea;
 
@@ -50,10 +55,15 @@
   --bg-overlay: rgba(0, 0, 0, 0.6);
 
   /* Text */
-  --text-primary: color-mix(in srgb, white 80%, var(--bg-page));
-  --text-secondary: color-mix(in srgb, white 45%, var(--bg-page));
-  --text-tertiary: color-mix(in srgb, white 30%, var(--bg-page));
+  --text-primary: #d1d1d1;
+  --text-secondary: #818181;
+  --text-tertiary: #5e5e5e;
   --text-muted: var(--text-tertiary);
+  @supports (color: color-mix(in srgb, white, black)) {
+    --text-primary: color-mix(in srgb, white 80%, var(--bg-page));
+    --text-secondary: color-mix(in srgb, white 45%, var(--bg-page));
+    --text-tertiary: color-mix(in srgb, white 30%, var(--bg-page));
+  }
 
   /* Border */
   --border-primary: #373737;

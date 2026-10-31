@@ -1,9 +1,11 @@
 #popup.settings-popup {
   box-sizing: border-box;
+  width: calc(100vw - 2rem);
   width: min(44rem, calc(100vw - 2rem));
-  max-width: none;
+  max-width: 44rem;
+  height: calc(100vh - 2rem);
   height: min(36rem, calc(100dvh - 2rem));
-  max-height: none;
+  max-height: 36rem;
   padding: 1.75rem 2rem 1.5rem;
 
   .settings-content {

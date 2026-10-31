@@ -163,6 +163,7 @@
   .loading-action-btn.danger:hover {
     background: var(--danger-transparent);
     color: var(--danger);
+    border-color: var(--danger);
     border-color: color-mix(in srgb, var(--danger) 20%, transparent);
   }
 }

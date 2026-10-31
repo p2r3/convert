@@ -53,19 +53,23 @@
 }
 
 .fromto-pill.is-placeholder {
+  background: var(--bg-section);
   background: color-mix(in srgb, var(--bg-section) 60%, transparent);
   border-style: dashed;
+  border-color: var(--text-muted);
   border-color: color-mix(in srgb, var(--text-muted) 40%, transparent);
 }
 
 .fromto-pill.active {
   border-color: var(--text-secondary);
+  box-shadow: 0 0 0 2px var(--text-secondary);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--text-secondary) 15%, transparent);
 }
 
 .fromto-pill:focus-visible {
   outline: none;
   border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 35%, transparent);
 }
 

@@ -19,7 +19,10 @@ theme.subscribe((value) => {
 export function initTheme() {
   applyTheme(theme.value);
 
-  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
+  const media = window.matchMedia("(prefers-color-scheme: dark)");
+  const onChange = (e: MediaQueryListEvent) => {
     theme.value = e.matches ? "dark" : "light";
-  });
+  };
+  if (media.addEventListener) media.addEventListener("change", onChange);
+  else media.addListener(onChange);
 }
