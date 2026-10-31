@@ -90,6 +90,9 @@ function normalizeMimeType(mime: string) {
       return "application/x-elf";
     case "video/MP2T":
       return "video/mp2t";
+    case "application/x-protobuf":
+    case "application/x-protobuffer":
+      return "application/protobuf";
   }
   return mime;
 }

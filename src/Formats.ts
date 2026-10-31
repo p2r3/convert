@@ -141,6 +141,7 @@ const Formats = {
   TOML: new FormatDefinition("Tom's Obvious, Minimal Language", "toml", "toml", "application/toml", Category.DATA),
   INI: new FormatDefinition("Initialization file", "ini", "ini", "text/plain", Category.DATA),
   CSV: new FormatDefinition("Comma Separated Values", "csv", "csv", "text/csv", Category.DATA),
+  PBF: new FormatDefinition("Protobuf Binary Format", "pbf", "pbf", "application/protobuf", Category.DATA),
 
   // code
   PYTHON: new FormatDefinition("Python Script", "py", "py", "text/x-python", Category.CODE),

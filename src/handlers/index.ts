@@ -109,6 +109,7 @@ const HANDLERS = {
   azw3: [],
   wavebreak: [],
   gdlvl: [],
+  pbf: [],
 } as const;
 
 // handlers can only be named things listed above
