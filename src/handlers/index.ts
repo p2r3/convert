@@ -159,7 +159,7 @@ export async function ensureDefinitions(cache: HandlerDefinition[]) {
   const startTime = performance.now();
   for (let i = cache.length - 1; i >= 0; i--) {
     if (HANDLER_NAMES.includes(cache[i].name)) continue;
-    console.error(`Handler "${cache[i].name}" doesnt exist but is in the format cache?!`);
+    console.info(`Handler "${cache[i].name}" is unavailable in this build.`);
     cache.splice(i, 1);
   }
 
