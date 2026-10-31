@@ -6,7 +6,7 @@ import type { DesktopUpdater } from "./ui/UpdateStore.js";
 declare global {
   interface Window {
     handlerDefs: HandlerDefinition[];
-    traversionGraph: Remote<TraversionGraph>;
+    traversionGraph: Remote<TraversionGraph> | TraversionGraph;
     printSupportedFormatCache: () => string;
     showPopup: (html: string) => void;
     hidePopup: () => void;

@@ -31,12 +31,49 @@ export function goToUploadHome(): void {
 
 window.handlerDefs = [];
 
-const RemoteTraversionGraph = comlink.wrap<typeof TraversionGraph>(new TraversionGraphWorker());
+// if we dont have offscreencanvas, dont use workers
+const nativeWorkerCanvas =
+  typeof OffscreenCanvas !== "undefined" &&
+  typeof OffscreenCanvas.prototype.transferToImageBitmap === "function";
+let useWorkers = false;
+
+async function createGraph() {
+  let worker: Worker | undefined;
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  try {
+    worker = new TraversionGraphWorker();
+    const RemoteGraph = comlink.wrap<typeof TraversionGraph>(worker);
+    const graph = await Promise.race([
+      new RemoteGraph(),
+      new Promise<never>((_, reject) => {
+        worker!.addEventListener(
+          "error",
+          (event) => reject(new Error(event.message || "Module worker unavailable")),
+          {
+            once: true,
+          },
+        );
+        timeout = setTimeout(() => reject(new Error("Module worker did not start")), 10000);
+      }),
+    ]);
+    useWorkers = true;
+    return graph;
+  } catch (error) {
+    worker?.terminate();
+    console.info("Using main-thread conversion fallback", error);
+    const { TraversionGraph } = await import("./TraversionGraph.js");
+    return new TraversionGraph();
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 // i dont expect any other pages to exist so location.href works
 window.baseUrl = new URL(import.meta.env.BASE_URL, location.href).href;
 const converterMain = new Converter("main_thread", window.baseUrl);
-window.traversionGraph = await new RemoteTraversionGraph();
+const graphReady = createGraph().then((graph) => {
+  window.traversionGraph = graph;
+});
 
 type ConverterWorkerEntry = { worker: Worker; converter: comlink.Remote<Converter>; name: string };
 const converterWorkers: Map<HandlerName, Promise<ConverterWorkerEntry>> = new Map();
@@ -76,6 +113,7 @@ window.printSupportedFormatCache = () => {
 async function buildOptionList() {
   ConversionOptions.clear();
 
+  await graphReady;
   await ensureDefinitions(window.handlerDefs);
 
   for (const handler of window.handlerDefs) {
@@ -144,7 +182,7 @@ async function attemptConvertPath(
 
     try {
       const converter =
-        handlerDef.offload !== false
+        handlerDef.offload !== false && useWorkers && nativeWorkerCanvas
           ? (await getOrCreateConversionWorker(handlerDef.name)).converter
           : converterMain;
 
