@@ -263,7 +263,7 @@ class threejsHandler implements FormatHandler {
     this.scene.remove(object);
 
     const rendered = await this.canvas.convertToBlob({ type: mime });
-    return new Uint8Array(await rendered.arrayBuffer());
+    return rendered.bytes();
   }
 
   async doConvert(

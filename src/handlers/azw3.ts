@@ -70,12 +70,7 @@ class azw3Handler implements FormatHandler {
             if (recindex != null) {
               try {
                 const buf = await book.mobi.loadResource(Number(recindex) - 1);
-                const uint8 = new Uint8Array(buf as ArrayBuffer);
-                let binary = "";
-                for (let j = 0; j < uint8.byteLength; j++) {
-                  binary += String.fromCharCode(uint8[j]);
-                }
-                b64 = btoa(binary);
+                b64 = new Uint8Array(buf as ArrayBuffer).toBase64();
               } catch (e) {
                 console.warn(e);
               }
@@ -86,13 +81,7 @@ class azw3Handler implements FormatHandler {
                   const [b] = await (book as any).loadResourceBlob(src);
                   if (b) {
                     type = b.type;
-                    const arrayBuffer = await b.arrayBuffer();
-                    const uint8 = new Uint8Array(arrayBuffer);
-                    let binary = "";
-                    for (let j = 0; j < uint8.byteLength; j++) {
-                      binary += String.fromCharCode(uint8[j]);
-                    }
-                    b64 = btoa(binary);
+                    b64 = (await (b as Blob).bytes()).toBase64();
                   }
                 } catch (e) {
                   console.warn(e);

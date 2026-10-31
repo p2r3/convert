@@ -8,7 +8,9 @@ import {
   unpackTypstAssets,
 } from "../../src/handlers/typst.ts";
 
+const RuntimeBlob = globalThis.Blob;
 GlobalRegistrator.register();
+globalThis.Blob = RuntimeBlob;
 
 test("preprocessHtmlForTypst injects a page break marker between slide-like containers", () => {
   const normalized = preprocessHtmlForTypst(`

@@ -211,18 +211,6 @@ export function postprocessTypstFromPandoc(typstContent: string): string {
   );
 }
 
-function bytesToBase64(bytes: Uint8Array): string {
-  let binary = "";
-  const chunkSize = 0x8000;
-
-  for (let i = 0; i < bytes.length; i += chunkSize) {
-    const chunk = bytes.subarray(i, i + chunkSize);
-    binary += String.fromCharCode(...chunk);
-  }
-
-  return btoa(binary);
-}
-
 export async function collectTypstAssetFiles(
   files: Record<string, any>,
   excludedPaths: string[] = [],
@@ -234,8 +222,7 @@ export async function collectTypstAssetFiles(
     if (excluded.has(path)) continue;
     if (!(file instanceof Blob)) continue;
 
-    const arrayBuffer = await file.arrayBuffer();
-    bundledAssets[path] = new Uint8Array(arrayBuffer);
+    bundledAssets[path] = await file.bytes();
   }
 
   return bundledAssets;
@@ -251,7 +238,7 @@ export async function bundleTypstAssets(
 
   if (assetPaths.length === 0) return typstContent;
   const bundledAssets = Object.fromEntries(
-    Object.entries(shadowFiles).map(([path, bytes]) => [path, bytesToBase64(bytes)]),
+    Object.entries(shadowFiles).map(([path, bytes]) => [path, bytes.toBase64()]),
   );
 
   return [
@@ -261,17 +248,6 @@ export async function bundleTypstAssets(
     "",
     typstContent,
   ].join("\n");
-}
-
-function base64ToBytes(base64: string): Uint8Array {
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-
-  return bytes;
 }
 
 export function unpackTypstAssets(mainContent: string): {
@@ -302,7 +278,7 @@ export function unpackTypstAssets(mainContent: string): {
 
   const parsedManifest = JSON.parse(manifestRaw) as Record<string, string>;
   const shadowFiles = Object.fromEntries(
-    Object.entries(parsedManifest).map(([path, base64]) => [path, base64ToBytes(base64)]),
+    Object.entries(parsedManifest).map(([path, base64]) => [path, Uint8Array.fromBase64(base64)]),
   );
 
   return {

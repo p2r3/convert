@@ -38,9 +38,7 @@ class alsHandler implements FormatHandler {
         const decompressedStream = new Blob([inputFile.bytes as BlobPart])
           .stream()
           .pipeThrough(new DecompressionStream("gzip"));
-        const decompressedBytes = new Uint8Array(
-          await new Response(decompressedStream).arrayBuffer(),
-        );
+        const decompressedBytes = await new Response(decompressedStream).bytes();
 
         let xml: string;
         try {

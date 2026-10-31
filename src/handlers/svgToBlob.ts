@@ -35,7 +35,7 @@ class svgToBlobHandler implements FormatHandler {
     const outputFiles: FileData[] = [];
     for (const inputFile of inputFiles) {
       // avoid the "Tainted canvases may not be exported" error
-      const url = `data:${inputFormat.mime};base64,${btoa(inputFile.bytes.reduce((str, byte) => str + String.fromCharCode(byte), ""))}`;
+      const url = `data:${inputFormat.mime};base64,${inputFile.bytes.toBase64()}`;
 
       const image = new Image();
       await new Promise((resolve, reject) => {

@@ -21,15 +21,6 @@ class htmlEmbedHandler implements FormatHandler {
     this.ready = true;
   }
 
-  static bytesToBase64(bytes: Uint8Array): string {
-    const chunks = [];
-    for (let i = 0; i < bytes.length; i += 32768) {
-      const byteChunk = bytes.subarray(i, i + 32768);
-      chunks.push(String.fromCharCode(...byteChunk));
-    }
-    return btoa(chunks.join(""));
-  }
-
   async doConvert(
     inputFiles: FileData[],
     inputFormat: FileFormat,
@@ -50,7 +41,7 @@ class htmlEmbedHandler implements FormatHandler {
       } else if (inputFormat.internal === "svg") {
         html += `<div><template shadowrootmode="open">${decode(inputFile.bytes)}</template></div><br>`;
       } else {
-        const base64 = htmlEmbedHandler.bytesToBase64(inputFile.bytes);
+        const base64 = inputFile.bytes.toBase64();
 
         if (inputFormat.mime.startsWith("image/")) {
           html += `<img src="data:${inputFormat.mime};base64,${base64}"><br>`;

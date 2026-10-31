@@ -12,18 +12,6 @@ class harHandler implements FormatHandler {
     this.ready = true;
   }
 
-  private base64ToUint8Array(base64: string): Uint8Array {
-    const binaryString = atob(base64);
-    const length = binaryString.length;
-    const bytes = new Uint8Array(length);
-
-    for (let i = 0; i < length; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
-    }
-
-    return bytes;
-  }
-
   private async convertHarToZip(inputFile: FileData): Promise<FileData> {
     const zip = new JSZip();
 
@@ -45,7 +33,7 @@ class harHandler implements FormatHandler {
       const content = entry.response.content;
       let contentData;
       if (content.encoding === "base64") {
-        contentData = this.base64ToUint8Array(content.text);
+        contentData = Uint8Array.fromBase64(content.text);
       } else {
         contentData = encode(entry.response.content.text);
       }

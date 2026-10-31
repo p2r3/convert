@@ -50,7 +50,7 @@ class txtToInfiniteCraftHandler implements FormatHandler {
 
     const compressedStream = inputStream.pipeThrough(cs);
 
-    const compressedBytes = new Uint8Array(await new Response(compressedStream).arrayBuffer());
+    const compressedBytes = await new Response(compressedStream).bytes();
 
     const inputFileName = inputFile.name;
 
@@ -103,9 +103,7 @@ class infiniteCraftToJsonHandler implements FormatHandler {
         const decompressedStream = new Blob([inputFile.bytes as BlobPart])
           .stream()
           .pipeThrough(new DecompressionStream("gzip"));
-        const decompressedBytes = new Uint8Array(
-          await new Response(decompressedStream).arrayBuffer(),
-        );
+        const decompressedBytes = await new Response(decompressedStream).bytes();
 
         let json: string;
         try {

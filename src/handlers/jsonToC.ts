@@ -167,7 +167,7 @@ export default class jsonToCHandler implements FormatHandler {
         let structSplitRegex: RegExp = /\.(?!\d)/;
         let subStructs: string[] = line.split(structSplitRegex);
         subStructs = subStructs.slice(1, subStructs.length);
-        let operands = subStructs[subStructs.length - 1].split("=");
+        let operands = subStructs.at(-1)!.split("=");
         let varName = operands[0];
         let newVarValue = operands[1];
         subStructs = subStructs.slice(0, subStructs.length - 1);

@@ -6,15 +6,6 @@ import Formats from "src/Formats.ts";
 import { InitializationError } from "src/errors.ts";
 import { changeExt, encode } from "src/common/index.ts";
 
-// Convert bytes to base64 string
-function bytesToBase64(bytes: Uint8Array): string {
-  let binary = "";
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
-}
-
 // Sanitize all string values to ensure valid JSON
 function sanitizeString(str: string): string {
   // oxlint-disable-next-line eslint/no-control-regex

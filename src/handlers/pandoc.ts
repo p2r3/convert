@@ -322,8 +322,7 @@ class pandocHandler implements FormatHandler {
         continue;
       }
 
-      const arrayBuffer = await outputBlob.arrayBuffer();
-      let bytes = new Uint8Array(arrayBuffer);
+      let bytes = await outputBlob.bytes();
       if (outputFormat.internal === "typst") {
         const normalizedTypst = normalizeTypstAssetPaths(
           postprocessTypstFromPandoc(decode(bytes)),

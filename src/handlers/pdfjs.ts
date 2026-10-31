@@ -85,7 +85,7 @@ class pdfjsHandler implements FormatHandler {
               type: outputFormat.mime,
             });
             outputFiles.push({
-              bytes: new Uint8Array(await blob.arrayBuffer()),
+              bytes: await blob.bytes(),
               name: changeExt(inputFile.name, outputFormat.extension, `_${pageNumber - 1}`),
             });
           } finally {

@@ -22,8 +22,7 @@ class ImageMagickHandler implements FormatHandler {
   public abortable = true;
 
   async init() {
-    const wasmBuffer = await fetch(magickWasmUrl).then((r) => r.arrayBuffer());
-    const wasmBytes = new Uint8Array(wasmBuffer);
+    const wasmBytes = await fetch(magickWasmUrl).then((r) => r.bytes());
 
     await initializeImageMagick(wasmBytes);
 

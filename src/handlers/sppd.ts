@@ -566,7 +566,7 @@ class sppdHandler implements FormatHandler {
             renderer.render(this.scene, this.camera);
 
             const rendered = await canvas.convertToBlob({ type: outputFormat.mime });
-            const bytes = new Uint8Array(await rendered.arrayBuffer());
+            const bytes = await rendered.bytes();
             const name = changeExt(inputFile.name, outputFormat.extension, `_${frameIndex}`);
             outputFiles.push({ bytes, name });
 

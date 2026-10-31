@@ -46,7 +46,7 @@ class bsorHandler implements FormatHandler {
                 const blob = await canvas.convertToBlob({
                   type: outputFormat.mime,
                 });
-                const bytes = new Uint8Array(await blob.arrayBuffer());
+                const bytes = await blob.bytes();
                 outputs.push({
                   name: file.name.split(".")[0] + "_" + frameIndex++ + "." + outputFormat.extension,
                   bytes: bytes,

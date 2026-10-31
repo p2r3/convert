@@ -36,10 +36,10 @@ class textToPdfHandler implements FormatHandler {
         doc.on("data", (chunk: Uint8Array) => chunks.push(chunk));
         doc.on("end", async () => {
           try {
-            const buffer = await new Blob(chunks as BlobPart[], {
+            const bytes = await new Blob(chunks as BlobPart[], {
               type: "application/pdf",
-            }).arrayBuffer();
-            resolve(new Uint8Array(buffer));
+            }).bytes();
+            resolve(bytes);
           } catch (error) {
             reject(error);
           }

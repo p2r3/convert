@@ -51,10 +51,10 @@ class mcModpackHandler implements FormatHandler {
             try {
               const res = await fetch(downloadUrl);
               if (res.ok) {
-                const buffer = await res.arrayBuffer();
+                const bytes = await res.bytes();
                 // The path in Modrinth is usually 'mods/somemod.jar' etc.
                 // It should go into 'overrides/' inside the CF zip.
-                outZip.file(`overrides/${modFile.path}`, new Uint8Array(buffer));
+                outZip.file(`overrides/${modFile.path}`, bytes);
               } else {
                 console.warn(`Failed to download ${downloadUrl} (status ${res.status})`);
               }
@@ -134,8 +134,8 @@ class mcModpackHandler implements FormatHandler {
                 `https://www.curseforge.com/api/v1/mods/${modFile.projectID}/files/${modFile.fileID}/download`,
               );
               if (fileWeb.ok) {
-                const buffer = await fileWeb.arrayBuffer();
-                outZip.file(`overrides/mods/${fileName}`, new Uint8Array(buffer));
+                const bytes = await fileWeb.bytes();
+                outZip.file(`overrides/mods/${fileName}`, bytes);
               } else {
                 console.warn(`Failed to download CF file ${modFile.fileID}`);
               }

@@ -18,12 +18,8 @@ class batToExeHandler implements FormatHandler {
   private footer: Uint8Array | null = null;
 
   async init() {
-    this.header = await fetch(headUrl)
-      .then((res) => res.arrayBuffer())
-      .then((buf) => new Uint8Array(buf));
-    this.footer = await fetch(footUrl)
-      .then((res) => res.arrayBuffer())
-      .then((buf) => new Uint8Array(buf));
+    this.header = await fetch(headUrl).then((res) => res.bytes());
+    this.footer = await fetch(footUrl).then((res) => res.bytes());
     this.ready = true;
   }
 

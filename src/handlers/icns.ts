@@ -19,7 +19,7 @@ const ICON_TYPE_BY_SIZE = new Map<number, string>([
 ]);
 
 const ICON_SIZE_BY_TYPE = new Map<string, number>(
-  Array.from(ICON_TYPE_BY_SIZE.entries()).map(([size, type]) => [type, size]),
+  ICON_TYPE_BY_SIZE.entries().map(([size, type]) => [type, size]),
 );
 
 function isPng(bytes: Uint8Array): boolean {
@@ -72,7 +72,7 @@ export function resolveLargestIconSize(maxDimension: number): number {
   for (const size of ICON_SIZES) {
     if (normalized <= size) return size;
   }
-  return ICON_SIZES[ICON_SIZES.length - 1];
+  return ICON_SIZES.at(-1)!;
 }
 
 export function extractBestPngFromIcns(icnsBytes: Uint8Array): Uint8Array {
