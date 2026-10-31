@@ -1,8 +1,8 @@
 import type { FileData, FileFormat, FormatHandler } from "src/FormatHandler.ts";
 import * as NBT from "nbtify";
 import Formats from "src/Formats.ts";
-import { gzipSync } from "fflate";
 import { changeExt, decode, encode } from "src/common/index.ts";
+import { compressGzip } from "src/common/gzip.ts";
 
 class nbtHandler implements FormatHandler {
   public readonly name = "nbt";
@@ -89,7 +89,7 @@ class nbtHandler implements FormatHandler {
       for (const file of inputFiles) {
         outputFiles.push({
           name: changeExt(file.name, outputFormat.extension),
-          bytes: gzipSync(file.bytes),
+          bytes: await compressGzip(file.bytes),
         });
       }
     }

@@ -1,7 +1,7 @@
 import { changeExt, decode, encode } from "src/common/index.ts";
+import { compressGzip, decompressGzip } from "src/common/gzip.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import Formats from "src/Formats.ts";
-import { gunzipSync, gzipSync } from "fflate";
 import JSZip from "jszip";
 
 class gdlvlHandler implements FormatHandler {
@@ -39,7 +39,7 @@ class gdlvlHandler implements FormatHandler {
         const compressed = Uint8Array.fromBase64(decode(inputFile.bytes), {
           alphabet: "base64url",
         });
-        data = decode(gunzipSync(compressed));
+        data = decode(await decompressGzip(compressed));
       } else {
         throw new Error(`Cannot convert from ${inputFormat.extension}`);
       }
@@ -54,7 +54,7 @@ class gdlvlHandler implements FormatHandler {
         zip.file("level.data", data);
         bytes = await zip.generateAsync({ type: "uint8array" });
       } else if (outputFormat.internal === "gdlvl") {
-        const compressed = gzipSync(encode(data));
+        const compressed = await compressGzip(encode(data));
         bytes = encode(compressed.toBase64({ alphabet: "base64url" }));
       } else {
         throw new Error(`Cannot convert to ${outputFormat.extension}`);

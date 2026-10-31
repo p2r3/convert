@@ -40,6 +40,7 @@
         "dom-to-svg": "^0.12.2",
         "electron-updater": "^6.8.11",
         "epubjs": "^0.3.93",
+        "fflate": "^0.8.3",
         "html2canvas": "^1.4.1",
         "imagetracer": "^0.2.2",
         "js-synthesizer": "^1.13.0",

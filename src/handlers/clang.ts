@@ -4,7 +4,8 @@ import { parseTar } from "nanotar";
 import createLLVM, { type MainModule as LLVMModule } from "built/clang/llvm.js";
 import wasmUrl from "built/clang/llvm.wasm.gz?url";
 import resourcesUrl from "built/clang/resources.tar.gz?url";
-import { changeExt, fetchGzip } from "src/common/index.ts";
+import { changeExt } from "src/common/index.ts";
+import { fetchGzip } from "src/common/gzip.ts";
 
 const sysrootUrls = import.meta.glob<string>("/built/clang/sysroots/*.tar.gz", {
   query: "?url",

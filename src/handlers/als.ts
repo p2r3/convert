@@ -1,6 +1,7 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import Formats from "src/Formats.ts";
 import { changeExt, decode, encode } from "src/common/index.ts";
+import { decompressGzip } from "src/common/gzip.ts";
 
 class alsHandler implements FormatHandler {
   public readonly name = "als";
@@ -35,10 +36,7 @@ class alsHandler implements FormatHandler {
           throw new Error("Invalid ALS file: expected gzip-compressed data.");
         }
 
-        const decompressedStream = new Blob([inputFile.bytes as BlobPart])
-          .stream()
-          .pipeThrough(new DecompressionStream("gzip"));
-        const decompressedBytes = await new Response(decompressedStream).bytes();
+        const decompressedBytes = await decompressGzip(inputFile.bytes);
 
         let xml: string;
         try {

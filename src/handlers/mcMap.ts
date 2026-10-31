@@ -3,10 +3,10 @@ import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import Formats from "src/Formats.ts";
 import { InitializationError } from "src/errors.ts";
 
-import * as pako from "pako";
 import * as NBT from "nbtify";
 import JSZip from "jszip";
 import { changeExt, stripExt } from "src/common/index.ts";
+import { compressGzip, decompressGzip } from "src/common/gzip.ts";
 import { canvasToBlob, createCanvas, type CanvasBundle } from "src/common/canvas.ts";
 
 const DEFAULT_WIDTH = 128;
@@ -156,7 +156,7 @@ class mcMapHandler implements FormatHandler {
 
               const data = await NBT.write(formatMapNBT(tile, 4671));
 
-              zip.file(`map_${startDigit}.dat`, pako.gzip(data));
+              zip.file(`map_${startDigit}.dat`, await compressGzip(data));
 
               startDigit++;
             }
@@ -178,13 +178,13 @@ class mcMapHandler implements FormatHandler {
 
           outputFiles.push({
             name: `map_${startDigit}.dat`,
-            bytes: pako.gzip(data),
+            bytes: await compressGzip(data),
           });
         }
       }
     } else if (inputFormat.internal === "mcmap" && outputFormat.mime === Formats.PNG.mime) {
       for (const file of inputFiles) {
-        const result = pako.ungzip(file.bytes);
+        const result = await decompressGzip(file.bytes);
         const nbt = await NBT.read(result);
         if (NBT.isTag<NBT.CompoundTag>(nbt.data)) {
           const data: NBT.CompoundTag = nbt.data;
@@ -220,7 +220,7 @@ class mcMapHandler implements FormatHandler {
     } else if (inputFormat.internal === "mcmap" && outputFormat.internal === "rgb") {
       for (const file of inputFiles) {
         try {
-          const result = pako.ungzip(file.bytes);
+          const result = await decompressGzip(file.bytes);
           const nbt = await NBT.read(result);
           if (NBT.isTag<NBT.CompoundTag>(nbt.data)) {
             const data: NBT.CompoundTag = nbt.data;

@@ -1,8 +1,8 @@
 import type { FileData, FileFormat, FormatHandler } from "src/FormatHandler";
 import * as NBT from "nbtify";
-import { gunzipSync, gzipSync } from "fflate";
 import Formats from "src/Formats.ts";
 import { changeExt } from "src/common/index.ts";
+import { compressGzip, decompressGzip } from "src/common/gzip.ts";
 
 class mcSchematicHandler implements FormatHandler {
   public readonly name = "mcSchematic";
@@ -30,7 +30,7 @@ class mcSchematicHandler implements FormatHandler {
       // Decompress GZipped NBT input
       let unzipped;
       try {
-        unzipped = gunzipSync(file.bytes);
+        unzipped = await decompressGzip(file.bytes);
       } catch {
         // Fallback for uncompressed NBT
         unzipped = file.bytes;
@@ -64,7 +64,7 @@ class mcSchematicHandler implements FormatHandler {
         outputFormat.internal === "schem" ||
         outputFormat.internal === "schematic"
       ) {
-        outBytes = gzipSync(outBytes);
+        outBytes = await compressGzip(outBytes);
         outputFiles.push({
           name: changeExt(file.name, outputFormat.extension),
           bytes: outBytes,

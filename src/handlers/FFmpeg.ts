@@ -7,7 +7,8 @@ import wasmUrl from "built/ffmpeg/ffmpeg-core.wasm.gz?url";
 import mime from "mime";
 import normalizeMimeType from "../normalizeMimeType.ts";
 import Formats, { Category, type CategoryType } from "src/Formats.ts";
-import { changeExt, encode, fetchGzip } from "src/common/index.ts";
+import { changeExt, encode } from "src/common/index.ts";
+import { fetchGzip } from "src/common/gzip.ts";
 
 type FFmpegOptions = {
   preRun?: (ffmpeg: FFmpegModule) => void;

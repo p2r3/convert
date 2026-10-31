@@ -1,6 +1,7 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import Formats from "src/Formats.ts";
 import { changeExt, decode, encode } from "src/common/index.ts";
+import { compressGzip, decompressGzip } from "src/common/gzip.ts";
 
 class txtToInfiniteCraftHandler implements FormatHandler {
   public readonly name = "txtToInfiniteCraft";
@@ -44,13 +45,7 @@ class txtToInfiniteCraftHandler implements FormatHandler {
 
     const outputBytes = encode(JSON.stringify(jsonData, null, 2));
 
-    const cs = new CompressionStream("gzip");
-
-    const inputStream = new Response(outputBytes).body!;
-
-    const compressedStream = inputStream.pipeThrough(cs);
-
-    const compressedBytes = await new Response(compressedStream).bytes();
+    const compressedBytes = await compressGzip(outputBytes);
 
     const inputFileName = inputFile.name;
 
@@ -100,10 +95,7 @@ class infiniteCraftToJsonHandler implements FormatHandler {
           throw new Error("Invalid IC file: expected gzip-compressed data.");
         }
 
-        const decompressedStream = new Blob([inputFile.bytes as BlobPart])
-          .stream()
-          .pipeThrough(new DecompressionStream("gzip"));
-        const decompressedBytes = await new Response(decompressedStream).bytes();
+        const decompressedBytes = await decompressGzip(inputFile.bytes);
 
         let json: string;
         try {
