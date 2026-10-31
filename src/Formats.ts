@@ -281,6 +281,9 @@ const Formats = {
   CMAP: new FormatDefinition("Celaria Map", "cmap", "cmap", "application/x-celaria-map", Category.DATA),
   OM_PUZZLE: new FormatDefinition("Opus Magnum puzzle", "puzzle", "puzzle", "application/x-opus-magnum-puzzle", Category.DATA),
   OM_MOLECULE: new FormatDefinition("Opus Magnum molecule", "molecule", "molecule", "application/x-opus-magnum-molecule", Category.DATA),
+  GMD: new FormatDefinition("GDShare Level", "gmd", "gmd", "application/x-gmd+xml", Category.DATA),
+  GMD2: new FormatDefinition("GDShare Level Archive", "gmd2", "gmd2", "application/x-gmd2+zip", [Category.ARCHIVE, Category.DATA]),
+  GDLVL: new FormatDefinition("Geometry Dash Level", "gdlvl", "gdlvl", "application/x-gdlvl", Category.DATA),
 };
 
 export default Formats;

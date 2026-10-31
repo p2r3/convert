@@ -108,6 +108,7 @@ const HANDLERS = {
   mcModpack: [],
   azw3: [],
   wavebreak: [],
+  gdlvl: [],
 } as const;
 
 // handlers can only be named things listed above
