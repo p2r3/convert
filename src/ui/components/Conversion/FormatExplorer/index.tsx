@@ -23,7 +23,7 @@ import {
 import { useDebouncedCallback } from "use-debounce";
 
 import "./index.css";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
+import { useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 import { popupOpen } from "src/ui/PopupStore";
 import type { RefObject } from "preact";
 import type { FileFormat } from "src/FormatHandler";
@@ -185,6 +185,27 @@ function filterByTerm(options: SearchIndex, term: string): SearchIndex {
   return filtered;
 }
 
+function useFormatCosts(format: FileFormat | null, direction: "from" | "to") {
+  const [result, setResult] = useState<{
+    format: FileFormat;
+    direction: "from" | "to";
+    costs: ReadonlyMap<string, number>;
+  } | null>(null);
+  useLayoutEffect(() => {
+    if (!format) return;
+    let active = true;
+    Promise.resolve(window.traversionGraph.getFormatCosts(format, direction))
+      .then((costs) => {
+        if (active) setResult({ format, direction, costs });
+      })
+      .catch((error) => console.warn("Could not load format ranking costs", error));
+    return () => {
+      active = false;
+    };
+  }, [format, direction]);
+  return result?.format === format && result.direction === direction ? result.costs : undefined;
+}
+
 export default function FormatExplorer({
   conversionOptions,
   matchingFrom,
@@ -210,27 +231,9 @@ export default function FormatExplorer({
     [conversionOptions],
   );
   const otherFormat = (direction === "from" ? toOption : fromOption)?.[0] ?? null;
-  const [costResult, setCostResult] = useState<{
-    format: FileFormat;
-    direction: "from" | "to";
-    costs: ReadonlyMap<string, number>;
-  } | null>(null);
-  useEffect(() => {
-    if (!otherFormat) return;
-    let active = true;
-    Promise.resolve(window.traversionGraph.getFormatCosts(otherFormat, direction))
-      .then((costs) => {
-        if (active) setCostResult({ format: otherFormat, direction, costs });
-      })
-      .catch((error) => console.warn("Could not load format ranking costs", error));
-    return () => {
-      active = false;
-    };
-  }, [otherFormat, direction]);
-  const formatCosts =
-    costResult?.format === otherFormat && costResult.direction === direction
-      ? costResult.costs
-      : undefined;
+  const outputCosts = useFormatCosts(fromOption?.[0] ?? null, "to");
+  const inputCosts = useFormatCosts(toOption?.[0] ?? null, "from");
+  const formatCosts = direction === "to" ? outputCosts : inputCosts;
   const originalIndex = useMemo(
     () =>
       generateSearchIndex(
