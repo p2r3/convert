@@ -92,6 +92,8 @@ export class TraversionGraph {
   private handlerByName = new Map<string, HandlerDefinition>();
   private formatPriorityByHandler = new Map<string, Map<string, number>>();
   private handlerPairs = new Map<string, Set<string>>();
+  private incomingEdges: number[][] = [];
+  private edgeCostCache = new Map<string, number[]>();
 
   public addCategoryChangeCost(
     from: CategoryType,
@@ -193,6 +195,7 @@ export class TraversionGraph {
     this.handlers = handlers;
     this.nodes.length = 0;
     this.edges.length = 0;
+    this.edgeCostCache.clear();
 
     // rebuild lookup caches
     this.nodeIndexByIdentifier.clear();
@@ -303,6 +306,9 @@ export class TraversionGraph {
         }
       });
     });
+
+    this.incomingEdges = this.nodes.map(() => []);
+    this.edges.forEach((edge, index) => this.incomingEdges[edge.to.index].push(index));
 
     const endTime = performance.now();
     console.log(
@@ -450,28 +456,45 @@ export class TraversionGraph {
     this.listeners.forEach((l) => l(state, path));
   }
 
-  private calculateRemainingCosts(toIndex: number): number[] {
-    const incomingEdges: Edge[][] = this.nodes.map(() => []);
-    for (const edge of this.edges) incomingEdges[edge.to.index].push(edge);
-
+  private calculateEdgeCosts(startIndex: number, reverse: boolean): number[] {
+    const key = `${startIndex}:${reverse}`;
+    const cached = this.edgeCostCache.get(key);
+    if (cached) return cached;
     const costs = this.nodes.map(() => Infinity);
-    costs[toIndex] = 0;
+    costs[startIndex] = 0;
     const queue = new PriorityQueue<{ index: number; cost: number }>(
       1000,
       (a, b) => a.cost - b.cost,
     );
-    queue.add({ index: toIndex, cost: 0 });
+    queue.add({ index: startIndex, cost: 0 });
     while (queue.size() > 0) {
       const current = queue.poll()!;
       if (current.cost > costs[current.index]) continue;
-      for (const edge of incomingEdges[current.index]) {
+      const edgeIndices = reverse
+        ? this.incomingEdges[current.index]
+        : this.nodes[current.index].edges;
+      for (const edgeIndex of edgeIndices) {
+        const edge = this.edges[edgeIndex];
+        const next = reverse ? edge.from.index : edge.to.index;
         const cost = current.cost + edge.cost;
-        if (cost >= costs[edge.from.index]) continue;
-        costs[edge.from.index] = cost;
-        queue.add({ index: edge.from.index, cost });
+        if (cost >= costs[next]) continue;
+        costs[next] = cost;
+        queue.add({ index: next, cost });
       }
     }
+    this.edgeCostCache.set(key, costs);
     return costs;
+  }
+
+  public getFormatCosts(format: FileFormat, direction: "from" | "to" = "to"): Map<string, number> {
+    const index = this.nodeIndexByIdentifier.get(`${format.mime}(${format.format})`);
+    if (index === undefined) return new Map();
+    const costs = this.calculateEdgeCosts(index, direction === "from");
+    return new Map(
+      this.nodes.flatMap((node, i) =>
+        Number.isFinite(costs[i]) ? [[node.identifier, costs[i]] as const] : [],
+      ),
+    );
   }
 
   public async *searchPath(
@@ -487,7 +510,7 @@ export class TraversionGraph {
     const fromIndex = this.nodeIndexByIdentifier.get(fromIdentifier) ?? -1;
     const toIndex = this.nodeIndexByIdentifier.get(toIdentifier) ?? -1;
     if (fromIndex === -1 || toIndex === -1) return []; // If either format is not in the graph, return empty array
-    const remainingCosts = this.calculateRemainingCosts(toIndex);
+    const remainingCosts = this.calculateEdgeCosts(toIndex, true);
     if (!Number.isFinite(remainingCosts[fromIndex])) return;
     const queue = new PriorityQueue<QueueNode>(
       1000,

@@ -23,7 +23,7 @@ import {
 import { useDebouncedCallback } from "use-debounce";
 
 import "./index.css";
-import { useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 import { popupOpen } from "src/ui/PopupStore";
 import type { RefObject } from "preact";
 import type { FileFormat } from "src/FormatHandler";
@@ -37,6 +37,11 @@ import {
   hasActiveFilters,
 } from "src/ui/FormatCategories";
 import { Category, type CategoryType } from "src/Formats";
+import {
+  collectFormatCategories,
+  sortByPopularity,
+  type FormatCategories,
+} from "src/ui/FormatRanking";
 
 interface FormatExplorerProps {
   conversionOptions: ConversionOptionsMap;
@@ -109,8 +114,11 @@ function generateSearchIndex(
   showAll: boolean,
   advancedMode: boolean,
   direction: "from" | "to",
+  otherFormat: FileFormat | null,
+  formatCategories: FormatCategories,
+  formatCosts?: ReadonlyMap<string, number>,
 ): SearchIndex {
-  const index: SearchIndex = new Map();
+  let index: SearchIndex = new Map();
   const seen = new Set<string>();
 
   for (const [file, handler] of optionsMap) {
@@ -131,6 +139,17 @@ function generateSearchIndex(
     }
   }
 
+  index = new Map(
+    sortByPopularity(
+      [...index],
+      ([, [format]]) => format,
+      direction,
+      otherFormat,
+      formatCategories,
+      formatCosts,
+    ),
+  );
+
   if (direction === "from" && matchingFrom) {
     return new Map([
       ...[...index].filter(([, [format]]) => matchingFrom.has(format)),
@@ -141,22 +160,17 @@ function generateSearchIndex(
   }
 }
 
-function filterByCategories(options: SearchIndex, categories: Set<CategoryType>): SearchIndex {
+function filterByCategories(
+  options: SearchIndex,
+  categories: Set<CategoryType>,
+  formatCategories: FormatCategories,
+): SearchIndex {
   if (categories.size === 0) return options;
 
   const filtered: SearchIndex = new Map();
   for (const [key, pair] of options) {
-    const cat = pair[0].category;
-    if (typeof cat === "string" && categories.has(cat)) {
-      filtered.set(key, pair);
-    } else if (Array.isArray(cat)) {
-      for (const c of cat) {
-        if (categories.has(c)) {
-          filtered.set(key, pair);
-          break;
-        }
-      }
-    }
+    const cat = formatCategories.get(pair[0].format) ?? [];
+    if (cat.some((c) => categories.has(c))) filtered.set(key, pair);
   }
   return filtered;
 }
@@ -191,9 +205,54 @@ export default function FormatExplorer({
 }: FormatExplorerProps) {
   const isAdvanced = Mode.value === ModeEnum.Advanced;
 
+  const formatCategories = useMemo(
+    () => collectFormatCategories(conversionOptions.keys()),
+    [conversionOptions],
+  );
+  const otherFormat = (direction === "from" ? toOption : fromOption)?.[0] ?? null;
+  const [costResult, setCostResult] = useState<{
+    format: FileFormat;
+    direction: "from" | "to";
+    costs: ReadonlyMap<string, number>;
+  } | null>(null);
+  useEffect(() => {
+    if (!otherFormat) return;
+    let active = true;
+    Promise.resolve(window.traversionGraph.getFormatCosts(otherFormat, direction))
+      .then((costs) => {
+        if (active) setCostResult({ format: otherFormat, direction, costs });
+      })
+      .catch((error) => console.warn("Could not load format ranking costs", error));
+    return () => {
+      active = false;
+    };
+  }, [otherFormat, direction]);
+  const formatCosts =
+    costResult?.format === otherFormat && costResult.direction === direction
+      ? costResult.costs
+      : undefined;
   const originalIndex = useMemo(
-    () => generateSearchIndex(conversionOptions, matchingFrom, showAll, isAdvanced, direction),
-    [conversionOptions, matchingFrom, showAll, isAdvanced, direction],
+    () =>
+      generateSearchIndex(
+        conversionOptions,
+        matchingFrom,
+        showAll,
+        isAdvanced,
+        direction,
+        otherFormat,
+        formatCategories,
+        formatCosts,
+      ),
+    [
+      conversionOptions,
+      matchingFrom,
+      showAll,
+      isAdvanced,
+      direction,
+      otherFormat,
+      formatCategories,
+      formatCosts,
+    ],
   );
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -213,8 +272,11 @@ export default function FormatExplorer({
 
   const searchResultsIndex = useMemo(
     () =>
-      filterByTerm(filterByCategories(originalIndex, activeCategories), searchTerm.toLowerCase()),
-    [originalIndex, searchTerm, activeCategories],
+      filterByTerm(
+        filterByCategories(originalIndex, activeCategories, formatCategories),
+        searchTerm.toLowerCase(),
+      ),
+    [originalIndex, searchTerm, activeCategories, formatCategories],
   );
 
   const selectedOption = direction === "from" ? fromOption : toOption;
