@@ -28,6 +28,11 @@ This is not just terrible for privacy, it's also incredibly lame. What if you _r
 
 For a semi-technical overview of this tool, check out the video: https://youtu.be/btUbcsTbVA8
 
+<!-- live-links -->
+
+**Live:** [gitguy268.github.io/convert](https://gitguy268.github.io/convert/) · [convert-eight-sigma.vercel.app](https://convert-eight-sigma.vercel.app)
+<!-- /live-links -->
+
 <!-- run-steps:start -->
 
 ## Run it locally, step by step
