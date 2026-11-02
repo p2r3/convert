@@ -45,7 +45,7 @@ export interface ConversionSettings {
   protect?: string;
   /** Number the pages of a PDF at the bottom. */
   pageNumbers?: boolean;
-  /** Text to print diagonally across every page of a PDF. */
+  /** Text to print diagonally across every page of a PDF, or across a picture. */
   watermark?: string;
   /** Palette size of a PNG, 2–256. Fewer colours make a smaller file. */
   colors?: number;
@@ -103,6 +103,19 @@ export function sameFormat(a: FileFormat, b: FileFormat) {
   return a.mime === b.mime && a.format === b.format;
 }
 
+/** Outputs of tools whose handlers read no settings (videoTools, imageTools, depth, metadata). */
+const TOOL_FORMATS: ReadonlySet<string> = new Set([
+  "contact-sheet",
+  "audio-video",
+  "favicon",
+  "collage",
+  "framed",
+  "halftone",
+  "ascii-html",
+  "depth",
+  "metadata",
+]);
+
 /**
  * Which settings make sense for the given output format.
  * @param input The format the file comes from, for settings that depend on both ends.
@@ -111,8 +124,8 @@ export function sameFormat(a: FileFormat, b: FileFormat) {
  * Let handlers declare supported settings if more of them start using these.
  */
 export function applicableSettings(format: FileFormat, input?: FileFormat): SettingKey[] {
-  // tools with a handler of their own (src/handlers/videoTools.ts), which reads no settings
-  if (format.format === "contact-sheet" || format.format === "audio-video") return [];
+  // tools with a handler of their own, which reads no settings
+  if (TOOL_FORMATS.has(format.format)) return [];
   if (format.mime === "image/gif") return ["fps", "maxSize", "start", "end"];
   // the PDF tools (src/handlers/pdfTools.ts); a merged PDF has a handler of its own that reads none
   if (format.mime === "application/pdf") {
@@ -136,8 +149,10 @@ export function applicableSettings(format: FileFormat, input?: FileFormat): Sett
   if (isImage || isVideo) keys.push("maxSize");
   if (isVideo || isAudio) keys.push("start", "end", "copyStreams");
   if (isImage || isVideo || isAudio) keys.push("stripMetadata");
+  if (isImage) keys.push("watermark");
   if (format.format === "png") keys.push("colors");
   if (isAudio && !isVideo) keys.push(...AUDIO_EDITS);
+  if (isVideo) keys.push("speed");
   return keys;
 }
 
@@ -280,6 +295,17 @@ export function ffmpegAudioFilter(settings: ConversionSettings): string | undefi
   return filters.join(",");
 }
 
+/**
+ * The video half of a speed change: the same cut as {@link ffmpegAudioFilter} makes, then the
+ * frames played faster or slower. Undefined without a speed.
+ */
+export function ffmpegSpeedFilter(settings: ConversionSettings): string | undefined {
+  const { start, end, speed } = settings;
+  if (!speed) return undefined;
+  const cut = [start && `start=${start}`, end && `end=${end}`].filter(Boolean).join(":");
+  return `${cut ? `trim=${cut},` : ""}setpts=(PTS-STARTPTS)/${speed}`;
+}
+
 /** Every setting except the filters of {@link ffmpegScaleFilter} and {@link ffmpegAudioFilter}. */
 export function ffmpegSettingsArgs(settings: ConversionSettings): string[] {
   // with audio edits the cut is part of the filter chain
@@ -330,8 +356,9 @@ export function compressorsFor(
     (categories.includes(Category.VIDEO) || categories.includes(Category.AUDIO));
   // mediabunny always re-encodes, so only FFmpeg can copy streams, and it has no audio filters
   const media = settings.copyStreams || hasAudioEdits(settings) ? ["FFmpeg"] : MEDIA_COMPRESSORS;
+  // oxipng only rewrites the PNG, it can't change what is in it
   const names =
-    format.mime === "image/png" && settings.colors
+    format.mime === "image/png" && (settings.colors || settings.watermark)
       ? ["ImageMagick"]
       : (COMPRESSORS[format.mime] ?? (isMedia ? media : []));
 

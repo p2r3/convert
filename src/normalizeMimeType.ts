@@ -16,6 +16,10 @@ function normalizeMimeType(mime: string) {
       return "image/icns";
     case "image/x-icon":
       return "image/vnd.microsoft.icon";
+    // what the mime package calls .mmd; nothing here reads karaoke files, and Mermaid diagrams
+    // are what people mean by it
+    case "application/vnd.chipnuts.karaoke-mmd":
+      return "text/vnd.mermaid";
     case "image/vtf":
       return "image/x-vtf";
     case "image/aseprite":

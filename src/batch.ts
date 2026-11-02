@@ -196,7 +196,7 @@ export function siblingKeys(
 
 /**
  * The special outputs that fit an input and deserve a shortcut, as the `format` of their
- * output: a list of 447 formats does not tell anyone that a PNG can be read or cut out.
+ * output: a long list of formats does not tell anyone that a PNG can be read or cut out.
  * @param sameTypeCount How many of the selected files have this input format.
  * @param hasWebGpu Whether the browser can run the upscalers at all.
  */
@@ -204,27 +204,36 @@ export function toolsFor(from: FileFormat, sameTypeCount: number, hasWebGpu: boo
   if (from.mime === "application/pdf") {
     return ["ocr", "pdf-pages", ...(sameTypeCount > 1 ? ["pdf-merged"] : [])];
   }
+  if (from.mime === "application/json") return ["ts"];
   const categories = categoriesOf(from);
   // a GIF is both: it goes with video, where a single still is not what is asked for
   if (categories.includes(Category.VIDEO)) {
+    if (categories.includes(Category.IMAGE)) {
+      return hasWebGpu ? ["upscaled-film", "upscaled-animation"] : [];
+    }
     return [
-      // a GIF is short and already shows its frames
-      ...(categories.includes(Category.IMAGE) ? [] : ["contact-sheet"]),
+      "contact-sheet",
       ...(hasWebGpu ? ["upscaled-film", "upscaled-animation"] : []),
+      "metadata",
     ];
   }
   if (categories.includes(Category.IMAGE) && !categories.includes(Category.VECTOR)) {
+    // the metadata report and coloured ASCII art are in the format list: the row is long enough
     return [
       "ocr",
       "nobg",
       ...(hasWebGpu ? ["upscaled-photo", "upscaled-drawing"] : []),
-      ...(sameTypeCount > 1 ? ["pdf-from-images"] : []),
+      "favicon",
+      "framed",
+      "halftone",
+      "depth",
+      ...(sameTypeCount > 1 ? ["collage", "pdf-from-images"] : []),
     ];
   }
   if (categories.includes(Category.AUDIO)) {
     // judged on the file itself, so only for the formats the check reads as they are
     const direct = AUDIO_FILES.some((f) => sameFormat(f, from));
-    return [...(direct ? ["audio-check"] : []), "audio-video"];
+    return [...(direct ? ["audio-check"] : []), "audio-video", "metadata"];
   }
   return [];
 }

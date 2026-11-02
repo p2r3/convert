@@ -135,6 +135,12 @@ export default [
     hash: ["sha256", "75da6c8d2f8096ec743d071951be73b4a8bc7b3e51d9a6625d63644f90ffeedb"],
   },
   {
+    // Depth Anything V2 Small (Apache-2.0), as ONNX with int8 weights
+    name: "depth-anything-v2-small",
+    url: "https://huggingface.co/onnx-community/depth-anything-v2-small/resolve/4472b7362082ad9968fee890ca0f1e5aca36b93d/onnx/model_int8.onnx",
+    hash: ["sha256", "01aa7a23de3f4a0ee1a2bb9997e6918104c85a9f95dea46d27b9b3fb0c6b9001"],
+  },
+  {
     name: "liquid-glass-ui",
     url: "https://github.com/hwyuanzi/LiquidGlass-UI/archive/293328c3a983b55460b488bffb2caa6f25729c2f.tar.gz",
     hash: ["sha256", "f49c27196a5197414be60c5a572ab1bbda72018ab14681da36c76239e218542f"],

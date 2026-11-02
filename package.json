@@ -90,6 +90,7 @@
     "loudness-worklet": "2.1.0",
     "lucide-preact": "^1.52.0",
     "mediabunny": "^1.61.1",
+    "mermaid": "12.1.0",
     "meyda": "^5.6.3",
     "mime": "^4.1.0",
     "mupdf": "^1.28.1",

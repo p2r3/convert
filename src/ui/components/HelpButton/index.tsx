@@ -83,7 +83,27 @@ export default function HelpButton() {
               two or more PDFs.
             </li>
             <li>
-              <strong>Combine into one PDF</strong> puts two or more pictures on pages of their own.
+              <strong>Combine into one PDF</strong> puts two or more pictures on pages of their own,
+              and <strong>Collage</strong> lays them out in one picture.
+            </li>
+            <li>
+              <strong>Favicon set</strong> makes the icons a website needs from one picture, with
+              the HTML to use them, in a zip. <strong>Frame screenshot</strong> puts a picture on a
+              gradient with rounded corners and a shadow. <strong>Halftone print</strong> prints it
+              as a three-colour silk screen of dots.
+            </li>
+            <li>
+              <strong>Depth map</strong> shows how far away each part of a photo is, near in light
+              and far in dark. Downloads about 27 MB the first time.
+            </li>
+            <li>
+              <strong>Metadata</strong> lists what a song or a video says about itself, and the
+              tempo of a song. For pictures it is in the format list as &quot;Metadata report&quot;,
+              next to &quot;ASCII art in colour&quot;.
+            </li>
+            <li>
+              <strong>TypeScript types</strong> describes the shape of a JSON file. Mermaid diagrams
+              (.mmd) become SVG or PNG.
             </li>
             <li>
               <strong>Check audio</strong> tells whether a music file is what it claims to be: a
@@ -107,8 +127,9 @@ export default function HelpButton() {
               a sound to a start and an end, removes metadata such as the location of a photo, keeps
               or turns pages of a PDF, and puts a password on the zip. For sound it also evens out
               loudness, fades in and out, mixes to mono, plays backwards, cuts silence and changes
-              speed. For a PDF it opens or sets a password and adds page numbers or a watermark. For
-              a PNG it cuts the number of colours, which can make it much smaller.
+              speed, and a video can play faster or slower too. For a PDF it opens or sets a
+              password and adds page numbers or a watermark, and a picture can get a watermark as
+              well. For a PNG it cuts the number of colours, which can make it much smaller.
             </li>
             <li>
               <strong>+</strong> adds more files. Each file can get its own output.

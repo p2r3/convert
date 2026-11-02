@@ -3,7 +3,13 @@ import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import type { ConvertContext } from "../ui/ProgressStore.js";
 import { imageToText, rgbaToGrayscale } from "built/image-to-txt/src/convert.ts";
 import { InitializationError } from "src/errors.ts";
-import { blobToCanvas, canvasToBlob, createCanvas, type CanvasBundle } from "src/common/canvas.ts";
+import {
+  blobToCanvas,
+  canvasToBlob,
+  createCanvas,
+  drawWatermark,
+  type CanvasBundle,
+} from "src/common/canvas.ts";
 import { changeExt, decode, encode } from "src/common/index.ts";
 
 class canvasToBlobHandler implements FormatHandler {
@@ -105,6 +111,8 @@ class canvasToBlobHandler implements FormatHandler {
           }),
         );
       } else {
+        const watermark = convertCtx?.settings.watermark;
+        if (watermark) drawWatermark(ctx, canvas.width, canvas.height, watermark);
         bytes = await canvasToBlob(this.#bundle, outputFormat.mime, convertCtx?.settings.quality);
       }
 

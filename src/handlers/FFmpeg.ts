@@ -13,10 +13,12 @@ import { InitializationError } from "src/errors.ts";
 import { changeExt, encode, stalls } from "src/common/index.ts";
 import {
   type ConversionSettings,
+  categoriesOf,
   ffmpegAudioFilter,
   ffmpegCopyArgs,
   ffmpegScaleFilter,
   ffmpegSettingsArgs,
+  ffmpegSpeedFilter,
   ffmpegTrimArgs,
   sameFormat,
 } from "src/ConversionSettings.ts";
@@ -485,11 +487,16 @@ class FFmpegHandler implements FormatHandler {
     // before the first frame (eight still work). The encoder keeps its own threads.
     if (this.#threads) command.push("-filter_threads", "4");
     if (args) command.push(...args);
-    if (scale && !usePalette) {
+    // the audio half of a speed change is in the "-af" chain above
+    const speed = categoriesOf(outputFormat).includes(Category.VIDEO)
+      ? ffmpegSpeedFilter(settings)
+      : undefined;
+    const videoFilter = [scale, speed].filter(Boolean).join(",");
+    if (videoFilter && !usePalette) {
       // FFmpeg only honours the last "-vf", so join an existing one instead of adding another
       const vf = command.lastIndexOf("-vf");
-      if (vf === -1) command.push("-vf", scale);
-      else command[vf + 1] = `${scale},${command[vf + 1]}`;
+      if (vf === -1) command.push("-vf", videoFilter);
+      else command[vf + 1] = `${videoFilter},${command[vf + 1]}`;
     }
     command.push("output");
 

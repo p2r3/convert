@@ -48,6 +48,11 @@ export default defineConfig({
       },
       { find: "built", replacement: fileURLToPath(new URL("./built", import.meta.url)) },
       {
+        // mermaid's optional ELK layout is EPL-2.0, a copyleft licence: build without it
+        find: /^elkjs\/lib\/elk\.bundled\.js$/,
+        replacement: fileURLToPath(new URL("./src/handlers/mermaid/noElk.ts", import.meta.url)),
+      },
+      {
         // the package's own bundle is a webpack development build made of eval() calls, which
         // minifying breaks. Its TypeScript source is in the package too and builds cleanly.
         find: /^@websr\/websr$/,

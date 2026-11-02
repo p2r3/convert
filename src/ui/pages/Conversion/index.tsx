@@ -38,14 +38,21 @@ import FormatExplorer from "src/ui/components/Conversion/FormatExplorer";
 import LoadingScreen from "src/ui/components/LoadingScreen";
 import Footer from "src/ui/components/Footer";
 import {
+  AppWindow,
   ArrowLeft,
   ArrowRight,
   AudioLines,
+  Braces,
   Clapperboard,
   Combine,
   Eraser,
+  Frame,
+  Grid3x3,
   ImageUpscale,
   Images,
+  Info,
+  Layers,
+  LayoutDashboard,
   LayoutGrid,
   Minimize2,
   Plus,
@@ -84,6 +91,13 @@ const TOOLS: Record<string, { label: string; icon: preact.JSX.Element }> = {
   "contact-sheet": { label: "Contact sheet", icon: <LayoutGrid size={14} /> },
   "audio-check": { label: "Check audio", icon: <AudioLines size={14} /> },
   "audio-video": { label: "Make a video", icon: <Clapperboard size={14} /> },
+  favicon: { label: "Favicon set", icon: <AppWindow size={14} /> },
+  framed: { label: "Frame screenshot", icon: <Frame size={14} /> },
+  halftone: { label: "Halftone print", icon: <Grid3x3 size={14} /> },
+  depth: { label: "Depth map", icon: <Layers size={14} /> },
+  collage: { label: "Collage", icon: <LayoutDashboard size={14} /> },
+  metadata: { label: "Metadata", icon: <Info size={14} /> },
+  ts: { label: "TypeScript types", icon: <Braces size={14} /> },
 };
 
 function countAvailableFormats(

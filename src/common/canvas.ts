@@ -41,3 +41,32 @@ export async function blobToCanvas(
   bundle.ctx.drawImage(image, 0, 0, bundle.canvas.width, bundle.canvas.height);
   image.close();
 }
+
+/**
+ * Writes `text` once across the whole picture, corner to corner and faded, the way the PDF
+ * tools stamp a page (src/handlers/pdfTools.ts).
+ */
+export function drawWatermark(
+  ctx: OffscreenCanvasRenderingContext2D,
+  width: number,
+  height: number,
+  text: string,
+) {
+  const diagonal = Math.hypot(width, height);
+  ctx.save();
+  // sans-serif averages about half an em per character, and the text spans 70 % of the diagonal
+  const size = Math.max(8, Math.min(diagonal / 8, (diagonal * 0.7) / (0.5 * text.length)));
+  ctx.font = `bold ${size}px sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.globalAlpha = 0.3;
+  ctx.translate(width / 2, height / 2);
+  ctx.rotate(-Math.atan2(height, width));
+  // a light edge keeps the grey readable on dark pictures
+  ctx.lineWidth = Math.max(1, size / 24);
+  ctx.strokeStyle = "white";
+  ctx.strokeText(text, 0, 0);
+  ctx.fillStyle = "#808080";
+  ctx.fillText(text, 0, 0);
+  ctx.restore();
+}

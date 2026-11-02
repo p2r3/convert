@@ -10,6 +10,7 @@ import {
   ffmpegCopyArgs,
   ffmpegScaleFilter,
   ffmpegSettingsArgs,
+  ffmpegSpeedFilter,
   settingsFor,
 } from "../src/ConversionSettings.js";
 
@@ -44,10 +45,12 @@ test("applicableSettings depends on the output category and losslessness", () =>
     "quality",
     "maxSize",
     "stripMetadata",
+    "watermark",
   ]);
   expect(applicableSettings(Formats.PNG.builder("png").lossless().to())).toEqual([
     "maxSize",
     "stripMetadata",
+    "watermark",
     "colors",
   ]);
   expect(applicableSettings(Formats.GIF.builder("gif").to())).toEqual([
@@ -65,6 +68,7 @@ test("applicableSettings depends on the output category and losslessness", () =>
     "end",
     "copyStreams",
     "stripMetadata",
+    "speed",
   ]);
   expect(applicableSettings(Formats.MP3.builder("mp3").to())).toEqual([
     "audioBitrate",
@@ -88,7 +92,24 @@ test("applicableSettings depends on the output category and losslessness", () =>
   expect(
     applicableSettings({ ...Formats.PNG.builder("png").to(), format: "contact-sheet" }),
   ).toEqual([]);
+  for (const format of ["favicon", "collage", "framed", "halftone", "depth", "metadata"]) {
+    expect(applicableSettings({ ...Formats.PNG.builder("png").to(), format })).toEqual([]);
+  }
+  // a vector image has no pixels to stamp
   expect(applicableSettings(Formats.SVG.builder("svg").to())).toEqual([]);
+});
+
+test("ffmpegSpeedFilter cuts the video as the audio chain does, then changes its pace", () => {
+  expect(ffmpegSpeedFilter({})).toBeUndefined();
+  expect(ffmpegSpeedFilter({ start: 2 })).toBeUndefined();
+  expect(ffmpegSpeedFilter({ speed: 2 })).toBe("setpts=(PTS-STARTPTS)/2");
+  expect(ffmpegSpeedFilter({ speed: 0.5, start: 1, end: 3 })).toBe(
+    "trim=start=1:end=3,setpts=(PTS-STARTPTS)/0.5",
+  );
+  // the audio half of the same change
+  expect(ffmpegAudioFilter({ speed: 2, start: 1 })).toBe(
+    "atrim=start=1,asetpts=PTS-STARTPTS,atempo=2",
+  );
 });
 
 const PDF = Formats.PDF.builder("pdf").fromTo();
@@ -272,6 +293,9 @@ test("compressorsFor only trusts listed handlers that read and write the format"
   // fewer colours is lossy, which oxipng won't do
   const quantising = compressorsFor(Formats.PNG.builder("x").nowhere(), handlers, { colors: 64 });
   expect(quantising.map(([, h]) => h.name as string)).toEqual(["ImageMagick"]);
+  // nor will it stamp a watermark
+  const stamping = compressorsFor(Formats.PNG.builder("x").nowhere(), handlers, { watermark: "A" });
+  expect(stamping.map(([, h]) => h.name as string)).toEqual(["ImageMagick"]);
   expect(names(Formats.PDF.builder("x").nowhere())).toEqual(["compressPdf"]);
   // mediabunny always re-encodes, so a stream copy leaves only FFmpeg
   const copying = compressorsFor(Formats.MP4.builder("x").nowhere(), handlers, {
@@ -281,6 +305,8 @@ test("compressorsFor only trusts listed handlers that read and write the format"
   // nor does mediabunny have audio filters
   const fading = compressorsFor(Formats.MP4.builder("x").nowhere(), handlers, { fadeIn: 1 });
   expect(fading.map(([, h]) => h.name as string)).toEqual(["FFmpeg"]);
+  const faster = compressorsFor(Formats.MP4.builder("x").nowhere(), handlers, { speed: 2 });
+  expect(faster.map(([, h]) => h.name as string)).toEqual(["FFmpeg"]);
   // FFmpeg can't read MP3 here, and DOCX isn't on the list at all
   expect(names(Formats.MP3.builder("x").nowhere())).toEqual([]);
   expect(names(Formats.DOCX.builder("x").nowhere())).toEqual([]);

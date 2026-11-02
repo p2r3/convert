@@ -303,6 +303,42 @@ function convertGenerated(
           pixels.data[i] = i % 4 === 3 ? 255 : (i * 7) % 256;
         ctx.putImageData(pixels, 0, 0);
         bytes = await toBytes("image/jpeg", input === "photo-low" ? 0.2 : 1);
+        if (input === "photo-make") {
+          // an APP1 segment with one EXIF entry, Make = "Ack", short enough to sit in the entry
+          const tiff = [..."MM\0*"].map((c) => c.charCodeAt(0));
+          tiff.push(
+            0,
+            0,
+            0,
+            8,
+            0,
+            1,
+            0x01,
+            0x0f,
+            0,
+            2,
+            0,
+            0,
+            0,
+            4,
+            0x41,
+            0x63,
+            0x6b,
+            0,
+            0,
+            0,
+            0,
+            0,
+          );
+          const exif = [
+            0xff,
+            0xe1,
+            0,
+            2 + 6 + tiff.length,
+            ...new TextEncoder().encode("Exif\0\0"),
+          ];
+          bytes = new Uint8Array([...bytes.slice(0, 2), ...exif, ...tiff, ...bytes.slice(2)]);
+        }
         if (input === "photo-exif") {
           // an APP1 segment right after the start marker: "Exif", then an empty big-endian TIFF
           const exif = [0xff, 0xe1, 0, 22, ...new TextEncoder().encode("Exif\0\0MM\0*")];
@@ -999,6 +1035,315 @@ test(
     );
 
     expect(result).toEqual(["a.png", "b.png"]);
+  },
+  { timeout: 120000 },
+);
+
+test(
+  "png → favicon set gives a zip",
+  async () => {
+    const output = await convertGenerated("disc", Formats.PNG, {
+      ...Formats.ZIP,
+      format: "favicon",
+    });
+
+    expect(output!.handlers.at(-1)).toBe("favicon");
+    expect(output!.text.slice(0, 2)).toBe("PK");
+    // the first file in the zip; the description holds the first 4 KB
+    expect(output!.text).toContain("favicon.ico");
+  },
+  { timeout: 60000 },
+);
+
+const png = (format: string) => ({ ...Formats.PNG, format });
+
+test(
+  "png → framed, halftone and depth keep the picture's size or frame it",
+  async () => {
+    const framed = await convertGenerated("disc", Formats.PNG, png("framed"));
+    // 8 % of the longest side around a 600 × 200 picture
+    expect(framed!.handlers.at(-1)).toBe("frame");
+    expect(framed!.width).toBe(600 + 2 * 48);
+
+    const print = await convertGenerated("disc", Formats.PNG, png("halftone"));
+    expect(print!.handlers.at(-1)).toBe("halftone");
+    expect(print!.width).toBe(600);
+    // the white edge is bare paper, the black disc is covered in ink
+    expect(print!.cornerRed).toBe(0xf1);
+    expect(print!.centreRed).toBeLessThan(0xf1);
+
+    const depth = await convertGenerated("disc", Formats.PNG, png("depth"));
+    expect(depth!.handlers.at(-1)).toBe("depth");
+    expect(depth!.width).toBe(600);
+    expect(depth!.cornerAlpha).toBe(255);
+  },
+  { timeout: 180000 },
+);
+
+test(
+  "two pngs → collage gives one picture with both side by side",
+  async () => {
+    const result = await page.evaluate(
+      async (from, to) => {
+        const bytes = await fetch("/test/colors_50x50.png").then((r) => r.bytes());
+        const files = [
+          { name: "a.png", bytes },
+          { name: "b.png", bytes: bytes.slice() },
+        ];
+        const output = await window.tryConvertByTraversing(files, from, to);
+        if (!output) return null;
+        const image = await createImageBitmap(new Blob([output.files[0].bytes as BlobPart]));
+        return {
+          count: output.files.length,
+          name: output.files[0].name,
+          width: image.width,
+          height: image.height,
+        };
+      },
+      { format: Formats.PNG, handler: dummyHandler },
+      { format: { ...Formats.PNG, format: "collage" }, handler: dummyHandler } as never,
+    );
+
+    // two cells of 50 with gaps of 8 between and around them
+    expect(result).toEqual({ count: 1, name: "a-collage.png", width: 124, height: 66 });
+  },
+  { timeout: 60000 },
+);
+
+test(
+  "png → ascii art in colour gives an HTML page",
+  async () => {
+    const output = await convertGenerated("disc", Formats.PNG, {
+      ...Formats.HTML,
+      format: "ascii-html",
+    });
+
+    expect(output!.handlers.at(-1)).toBe("asciiHtml");
+    expect(output!.text).toStartWith("<!DOCTYPE html>");
+    expect(output!.text).toContain('<span style="color:#');
+  },
+  { timeout: 60000 },
+);
+
+test(
+  "a watermark is stamped on a picture, also when it stays a PNG",
+  async () => {
+    const plain = await convertGenerated("disc", Formats.PNG, Formats.JPEG);
+    const stamped = await convertGenerated("disc", Formats.PNG, Formats.JPEG, {
+      watermark: "CONVERT TO IT",
+    });
+    expect(plain!.centreRed).toBeLessThan(20);
+    // light grey letters over the middle of the black disc
+    expect(stamped!.centreRed).toBeGreaterThan(plain!.centreRed + 20);
+
+    const png = await convertGenerated("disc", Formats.PNG, Formats.PNG, {
+      watermark: "CONVERT TO IT",
+    });
+    expect(png!.handlers.at(-1)).toBe("ImageMagick");
+    expect(png!.centreRed).toBeGreaterThan(20);
+  },
+  { timeout: 120000 },
+);
+
+test(
+  "mermaid → svg draws the diagram at its own size",
+  async () => {
+    const output = await convertGenerated(
+      "graph TD\n  A[Start] --> B[Done]\n",
+      Formats.MERMAID,
+      Formats.SVG,
+    );
+
+    expect(output!.handlers).toEqual(["dummy", "mermaid"]);
+    expect(output!.text).toMatch(/^<svg[^>]* width="[\d.]+" height="[\d.]+"/);
+  },
+  { timeout: 120000 },
+);
+
+test(
+  "mermaid → svg → png draws the diagram",
+  async () => {
+    const output = await convertGenerated(
+      "graph TD\n  A[Start] --> B[Done]\n",
+      Formats.MERMAID,
+      Formats.PNG,
+    );
+
+    expect(output).toBeTruthy();
+    expect(output!.handlers).toContain("mermaid");
+    expect(output!.width).toBeGreaterThan(20);
+  },
+  { timeout: 120000 },
+);
+
+test(
+  "json → typescript describes the shape",
+  async () => {
+    const output = await convertGenerated(
+      '{"id":1,"tags":["a"]}',
+      Formats.JSON,
+      Formats.TYPESCRIPT,
+    );
+
+    expect(output!.handlers.at(-1)).toBe("jsonToTs");
+    expect(output!.text).toContain("export interface");
+    expect(output!.text).toContain("  tags: string[];");
+  },
+  { timeout: 60000 },
+);
+
+test(
+  "mp3 → metadata report has the tags, the stream and the tempo",
+  async () => {
+    const output = await convertResource("gaster.mp3", Formats.MP3, {
+      ...Formats.JSON,
+      format: "metadata",
+    });
+
+    expect(output!.handlers.at(-1)).toBe("metadata");
+    expect(output!.name).toBe("gaster-metadata.json");
+    const report = JSON.parse(output!.text);
+    expect(report.format.codec).toContain("MPEG");
+    expect(report.format.duration).toBeCloseTo(2.3, 1);
+    // too short for a tempo, which the unit tests check on longer click tracks
+    expect(report.bpm).toBeUndefined();
+  },
+  { timeout: 120000 },
+);
+
+test(
+  "png → metadata report has the size and properties",
+  async () => {
+    const output = await convertGenerated("disc", Formats.PNG, {
+      ...Formats.JSON,
+      format: "metadata",
+    });
+
+    expect(output!.handlers.at(-1)).toBe("metadata");
+    const report = JSON.parse(output!.text);
+    expect([report.width, report.height]).toEqual([600, 200]);
+    expect(Object.keys(report.properties).length).toBeGreaterThan(0);
+  },
+  { timeout: 120000 },
+);
+
+test(
+  "mp4 at speed 2 plays in half the time",
+  async () => {
+    const result = await page.evaluate(
+      async (from, to) => {
+        const bytes = await fetch("/test/doom.mp4").then((r) => r.bytes());
+        const output = await window.tryConvertByTraversing(
+          [{ name: "doom.mp4", bytes }],
+          from,
+          to,
+          undefined,
+          { speed: 2 },
+        );
+        if (!output) return null;
+        const video = document.createElement("video");
+        video.src = URL.createObjectURL(new Blob([output.files[0].bytes as BlobPart]));
+        await new Promise((resolve) => video.addEventListener("loadedmetadata", resolve));
+        return { handler: output.path.at(-1)!.handler.name as string, duration: video.duration };
+      },
+      { format: Formats.MP4, handler: dummyHandler },
+      { format: Formats.MP4, handler: dummyHandler },
+    );
+
+    expect(result!.handler).toBe("FFmpeg");
+    // doom.mp4 is 2.4 seconds at 10 frames a second, and keeps that rate: half the time, give or
+    // take the two frames that native FFmpeg also lands on (1.4 seconds)
+    expect(result!.duration).toBeGreaterThan(1.1);
+    expect(result!.duration).toBeLessThan(1.5);
+  },
+  { timeout: 120000 },
+);
+
+test(
+  "tiffs go through the picture tools one by one, or together into a collage",
+  async () => {
+    const result = await page.evaluate(
+      async (png, tiff, collage, halftone) => {
+        const bytes = await fetch("/test/colors_50x50.png").then((r) => r.bytes());
+        const made = await window.tryConvertByTraversing([{ name: "a.png", bytes }], png, tiff);
+        if (!made) return null;
+        const tiffs = () =>
+          ["a.tiff", "b.tiff", "c.tiff"].map((name) => ({
+            name,
+            bytes: made.files[0].bytes.slice(),
+          }));
+        // declared in here because this function runs in the page
+        // oxlint-disable-next-line unicorn/consistent-function-scoping
+        const sizes = async (output: { files: FileData[] } | null) =>
+          output &&
+          Promise.all(
+            output.files.map(async (file) => {
+              const image = await createImageBitmap(new Blob([file.bytes as BlobPart]));
+              return `${file.name} ${image.width}x${image.height}`;
+            }),
+          );
+        return {
+          collage: await sizes(
+            await window.tryConvertByTraversing(tiffs().slice(0, 2), tiff, collage),
+          ),
+          halftone: await sizes(await window.tryConvertByTraversing(tiffs(), tiff, halftone)),
+        };
+      },
+      { format: Formats.PNG, handler: dummyHandler },
+      { format: Formats.TIFF, handler: dummyHandler },
+      { format: { ...Formats.PNG, format: "collage" }, handler: dummyHandler } as never,
+      { format: { ...Formats.PNG, format: "halftone" }, handler: dummyHandler } as never,
+    );
+
+    expect(result!.collage).toEqual(["a-collage.png 124x66"]);
+    expect(result!.halftone).toEqual([
+      "a-halftone.png 50x50",
+      "b-halftone.png 50x50",
+      "c-halftone.png 50x50",
+    ]);
+  },
+  { timeout: 120000 },
+);
+
+test(
+  "jpeg → metadata report has its EXIF",
+  async () => {
+    const output = await convertGenerated("photo-make", Formats.JPEG, {
+      ...Formats.JSON,
+      format: "metadata",
+    });
+
+    expect(output!.handlers.at(-1)).toBe("metadata");
+    expect(JSON.parse(output!.text).properties["exif:Make"]).toBe("Ack");
+  },
+  { timeout: 120000 },
+);
+
+test(
+  "mp4 → metadata report describes the video",
+  async () => {
+    const output = await convertResource("doom.mp4", Formats.MP4, {
+      ...Formats.JSON,
+      format: "metadata",
+    });
+
+    const report = JSON.parse(output!.text);
+    expect(report.format.duration).toBeCloseTo(2.4, 1);
+    expect(report.bpm).toBeUndefined();
+  },
+  { timeout: 120000 },
+);
+
+test(
+  "a song's metadata report has its tempo",
+  async () => {
+    const output = await convertResource("click-120bpm.mp3", Formats.MP3, {
+      ...Formats.JSON,
+      format: "metadata",
+    });
+
+    const { bpm } = JSON.parse(output!.text);
+    expect(Math.abs(bpm - 120)).toBeLessThan(2);
   },
   { timeout: 120000 },
 );

@@ -133,6 +133,7 @@ const Formats = {
   JSONC: new FormatDefinition("JSON Comments", "jsonc", "jsonc", "application/jsonc", Category.DATA),
   BSON: new FormatDefinition("Binary JSON", "bson", "bson", "application/bson", Category.DATA),
   TOON: new FormatDefinition("Token-Oriented Object Notation", "toon", "toon", "text/toon", Category.DATA),
+  MERMAID: new FormatDefinition("Mermaid Diagram", "mermaid", "mmd", "text/vnd.mermaid", [Category.TEXT, Category.CODE]),
   XML: new FormatDefinition("Extensible Markup Language", "xml", "xml", "application/xml", Category.DATA),
   YML: new FormatDefinition("YAML Ain't Markup Language", "yaml", "yml", "application/yaml", Category.DATA),
   TOML: new FormatDefinition("Tom's Obvious, Minimal Language", "toml", "toml", "application/toml", Category.DATA),
@@ -143,6 +144,7 @@ const Formats = {
   // code
   PYTHON: new FormatDefinition("Python Script", "py", "py", "text/x-python", Category.CODE),
   JS: new FormatDefinition("Javascript Source File", "js", "js", "text/javascript", Category.CODE),
+  TYPESCRIPT: new FormatDefinition("TypeScript Source File", "ts", "ts", "text/x-typescript", Category.CODE),
   C: new FormatDefinition("C Source File", "c", "c", "text/x-c", Category.CODE),
   CPP: new FormatDefinition("C++ Source File", "cpp", "cpp", "text/x-c++src", Category.CODE),
   CSHARP: new FormatDefinition("C# Source File", "cs", "cs", "text/csharp", Category.CODE),

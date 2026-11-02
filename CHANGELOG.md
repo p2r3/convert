@@ -7,7 +7,7 @@ All notable changes to this project are recorded here. The format follows
 
 ### Changes in this fork
 
-This repository is a fork of [p2r3/convert](https://github.com/p2r3/convert). The files below were changed or added by Lucas Van De Weerd between 2026-10-10 and 2026-10-12 and are, like the rest of the project, licensed under the GNU General Public License, version 2.
+This repository is a fork of [p2r3/convert](https://github.com/p2r3/convert). The files below were changed or added by Lucas Van De Weerd between 2026-10-10 and 2026-10-20 and are, like the rest of the project, licensed under the GNU General Public License, version 2.
 
 #### Added
 
@@ -49,6 +49,13 @@ This repository is a fork of [p2r3/convert](https://github.com/p2r3/convert). Th
 - "Contact sheet" and "Make a video" tools: `src/handlers/videoTools.ts`.
 - Format definitions for MOV, MKV, WebM, AVI, M4A, AAC and AIFF, and the `AUDIO_FILES` list: `src/Formats.ts`.
 
+- Picture tools, from ideas of [BrowseryTools](https://github.com/aghyad97/browserytools) (no code taken): "Favicon set", "Collage", "Frame screenshot", "Halftone print" and "ASCII art in colour": `src/handlers/imageTools.ts`, with tests in `test/handlers/imageTools.test.ts`. The halftone engine is ported from [silk-screen-halftone](https://github.com/ZihangDong/silk-screen-halftone) (MIT): `src/handlers/halftone/engine.ts`.
+- A "Depth map" tool with Depth Anything V2 Small: `src/handlers/depth.ts`, with `depth-anything-v2-small` in `recipe/requirements.config.ts`.
+- A "Metadata report" for pictures, songs and videos, with the tempo of a song: `src/handlers/metadata.ts`, with tests in `test/handlers/metadata.test.ts` and a 120 BPM click track, `test/resources/click-120bpm.mp3`.
+- Mermaid diagrams to SVG (`src/handlers/mermaid.ts`; the ELK layout is left out, see `src/handlers/mermaid/noElk.ts`) and JSON to TypeScript interfaces (`src/handlers/jsonToTs.ts`, with tests in `test/handlers/jsonToTs.test.ts`). Dependency: `mermaid`.
+- A watermark setting for pictures (`src/common/canvas.ts`, `src/handlers/canvasToBlob.ts`, `src/handlers/ImageMagick.ts`) and a speed setting for video (`ffmpegSpeedFilter` in `src/ConversionSettings.ts`, `src/handlers/FFmpeg.ts`).
+- Format definitions for Mermaid and TypeScript: `src/Formats.ts`.
+
 #### Fixed
 
 - MP4, MOV and MKV output no longer waits twenty seconds on a computer with ten or more cores: the filters of the multithreaded FFmpeg get four threads at most (`src/handlers/FFmpeg.ts`).
@@ -79,4 +86,8 @@ This repository is a fork of [p2r3/convert](https://github.com/p2r3/convert). Th
 - For these additions, also: `src/ConversionSettings.ts`, `src/handlers/FFmpeg.ts`, `src/handlers/index.ts`, `src/main.ts`, `src/ui/components/ConversionSettings/index.tsx`, `src/ui/pages/Conversion/index.tsx`, `test/ConversionSettings.test.ts`, `vite.config.js`, `package.json`, `bun.lock`, `NOTICE` and `README.md`.
 
 - The handlers and pages that pass those settings through: `src/Converter.ts`, `src/main.ts`, `src/common/canvas.ts`, `src/global.d.ts`, `src/handlers/FFmpeg.ts`, `src/handlers/ImageMagick.ts`, `src/handlers/canvasToBlob.ts`, `src/handlers/mediabunny.ts`, `src/ui/ProgressStore.ts`, `src/ui/components/FullPageDropOverlay/index.tsx`, `src/ui/pages/Conversion/index.tsx`, `src/ui/pages/Upload/index.tsx`, `test/commonFormats.test.ts`, `index.html`, `README.md` and `.gitignore`.
+- Several pictures converted by ImageMagick to PNG, JPEG or BMP give one file each, where they used to give one file with only the first: `src/handlers/ImageMagick.ts`. This is what lets HEIC or TIFF photos reach the picture tools one by one, and two or more of them into one collage.
+- `.mmd` files are read as Mermaid diagrams: the type the `mime` package gives them is mapped in `src/normalizeMimeType.ts`.
+- The Tools row offers the new tools, and "Metadata" for songs and videos and "TypeScript types" for JSON: `src/batch.ts`, `src/ui/pages/Conversion/index.tsx`, `src/ui/components/HelpButton/index.tsx`. The FFmpeg helpers of `src/handlers/videoTools.ts` are exported for the metadata report.
+- For the additions of 2026-10-20, also: `src/handlers/index.ts`, `test/batch.test.ts`, `test/ConversionSettings.test.ts`, `test/commonFormats.test.ts`, `vite.config.js`, `package.json`, `bun.lock`, `NOTICE` and `README.md`.
 - For the additions of 2026-10-11: `src/handlers/index.ts`, `src/ui/components/FileInfo/`, `src/ui/pages/Conversion/index.css`, `vite.config.js`, `recipe/requirements.config.ts`, `package.json`, `bun.lock` and `NOTICE`, next to the files already listed above.

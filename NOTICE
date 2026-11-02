@@ -62,6 +62,14 @@ limitPNG (no clear licence)
 awesome-video (CC0-1.0)  https://github.com/krzemienski/awesome-video
   The list where the contact sheet and the song-to-video tool were found.
   No code was taken from any of these six.
+BrowseryTools (AGPL-3.0) https://github.com/aghyad97/browserytools
+  Favicon sets, collages, framing screenshots, coloured ASCII art,
+  watermarks on pictures, reading the metadata of a file, depth maps,
+  Mermaid diagrams and JSON to TypeScript. Written here on canvas,
+  ImageMagick, music-metadata, ONNX Runtime and mermaid; no code was taken.
+ToolKnit (MIT)           https://github.com/ZihangDong/toolknit
+  Finding the tempo of a song and changing the speed of a video. Done here
+  with FFmpeg; no code was taken. Its halftone engine is used, see below.
 
 Third-party code and data added by this fork
 --------------------------------------------
@@ -136,6 +144,24 @@ loudness-worklet (MIT), lcweden         https://github.com/lcweden/loudness-work
   Reading the header of a music file, its spectrum, its loudness and true
   peak, and the MD5 of its samples, for "Check audio".
 
+silk-screen-halftone (MIT), Copyright (c) 2026 ToolKnit
+                                        https://github.com/ZihangDong/silk-screen-halftone
+  "Halftone print". src/handlers/halftone/engine.ts is ported from it, with
+  its licence text at the top and the changes listed there.
+Depth Anything V2 Small (Apache-2.0), Lihe Yang et al.
+                                        https://github.com/DepthAnything/Depth-Anything-V2
+  "Depth map". The int8 ONNX version published by onnx-community
+  (https://huggingface.co/onnx-community/depth-anything-v2-small) is fetched
+  at build time, see recipe/requirements.config.ts. Only the Small model is
+  Apache-2.0; the larger ones are not, and are not used.
+mermaid (MIT), Knut Sveidqvist and contributors
+                                        https://github.com/mermaid-js/mermaid
+  with its dependencies, MIT or ISC except chevrotain (Apache-2.0), d3-ease,
+  d3-sankey and rw (BSD-3-Clause) and robust-predicates (Unlicense)
+  Drawing Mermaid diagrams. Its optional ELK layout needs elkjs, which is
+  EPL-2.0; vite.config.js puts src/handlers/mermaid/noElk.ts in its place,
+  so no elkjs code is in a build.
+
 3D model formats use the loaders and exporters of three.js (MIT), subtitles
 use FFmpeg, and the image formats added in this round use ImageMagick with
 its LibRaw; the project had all three already.
@@ -170,6 +196,8 @@ and compatible with GPL version 3:
   "silueta" model weights                derived from Apache-2.0 weights, no
                                          licence statement of its own (added
                                          by this fork, see above)
+  Depth Anything V2 Small weights        Apache-2.0 (added by this fork)
+  chevrotain, used by mermaid            Apache-2.0 (added by this fork)
 
 @ffmpeg/core and @ffmpeg/core-mt are GPL-2.0-or-later. The mediabunny packages are MPL-2.0, which
 can be combined with the GPL. The remaining dependencies are under MIT, ISC,

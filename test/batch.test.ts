@@ -74,6 +74,22 @@ test("resolveTargets detects the input format and leaves the output open", () =>
   expect(targets.one.to).toBeNull();
 });
 
+test("resolveTargets reads .mmd as a Mermaid diagram, not as MultiMarkdown", () => {
+  const mermaidIn = option(Formats.MERMAID.builder("mermaid").from(), "mermaid");
+  const multiMarkdown = option(
+    { ...Formats.MD.builder("markdown_mmd").from(), format: "markdown_mmd", extension: "md" },
+    "pandoc",
+  );
+  const targets = resolveTargets(
+    new Map([multiMarkdown, mermaidIn]),
+    [["one", pick("flow.mmd")]],
+    {},
+    true,
+  );
+
+  expect(targets.one.from).toEqual(mermaidIn);
+});
+
 test("resolveTargets gives a new file the output already chosen for its format", () => {
   const files: [string, File][] = [
     ["one", pick("one.png", "image/png")],
@@ -131,23 +147,58 @@ test("toolsFor offers the tools that fit the input", () => {
   const png = Formats.PNG.builder("png").from();
   const pdf = Formats.PDF.builder("pdf").from();
   const mp4 = Formats.MP4.builder("mp4").from();
+  const pictureTools = ["favicon", "framed", "halftone", "depth"];
 
-  expect(toolsFor(png, 1, true)).toEqual(["ocr", "nobg", "upscaled-photo", "upscaled-drawing"]);
+  expect(toolsFor(png, 1, true)).toEqual([
+    "ocr",
+    "nobg",
+    "upscaled-photo",
+    "upscaled-drawing",
+    ...pictureTools,
+  ]);
   expect(toolsFor(pdf, 1, true)).toEqual(["ocr", "pdf-pages"]);
-  expect(toolsFor(mp4, 1, true)).toEqual(["contact-sheet", "upscaled-film", "upscaled-animation"]);
+  expect(toolsFor(mp4, 1, true)).toEqual([
+    "contact-sheet",
+    "upscaled-film",
+    "upscaled-animation",
+    "metadata",
+  ]);
   expect(toolsFor(Formats.MP3.builder("mp3").from(), 1, true)).toEqual([
     "audio-check",
     "audio-video",
+    "metadata",
   ]);
-  expect(toolsFor(png, 3, false)).toEqual(["ocr", "nobg", "pdf-from-images"]);
+  expect(toolsFor(png, 3, false)).toEqual([
+    "ocr",
+    "nobg",
+    ...pictureTools,
+    "collage",
+    "pdf-from-images",
+  ]);
+  expect(toolsFor(Formats.JSON.builder("json").from(), 1, true)).toEqual(["ts"]);
 });
 
 test("toolsFor leaves out what cannot work: merging one PDF, upscaling without WebGPU", () => {
   expect(toolsFor(Formats.PDF.builder("pdf").from(), 2, true)).toContain("pdf-merged");
-  expect(toolsFor(Formats.PNG.builder("png").from(), 1, false)).toEqual(["ocr", "nobg"]);
-  expect(toolsFor(Formats.MP4.builder("mp4").from(), 1, false)).toEqual(["contact-sheet"]);
+  expect(toolsFor(Formats.PNG.builder("png").from(), 1, false)).toEqual([
+    "ocr",
+    "nobg",
+    "favicon",
+    "framed",
+    "halftone",
+    "depth",
+  ]);
+  // a collage of one picture is that picture
+  expect(toolsFor(Formats.PNG.builder("png").from(), 1, true)).not.toContain("collage");
+  expect(toolsFor(Formats.MP4.builder("mp4").from(), 1, false)).toEqual([
+    "contact-sheet",
+    "metadata",
+  ]);
   // the check judges the file as it is, which a MIDI file has to be converted for first
-  expect(toolsFor(Formats.MIDI.builder("midi").from(), 1, true)).toEqual(["audio-video"]);
+  expect(toolsFor(Formats.MIDI.builder("midi").from(), 1, true)).toEqual([
+    "audio-video",
+    "metadata",
+  ]);
   // a vector image has no pixels to read or cut out, and a GIF counts as video
   expect(toolsFor(Formats.SVG.builder("svg").from(), 1, true)).toEqual([]);
   expect(toolsFor(Formats.GIF.builder("gif").from(), 1, false)).toEqual([]);

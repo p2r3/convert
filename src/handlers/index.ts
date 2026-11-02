@@ -129,6 +129,15 @@ const HANDLERS = {
   contactSheet: ["./videoTools.ts", "contactSheetHandler"],
   audioVideo: ["./videoTools.ts", "audioVideoHandler"],
   audioCheck: [],
+  favicon: ["./imageTools.ts", "faviconHandler"],
+  collage: ["./imageTools.ts", "collageHandler"],
+  frame: ["./imageTools.ts", "frameHandler"],
+  halftone: ["./imageTools.ts", "halftoneHandler"],
+  asciiHtml: ["./imageTools.ts", "asciiHtmlHandler"],
+  depth: [],
+  metadata: [],
+  mermaid: [],
+  jsonToTs: [],
 } as const;
 
 // handlers can only be named things listed above

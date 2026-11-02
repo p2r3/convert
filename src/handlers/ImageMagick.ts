@@ -1,6 +1,8 @@
 import {
+  CompositeOperator,
   initializeImageMagick,
   Magick,
+  MagickImage,
   MagickFormat,
   MagickImageCollection,
   MagickReadSettings,
@@ -17,6 +19,10 @@ import Formats, { Category, isCategory } from "src/Formats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import type { ConvertContext } from "../ui/ProgressStore.js";
 import { changeExt } from "src/common/index.ts";
+import { createCanvas, drawWatermark } from "src/common/canvas.ts";
+
+/** Output types that hold one picture, so that several inputs give several files. */
+const SINGLE_PICTURE_TYPES = new Set(["image/png", "image/jpeg", "image/bmp"]);
 
 /**
  * File formats ImageMagick handles that have no registered MIME type, and that `init` would
@@ -113,8 +119,10 @@ class ImageMagickHandler implements FormatHandler {
     args?: string[],
     ctx?: ConvertContext,
   ): Promise<FileData[]> {
-    // all inputs go into one image collection and one output, which a palette doesn't ask for
-    if (ctx?.settings.colors && inputFiles.length > 1) {
+    // all inputs go into one image collection and one output, which a palette doesn't ask for,
+    // and which a format of one picture can't hold: several photos to PNG are several PNGs
+    const singlePicture = SINGLE_PICTURE_TYPES.has(outputFormat.mime);
+    if ((ctx?.settings.colors || singlePicture) && inputFiles.length > 1) {
       const outputs: FileData[] = [];
       for (const file of inputFiles) {
         outputs.push(...(await this.doConvert([file], inputFormat, outputFormat, args, ctx)));
@@ -175,6 +183,16 @@ class ImageMagickHandler implements FormatHandler {
                 image.resize(new MagickGeometry(maxSize, maxSize));
               }
               if (stripMetadata) image.strip();
+              const watermark = ctx?.settings.watermark;
+              if (watermark) {
+                // drawn by the browser and laid over the frame, because this build has no fonts
+                const overlay = createCanvas(image.width, image.height);
+                drawWatermark(overlay.ctx, image.width, image.height, watermark);
+                const stamp = MagickImage.create();
+                stamp.readFromCanvas(overlay.canvas as unknown as HTMLCanvasElement);
+                image.composite(stamp, CompositeOperator.Over);
+                stamp.dispose();
+              }
               if (colors) {
                 // after resizing, which would blend new colours back in
                 const palette = new QuantizeSettings();

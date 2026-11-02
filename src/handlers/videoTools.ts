@@ -24,7 +24,7 @@ const AUDIO_VIDEO = new FormatDefinition(
   Category.VIDEO,
 );
 
-const VIDEO_FILES = [
+export const VIDEO_FILES = [
   Formats.MP4.builder("mp4"),
   Formats.MOV.builder("mov"),
   Formats.MKV.builder("matroska"),
@@ -33,11 +33,12 @@ const VIDEO_FILES = [
 ].map((format) => format.from());
 
 /**
- * One single-threaded FFmpeg for both tools, apart from the FFmpeg handler's own: these run
- * plain commands on one file and need none of its concat input, retries or thread handling.
+ * One single-threaded FFmpeg for these tools and the metadata report, apart from the FFmpeg
+ * handler's own: they run plain commands on one file and need none of its concat input, retries
+ * or thread handling.
  */
 let loading: Promise<FFmpeg> | undefined;
-function loadFFmpeg() {
+export function loadFFmpeg() {
   loading ??= (async () => {
     const ffmpeg = new FFmpeg();
     await ffmpeg.load({ coreURL: ffmpegCoreUrl, wasmURL: ffmpegWasmUrl });
@@ -51,7 +52,7 @@ function loadFFmpeg() {
 const args = (line: string) => line.split(" ");
 
 /** Runs FFmpeg and returns its exit code with everything it logged. */
-async function run(ffmpeg: FFmpeg, args: string[], ctx?: ConvertContext) {
+export async function run(ffmpeg: FFmpeg, args: string[], ctx?: ConvertContext) {
   let log = "";
   const collect = ({ message }: LogEvent) => {
     log += message + "\n";
@@ -63,7 +64,7 @@ async function run(ffmpeg: FFmpeg, args: string[], ctx?: ConvertContext) {
   return { code, log };
 }
 
-async function readOutput(ffmpeg: FFmpeg, name: string) {
+export async function readOutput(ffmpeg: FFmpeg, name: string) {
   const bytes = new Uint8Array((await ffmpeg.readFile(name)) as Uint8Array);
   await ffmpeg.deleteFile(name);
   return bytes;
