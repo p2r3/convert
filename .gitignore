@@ -8,3 +8,8 @@ release
 cache.json
 built
 .DS_Store
+.vercel/
+.env
+.env.*
+!.env.example
+node_modules/
