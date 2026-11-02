@@ -28,6 +28,35 @@ This is not just terrible for privacy, it's also incredibly lame. What if you _r
 
 For a semi-technical overview of this tool, check out the video: https://youtu.be/btUbcsTbVA8
 
+<!-- run-steps:start -->
+
+## Run it locally, step by step
+
+1. **Install [Bun](https://bun.sh).**
+
+2. **Get the code:**
+
+   ```sh
+   git clone https://github.com/Gitguy268/convert.git
+   cd convert
+   ```
+
+3. **Install the dependencies:**
+
+   ```sh
+   bun install
+   ```
+
+4. **Start it:**
+
+   ```sh
+   bun run dev
+   ```
+
+5. **Open the address it prints** (usually <http://localhost:5173/>). Press `Ctrl+C` to stop.
+
+<!-- run-steps:end -->
+
 ## What this fork adds
 
 This is a fork of [p2r3/convert](https://github.com/p2r3/convert). The rest of this README is the original project's, apart from the notes that mention the fork. [CHANGELOG.md](CHANGELOG.md) lists every changed file.
