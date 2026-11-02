@@ -2,8 +2,9 @@ name: Publish to GitHub Pages
 
 on:
   push:
-    branches: ["master"]
+    branches: ["master", "improvements"]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
