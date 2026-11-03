@@ -31,7 +31,6 @@ class sevenZipHandler implements FormatHandler {
 
   async init() {
     let zipTo = false;
-    let rarTo = false;
     let tarTo = false;
     let szTo = false;
 
@@ -64,8 +63,6 @@ class sevenZipHandler implements FormatHandler {
       // Comic flags
       if (extension === "zip") {
         zipTo = flags.includes("C");
-      } else if (extension === "rar") {
-        rarTo = flags.includes("C");
       } else if (extension === "tar") {
         tarTo = flags.includes("C");
       } else if (extension === "7z") {
@@ -101,7 +98,6 @@ class sevenZipHandler implements FormatHandler {
     // Comic book support
     this.supportedFormats.push(Formats.CBZ.builder("cbz").fromTo(true, zipTo));
     this.supportedFormats.push(Formats.CBT.builder("cbt").fromTo(true, tarTo));
-    this.supportedFormats.push(Formats.CBR.builder("cbr").fromTo(true, rarTo));
     this.supportedFormats.push(Formats.CB7.builder("cb7").fromTo(true, szTo));
 
     // push zip and tar up the list
@@ -214,7 +210,6 @@ class sevenZipHandler implements FormatHandler {
           name = name
             .replace(/\.cbz$/, ".zip")
             .replace(/\.cbt$/, ".tar")
-            .replace(/\.cbr$/, ".rar")
             .replace(/\.cb7$/, ".7z");
         }
 
@@ -229,7 +224,6 @@ class sevenZipHandler implements FormatHandler {
           name = name
             .replace(/\.zip$/, ".cbz")
             .replace(/\.tar$/, ".cbt")
-            .replace(/\.rar$/, ".cbr")
             .replace(/\.7z$/, ".cb7");
         }
 
@@ -296,7 +290,6 @@ class sevenZipHandler implements FormatHandler {
         name = name
           .replace(/\.cbz$/, ".zip")
           .replace(/\.cbt$/, ".tar")
-          .replace(/\.cbr$/, ".rar")
           .replace(/\.cb7$/, ".7z");
       }
 
@@ -311,7 +304,6 @@ class sevenZipHandler implements FormatHandler {
         name = name
           .replace(/\.zip$/, ".cbz")
           .replace(/\.tar$/, ".cbt")
-          .replace(/\.rar$/, ".cbr")
           .replace(/\.7z$/, ".cb7");
       }
 

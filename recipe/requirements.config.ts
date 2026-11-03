@@ -118,8 +118,8 @@ export default [
   },
   {
     name: "7z",
-    url: "https://github.com/ip7z/7zip/releases/download/26.03/7z2603-src.tar.xz",
-    hash: ["sha256", "9cbde5099c6deb73691b0579063da5827522ccbbcba3f0020fd04e8c8c16c0d4"],
+    url: "https://github.com/ip7z/7zip/releases/download/26.05/7z2605-src.tar.xz",
+    hash: ["sha256", "0b6080b8c3e7a579161d2d495224c0e51c467576cb4c7048b0ab485ef44cc22e"],
     patches: ["emcc.patch"],
     prebuild: "build.sh",
     toolchains: ["emscripten"],
