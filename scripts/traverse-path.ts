@@ -10,7 +10,7 @@ const breakdown = Bun.argv.includes("--breakdown");
 
 if (args.length < 3) {
   console.log(
-    "Usage: bun run scripts/traverse-path.ts <max-paths> <ext-from>[#<mime-from>] <ext-to>[#<mime-to>] [--breakdown]",
+    "Usage: bun run scripts/traverse-path.ts <max-paths> <ext-from>[#<mime-from>][#<format-from>] <ext-to>[#<mime-to>][#<format-to>] [--breakdown]",
   );
   console.log("ex. bun run scripts/traverse-path.ts 10 mp3 ogg#audio/ogg");
   exit(1);
@@ -26,12 +26,13 @@ const nodes: ConvertPathNode[] = handlers.flatMap((handler) => {
 });
 
 function findNode(text: string, filterKey: keyof FileFormat) {
-  const [ext, mime] = text.split("#");
+  const [ext, mime, format] = text.split("#");
 
   const found = nodes.find(
     (node) =>
       ext === node.format.extension &&
       (mime ? mime === node.format.mime : true) &&
+      (format ? format === node.format.format : true) &&
       node.format[filterKey],
   );
   if (!found) throw new Error(`could not find file format ${text}`);
