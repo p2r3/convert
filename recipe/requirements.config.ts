@@ -8,8 +8,8 @@ export default [
   },
   {
     name: "qoi-fu",
-    url: "https://github.com/pfusik/qoi-fu/archive/d4e5af8d3f3bed953f68dfc9c569690823888140.tar.gz",
-    hash: ["sha256", "6bd7a1a2ed401361e527b57af209ccafe2ec93ed7827f64b26721b699121ce8d"],
+    url: "https://github.com/pfusik/qoi-fu/archive/2fab2661f2b72fe73643a8ed7be782bd1053f6a2.tar.gz",
+    hash: ["sha256", "121821e657d3ca2b1553260516089f7efc7097a539b6e8ba73b3ed3f801eebf9"],
   },
   {
     name: "sppd",
@@ -18,13 +18,13 @@ export default [
   },
   {
     name: "qoa-fu",
-    url: "https://github.com/pfusik/qoa-fu/archive/521424aec645666d49cac7935b9d2f03354d92e6.tar.gz",
-    hash: ["sha256", "0b5a34da308743fb046e0537d97a851412591c5a90562513062ccdc1e6928803"],
+    url: "https://github.com/pfusik/qoa-fu/archive/70679a2d6223e25e37d7b421b2a14cd4e7d2b5b5.tar.gz",
+    hash: ["sha256", "ec9349087d770689bc978fa4e520906814b07e6ce1a3c50e7a25272db3542a49"],
   },
   {
     name: "image-to-txt",
-    url: "https://github.com/zipsegv/image-to-txt/archive/477f5dcd3a699119f471ffeb334bb77795bc3bdd.tar.gz",
-    hash: ["sha256", "7b956242110782d1c69653766b525d9db8e6d757dcc509784f5480906087936e"],
+    url: "https://github.com/zipsegv/image-to-txt/archive/759fcf98a3ba1d079dd73fcce84adf396156548d.tar.gz",
+    hash: ["sha256", "8acba29a08aab6171c42c5155358c3c44a343ea066dee1d3c8a719e069b86a9b"],
   },
   {
     name: "espeakng.js",
@@ -57,29 +57,29 @@ export default [
   },
   {
     name: "turbowarp-unpackager",
-    url: "https://github.com/TurboWarp/unpackager/archive/2eb03bd5dc18e3b7b1318190bef8e14274123778.tar.gz",
-    hash: ["sha256", "3bb10d2d3cf90496ddca29b523da85a901040d707ac03751de40edd35c8d61ce"],
+    url: "https://github.com/TurboWarp/unpackager/archive/9a8dd22a7095cf7275107a0f6ef113f74b16a505.tar.gz",
+    hash: ["sha256", "b11c47d69c7b4349ff991b70fa429fd60f1193aa6e8db073f5ed616f8571999f"],
   },
   {
     name: "typst-assets",
-    url: "https://github.com/typst/typst-assets/archive/ad8080d46d42fca909562572cfa14a86f00eb945.tar.gz",
-    hash: ["sha256", "4988f3ddf26b1feea9f312f9a2194493ed042aebf21eb18cc39452f24d261ced"],
+    url: "https://github.com/typst/typst-assets/archive/94dcb990edb36311ef85162baa26e4a8205e0bf0.tar.gz",
+    hash: ["sha256", "2c13595a732095045a0bdcc108767237c4809e4b3519dc1645dc264e0b84bfef"],
   },
   {
     name: "pandoc",
-    url: "https://github.com/jgm/pandoc/releases/download/3.11/pandoc-3.11.wasm.zip",
-    hash: ["sha256", "bd856c19094f5333ee92f239dd93d288a05429f1d957efef1c37e7bb97ac14bd"],
+    url: "https://github.com/jgm/pandoc/releases/download/3.13/pandoc-3.13-wasm.zip",
+    hash: ["sha256", "234d2020a7f3a9aab387bd35df3c17ca2ba0078a82490e2b3ede890d648d64fe"],
   },
   {
     name: "pandoc-js",
-    url: "https://raw.githubusercontent.com/jgm/pandoc/3.11/wasm/pandoc.js",
+    url: "https://raw.githubusercontent.com/jgm/pandoc/3.13/wasm/pandoc.js",
     hash: ["sha256", "6b07bca137feee170bffa2aefd0e5e067135a86a0b8aa4ec6da31049e6c5a36b"],
     patches: ["vite-and-extract-media.patch"],
   },
   {
     name: "foliate-mobi",
-    url: "https://raw.githubusercontent.com/johnfactotum/foliate-js/399248a67a8862ffb5e6463a33f9d52b317ca2eb/mobi.js",
-    hash: ["sha256", "833a25b0d6e7079027bfef9c28a3da702f093a50bd3f465945bc0d9fd0cd75cf"],
+    url: "https://raw.githubusercontent.com/johnfactotum/foliate-js/9a676796f728347b0127162079c13d23a0f7fee8/mobi.js",
+    hash: ["sha256", "016526df13a9f11ee6671a8c74346e1cf41fe6bdfe50165fdcbf744f015694f3"],
     patches: ["linkedom.patch"],
   },
   {
@@ -89,8 +89,8 @@ export default [
   },
   {
     name: "material-icons",
-    url: "https://github.com/material-extensions/vscode-material-icon-theme/archive/cb1dfb6d9cb73b15681a93939983d75dbba7bf5b.tar.gz",
-    hash: ["sha256", "fcf933b7b9fe2a8b54366abc6c88d0c902f8846eb436074d151e7a135c13c444"],
+    url: "https://github.com/material-extensions/vscode-material-icon-theme/archive/f368264282ef14ee7feb012fd54e825181eff9c3.tar.gz",
+    hash: ["sha256", "e5a830c2cd1315f43361a773a16c1728262651f87746da3a9faa76d160dbc832"],
     assemble: "assemble.ts",
   },
   {
