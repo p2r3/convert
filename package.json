@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "Truly universal browser-based file converter",
+  "license": "GPL-2.0-or-later",
   "author": "PortalRunner",
   "type": "module",
   "main": "dist-electron/main.cjs",
