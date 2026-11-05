@@ -36,8 +36,10 @@ export interface FileFormat extends IFormatDefinition {
 export const formatIdentifier = (format: IFormatDefinition) => `${format.mime}(${format.format})`;
 
 /** Whether both are the same format, regardless of which handler they come from. */
-export const sameFormat = (a: IFormatDefinition | null | undefined, b: IFormatDefinition) =>
-  a?.mime === b.mime && a.format === b.format;
+export const sameFormat = (
+  a: IFormatDefinition | null | undefined,
+  b: IFormatDefinition | null | undefined,
+) => a?.mime === b?.mime && a?.format === b?.format;
 
 /**
  * Class containing format definition and method used to produce FileFormat
