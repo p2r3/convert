@@ -633,7 +633,9 @@ export class TraversionGraph {
         if (!Number.isFinite(sumCosts(adaptiveCosts))) return;
         if (queue.size() >= MAX_QUEUED_PATHS) {
           queue.clear();
-          throw new Error("Conversion path search limit exceeded. Try a different output format.");
+          throw new Error(
+            "Could not find a path. This usually means the formats have nothing in common, or something failed while converting.",
+          );
         }
         queue.add({
           index: edge.to.index,
