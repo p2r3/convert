@@ -288,3 +288,8 @@ const Formats = {
 };
 
 export default Formats;
+
+export const SpecialFormats = {
+  /** This format is a placeholder for any formats being accepted. */
+  ANY: new FormatDefinition("ANY", "ANY", "ANY", "ANY", []),
+};

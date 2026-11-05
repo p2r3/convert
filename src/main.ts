@@ -3,6 +3,7 @@ import {
   type FileData,
   type ConvertPathNode,
   type HandlerDefinition,
+  formatIdentifier,
   sameFormat,
 } from "./FormatHandler.js";
 import { ensureDefinitions, type HandlerName } from "./handlers/index.js";
@@ -15,6 +16,8 @@ import { CurrentPage, LoadingToolsText, Pages } from "./ui/AppState.js";
 import { signal } from "@preact/signals";
 import { Mode, ModeEnum } from "./ui/ModeStore.js";
 import { ProgressStore } from "./ui/ProgressStore.js";
+import { detectFormats } from "./detectFormat.js";
+import { SpecialFormats } from "./Formats.js";
 
 type FileRecord = Record<`${string}-${string}`, File>;
 
@@ -124,7 +127,7 @@ async function buildOptionList() {
     }
 
     for (const format of handler.supportedFormats) {
-      if (!format.mime) continue;
+      if (!format.mime || format.mime === SpecialFormats.ANY.mime) continue;
       ConversionOptions.set(format, handler);
     }
   }
@@ -137,6 +140,21 @@ async function buildOptionList() {
 }
 
 let deadEndAttempts: ConvertPathNode[][];
+
+/** Remembers that `path` fails, so neither this run nor the graph tries it again. */
+async function markDeadEnd(path: ConvertPathNode[]) {
+  deadEndAttempts.push(path);
+  await window.traversionGraph.addDeadEndPath(path);
+  ProgressStore.progress("Looking for a valid path...", 0);
+}
+
+/** How many times a single conversion may go through SpecialFormats.ANY. */
+const MAX_ANY_DEPTH = 4;
+
+/** Identifiers of the known formats a file most likely is. */
+const detectFormatIds = (file: FileData) => [
+  ...new Set(detectFormats(file, ConversionOptions.keys()).map(formatIdentifier)),
+];
 
 async function attemptConvertPath(
   originalFiles: FileData[],
@@ -263,11 +281,7 @@ async function attemptConvertPath(
         handlerDef.name,
       );
 
-      const deadEndPath = path.slice(0, i + 2);
-      deadEndAttempts.push(deadEndPath);
-      await window.traversionGraph.addDeadEndPath(path.slice(0, i + 2));
-
-      ProgressStore.progress("Looking for a valid path...", 0);
+      await markDeadEnd(path.slice(0, i + 2));
       await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
       return null;
@@ -281,15 +295,111 @@ async function attemptConvertPath(
   return { files, path };
 }
 
-window.tryConvertByTraversing = async function (
+const totalBytes = (files: FileData[]) => files.reduce((sum, file) => sum + file.bytes.length, 0);
+
+/**
+ * Ranks the groups of files produced by a SpecialFormats.ANY step, best first. Only formats that
+ * can still reach the target count. Files already in the target format come first, then formats
+ * with a known path, then formats that only might work (e.g. nested archives). Ties go to more
+ * files, then more bytes, then the cheaper remaining path.
+ */
+async function rankAnyOutputGroups(files: FileData[], to: ConvertPathNode) {
+  const costs = await window.traversionGraph.getFormatCosts(to.format, "from");
+  const knownCosts = await window.traversionGraph.getFormatCosts(to.format, "from", false);
+  const targetId = formatIdentifier(to.format);
+  const tier = (id: string) => (id === targetId ? 0 : knownCosts.has(id) ? 1 : 2);
+
+  const groups = new Map<string, FileData[]>();
+  for (const file of files) {
+    for (const id of detectFormatIds(file)) {
+      if (!costs.has(id)) continue;
+      if (!groups.has(id)) groups.set(id, []);
+      groups.get(id)!.push(file);
+    }
+  }
+
+  return [...groups]
+    .toSorted(
+      ([idA, a], [idB, b]) =>
+        tier(idA) - tier(idB) ||
+        b.length - a.length ||
+        totalBytes(b) - totalBytes(a) ||
+        costs.get(idA)! - costs.get(idB)!,
+    )
+    .map(([id, group]) => {
+      const options = [...ConversionOptions].filter(([format]) => formatIdentifier(format) === id);
+      const [format, handler] = options.find(([format]) => format.from) ?? options[0];
+      return { node: { handler, format } as ConvertPathNode, files: group };
+    });
+}
+
+/**
+ * Continues a path that ended at SpecialFormats.ANY: detects what the step produced and tries
+ * each group of files, best first, by searching again from their real format.
+ */
+async function continueFromAny(
+  files: FileData[],
+  path: ConvertPathNode[],
+  to: ConvertPathNode,
+  abort: AbortSignal,
+  depth: number,
+) {
+  const step = path.at(-1)!;
+  const groups = await rankAnyOutputGroups(files, to);
+  if (!groups.length) {
+    const found = [...new Set(files.flatMap(detectFormatIds))];
+    ProgressStore.log(
+      `${step.handler.name} produced nothing convertible to ${to.format.format} (found: ${found.join(", ") || "nothing recognizable"}), rerouting.`,
+      "warn",
+      step.handler.name,
+    );
+    await markDeadEnd(path);
+    return null;
+  }
+
+  for (const group of groups) {
+    const prefix = path.slice(0, -1).concat({ handler: step.handler, format: group.node.format });
+    let result = null;
+    if (sameFormat(group.node.format, to.format)) {
+      result = { files: group.files, path: prefix };
+    } else {
+      const rest = await searchAndConvert(group.files, group.node, to, abort, depth + 1);
+      if (rest) result = { files: rest.files, path: prefix.concat(rest.path.slice(1)) };
+    }
+    if (!result) {
+      ProgressStore.log(
+        `Could not convert the extracted ${group.node.format.format} files, trying the next group.`,
+        "warn",
+        step.handler.name,
+      );
+      continue;
+    }
+    if (group.files.length < files.length) {
+      ProgressStore.log(
+        `Used ${group.files.length} ${group.node.format.format} file(s), dropped ${files.length - group.files.length} other file(s).`,
+        "warn",
+        step.handler.name,
+      );
+    }
+    return result;
+  }
+
+  ProgressStore.log(
+    `None of the files extracted by ${step.handler.name} could be converted, rerouting.`,
+    "warn",
+    step.handler.name,
+  );
+  await markDeadEnd(path);
+  return null;
+}
+
+async function searchAndConvert(
   files: FileData[],
   from: ConvertPathNode,
   to: ConvertPathNode,
-  abort?: AbortSignal,
-) {
-  deadEndAttempts = [];
-  abort ??= ProgressStore.controller.signal;
-  await window.traversionGraph.clearDeadEndPaths();
+  abort: AbortSignal,
+  depth: number,
+): Promise<{ files: FileData[]; path: ConvertPathNode[] } | null> {
   const paths = await window.traversionGraph.searchPathProxied(
     from,
     to,
@@ -300,12 +410,29 @@ window.tryConvertByTraversing = async function (
     const { value: path, done } = await paths.next();
     abort.throwIfAborted();
     if (done) return null;
-    if (path.at(-1)?.handler.name === to.handler.name) {
+    const openEnded = path.at(-1)!.format.mime === SpecialFormats.ANY.mime;
+    if (openEnded && depth >= MAX_ANY_DEPTH) continue;
+    if (!openEnded && path.at(-1)?.handler.name === to.handler.name) {
       path[path.length - 1] = to;
     }
     const attempt = await attemptConvertPath(files, path, abort);
-    if (attempt) return attempt;
+    if (!attempt) continue;
+    if (!openEnded) return attempt;
+    const result = await continueFromAny(attempt.files, path, to, abort, depth);
+    if (result) return result;
   }
+}
+
+window.tryConvertByTraversing = async function (
+  files: FileData[],
+  from: ConvertPathNode,
+  to: ConvertPathNode,
+  abort?: AbortSignal,
+) {
+  deadEndAttempts = [];
+  abort ??= ProgressStore.controller.signal;
+  await window.traversionGraph.clearDeadEndPaths();
+  return searchAndConvert(files, from, to, abort, 0);
 };
 
 async function initSupportedFormats() {

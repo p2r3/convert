@@ -1,5 +1,5 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-import Formats, { Category } from "src/Formats.ts";
+import Formats, { Category, SpecialFormats } from "src/Formats.ts";
 import SevenZip from "built/7z/7zz.js";
 import sevenZipWasmUrl from "built/7z/7zz.wasm?url";
 import mime from "mime";
@@ -111,6 +111,9 @@ class sevenZipHandler implements FormatHandler {
       ...this.supportedFormats.filter((f) => !priority.includes(f.internal)),
     ];
 
+    // Extracting yields whatever the archive contains
+    this.supportedFormats.push(SpecialFormats.ANY.builder("ANY").lossless().to());
+
     this.ready = true;
   }
 
@@ -126,14 +129,6 @@ class sevenZipHandler implements FormatHandler {
       throw new Error(`sevenZipHandler cannot convert from ${inputFormat.mime}`);
     }
 
-    if (
-      !this.supportedFormats.some(
-        (format) => format.to && format.internal === outputFormat.internal,
-      )
-    ) {
-      throw new TypeError(`sevenZipHandler cannot convert to ${outputFormat.mime}`);
-    }
-
     const createSevenZip = async () => {
       return await SevenZip({
         ...defaultSevenZipOptions,
@@ -142,6 +137,52 @@ class sevenZipHandler implements FormatHandler {
         },
       });
     };
+
+    if (outputFormat.mime === SpecialFormats.ANY.mime) {
+      // Extract the archive and return its contents.
+      // The converter detects what the files actually are and continues from there.
+      let i = 0;
+      for (const inputFile of inputFiles) {
+        ctx?.progress(`Extracting ${inputFile.name}...`, i / inputFiles.length);
+        ctx?.log(`Extracting ${inputFile.name}...`);
+        const sevenZip = await createSevenZip();
+
+        sevenZip.FS.writeFile(inputFile.name, inputFile.bytes);
+        sevenZip.callMain(["x", inputFile.name, "-odata"]);
+
+        const prefix = inputFiles.length > 1 ? stripExt(inputFile.name) + "_" : "";
+        const walk = (dir: string, rel: string) => {
+          const entries = (sevenZip.FS.readdir(dir) as string[])
+            .filter((entry) => entry !== "." && entry !== "..")
+            .toSorted();
+          for (const entry of entries) {
+            const path = `${dir}/${entry}`;
+            const relPath = rel ? `${rel}_${entry}` : entry;
+            if (sevenZip.FS.isDir(sevenZip.FS.stat(path, false).mode)) {
+              walk(path, relPath);
+              continue;
+            }
+            const bytes = sevenZip.FS.readFile(path);
+            if (!bytes.length) continue; // empty files would fail the whole step
+            outputFiles.push({ name: prefix + relPath, bytes });
+          }
+        };
+        walk("data", "");
+        i++;
+      }
+
+      ctx?.progress("Complete!", 1);
+      ctx?.log(`SevenZip extracted ${outputFiles.length} files.`);
+      return outputFiles;
+    }
+
+    if (
+      !this.supportedFormats.some(
+        (format) => format.to && format.internal === outputFormat.internal,
+      )
+    ) {
+      throw new TypeError(`sevenZipHandler cannot convert to ${outputFormat.mime}`);
+    }
 
     ctx?.log(`Initialising SevenZip for ${inputFormat.name} -> ${outputFormat.name}...`);
 

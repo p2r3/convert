@@ -1,5 +1,5 @@
 import { TraversionGraph } from "../src/TraversionGraph";
-import Formats from "../src/Formats.ts";
+import Formats, { SpecialFormats } from "../src/Formats.ts";
 import { ConvertPathNode, type FormatHandler } from "../src/FormatHandler.ts";
 import { MockedHandler } from "./MockedHandler.ts";
 import { expect, test } from "bun:test";
@@ -257,4 +257,40 @@ test("should find path from image to archive via anyinput\n", async () => {
   expect(extractedPaths[0][0].format.format).toBe("png");
   expect(extractedPaths[0][extractedPaths[0].length - 1].format.format).toBe("zip");
   expect(extractedPaths[0][extractedPaths[0].length - 1].handler.name).toBe("sevenZip");
+});
+
+test("should stop at ANY output\n", async () => {
+  const anyHandlers = [
+    new MockedHandler("canvasToBlob", [
+      Formats.PNG.builder("png").lossless().fromTo(),
+      Formats.JPEG.builder("jpeg").fromTo(),
+    ]),
+    new MockedHandler("sevenZip", [
+      Formats.ZIP.builder("zip").lossless().fromTo(),
+      SpecialFormats.ANY.builder("ANY").lossless().to(),
+    ]),
+  ];
+  const [canvas, sevenZip] = anyHandlers;
+  const png = new ConvertPathNode(canvas, Formats.PNG.builder("png").lossless().fromTo());
+  const jpeg = new ConvertPathNode(canvas, Formats.JPEG.builder("jpeg").fromTo());
+  const zip = new ConvertPathNode(sevenZip, Formats.ZIP.builder("zip").lossless().fromTo());
+  const graph = new TraversionGraph();
+  graph.init(anyHandlers);
+  const search = async (from: ConvertPathNode, to: ConvertPathNode) => {
+    const found = [];
+    for await (const path of graph.searchPath(from, to, true))
+      found.push(path.map((node) => node.format.format));
+    return found;
+  };
+
+  // zip → jpeg can only be planned up to the extraction
+  expect(await search(zip, jpeg)).toEqual([["zip", "ANY"]]);
+  // Packing generically and then extracting again is never offered
+  expect(await search(png, jpeg)).toEqual([["png", "jpeg"]]);
+
+  // Cost estimates assume ANY reaches everything, unless only known paths count
+  const toJpeg = (optimistic: boolean) => graph.getFormatCosts(jpeg.format, "from", optimistic);
+  expect(toJpeg(true).has("application/zip(zip)")).toBe(true);
+  expect(toJpeg(false).has("application/zip(zip)")).toBe(false);
+  expect(toJpeg(false).has("image/png(png)")).toBe(true);
 });
