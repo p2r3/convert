@@ -51,7 +51,7 @@ const LOSSY_COST_MULTIPLIER: number = 1.4; // Cost multiplier for lossy conversi
 const HANDLER_PRIORITY_COST: number = 0.02; // Cost multiplier for handler priority. Higher values will make the algorithm prefer handlers with higher priority more strongly.
 const FORMAT_PRIORITY_COST: number = 0.05; // Cost multiplier for format priority. Higher values will make the algorithm prefer formats with higher priority more strongly.
 const ANY_OUTPUT_COST: number = 3; // Estimated cost from the ANY node to any other format. The real formats are only known after the step runs, so this is an optimistic guess that should lose to known conversion paths.
-const ANY_INPUT_COST: number = 2; // Extra cost for edges created via supportAnyInput. Discourages generic "pack" conversions so the algorithm prefers more specific conversion paths (e.g. rename-then-convert over wrapping a file as-is).
+const ANY_INPUT_COST: number = 2; // Extra cost for edges into handlers that accept SpecialFormats.ANY. Discourages generic "pack" conversions so the algorithm prefers more specific conversion paths (e.g. rename-then-convert over wrapping a file as-is).
 
 const LOG_FREQUENCY = 1000;
 const MAX_QUEUED_PATHS = 15_000_000;
@@ -68,7 +68,7 @@ export interface Edge {
   handler: string;
   cost: number;
   costs: CostEntry[];
-  /** Set on edges created via supportAnyInput. */
+  /** Set on edges from a concrete format into a handler that accepts SpecialFormats.ANY. */
   kind?: "anyInput";
 }
 
@@ -273,11 +273,13 @@ export class TraversionGraph {
 
     this.anyIndex = this.nodeIndexByIdentifier.get(ANY_IDENTIFIER) ?? -1;
 
-    // Add edges for handlers with supportAnyInput.
+    // Add edges for handlers that accept SpecialFormats.ANY.
     // These handlers can accept any format as input, so we create edges
-    // from every known format node to their output formats.
+    // from every known format node to their output formats. Edges from the ANY node itself
+    // (passing on everything an ANY output produced) are regular edges created above.
     handlers.forEach((handler, hIndex) => {
-      if (!handler.supportAnyInput) return;
+      if (!handler.supportedFormats?.some((f) => f.from && f.mime === SpecialFormats.ANY.mime))
+        return;
       if (!handler.supportedFormats) return;
 
       // Collect output format node indices for this handler
@@ -588,8 +590,9 @@ export class TraversionGraph {
       let current = queue.poll()!;
       // A failed conversion can invalidate paths already in the queue.
       if (!Number.isFinite(sumCosts(this.calculateAdaptiveCosts(current.path)))) continue;
-      if (current.index === this.anyIndex) {
+      if (current.index === this.anyIndex && current.path.length > 1) {
         // The rest of the path can only be planned once the real output formats are known.
+        // A search that starts at ANY (passing on extracted files) goes on through its edges.
         console.log(
           `Found open-ended path at iteration ${iterations} with cost ${current.cost.toFixed(3)}: ${current.path.map((p) => p.handler.name + "(" + p.format.mime + ")").join(" → ")}`,
         );

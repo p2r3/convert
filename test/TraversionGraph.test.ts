@@ -5,35 +5,26 @@ import { MockedHandler } from "./MockedHandler.ts";
 import { expect, test } from "bun:test";
 
 const handlers: FormatHandler[] = [
-  new MockedHandler(
-    "canvasToBlob",
-    [
-      Formats.PNG.builder("png").lossless().fromTo(),
-      Formats.JPEG.builder("jpeg").fromTo(),
-      Formats.SVG.builder("svg").lossless().fromTo(),
-    ],
-    false,
-  ),
-  new MockedHandler(
-    "meyda",
-    [
-      Formats.JPEG.builder("jpeg").fromTo(),
-      Formats.PNG.builder("png").fromTo(),
-      Formats.WAV.builder("wav").fromTo(),
-    ],
-    false,
-  ),
-  new MockedHandler(
-    "FFmpeg",
-    [
-      Formats.PNG.builder("png").lossless().fromTo(),
-      Formats.MP3.builder("mp3").fromTo(),
-      Formats.WAV.builder("wav").lossless().fromTo(),
-      Formats.MP4.builder("mp4").lossless().fromTo(),
-    ],
-    false,
-  ),
-  new MockedHandler("sevenZip", [Formats.ZIP.builder("zip").lossless().to()], true),
+  new MockedHandler("canvasToBlob", [
+    Formats.PNG.builder("png").lossless().fromTo(),
+    Formats.JPEG.builder("jpeg").fromTo(),
+    Formats.SVG.builder("svg").lossless().fromTo(),
+  ]),
+  new MockedHandler("meyda", [
+    Formats.JPEG.builder("jpeg").fromTo(),
+    Formats.PNG.builder("png").fromTo(),
+    Formats.WAV.builder("wav").fromTo(),
+  ]),
+  new MockedHandler("FFmpeg", [
+    Formats.PNG.builder("png").lossless().fromTo(),
+    Formats.MP3.builder("mp3").fromTo(),
+    Formats.WAV.builder("wav").lossless().fromTo(),
+    Formats.MP4.builder("mp4").lossless().fromTo(),
+  ]),
+  new MockedHandler("sevenZip", [
+    SpecialFormats.ANY.builder("ANY").from(),
+    Formats.ZIP.builder("zip").lossless().to(),
+  ]),
 ];
 
 console.log("Testing...\n");
@@ -259,7 +250,7 @@ test("should find path from image to archive via anyinput\n", async () => {
   expect(extractedPaths[0][extractedPaths[0].length - 1].handler.name).toBe("sevenZip");
 });
 
-test("should stop at ANY output\n", async () => {
+test("should stop at ANY output and only continue from it when searching from ANY\n", async () => {
   const anyHandlers = [
     new MockedHandler("canvasToBlob", [
       Formats.PNG.builder("png").lossless().fromTo(),
@@ -267,13 +258,14 @@ test("should stop at ANY output\n", async () => {
     ]),
     new MockedHandler("sevenZip", [
       Formats.ZIP.builder("zip").lossless().fromTo(),
-      SpecialFormats.ANY.builder("ANY").lossless().to(),
+      SpecialFormats.ANY.builder("ANY").lossless().fromTo(),
     ]),
   ];
   const [canvas, sevenZip] = anyHandlers;
   const png = new ConvertPathNode(canvas, Formats.PNG.builder("png").lossless().fromTo());
   const jpeg = new ConvertPathNode(canvas, Formats.JPEG.builder("jpeg").fromTo());
   const zip = new ConvertPathNode(sevenZip, Formats.ZIP.builder("zip").lossless().fromTo());
+  const any = new ConvertPathNode(sevenZip, SpecialFormats.ANY.builder("ANY").lossless().fromTo());
   const graph = new TraversionGraph();
   graph.init(anyHandlers);
   const search = async (from: ConvertPathNode, to: ConvertPathNode) => {
@@ -285,6 +277,8 @@ test("should stop at ANY output\n", async () => {
 
   // zip → jpeg can only be planned up to the extraction
   expect(await search(zip, jpeg)).toEqual([["zip", "ANY"]]);
+  // Starting from ANY passes everything on instead of stopping right away
+  expect(await search(any, zip)).toEqual([["ANY", "zip"]]);
   // Packing generically and then extracting again is never offered
   expect(await search(png, jpeg)).toEqual([["png", "jpeg"]]);
 

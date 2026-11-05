@@ -148,11 +148,6 @@ export interface HandlerDefinition {
   /** List of supported input/output {@link FileFormat}s. */
   supportedFormats?: FileFormat[];
 
-  /** Whether the handler supports input of any type.
-   * Conversion using this handler will be performed only if no other direct conversion is found.
-   */
-  readonly supportAnyInput?: boolean;
-
   /** Whether the handler supports running in a Web Worker.
    * Unless you are doing something extraordinary, this should be enabled. If you plan to disable it,
    * your reason better be REALLY good. Try replacing `HTMLCanvasElement` -> `OffscreenCanvas`
@@ -213,7 +208,6 @@ export class ConvertPathNode {
 export function stripHandler(handler: HandlerDefinition): HandlerDefinition {
   return structuredClone({
     name: handler.name,
-    supportAnyInput: handler.supportAnyInput,
     supportedFormats: handler.supportedFormats,
     offload: handler.offload,
     abortable: handler.abortable,

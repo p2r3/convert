@@ -297,13 +297,22 @@ async function attemptConvertPath(
 
 const totalBytes = (files: FileData[]) => files.reduce((sum, file) => sum + file.bytes.length, 0);
 
+/** Whether some handler accepts SpecialFormats.ANY and directly outputs `format`, e.g. packing into a zip. */
+const acceptsAnyInto = (format: FileFormat) =>
+  window.handlerDefs.some(
+    (handler) =>
+      handler.supportedFormats?.some((f) => f.from && sameFormat(f, SpecialFormats.ANY)) &&
+      handler.supportedFormats.some((f) => f.to && sameFormat(f, format)),
+  );
+
 /**
- * Ranks the groups of files produced by a SpecialFormats.ANY step, best first. Only formats that
- * can still reach the target count. Files already in the target format come first, then formats
- * with a known path, then formats that only might work (e.g. nested archives). Ties go to more
- * files, then more bytes, then the cheaper remaining path.
+ * Ranks the ways to continue with the files produced by a SpecialFormats.ANY step, best first.
  */
-async function rankAnyOutputGroups(files: FileData[], to: ConvertPathNode) {
+async function rankAnyOutputCandidates(
+  files: FileData[],
+  step: ConvertPathNode,
+  to: ConvertPathNode,
+) {
   const costs = await window.traversionGraph.getFormatCosts(to.format, "from");
   const knownCosts = await window.traversionGraph.getFormatCosts(to.format, "from", false);
   const targetId = formatIdentifier(to.format);
@@ -318,7 +327,7 @@ async function rankAnyOutputGroups(files: FileData[], to: ConvertPathNode) {
     }
   }
 
-  return [...groups]
+  const ranked = [...groups]
     .toSorted(
       ([idA, a], [idB, b]) =>
         tier(idA) - tier(idB) ||
@@ -329,13 +338,17 @@ async function rankAnyOutputGroups(files: FileData[], to: ConvertPathNode) {
     .map(([id, group]) => {
       const options = [...ConversionOptions].filter(([format]) => formatIdentifier(format) === id);
       const [format, handler] = options.find(([format]) => format.from) ?? options[0];
-      return { node: { handler, format } as ConvertPathNode, files: group };
+      return { node: { handler, format } as ConvertPathNode, files: group, passOn: false };
     });
+
+  if (!knownCosts.has(formatIdentifier(SpecialFormats.ANY))) return ranked;
+  const passOn = { node: step, files, passOn: true };
+  return acceptsAnyInto(to.format) ? [passOn, ...ranked] : [...ranked, passOn];
 }
 
 /**
  * Continues a path that ended at SpecialFormats.ANY: detects what the step produced and tries
- * each group of files, best first, by searching again from their real format.
+ * each way to continue, best first, by searching again from there.
  */
 async function continueFromAny(
   files: FileData[],
@@ -345,8 +358,8 @@ async function continueFromAny(
   depth: number,
 ) {
   const step = path.at(-1)!;
-  const groups = await rankAnyOutputGroups(files, to);
-  if (!groups.length) {
+  const candidates = await rankAnyOutputCandidates(files, step, to);
+  if (!candidates.length) {
     const found = [...new Set(files.flatMap(detectFormatIds))];
     ProgressStore.log(
       `${step.handler.name} produced nothing convertible to ${to.format.format} (found: ${found.join(", ") || "nothing recognizable"}), rerouting.`,
@@ -357,8 +370,11 @@ async function continueFromAny(
     return null;
   }
 
-  for (const group of groups) {
-    const prefix = path.slice(0, -1).concat({ handler: step.handler, format: group.node.format });
+  for (const group of candidates) {
+    // Groups replace the ANY step with their real format; passing on keeps it.
+    const prefix = group.passOn
+      ? path
+      : path.slice(0, -1).concat({ handler: step.handler, format: group.node.format });
     let result = null;
     if (sameFormat(group.node.format, to.format)) {
       result = { files: group.files, path: prefix };
@@ -368,7 +384,7 @@ async function continueFromAny(
     }
     if (!result) {
       ProgressStore.log(
-        `Could not convert the extracted ${group.node.format.format} files, trying the next group.`,
+        `Could not convert the extracted ${group.passOn ? "" : group.node.format.format + " "}files, trying the next option.`,
         "warn",
         step.handler.name,
       );

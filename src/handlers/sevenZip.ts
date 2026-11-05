@@ -24,7 +24,6 @@ function padNumberString(num: number, digits: number): string {
 class sevenZipHandler implements FormatHandler {
   public readonly name = "sevenZip";
   public supportedFormats: FileFormat[] = [];
-  public supportAnyInput = true;
   public ready = false;
 
   #tarCompressedFormats: string[] = [];
@@ -111,8 +110,8 @@ class sevenZipHandler implements FormatHandler {
       ...this.supportedFormats.filter((f) => !priority.includes(f.internal)),
     ];
 
-    // Extracting yields whatever the archive contains
-    this.supportedFormats.push(SpecialFormats.ANY.builder("ANY").lossless().to());
+    // Packs anything; extracting yields whatever the archive contains
+    this.supportedFormats.push(SpecialFormats.ANY.builder("ANY").lossless().fromTo());
 
     this.ready = true;
   }
@@ -226,7 +225,10 @@ class sevenZipHandler implements FormatHandler {
           `sevenZipHandler cannot convert from ${inputFormat.mime} to ${outputFormat.mime}`,
         );
       }
-    } else if (this.supportedFormats.some((format) => format.internal === inputFormat.internal)) {
+    } else if (
+      inputFormat.mime !== SpecialFormats.ANY.mime &&
+      this.supportedFormats.some((format) => format.internal === inputFormat.internal)
+    ) {
       // Archive-to-archive conversion
       let i = 0;
       for (const inputFile of inputFiles) {

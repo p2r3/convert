@@ -9,7 +9,6 @@ export class MockedHandler implements FormatHandler {
   constructor(
     public readonly name: HandlerName,
     public supportedFormats?: FileFormat[],
-    public supportAnyInput?: boolean,
   ) {}
   public ready = false;
   init() {

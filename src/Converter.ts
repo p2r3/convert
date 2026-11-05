@@ -6,6 +6,7 @@ import {
   type FileData,
   type HandlerDefinition,
 } from "./FormatHandler";
+import { SpecialFormats } from "./Formats";
 import { createRemoteContext, type IProgressStore } from "./ui/ProgressStore";
 import { getHandler } from "./handlers/index.js";
 
@@ -65,8 +66,10 @@ export class Converter {
         throw new Error(`Handler "${def.name}" doesn't support any formats.`);
 
       const inputFormat =
-        def.supportedFormats.find((c) => c.from && sameFormat(c, path[0].format)) ||
-        (def.supportAnyInput ? path[0].format : undefined);
+        def.supportedFormats.find((c) => c.from && sameFormat(c, path[0].format)) ??
+        (def.supportedFormats.some((c) => c.from && sameFormat(c, SpecialFormats.ANY))
+          ? path[0].format
+          : undefined);
 
       if (!inputFormat)
         throw new Error(
