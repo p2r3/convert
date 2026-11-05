@@ -19,7 +19,7 @@ function sanitizeString(str: string): string {
  * - Packing any input(s) into a single LZH archive
  * - Multiple compression methods (lh0, lh1, lh4, lh5, lh6, lh7)
  */
-export class lzhHandler implements FormatHandler {
+export default class lzhHandler implements FormatHandler {
   public readonly name = "lzh";
   public supportedFormats = [
     Formats.LZH.builder("lzh").lossless().fromTo(),
