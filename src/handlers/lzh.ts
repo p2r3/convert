@@ -4,12 +4,6 @@ import { LZHEncoder, type LHAFileInput } from "./lzh/encoder.ts";
 import Formats, { SpecialFormats } from "src/Formats.ts";
 import { InitializationError } from "src/errors.ts";
 
-// Sanitize all string values to ensure valid JSON
-function sanitizeString(str: string): string {
-  // oxlint-disable-next-line eslint/no-control-regex
-  return str.replace(/[\x00-\x1F\x7F-\x9F]/g, "").trim() || "unknown";
-}
-
 /**
  * LZH/LHA Archive Handler
  * Handles LZH (Lempel-Ziv-Huffman) and LHA archive formats

@@ -70,7 +70,7 @@ function getMatchingFromFormats(options: ConversionOptionsMap, files: File[]) {
   return detectFormatMatches(files[0], fromFormats, { loose: true });
 }
 
-function downloadFile(bytes: Uint8Array, name: string, type: string) {
+function downloadFile(bytes: Uint8Array, name: string) {
   const blob = new Blob([bytes as BlobPart], { type: "application/octet-stream" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -231,7 +231,7 @@ export default function Conversion() {
         const bytes = new Uint8Array(buf);
 
         if (sameFormat(fromOption[0], toOption[0])) {
-          downloadFile(bytes, f.name, toOption[0].mime);
+          downloadFile(bytes, f.name);
           continue;
         }
         inputFileData.push({ name: f.name, bytes });
@@ -267,7 +267,7 @@ export default function Conversion() {
       }
 
       for (const file of output.files) {
-        downloadFile(file.bytes, file.name, toOption[0].mime);
+        downloadFile(file.bytes, file.name);
       }
 
       PopupData.value = {
