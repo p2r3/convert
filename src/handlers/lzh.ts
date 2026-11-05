@@ -16,13 +16,14 @@ function sanitizeString(str: string): string {
  *
  * Supports:
  * - Extracting LZH/LHA archives to individual files (SpecialFormats.ANY)
+ * - Packing any input(s) into a single LZH archive
  * - Multiple compression methods (lh0, lh1, lh4, lh5, lh6, lh7)
  */
 export class lzhHandler implements FormatHandler {
   public readonly name = "lzh";
   public supportedFormats = [
-    Formats.LZH.builder("lzh").lossless().from(),
-    SpecialFormats.ANY.builder("ANY").lossless().to(),
+    Formats.LZH.builder("lzh").lossless().fromTo(),
+    SpecialFormats.ANY.builder("ANY").lossless().fromTo(),
   ];
   public ready = false;
 
@@ -38,70 +39,32 @@ export class lzhHandler implements FormatHandler {
     if (!this.ready) {
       throw new InitializationError("Handler not initialized.");
     }
-    if (inputFormat.internal !== "lzh" || outputFormat.mime !== SpecialFormats.ANY.mime) {
-      throw new TypeError(
-        `Unsupported conversion: ${inputFormat.format} to ${outputFormat.format}`,
-      );
-    }
 
-    const outputFiles: FileData[] = [];
-    for (const inputFile of inputFiles) {
-      const decoder = new LZHDecoder(inputFile.bytes);
-      for (const file of decoder.extractAll()) {
-        // Skip directory entries
-        if (file.method === "-lhd-" || file.filename.endsWith("/")) continue;
-        // Flatten paths, keeping only the file name
-        const filename = file.filename.replace(/\\/g, "/").split("/").pop() || file.filename;
-        outputFiles.push({ name: filename, bytes: file.data });
+    if (inputFormat.internal === "lzh" && outputFormat.mime === SpecialFormats.ANY.mime) {
+      const outputFiles: FileData[] = [];
+      for (const inputFile of inputFiles) {
+        const decoder = new LZHDecoder(inputFile.bytes);
+        for (const file of decoder.extractAll()) {
+          // Skip directory entries
+          if (file.method === "-lhd-" || file.filename.endsWith("/")) continue;
+          // Flatten paths, keeping only the file name
+          const filename = file.filename.replace(/\\/g, "/").split("/").pop() || file.filename;
+          outputFiles.push({ name: filename, bytes: file.data });
+        }
       }
-    }
-    return outputFiles;
-  }
-}
-
-// Packs any input(s) into a singular LZH file. Separated for tree purposes.
-export class lzhAnyHandler implements FormatHandler {
-  public readonly name = "lzhAny";
-  public supportedFormats = [
-    SpecialFormats.ANY.builder("ANY").from(),
-    Formats.LZH.builder("lzh").lossless().to(),
-  ];
-  public ready = false;
-
-  async init() {
-    this.ready = true;
-  }
-
-  async doConvert(
-    inputFiles: FileData[],
-    inputFormat: FileFormat,
-    outputFormat: FileFormat,
-  ): Promise<FileData[]> {
-    if (!this.ready) {
-      throw new Error("Handler not initialized");
+      return outputFiles;
     }
 
-    const outputFiles: FileData[] = [];
-
-    // Convert multiple files to LZH/LHA archive
-    const filesToArchive: LHAFileInput[] = [];
-
-    for (const inputFile of inputFiles) {
-      filesToArchive.push({
+    if (outputFormat.internal === "lzh") {
+      const filesToArchive: LHAFileInput[] = inputFiles.map((inputFile) => ({
         filename: inputFile.name,
         data: inputFile.bytes,
         timestamp: new Date(),
-      });
+      }));
+      const lzhData = new LZHEncoder().create(filesToArchive);
+      return [{ name: "archive." + outputFormat.extension, bytes: lzhData }];
     }
 
-    const encoder = new LZHEncoder();
-    const lzhData = encoder.create(filesToArchive);
-
-    outputFiles.push({
-      name: "archive." + outputFormat.extension,
-      bytes: lzhData,
-    });
-
-    return outputFiles;
+    throw new TypeError(`Unsupported conversion: ${inputFormat.format} to ${outputFormat.format}`);
   }
 }
