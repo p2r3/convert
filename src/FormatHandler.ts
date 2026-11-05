@@ -32,6 +32,13 @@ export interface FileFormat extends IFormatDefinition {
   lossless?: boolean;
 }
 
+/** Unique identifier of a format across handlers, e.g. `image/png(png)`. */
+export const formatIdentifier = (format: IFormatDefinition) => `${format.mime}(${format.format})`;
+
+/** Whether both are the same format, regardless of which handler they come from. */
+export const sameFormat = (a: IFormatDefinition | null | undefined, b: IFormatDefinition) =>
+  a?.mime === b.mime && a.format === b.format;
+
 /**
  * Class containing format definition and method used to produce FileFormat
  * that can be supported by handlers.

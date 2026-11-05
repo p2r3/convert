@@ -11,7 +11,7 @@ import {
 import { Mode, ModeEnum } from "src/ui/ModeStore";
 import normalizeMimeType from "src/normalizeMimeType";
 import { getExt } from "src/common/index.ts";
-import type { FileFormat } from "src/FormatHandler";
+import { formatIdentifier, sameFormat, type FileFormat } from "src/FormatHandler";
 
 import ConversionHeader from "src/ui/components/Conversion/ConversionHeader";
 import FormatExplorer from "src/ui/components/Conversion/FormatExplorer";
@@ -50,7 +50,7 @@ function countAvailableFormats(
       continue;
     }
 
-    const dedupeKey = `${format.mime}|${format.format}`;
+    const dedupeKey = formatIdentifier(format);
     if (seen.has(dedupeKey)) continue;
     seen.add(dedupeKey);
     count += 1;
@@ -195,7 +195,7 @@ export default function Conversion() {
 
     const uniqueFormats = new Set<string>();
     for (const [format, handler] of matchingFrom) {
-      uniqueFormats.add(`${format.mime}|${format.format}`);
+      uniqueFormats.add(formatIdentifier(format));
 
       // chances are, this format is exactly what the user wants
       if (ext === format.extension && mimeCandidates.includes(format.mime)) {
@@ -298,10 +298,7 @@ export default function Conversion() {
         const buf = await f.arrayBuffer();
         const bytes = new Uint8Array(buf);
 
-        if (
-          fromOption[0].mime === toOption[0].mime &&
-          fromOption[0].format === toOption[0].format
-        ) {
+        if (sameFormat(fromOption[0], toOption[0])) {
           downloadFile(bytes, f.name, toOption[0].mime);
           continue;
         }

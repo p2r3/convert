@@ -1,6 +1,11 @@
 import "./polyfills.ts";
 import * as comlink from "comlink";
-import type { ConvertPathNode, FileData, HandlerDefinition } from "./FormatHandler";
+import {
+  sameFormat,
+  type ConvertPathNode,
+  type FileData,
+  type HandlerDefinition,
+} from "./FormatHandler";
 import { createRemoteContext, type IProgressStore } from "./ui/ProgressStore";
 import { getHandler } from "./handlers/index.js";
 
@@ -60,9 +65,8 @@ export class Converter {
         throw new Error(`Handler "${def.name}" doesn't support any formats.`);
 
       const inputFormat =
-        def.supportedFormats.find(
-          (c) => c.from && c.mime === path[0].format.mime && c.format === path[0].format.format,
-        ) || (def.supportAnyInput ? path[0].format : undefined);
+        def.supportedFormats.find((c) => c.from && sameFormat(c, path[0].format)) ||
+        (def.supportAnyInput ? path[0].format : undefined);
 
       if (!inputFormat)
         throw new Error(

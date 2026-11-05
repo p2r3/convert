@@ -3,6 +3,7 @@ import {
   type FileData,
   type ConvertPathNode,
   type HandlerDefinition,
+  sameFormat,
 } from "./FormatHandler.js";
 import { ensureDefinitions, type HandlerName } from "./handlers/index.js";
 import * as comlink from "comlink";
@@ -149,8 +150,7 @@ async function attemptConvertPath(
     for (let i = 0; i < deadEnd.length; i++) {
       if (
         path[i]?.handler.name === deadEnd[i].handler.name &&
-        path[i]?.format.mime === deadEnd[i].format.mime &&
-        path[i]?.format.format === deadEnd[i].format.format
+        sameFormat(path[i]?.format, deadEnd[i].format)
       )
         continue;
       isDeadEnd = false;

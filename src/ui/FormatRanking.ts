@@ -1,4 +1,4 @@
-import type { FileFormat } from "src/FormatHandler";
+import { formatIdentifier, sameFormat, type FileFormat } from "src/FormatHandler";
 import type { CategoryType } from "src/Formats";
 import data from "src/ui/popularity.json";
 
@@ -87,7 +87,7 @@ function rankScore(
   costs?: ReadonlyMap<string, number>,
 ): number {
   // A zero-cost no-op should not displace actual conversion choices.
-  if (other?.mime === format.mime && other.format === format.format) return -Infinity;
+  if (sameFormat(other, format)) return -Infinity;
   const side = direction === "from" ? "in" : "out";
   const stats = formats[format.format];
   const cats = categoriesOf(format, collected);
@@ -112,7 +112,7 @@ function rankScore(
     WEIGHTS.web * popularity +
     WEIGHTS.sameCategory * sameCategory +
     WEIGHTS.prediction * prediction -
-    WEIGHTS.edgeCost * (costs ? (costs.get(`${format.mime}(${format.format})`) ?? Infinity) : 0)
+    WEIGHTS.edgeCost * (costs ? (costs.get(formatIdentifier(format)) ?? Infinity) : 0)
   );
 }
 

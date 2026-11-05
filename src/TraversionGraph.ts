@@ -1,5 +1,11 @@
 import "./polyfills.ts";
-import { ConvertPathNode, type FileFormat, type HandlerDefinition } from "./FormatHandler.ts";
+import {
+  ConvertPathNode,
+  formatIdentifier,
+  sameFormat,
+  type FileFormat,
+  type HandlerDefinition,
+} from "./FormatHandler.ts";
 import type { CategoryType } from "./Formats.ts";
 import { PriorityQueue } from "./PriorityQueue.ts";
 import * as comlink from "comlink";
@@ -225,16 +231,16 @@ export class TraversionGraph {
       let fromIndices: Array<{ format: FileFormat; index: number }> = [];
       let toIndices: Array<{ format: FileFormat; index: number }> = [];
       handler.supportedFormats?.forEach((format) => {
-        const formatIdentifier = format.mime + `(${format.format})`;
-        let index = this.nodeIndexByIdentifier.get(formatIdentifier) ?? -1;
+        const identifier = formatIdentifier(format);
+        let index = this.nodeIndexByIdentifier.get(identifier) ?? -1;
         if (index === -1) {
           index = this.nodes.length;
           this.nodes.push({
-            identifier: formatIdentifier,
+            identifier,
             format: format,
             edges: [],
           });
-          this.nodeIndexByIdentifier.set(formatIdentifier, index);
+          this.nodeIndexByIdentifier.set(identifier, index);
         }
         if (format.from) fromIndices.push({ format, index });
         if (format.to) toIndices.push({ format, index });
@@ -267,8 +273,7 @@ export class TraversionGraph {
       const toEntries: Array<{ format: FileFormat; index: number }> = [];
       for (const f of handler.supportedFormats) {
         if (!f.to) continue;
-        const id = f.mime + `(${f.format})`;
-        const idx = this.nodeIndexByIdentifier.get(id) ?? -1;
+        const idx = this.nodeIndexByIdentifier.get(formatIdentifier(f)) ?? -1;
         if (idx !== -1) toEntries.push({ format: f, index: idx });
       }
 
@@ -487,7 +492,7 @@ export class TraversionGraph {
   }
 
   public getFormatCosts(format: FileFormat, direction: "from" | "to" = "to"): Map<string, number> {
-    const index = this.nodeIndexByIdentifier.get(`${format.mime}(${format.format})`);
+    const index = this.nodeIndexByIdentifier.get(formatIdentifier(format));
     if (index === undefined) return new Map();
     const costs = this.calculateEdgeCosts(index, direction === "from");
     return new Map(
@@ -505,10 +510,8 @@ export class TraversionGraph {
     debug?: (costs: (CostEntry & { step: number })[], total: number) => void,
   ): AsyncGenerator<ConvertPathNode[]> {
     // A*: base edge costs estimate the remaining costs
-    const fromIdentifier = from.format.mime + `(${from.format.format})`;
-    const toIdentifier = to.format.mime + `(${to.format.format})`;
-    const fromIndex = this.nodeIndexByIdentifier.get(fromIdentifier) ?? -1;
-    const toIndex = this.nodeIndexByIdentifier.get(toIdentifier) ?? -1;
+    const fromIndex = this.nodeIndexByIdentifier.get(formatIdentifier(from.format)) ?? -1;
+    const toIndex = this.nodeIndexByIdentifier.get(formatIdentifier(to.format)) ?? -1;
     if (fromIndex === -1 || toIndex === -1) return []; // If either format is not in the graph, return empty array
     const remainingCosts = this.calculateEdgeCosts(toIndex, true);
     if (!Number.isFinite(remainingCosts[fromIndex])) return;
@@ -557,14 +560,7 @@ export class TraversionGraph {
       this.nodes[current.index].edges.forEach((edgeIndex) => {
         let edge = this.edges[edgeIndex];
         if (!Number.isFinite(remainingCosts[edge.to.index])) return;
-        if (
-          current.path.some(
-            (node) =>
-              node.format.mime === edge.to.format.mime &&
-              node.format.format === edge.to.format.format,
-          )
-        )
-          return;
+        if (current.path.some((node) => sameFormat(node.format, edge.to.format))) return;
         const handler = this.handlerByName.get(edge.handler);
         if (!handler) return; // If the handler for this edge is not found, skip it
 
@@ -610,8 +606,7 @@ export class TraversionGraph {
       for (let i = 0; i < deadEnd.length; i++) {
         if (
           path[i]?.handler.name === deadEnd[i].handler.name &&
-          path[i]?.format.mime === deadEnd[i].format.mime &&
-          path[i]?.format.format === deadEnd[i].format.format
+          sameFormat(path[i]?.format, deadEnd[i].format)
         )
           continue;
         isDeadEnd = false;

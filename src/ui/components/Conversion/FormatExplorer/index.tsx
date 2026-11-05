@@ -26,7 +26,7 @@ import "./index.css";
 import { useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 import { popupOpen } from "src/ui/PopupStore";
 import type { RefObject } from "preact";
-import type { FileFormat } from "src/FormatHandler";
+import { formatIdentifier, type FileFormat } from "src/FormatHandler";
 import type { ConversionOption, ConversionOptionsMap } from "src/main";
 import { Mode, ModeEnum } from "src/ui/ModeStore";
 import FromTo from "src/ui/components/Conversion/FromTo";
@@ -126,7 +126,7 @@ function generateSearchIndex(
     if (direction === "to" && !file.to) continue;
     if (direction === "from" && !showAll && matchingFrom && !matchingFrom.has(file)) continue;
 
-    const dedupeKey = `${file.mime}|${file.format}`;
+    const dedupeKey = formatIdentifier(file);
     const id = formatExplorerRowKey(file, handler.name);
 
     if (advancedMode) {
