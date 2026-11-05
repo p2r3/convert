@@ -1,11 +1,15 @@
-import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
+import {
+  sameFormat,
+  type FileData,
+  type FileFormat,
+  type FormatHandler,
+  type IFormatDefinition,
+} from "../FormatHandler.ts";
 import Formats from "src/Formats.ts";
 
-import { parseTar } from "nanotar";
-import JSZip from "jszip";
-import { stripExt } from "src/common/index.ts";
-
-const image_list = ["png", "jpg", "webp", "bmp", "tiff", "gif"];
+import { changeExt, stripExt } from "src/common/index.ts";
+import type { ConvertContext } from "src/ui/ProgressStore.ts";
+import { InitializationError } from "src/errors.ts";
 
 function padNumberString(num: number, digits: number): string {
   let str = String(num);
@@ -17,200 +21,112 @@ function padNumberString(num: number, digits: number): string {
   return str;
 }
 
-export class comicsZipPackerHandler implements FormatHandler {
-  public readonly name = "comicsZipPacker";
-  public supportedFormats = [
-    Formats.PNG.builder("png").from(),
-    Formats.JPEG.builder("jpg").from(),
-    Formats.WEBP.builder("webp").from(),
-    Formats.BMP.builder("bmp").from(),
-    Formats.TIFF.builder("tiff").from(),
-    Formats.GIF.builder("gif").from(),
-    Formats.ZIP.builder("zip").lossless().to(),
-    Formats.CBZ.builder("cbz").to(),
-  ];
+const COMIC_FORMATS = {
+  cbz: [Formats.CBZ, Formats.ZIP],
+  cbt: [Formats.CBT, Formats.TAR],
+  cbr: [Formats.CBR, Formats.RAR],
+  cb7: [Formats.CB7, Formats.SZ],
+} as const;
+
+export class comicsPackerHandler implements FormatHandler {
+  public readonly name = "comicsPacker";
+  public supportedFormats?: FileFormat[];
   public ready = false;
 
+  #sevenzip?: FormatHandler;
+
   async init() {
-    this.ready = true;
+    this.#sevenzip = new (await import("./sevenZip.ts")).default();
+    await this.#sevenzip.init();
+    const contains = (format: IFormatDefinition) =>
+      this.#sevenzip?.supportedFormats?.some((f) => sameFormat(f, format) && f.to);
+    this.supportedFormats = [
+      Formats.PNG.builder("png").from(),
+      Formats.JPEG.builder("jpg").from(),
+      Formats.WEBP.builder("webp").from(),
+      Formats.BMP.builder("bmp").from(),
+      Formats.TIFF.builder("tiff").from(),
+      Formats.GIF.builder("gif").from(),
+    ];
+    for (const [comic, archive] of Object.values(COMIC_FORMATS)) {
+      if (contains(archive)) this.supportedFormats.push(comic.builder(comic.extension).to());
+    }
+    this.ready = this.#sevenzip.ready;
   }
 
   async doConvert(
     inputFiles: FileData[],
     inputFormat: FileFormat,
     outputFormat: FileFormat,
+    ctx?: ConvertContext,
   ): Promise<FileData[]> {
-    const outputFiles: FileData[] = [];
+    if (!this.#sevenzip) throw new InitializationError();
 
-    // Pack a zip/cbz with code copied from wad.ts
-    if (
-      image_list.includes(inputFormat.internal) &&
-      (outputFormat.internal === "cbz" || outputFormat.internal === "zip")
-    ) {
-      // Single-gif catching
-      if (inputFormat.internal === "gif" && inputFiles.length === 1) {
-        throw new TypeError("User probably intends for an archive of video/gif frames; abort.");
-      }
+    if (inputFormat.internal === "gif" && inputFiles.length === 1)
+      throw new Error("Probably wanted to make an archive of frames, abort");
 
-      // Base name for imgs -> archive
-      const baseName = stripExt(
-        inputFiles[0].name.replace("_0." + inputFormat.extension, "." + inputFormat.extension),
-      );
+    const baseName = stripExt(
+      inputFiles[0].name.replace("_0." + inputFormat.extension, "." + inputFormat.extension),
+    );
 
-      const zip = new JSZip();
+    const comicFiles: FileData[] = [];
 
-      // Add files to archive
-      const necessaryDigits = String(inputFiles.length - 1).length;
-      let iterations = 0;
-      for (const file of inputFiles) {
-        if (outputFormat.internal === "cbz") {
-          zip.file(
-            padNumberString(iterations, necessaryDigits) + "." + inputFormat.extension,
-            file.bytes,
-          );
-        } else {
-          zip.file(file.name, file.bytes);
-        }
-        iterations += 1;
-      }
-
-      const output = await zip.generateAsync({ type: "uint8array" });
-      outputFiles.push({ bytes: output, name: baseName + "." + outputFormat.extension });
-    } else {
-      throw new TypeError(
-        `Unsupported conversion path: ${inputFormat.internal} -> ${outputFormat.internal}`,
-      );
+    const digits = String(inputFiles.length - 1).length;
+    for (const [i, file] of inputFiles.entries()) {
+      comicFiles.push({
+        name: padNumberString(i, digits) + "." + inputFormat.extension,
+        bytes: file.bytes,
+      });
     }
 
-    return outputFiles;
+    const comicEntry = Object.values(COMIC_FORMATS).find(([comic]) =>
+      sameFormat(outputFormat, comic),
+    );
+    if (!comicEntry) throw new Error(`Cannot convert to ${outputFormat.format}`);
+
+    const archiveFormat = this.#sevenzip.supportedFormats?.find((f) =>
+      sameFormat(f, comicEntry[1]),
+    );
+    if (!archiveFormat)
+      throw new Error(`Sevenzip did not have a format for ${outputFormat.extension}`);
+
+    const outputFiles = await this.#sevenzip.doConvert(comicFiles, inputFormat, archiveFormat, ctx);
+
+    return outputFiles.map((f) => ({
+      name: changeExt(baseName, outputFormat.extension),
+      bytes: f.bytes,
+    }));
   }
 }
 
-export class comicsZipUnpackerHandler implements FormatHandler {
-  public readonly name = "comicsZipUnpacker";
-  public supportedFormats = [
-    Formats.PNG.builder("png").to(),
-    Formats.JPEG.builder("jpg").to(),
-    Formats.WEBP.builder("webp").to(),
-    Formats.BMP.builder("bmp").to(),
-    Formats.TIFF.builder("tiff").to(),
-    Formats.GIF.builder("gif").to(),
-    Formats.ZIP.builder("zip").from(),
-    Formats.CBZ.builder("cbz").from(),
-  ];
-  public ready = false;
+function createRenameHandler<K extends keyof typeof COMIC_FORMATS>(format: K) {
+  const [comic, archive] = COMIC_FORMATS[format];
+  return class implements FormatHandler {
+    public readonly name = `${format}Rename` as const;
+    public supportedFormats = [
+      comic.builder(comic.extension).from(),
+      archive.builder(archive.extension).lossless().to(),
+    ];
+    public ready = false;
 
-  async init() {
-    this.ready = true;
-  }
-
-  async doConvert(
-    inputFiles: FileData[],
-    inputFormat: FileFormat,
-    outputFormat: FileFormat,
-  ): Promise<FileData[]> {
-    const outputFiles: FileData[] = [];
-
-    // Unpack a zip/cbz with code copied from lzh.ts
-    if (
-      (inputFormat.internal === "cbz" || inputFormat.internal === "zip") &&
-      image_list.includes(outputFormat.internal)
-    ) {
-      for (const file of inputFiles) {
-        const zip = new JSZip();
-        await zip.loadAsync(file.bytes);
-
-        // Extract all files from ZIP
-        for (const [filename, zipEntry] of Object.entries(zip.files)) {
-          if (!zipEntry.dir) {
-            if (inputFormat.internal === "cbz" && filename.endsWith(".xml")) {
-              // Ignore .xml files in comic book archives.
-            } else if (filename.endsWith("." + outputFormat.extension) === false) {
-              throw new TypeError("Archive contains multiple file types; abort.");
-            } else {
-              const data = await zipEntry.async("uint8array");
-              outputFiles.push({
-                name: filename,
-                bytes: data,
-              });
-            }
-          }
-        }
-      }
-
-      // throw new Error if empty
-      if (outputFiles.length === 0) {
-        throw new Error("No applicable files to unzip found.");
-      }
-    } else {
-      throw new TypeError(
-        `Unsupported conversion path: ${inputFormat.internal} -> ${outputFormat.internal}`,
-      );
+    async init() {
+      this.ready = true;
     }
 
-    return outputFiles;
-  }
-}
-
-export class comicsTarUnpackerHandler implements FormatHandler {
-  public readonly name = "comicsTarUnpacker";
-  public supportedFormats = [
-    Formats.PNG.builder("png").to(),
-    Formats.JPEG.builder("jpg").to(),
-    Formats.WEBP.builder("webp").to(),
-    Formats.BMP.builder("bmp").to(),
-    Formats.TIFF.builder("tiff").to(),
-    Formats.GIF.builder("gif").to(),
-    Formats.TAR.builder("tar").from(),
-    Formats.CBT.builder("cbt").from(),
-  ];
-  public ready = false;
-
-  async init() {
-    this.ready = true;
-  }
-
-  async doConvert(
-    inputFiles: FileData[],
-    inputFormat: FileFormat,
-    outputFormat: FileFormat,
-  ): Promise<FileData[]> {
-    const outputFiles: FileData[] = [];
-
-    // Unpack a tar/cbt with code from tar.ts
-    if (
-      (inputFormat.internal === "cbt" || inputFormat.internal === "tar") &&
-      image_list.includes(outputFormat.internal)
-    ) {
-      for (const inputFile of inputFiles) {
-        const files = parseTar(inputFile.bytes);
-
-        for (const file of files) {
-          if (inputFormat.internal === "cbt" && file.name.endsWith(".xml")) {
-            // Ignore .xml files in comic book archives.
-          } else if (file.name.endsWith("." + outputFormat.extension) === false) {
-            throw new TypeError("Archive contains multiple file types; abort.");
-          } else if (!file.data) {
-            throw new TypeError("Undefined data type; abort.");
-          } else {
-            outputFiles.push({
-              name: file.name,
-              bytes: file.data,
-            });
-          }
-        }
-      }
-
-      // throw new Error if empty
-      if (outputFiles.length === 0) {
-        throw new Error("No applicable files to unpack found.");
-      }
-    } else {
-      throw new TypeError(
-        `Unsupported conversion path: ${inputFormat.internal} -> ${outputFormat.internal}`,
-      );
+    async doConvert(
+      inputFiles: FileData[],
+      inputFormat: FileFormat,
+      outputFormat: FileFormat,
+    ): Promise<FileData[]> {
+      return inputFiles.map((file) => ({
+        ...file,
+        name: changeExt(file.name, outputFormat.extension),
+      }));
     }
-
-    return outputFiles;
-  }
+  };
 }
+
+export const cbzRenameHandler = createRenameHandler("cbz");
+export const cbtRenameHandler = createRenameHandler("cbt");
+export const cbrRenameHandler = createRenameHandler("cbr");
+export const cb7RenameHandler = createRenameHandler("cb7");

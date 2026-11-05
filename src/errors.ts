@@ -13,7 +13,7 @@ export class EOFError extends Error {
   }
 }
 export class InitializationError extends Error {
-  constructor(message: string) {
+  constructor(message: string = "Handler not initialized.") {
     super(message);
     this.name = "InitializationError";
   }
