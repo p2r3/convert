@@ -134,6 +134,16 @@ export interface FileData {
    */
   readonly name: string;
   /**
+   * Folder the file sits in in an imaginary folder. Relative, `/`-separated,
+   * without leading or trailing slashes. Missing for loose files.
+   * ex. "assets/img" for a file that came from the path "assets/img/a.png"
+   *
+   * **Please note:** _handlers_ are responsible for ensuring the lifetime
+   * and consistency of the buffer and the immutability of the object as a whole
+   * when passed as input.
+   */
+  readonly path?: string;
+  /**
    * File contents in bytes.
    *
    * **Please note:** _handlers_ are responsible for ensuring the lifetime

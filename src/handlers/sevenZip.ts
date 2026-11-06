@@ -6,6 +6,7 @@ import mime from "mime";
 import normalizeMimeType from "src/normalizeMimeType.ts";
 import type { ConvertContext } from "src/ui/ProgressStore.js";
 import { changeExt, stripExt } from "src/common/index.ts";
+import { extractedParent, filePath, joinPath, splitPath } from "src/common/path.ts";
 
 const defaultSevenZipOptions = {
   locateFile: () => sevenZipWasmUrl,
@@ -121,21 +122,21 @@ class sevenZipHandler implements FormatHandler {
         sevenZip.FS.writeFile(inputFile.name, inputFile.bytes);
         sevenZip.callMain(["x", inputFile.name, "-odata"]);
 
-        const prefix = inputFiles.length > 1 ? stripExt(inputFile.name) + "_" : "";
+        const parent = extractedParent(inputFile, inputFiles.length > 1);
         const walk = (dir: string, rel: string) => {
           const entries = (sevenZip.FS.readdir(dir) as string[])
             .filter((entry) => entry !== "." && entry !== "..")
             .toSorted();
           for (const entry of entries) {
             const path = `${dir}/${entry}`;
-            const relPath = rel ? `${rel}_${entry}` : entry;
+            const relPath = joinPath(rel, entry);
             if (sevenZip.FS.isDir(sevenZip.FS.stat(path, false).mode)) {
               walk(path, relPath);
               continue;
             }
             const bytes = sevenZip.FS.readFile(path);
             if (!bytes.length) continue; // empty files would fail the whole step
-            outputFiles.push({ name: prefix + relPath, bytes });
+            outputFiles.push({ ...splitPath(relPath, parent), bytes });
           }
         };
         walk("data", "");
@@ -246,8 +247,10 @@ class sevenZipHandler implements FormatHandler {
 
       sevenZip.FS.mkdir("data");
       sevenZip.FS.chdir("data");
-      for (let i = 0; i < inputFiles.length; i++) {
-        sevenZip.FS.writeFile(inputFiles[i].name, inputFiles[i].bytes);
+      for (const file of inputFiles) {
+        const { name, path } = splitPath(filePath(file));
+        if (path) sevenZip.FS.mkdirTree(path, 0o777);
+        sevenZip.FS.writeFile(joinPath(path, name), file.bytes);
       }
 
       const baseName = stripExt(inputFiles[0].name);

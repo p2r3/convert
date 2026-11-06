@@ -3,6 +3,7 @@ import { LZHDecoder } from "./lzh/decoder.ts";
 import { LZHEncoder, type LHAFileInput } from "./lzh/encoder.ts";
 import Formats, { SpecialFormats } from "src/Formats.ts";
 import { InitializationError } from "src/errors.ts";
+import { extractedParent, filePath, splitPath } from "src/common/path.ts";
 
 /**
  * LZH/LHA Archive Handler
@@ -37,13 +38,12 @@ export default class lzhHandler implements FormatHandler {
     if (inputFormat.internal === "lzh" && outputFormat.mime === SpecialFormats.ANY.mime) {
       const outputFiles: FileData[] = [];
       for (const inputFile of inputFiles) {
+        const parent = extractedParent(inputFile, inputFiles.length > 1);
         const decoder = new LZHDecoder(inputFile.bytes);
         for (const file of decoder.extractAll()) {
           // Skip directory entries
           if (file.method === "-lhd-" || file.filename.endsWith("/")) continue;
-          // Flatten paths, keeping only the file name
-          const filename = file.filename.replace(/\\/g, "/").split("/").pop() || file.filename;
-          outputFiles.push({ name: filename, bytes: file.data });
+          outputFiles.push({ ...splitPath(file.filename, parent), bytes: file.data });
         }
       }
       return outputFiles;
@@ -51,7 +51,7 @@ export default class lzhHandler implements FormatHandler {
 
     if (outputFormat.internal === "lzh") {
       const filesToArchive: LHAFileInput[] = inputFiles.map((inputFile) => ({
-        filename: inputFile.name,
+        filename: filePath(inputFile),
         data: inputFile.bytes,
         timestamp: new Date(),
       }));

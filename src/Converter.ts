@@ -92,12 +92,23 @@ export class Converter {
         (currentStep - 1) / totalSteps,
       );
 
-      const outputFiles = (
+      let outputFiles = (
         await Promise.all([
           handler.doConvert(inputFiles, inputFormat, path[1].format, ctx),
           new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
         ])
       )[0];
+
+      // guess the folders
+      if (
+        outputFiles.length === inputFiles.length &&
+        inputFiles.some((f) => f.path) &&
+        !outputFiles.some((f) => f.path)
+      ) {
+        outputFiles = outputFiles.map((f, i) =>
+          inputFiles[i].path ? { ...f, path: inputFiles[i].path } : f,
+        );
+      }
 
       ctx.log(`Step ${currentStep}/${totalSteps} complete`);
       if (outputFiles.some((c) => !c.bytes.length)) throw "Output is empty.";

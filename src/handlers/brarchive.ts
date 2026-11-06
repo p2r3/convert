@@ -1,7 +1,7 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-import Formats from "src/Formats.ts";
-import JSZip from "jszip";
+import Formats, { SpecialFormats } from "src/Formats.ts";
 import { changeExt, decode, encode } from "src/common/index.ts";
+import { extractedParent, filePath, splitPath } from "src/common/path.ts";
 
 function read_lendian_4(a: number, b: number, c: number, d: number): number {
   return a + b * Math.pow(16, 2) + c * Math.pow(16, 4) + d * Math.pow(16, 6);
@@ -36,9 +36,8 @@ function write_lendian_4(x: number): number[] {
 class brarchiveHandler implements FormatHandler {
   public readonly name = "brarchive";
   public supportedFormats = [
-    Formats.ZIP.builder("zip").lossless().fromTo(),
-    Formats.JSON.builder("json").lossless().fromTo(),
     Formats.BRARCHIVE.builder("brarchive").lossless().fromTo(),
+    SpecialFormats.ANY.builder("ANY").lossless().fromTo(),
   ];
   public ready = false;
 
@@ -53,10 +52,7 @@ class brarchiveHandler implements FormatHandler {
   ): Promise<FileData[]> {
     const outputFiles: FileData[] = [];
 
-    if (
-      inputFormat.internal === "brarchive" &&
-      (outputFormat.internal === "zip" || outputFormat.internal === "json")
-    ) {
+    if (inputFormat.internal === "brarchive" && outputFormat.mime === SpecialFormats.ANY.mime) {
       // Thanks to @santiago046's documentation
 
       const file_entry_size = 1 + 247 + 4 + 4; // the size of a single FileEntry
@@ -122,74 +118,17 @@ class brarchiveHandler implements FormatHandler {
           });
         }
 
-        if (outputFormat.internal === "zip") {
-          // And now, we simply zip the files!
-          const zip = new JSZip();
-          for (const ar_file of archiveFiles) {
-            zip.file(ar_file.name, ar_file.bytes);
-          }
-
-          // Finally, output the zip.
-          const output = await zip.generateAsync({ type: "uint8array" });
-          outputFiles.push({
-            bytes: output,
-            name: changeExt(file.name, outputFormat.extension),
-          });
-        } else if (outputFormat.internal === "json") {
-          // First, validate that everything in the archive is in fact a .json file.
-          for (const ar_file of archiveFiles) {
-            if (!ar_file.name.endsWith(".json")) {
-              throw new Error(
-                "Error, brarchive doesn't consist solely of .json files, so we can't convert straight to that. " +
-                  ar_file.name,
-              );
-            }
-          }
-
-          // Then we just add the files to the output.
-          outputFiles.push(...archiveFiles);
+        // Extract everything; the converter detects what the files are.
+        const parent = extractedParent(file, inputFiles.length > 1);
+        for (const ar_file of archiveFiles) {
+          outputFiles.push({ ...splitPath(ar_file.name, parent), bytes: ar_file.bytes });
         }
       }
-    } else if (
-      (inputFormat.internal === "json" || inputFormat.internal === "zip") &&
-      outputFormat.internal === "brarchive"
-    ) {
-      const working_files: { [key: string]: FileData[] } = {};
-
-      // Special handling for zip input.
-      if (inputFormat.internal === "zip") {
-        for (const file of inputFiles) {
-          const zip = new JSZip();
-          await zip.loadAsync(file.bytes);
-
-          let done_something_flag = false;
-
-          // Extract all files from ZIP
-          working_files[file.name] = [];
-          for (const [filename, zipEntry] of Object.entries(zip.files)) {
-            if (!zipEntry.dir) {
-              if (filename.endsWith(".json") === false) {
-                throw new Error("Archive contains more than just .json files; abort.");
-              } else {
-                done_something_flag = true;
-                const data = await zipEntry.async("uint8array");
-                working_files[file.name].push({
-                  name: filename,
-                  bytes: data,
-                });
-              }
-            }
-          }
-
-          // Throw error if empty
-          if (!done_something_flag) {
-            throw new Error("No applicable files to unzip found in " + file.name);
-          }
-        }
-      } else {
-        working_files["Unnamed.brarchive"] = [];
-        working_files["Unnamed.brarchive"].push(...inputFiles);
-      }
+    } else if (outputFormat.internal === "brarchive" && inputFormat.internal !== "brarchive") {
+      // Pack all inputs into one archive. Mostly JSON in practice, but any bytes are fine.
+      const working_files: { [key: string]: FileData[] } = {
+        "Unnamed.brarchive": inputFiles,
+      };
 
       // Iterate through each collection of files.
       for (const key in working_files) {
@@ -210,7 +149,7 @@ class brarchiveHandler implements FormatHandler {
         // Start writing FileEntry's
         for (let i = 0; i < working_files[key].length; i++) {
           // Shorten name if need be
-          let name = working_files[key][i].name;
+          let name = filePath(working_files[key][i]);
           while (encode(name).length > 247) {
             name = name.substring(0, name.length - 1);
           }

@@ -9,6 +9,7 @@ import {
 } from "src/main";
 import { Mode, ModeEnum } from "src/ui/ModeStore";
 import { getExt } from "src/common/index.ts";
+import { filePath } from "src/common/path.ts";
 import { formatIdentifier, sameFormat } from "src/FormatHandler";
 import { detectFormatMatches } from "src/detectFormat";
 
@@ -267,7 +268,7 @@ export default function Conversion() {
       }
 
       for (const file of output.files) {
-        downloadFile(file.bytes, file.name);
+        downloadFile(file.bytes, filePath(file).replaceAll("/", "_"));
       }
 
       PopupData.value = {
