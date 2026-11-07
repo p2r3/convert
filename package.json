@@ -93,7 +93,6 @@
     "pdf-parse": "^2.4.5",
     "pdfjs-dist": "5.4.296",
     "pdfkit": "^0.20.2",
-    "pe-library": "^2.0.1",
     "preact": "^11.1.1",
     "sass": "^1.107.1",
     "svg-pathdata": "^9.0.0",
