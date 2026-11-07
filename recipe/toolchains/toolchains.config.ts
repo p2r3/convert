@@ -46,4 +46,10 @@ export default [
     hash: ["sha256", "c926ff491cbd9a331a589160811bd97ab1749b4d5198a519338f2cdfabe6940a"],
     prebuild: "build.sh",
   },
+  {
+    name: "llvm-mingw",
+    version: "20261020-1",
+    url: "https://github.com/mstorsjo/llvm-mingw/releases/download/20261020/llvm-mingw-20261020-ucrt-ubuntu-22.04-x86_64.tar.xz",
+    hash: ["sha256", "55064b60b991a1e1e8090b8c2f84e82b22cfe5903d12c159d65064cf5e8ae335"],
+  },
 ] satisfies ToolchainsConfig;

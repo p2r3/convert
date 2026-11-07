@@ -1,20 +1,11 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import Formats from "src/Formats.ts";
-import { Buffer } from "buffer";
+import { InitializationError } from "src/errors.ts";
 
 import elfUrl from "built/shtoelf/stub.elf?url";
 import { changeExt } from "src/common/index.ts";
 
-function replaceUint32LE(file: Buffer, from: number, to: number) {
-  const fromBytes = Buffer.alloc(4);
-  fromBytes.writeUint32LE(from, 0);
-
-  const toBytes = Buffer.alloc(4);
-  toBytes.writeUint32LE(to, 0);
-
-  const index = file.indexOf(fromBytes);
-  toBytes.copy(file, index);
-}
+const MAGIC = new TextEncoder().encode("CONVERT\0");
 
 class shToElfHandler implements FormatHandler {
   public readonly name = "shToElf";
@@ -24,11 +15,11 @@ class shToElfHandler implements FormatHandler {
   ];
   public ready = false;
 
-  #binary?: Buffer;
+  #stub?: Uint8Array;
 
   async init() {
+    this.#stub = await fetch(elfUrl).then((res) => res.bytes());
     this.ready = true;
-    this.#binary = Buffer.from(await (await fetch(elfUrl)).bytes());
   }
 
   async doConvert(
@@ -36,21 +27,18 @@ class shToElfHandler implements FormatHandler {
     inputFormat: FileFormat,
     outputFormat: FileFormat,
   ): Promise<FileData[]> {
-    const outputFiles: FileData[] = [];
+    const stub = this.#stub;
+    if (!this.ready || !stub) throw new InitializationError("Handler not initialized.");
 
-    for (const inputFile of inputFiles) {
-      const binary = Buffer.from(new Uint8Array(this.#binary!));
-      replaceUint32LE(binary, 1273991571, inputFile.bytes.length);
-
-      let file = Buffer.concat([binary, inputFile.bytes]);
-
-      outputFiles.push({
-        name: changeExt(inputFile.name, "elf"),
-        bytes: file,
-      });
-    }
-
-    return outputFiles;
+    return inputFiles.map((file) => {
+      // [stub][script][u32le script size][magic]
+      const out = new Uint8Array(stub.length + file.bytes.length + 4 + MAGIC.length);
+      out.set(stub);
+      out.set(file.bytes, stub.length);
+      new DataView(out.buffer).setUint32(stub.length + file.bytes.length, file.bytes.length, true);
+      out.set(MAGIC, out.length - MAGIC.length);
+      return { name: changeExt(file.name, "elf"), bytes: out };
+    });
   }
 }
 
