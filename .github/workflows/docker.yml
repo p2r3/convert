@@ -42,9 +42,10 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
-          arguments: |
+          build-args: |
             VITE_COMMIT_SHA=${{ github.sha }}
           file: docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
