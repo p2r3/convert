@@ -1,4 +1,20 @@
 bunx lint-staged
+
+# hide unstaged and untracked changes so the checks below only see what's being committed
+before=$(git rev-parse -q --verify refs/stash || true)
+git stash push -q --keep-index --include-untracked -m "pre-commit: unstaged changes"
+after=$(git rev-parse -q --verify refs/stash || true)
+
+if [ "$before" != "$after" ]; then
+  restore() {
+    # reset to HEAD first so the stash (index + worktree + untracked) applies without conflicts
+    git reset -q --hard
+    git stash pop -q --index || echo "pre-commit: failed to restore unstaged changes, they're in \`git stash list\`" >&2
+  }
+  trap restore EXIT
+  trap 'exit 130' INT TERM
+fi
+
 bun run build:check
 bun run build:assemble --all
 bunx tsc
