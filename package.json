@@ -100,7 +100,6 @@
     "three-bvh-csg": "^0.0.18",
     "three-mesh-bvh": "^0.9.18",
     "tippy.js": "^6.3.7",
-    "ts-flp": "^1.1.0",
     "use-debounce": "^10.1.1",
     "vexflow": "^5.0.0",
     "vite-plugin-static-copy": "^3.4.0",

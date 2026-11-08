@@ -8,7 +8,7 @@ import { Vector } from "built/sppd/sppd/Vector.ts";
 
 import Formats from "src/Formats.ts";
 import { InitializationError } from "src/errors.ts";
-import { changeExt, encode } from "src/common/index.ts";
+import { changeExt } from "src/common/index.ts";
 
 function toThreeVector(vec: Vector) {
   return new THREE.Vector3(vec.y, vec.z, vec.x);
@@ -151,26 +151,6 @@ function getModelBuilder(modelName: string) {
   }
 }
 
-function getJsonReplacer() {
-  const ancestors: object[] = [];
-  return function (this: any, _key: string, value: any) {
-    if (typeof value === "bigint") {
-      return value.toString();
-    }
-    if (typeof value !== "object" || value === null) {
-      return value;
-    }
-    while (ancestors.length > 0 && ancestors.at(-1) !== this) {
-      ancestors.pop();
-    }
-    if (ancestors.includes(value)) {
-      return `[Circular reference to ${value.constructor.name}]`;
-    }
-    ancestors.push(value);
-    return value;
-  };
-}
-
 const VOXEL_SIZE = 128;
 const VOXEL_SIZE_HALF = VOXEL_SIZE / 2;
 
@@ -190,7 +170,6 @@ class sppdHandler implements FormatHandler {
     Formats.PORTAL2_DEM.builder("dem").from(),
     Formats.PNG.builder("png").to(),
     Formats.JPEG.builder("jpeg").to(),
-    Formats.JSON.builder("json").lossless().to(),
   ];
   public ready = false;
 
@@ -532,25 +511,15 @@ class sppdHandler implements FormatHandler {
       const voxels: Map<string, Vector> = new Map();
       const portalVoxels: Map<string, Vector> = new Map();
 
-      if (outputFormat.format !== "json") {
-        this.resetSceneWalls();
-        this.voxelGridOffset = null;
-      }
+      this.resetSceneWalls();
+      this.voxelGridOffset = null;
 
-      const demo: Demo = await new Promise((resolve) => {
+      await new Promise((resolve) => {
         new Demo(inputFile.bytes, {
           onTick: (demo) => this.collectPoints(demo, voxels, portalVoxels),
           onFinish: resolve,
         });
       });
-
-      if (outputFormat.format === "json") {
-        const string = JSON.stringify(demo, getJsonReplacer(), 2);
-        const bytes = encode(string);
-        const name = changeExt(inputFile.name, "json");
-        outputFiles.push({ bytes, name });
-        continue;
-      }
 
       const canvas = this.canvas;
       const renderer = this.renderer;

@@ -1,8 +1,6 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import {
   extractEvents,
-  tableToString,
-  stringToTable,
   buildMidi,
   parseRtttl,
   parseGrubTune,
@@ -85,7 +83,6 @@ export class midiCodecHandler implements FormatHandler {
     Formats.RTTTL.builder("rtttl").fromTo(),
     Formats.NOKRING.builder("rtttl").from(),
     Formats.GRUB.builder("grub").fromTo(),
-    Formats.TEXT.builder("txt").lossless().fromTo(),
     // PNG spectrogram -> MIDI (matches meyda's internal="image" so routing picks
     // up the audio->png->mid path automatically)
     Formats.PNG.builder("png").fromTo(),
@@ -120,32 +117,20 @@ export class midiCodecHandler implements FormatHandler {
         table = pngToMidi(data, width, height);
       } else if (inputFormat.internal === "mid") {
         table = extractEvents(inputFile.bytes);
-      } else if (
-        inputFormat.internal === "txt" ||
-        inputFormat.internal === "rtttl" ||
-        inputFormat.internal === "grub"
-      ) {
-        // Text input: MIDI-text, RTTTL, or GRUB tune
+      } else if (inputFormat.internal === "rtttl" || inputFormat.internal === "grub") {
+        // Text input: RTTTL or GRUB tune
         const text = decode(inputFile.bytes);
         const trimmed = text.trimStart();
-        table = trimmed.startsWith("# MIDI File")
-          ? stringToTable(text)
-          : /^[^\s:]+\s*:(?:\s*[a-zA-Z]=\d+\s*,?\s*)+:/.test(trimmed)
-            ? parseRtttl(text)
-            : parseGrubTune(text);
+        table = /^[^\s:]+\s*:(?:\s*[a-zA-Z]=\d+\s*,?\s*)+:/.test(trimmed)
+          ? parseRtttl(text)
+          : parseGrubTune(text);
       } else {
         throw new TypeError(`Unsupported input format: ${inputFormat.internal}`);
       }
 
       // Step 2: event table -> output format
 
-      if (outputFormat.internal === "txt") {
-        const text = tableToString(table);
-        outputFiles.push({
-          bytes: encode(text),
-          name: changeExt(inputFile.name, outputFormat.extension),
-        });
-      } else if (outputFormat.internal === "rtttl") {
+      if (outputFormat.internal === "rtttl") {
         const text = tableToRtttl(table, baseName);
         outputFiles.push({
           bytes: encode(text),

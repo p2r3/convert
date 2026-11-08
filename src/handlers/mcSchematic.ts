@@ -10,8 +10,6 @@ class mcSchematicHandler implements FormatHandler {
     Formats.MC_SCHEMATIC.builder("schematic").lossless().fromTo(),
     Formats.MC_SCHEM.builder("schem").lossless().fromTo(),
     Formats.MC_LITEMATIC.builder("litematic").lossless().fromTo(),
-    // Target internal format for graph routing
-    Formats.NBT.builder("nbt").lossless().to(),
   ];
   public ready = false;
 
@@ -46,7 +44,6 @@ class mcSchematicHandler implements FormatHandler {
         if (outputFormat.internal === "litematic") {
           resultNbt = this.schemToLitematic(nbt.data);
         } else {
-          // Route Native Schematic NBTs to graph path
           resultNbt = nbt;
         }
       } else {
@@ -55,27 +52,11 @@ class mcSchematicHandler implements FormatHandler {
         );
       }
 
-      // Output processed intermediate NBT
-      let outBytes = await NBT.write(resultNbt);
-
-      // Handle file compression natively for endpoints (Litematic <-> Schem)
-      if (
-        outputFormat.internal === "litematic" ||
-        outputFormat.internal === "schem" ||
-        outputFormat.internal === "schematic"
-      ) {
-        outBytes = await compressGzip(outBytes);
-        outputFiles.push({
-          name: changeExt(file.name, outputFormat.extension),
-          bytes: outBytes,
-        });
-      } else {
-        // Not a native out-format (e.g., routing to JSON). Fallback to NBT extension for graph bridges.
-        outputFiles.push({
-          name: changeExt(file.name, "nbt"),
-          bytes: outBytes,
-        });
-      }
+      const outBytes = await compressGzip(await NBT.write(resultNbt));
+      outputFiles.push({
+        name: changeExt(file.name, outputFormat.extension),
+        bytes: outBytes,
+      });
     }
 
     return outputFiles;

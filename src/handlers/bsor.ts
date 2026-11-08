@@ -2,7 +2,6 @@ import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import { Replay } from "./bsor/replay.ts";
 import { render } from "./bsor/renderer.ts";
 import Formats from "src/Formats.ts";
-import { changeExt, encode } from "src/common/index.ts";
 
 class bsorHandler implements FormatHandler {
   public readonly name = "bsor";
@@ -10,7 +9,6 @@ class bsorHandler implements FormatHandler {
     Formats.BSOR.builder("bsor").from(),
     Formats.PNG.builder("png").to(),
     Formats.JPEG.builder("jpeg").to(),
-    Formats.JSON.builder("json").lossless().to(),
   ];
   public ready = false;
 
@@ -28,14 +26,6 @@ class bsorHandler implements FormatHandler {
       await Promise.all(
         inputFiles.map(async (file) => {
           const replay = new Replay(file.bytes);
-          if (outputFormat.internal === "json") {
-            return [
-              {
-                name: changeExt(file.name, "json"),
-                bytes: encode(JSON.stringify(replay)),
-              },
-            ];
-          }
           let outputs: FileData[] = [];
           await new Promise<void>((resolve) => {
             render(

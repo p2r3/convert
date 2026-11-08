@@ -1,10 +1,10 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import Formats from "src/Formats.ts";
 import { changeExt, decode, encode } from "src/common/index.ts";
-import { compressGzip, decompressGzip } from "src/common/gzip.ts";
+import { compressGzip } from "src/common/gzip.ts";
 
-class txtToInfiniteCraftHandler implements FormatHandler {
-  public readonly name = "txtToInfiniteCraft";
+class infiniteCraftHandler implements FormatHandler {
+  public readonly name = "infiniteCraft";
   public supportedFormats = [
     Formats.TEXT.builder("text").from(),
     Formats.INFINITE_CRAFT.builder("ic").to(),
@@ -61,61 +61,4 @@ class txtToInfiniteCraftHandler implements FormatHandler {
   }
 }
 
-class infiniteCraftToJsonHandler implements FormatHandler {
-  public readonly name = "infiniteCraftToJson";
-  public supportedFormats = [
-    Formats.INFINITE_CRAFT.builder("ic").lossless().from(),
-    Formats.JSON.builder("json").lossless().to(),
-  ];
-  public ready = false;
-
-  async init() {
-    this.ready = true;
-  }
-
-  async doConvert(
-    inputFiles: FileData[],
-    inputFormat: FileFormat,
-    outputFormat: FileFormat,
-  ): Promise<FileData[]> {
-    // Credit to als.ts
-    if (inputFormat.internal !== "ic" || outputFormat.internal !== "json") {
-      throw new TypeError(
-        `Unsupported conversion path: ${inputFormat.internal} -> ${outputFormat.internal}`,
-      );
-    }
-
-    return Promise.all(
-      inputFiles.map(async (inputFile) => {
-        if (
-          inputFile.bytes.length < 2 ||
-          inputFile.bytes[0] !== 0x1f ||
-          inputFile.bytes[1] !== 0x8b
-        ) {
-          throw new Error("Invalid IC file: expected gzip-compressed data.");
-        }
-
-        const decompressedBytes = await decompressGzip(inputFile.bytes);
-
-        let json: string;
-        try {
-          json = decode(decompressedBytes);
-        } catch {
-          throw new Error("Invalid IC file: decompressed data is not UTF-8 JSON.");
-        }
-        if (json.trimStart().startsWith("[")) {
-          throw new Error("Invalid IC file: decompressed data should not be an array in JSON.");
-        } else if (!json.trimStart().startsWith("{")) {
-          throw new Error("Invalid IC file: decompressed data is not JSON.");
-        }
-
-        return {
-          name: changeExt(inputFile.name, "json"),
-          bytes: encode(json),
-        };
-      }),
-    );
-  }
-}
-
-export { txtToInfiniteCraftHandler, infiniteCraftToJsonHandler };
+export default infiniteCraftHandler;

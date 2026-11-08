@@ -18,7 +18,6 @@ class wadHandler implements FormatHandler {
   public readonly name = "wad";
   public supportedFormats = [
     Formats.WAD.builder("wad").lossless().fromTo(),
-    Formats.JSON.builder("json").to(),
     SpecialFormats.ANY.builder("ANY").lossless().fromTo(),
   ];
   public ready = false;
@@ -170,21 +169,6 @@ class wadHandler implements FormatHandler {
                 path,
                 bytes: lump.data,
               });
-          });
-        } else if (outputFormat.internal === "json") {
-          // WAD → JSON: export directory listing and metadata
-          const info = {
-            type,
-            lumpCount: lumps.length,
-            lumps: lumps.map((l, i) => ({
-              index: i,
-              name: l.name,
-              size: l.data.length,
-            })),
-          };
-          outputFiles.push({
-            bytes: encode(JSON.stringify(info, null, 2)),
-            name: changeExt(file.name, "json"),
           });
         } else if (outputFormat.internal === "wad") {
           // WAD → WAD (passthrough / preserve type)

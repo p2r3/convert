@@ -195,6 +195,8 @@ class pandocHandler implements FormatHandler {
       if (format === "revealjs") continue;
       // Typst compilation is handled by the dedicated Typst handler.
       if (format === "pdf") continue;
+      // Pandoc's own AST serializations are waterfalls (see docs/design/WATERFALLS.md)
+      if (format === "json" || format === "xml" || format === "native") continue;
       // Adjust plaintext format name to match other handlers
       if (format === "plain") format = "text";
       const name = pandocHandler.formatNames.get(format) || format;
@@ -242,7 +244,6 @@ class pandocHandler implements FormatHandler {
       this.supportedFormats.splice(typstIndex, 1);
       this.supportedFormats.splice(1, 0, typstFormat);
     }
-    // pandoc internal formats is almost always never what the user wants
     const jsonXmlFormats = this.supportedFormats.filter(
       (c) => c.mime === "application/json" || c.mime === "application/xml",
     );
