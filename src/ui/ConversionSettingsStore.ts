@@ -19,9 +19,6 @@ export function resetSettings() {
   SettingsGeneration.value++;
 }
 
-const sharedSpec = (key: string): OptionSpec | undefined =>
-  Object.hasOwn(Settings, key) ? (Settings as Record<string, OptionSpec>)[key] : undefined;
-
 export function availableSettings(
   formats: FileFormat[],
   sharedOnly = false,
@@ -29,7 +26,9 @@ export function availableSettings(
   const specs = new Map<string, OptionSpec>();
   for (const format of formats) {
     for (const [key, declared] of Object.entries(format.options ?? {})) {
-      const shared = sharedSpec(key);
+      const shared = Object.hasOwn(Settings, key)
+        ? (Settings as Record<string, OptionSpec>)[key]
+        : undefined;
       if (sharedOnly && !shared) continue;
       const spec = declared === true ? shared : ({ ...shared, ...declared } as OptionSpec);
       if (!spec) continue;

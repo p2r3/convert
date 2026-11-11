@@ -101,12 +101,6 @@ function EnumField({ id, name, spec, value }: FieldProps & { spec: { type: "enum
   );
 }
 
-function describeString(spec: OptionSpec & { type: "string" }, value: string) {
-  if (spec.maxLength !== undefined && value.length > spec.maxLength)
-    return `Use at most ${spec.maxLength} characters.`;
-  return "This value isn't in the expected format.";
-}
-
 function StringField({ id, name, spec, value }: FieldProps & { spec: { type: "string" } }) {
   const [text, setText] = useState(typeof value === "string" ? value : "");
   const invalid = text !== "" && !isValidOption(spec, text);
@@ -134,7 +128,9 @@ function StringField({ id, name, spec, value }: FieldProps & { spec: { type: "st
       </div>
       {invalid && (
         <span id={`${id}-error`} className="settings-field-error">
-          {describeString(spec, text)}
+          {spec.maxLength !== undefined && text.length > spec.maxLength
+            ? `Use at most ${spec.maxLength} characters.`
+            : "This value isn't in the expected format."}
         </span>
       )}
     </>
