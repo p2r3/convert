@@ -432,9 +432,11 @@ async function searchAndConvert(
   const paths = await window.traversionGraph.searchPathProxied(
     from,
     to,
-    Mode.value === ModeEnum.Simple,
+    {
+      simpleMode: Mode.value === ModeEnum.Simple,
+      requiredOptions: strict ? Object.keys(settings) : [],
+    },
     comlink.proxy(() => abort.aborted),
-    strict ? Object.keys(settings) : [],
   );
   while (true) {
     const { value: path, done } = await paths.next();

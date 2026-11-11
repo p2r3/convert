@@ -41,7 +41,7 @@ test("should find the optimal path from image to audio\n", async () => {
       handlers.find((h) => h.name === "FFmpeg")!,
       Formats.MP3.builder("mp3").lossless().fromTo(),
     ),
-    true,
+    { simpleMode: true },
   );
   let extractedPaths = [];
   for await (const path of paths) extractedPaths.push(path);
@@ -64,7 +64,7 @@ test("should find the optimal path from image to audio in strict graph\n", async
       handlers.find((h) => h.name === "FFmpeg")!,
       Formats.MP3.builder("mp3").lossless().fromTo(),
     ),
-    true,
+    { simpleMode: true },
   );
   let extractedPaths = [];
   for await (const path of paths) extractedPaths.push(path);
@@ -87,7 +87,7 @@ test("add category change costs should affect pathfinding\n", async () => {
       handlers.find((h) => h.name === "FFmpeg")!,
       Formats.MP3.builder("mp3").lossless().fromTo(),
     ),
-    true,
+    { simpleMode: true },
   );
   let extractedPaths = [];
   for await (const path of paths) extractedPaths.push(path);
@@ -103,7 +103,7 @@ test("add category change costs should affect pathfinding\n", async () => {
       handlers.find((h) => h.name === "FFmpeg")!,
       Formats.MP3.builder("mp3").lossless().fromTo(),
     ),
-    true,
+    { simpleMode: true },
   );
   let extractedNewPaths = [];
   for await (const path of newPaths) extractedNewPaths.push(path);
@@ -126,7 +126,7 @@ test("remove category change costs should affect pathfinding\n", async () => {
       handlers.find((h) => h.name === "FFmpeg")!,
       Formats.MP3.builder("mp3").lossless().fromTo(),
     ),
-    true,
+    { simpleMode: true },
   );
   let extractedPaths = [];
   for await (const path of paths) extractedPaths.push(path);
@@ -142,7 +142,7 @@ test("remove category change costs should affect pathfinding\n", async () => {
       handlers.find((h) => h.name === "FFmpeg")!,
       Formats.MP3.builder("mp3").lossless().fromTo(),
     ),
-    true,
+    { simpleMode: true },
   );
   let extractedNewPaths = [];
   for await (const path of newPaths) extractedNewPaths.push(path);
@@ -164,7 +164,7 @@ test("add adaptive category costs should affect pathfinding\n", async () => {
       handlers.find((h) => h.name === "FFmpeg")!,
       Formats.MP3.builder("mp3").lossless().fromTo(),
     ),
-    true,
+    { simpleMode: true },
   );
   let extractedPaths = [];
   for await (const path of paths) extractedPaths.push(path);
@@ -180,7 +180,7 @@ test("add adaptive category costs should affect pathfinding\n", async () => {
       handlers.find((h) => h.name === "FFmpeg")!,
       Formats.MP3.builder("mp3").lossless().fromTo(),
     ),
-    true,
+    { simpleMode: true },
   );
   let extractedNewPaths = [];
   for await (const path of newPaths) extractedNewPaths.push(path);
@@ -202,7 +202,7 @@ test("remove adaptive category costs should affect pathfinding\n", async () => {
       handlers.find((h) => h.name === "FFmpeg")!,
       Formats.MP3.builder("mp3").lossless().fromTo(),
     ),
-    true,
+    { simpleMode: true },
   );
   let extractedPaths = [];
   for await (const path of paths) extractedPaths.push(path);
@@ -218,7 +218,7 @@ test("remove adaptive category costs should affect pathfinding\n", async () => {
       handlers.find((h) => h.name === "FFmpeg")!,
       Formats.MP3.builder("mp3").lossless().fromTo(),
     ),
-    true,
+    { simpleMode: true },
   );
   let extractedNewPaths = [];
   for await (const path of newPaths) extractedNewPaths.push(path);
@@ -240,7 +240,7 @@ test("should find path from image to archive via anyinput\n", async () => {
       handlers.find((h) => h.name === "sevenZip")!,
       Formats.ZIP.builder("zip").lossless().to(),
     ),
-    true,
+    { simpleMode: true },
   );
   let extractedPaths = [];
   for await (const path of paths) extractedPaths.push(path);
@@ -270,7 +270,7 @@ test("should stop at ANY output and only continue from it when searching from AN
   graph.init(anyHandlers);
   const search = async (from: ConvertPathNode, to: ConvertPathNode) => {
     const found = [];
-    for await (const path of graph.searchPath(from, to, true))
+    for await (const path of graph.searchPath(from, to, { simpleMode: true }))
       found.push(path.map((node) => node.format.format));
     return found;
   };

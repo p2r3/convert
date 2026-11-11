@@ -60,12 +60,9 @@ const from = findNode(args[1], "from");
 const to = findNode(args[2], "to");
 console.log();
 
-const search = traversionGraph.searchPath(
-  from,
-  to,
-  true,
-  undefined,
-  breakdown
+const search = traversionGraph.searchPath(from, to, {
+  simpleMode: true,
+  debug: breakdown
     ? (costs, total) => {
         const steps = new Map<number, string[]>();
         for (const { step, reason, cost } of costs) {
@@ -79,7 +76,7 @@ const search = traversionGraph.searchPath(
         console.log();
       }
     : undefined,
-);
+});
 for (let i = 0; i < Number(args[0]); i++) {
   const { done, value: path } = await search.next();
   if (done) break;

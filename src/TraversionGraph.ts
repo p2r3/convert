@@ -18,6 +18,13 @@ export interface CostEntry {
 
 const sumCosts = (costs: CostEntry[]) => costs.reduce((sum, entry) => sum + entry.cost, 0);
 
+export interface SearchPathOptions {
+  simpleMode?: boolean;
+  isCancelled?: () => boolean | Promise<boolean>;
+  debug?: (costs: (CostEntry & { step: number })[], total: number) => void;
+  requiredOptions?: string[];
+}
+
 interface CostTrace {
   previous?: CostTrace;
   costs: CostEntry[];
@@ -554,10 +561,7 @@ export class TraversionGraph {
   public async *searchPath(
     from: ConvertPathNode,
     to: ConvertPathNode,
-    simpleMode: boolean,
-    isCancelled?: () => boolean | Promise<boolean>,
-    debug?: (costs: (CostEntry & { step: number })[], total: number) => void,
-    requiredOptions: string[] = [],
+    { simpleMode = false, isCancelled, debug, requiredOptions = [] }: SearchPathOptions = {},
   ): AsyncGenerator<ConvertPathNode[]> {
     // A*: base edge costs estimate the remaining costs
     const fromIndex = this.nodeIndexByIdentifier.get(formatIdentifier(from.format)) ?? -1;
@@ -666,13 +670,11 @@ export class TraversionGraph {
   public searchPathProxied(
     from: ConvertPathNode,
     to: ConvertPathNode,
-    simpleMode: boolean,
-    isCancelled?: () => boolean | Promise<boolean>,
-    requiredOptions?: string[],
+    // not perfect but works
+    options: Omit<SearchPathOptions, "isCancelled" | "debug"> = {},
+    isCancelled?: SearchPathOptions["isCancelled"],
   ) {
-    return comlink.proxy(
-      this.searchPath(from, to, simpleMode, isCancelled, undefined, requiredOptions),
-    );
+    return comlink.proxy(this.searchPath(from, to, { ...options, isCancelled }));
   }
 
   private calculateAdaptiveCosts(path: ConvertPathNode[]): CostEntry[] {
