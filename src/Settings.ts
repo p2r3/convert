@@ -29,20 +29,20 @@ export type OptionSpec = OptionDisplay &
 // oxfmt-ignore
 export const Settings = {
   // size
-  width: { category: "size", label: "Width", unit: "px", type: "number", min: 1, integer: true },
-  height: { category: "size", label: "Height", unit: "px", type: "number", min: 1, integer: true },
+  width: { content: true, category: "size", label: "Width", unit: "px", type: "number", min: 1, integer: true },
+  height: { content: true, category: "size", label: "Height", unit: "px", type: "number", min: 1, integer: true },
   // quality
   quality: { category: "quality", label: "Quality", type: "number", min: 1, max: 100, integer: true },
   // video
   videoCodec: { category: "video", label: "Codec", type: "enum", values: [] },
-  fps: { category: "video", label: "Frame rate", unit: "fps", type: "number", min: 1, max: 240 },
+  fps: { content: true, category: "video", label: "Frame rate", unit: "fps", type: "number", min: 1, max: 240 },
   videoBitrate: { category: "video", label: "Bitrate", unit: "kbps", type: "number", min: 1, integer: true },
   // audio
   audioCodec: { category: "audio", label: "Codec", type: "enum", values: [] },
   audioBitrate: { category: "audio", label: "Bitrate", unit: "kbps", type: "number", min: 1, integer: true },
-  sampleRate: { category: "audio", label: "Sample rate", unit: "Hz", type: "number", min: 1000, max: 384000, integer: true },
-  channels: { category: "audio", label: "Channels", type: "number", min: 1, max: 8, integer: true },
-} satisfies Record<string, OptionSpec>;
+  sampleRate: { content: true, category: "audio", label: "Sample rate", unit: "Hz", type: "number", min: 1000, max: 384000, integer: true },
+  channels: { content: true, category: "audio", label: "Channels", type: "number", min: 1, max: 8, integer: true },
+} satisfies Record<string, OptionSpec & { content?: true }>; // content settings are applied at each step
 
 export type ConvertOptions = {
   [K in keyof typeof Settings]?: (typeof Settings)[K] extends { type: "number" }
@@ -92,21 +92,26 @@ export function sanitizeOptions(format: FileFormat, options: ConvertOptions = {}
   );
 }
 
-function lastStepSupports(path: ConvertPathNode[], key: string, value: unknown) {
-  if (path.length < 2) return false;
-  const spec = specOf(path[path.length - 1].format, key);
+function stepSupports(node: ConvertPathNode, key: string, value: unknown) {
+  const spec = specOf(node.format, key);
   return spec !== undefined && isValidOption(spec, value);
 }
 
 export const pathSupportsOptions = (path: ConvertPathNode[], settings: ConvertOptions) =>
-  Object.entries(settings).every(([key, value]) => lastStepSupports(path, key, value));
+  Object.entries(settings).every(
+    ([key, value]) => path.length > 1 && stepSupports(path[path.length - 1], key, value),
+  );
 
 export function distributeOptions(path: ConvertPathNode[], settings: ConvertOptions) {
   const result: ConvertPathNode[] = path.map((node) => ({ ...node, options: undefined }));
   const unsupported: string[] = [];
   for (const [key, value] of Object.entries(settings)) {
-    if (!lastStepSupports(path, key, value)) unsupported.push(key);
-    else (result[result.length - 1].options ??= {})[key] = value;
+    const content = own<OptionSpec & { content?: true }>(Settings, key)?.content;
+    const steps = result
+      .slice(content ? 1 : Math.max(1, result.length - 1))
+      .filter((node) => stepSupports(node, key, value));
+    for (const node of steps) (node.options ??= {})[key] = value;
+    if (!steps.length) unsupported.push(key);
   }
   return { path: result, unsupported };
 }
