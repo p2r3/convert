@@ -18,6 +18,7 @@ import { Mode, ModeEnum } from "./ui/ModeStore.js";
 import { ProgressStore } from "./ui/ProgressStore.js";
 import { detectFormats } from "./detectFormat.js";
 import { SpecialFormats } from "./Formats.js";
+import { distributeOptions, type ConvertOptions } from "./Settings.js";
 
 type FileRecord = Record<`${string}-${string}`, File>;
 
@@ -356,6 +357,8 @@ async function continueFromAny(
   to: ConvertPathNode,
   abort: AbortSignal,
   depth: number,
+  settings: ConvertOptions,
+  strict: boolean,
 ) {
   const step = path.at(-1)!;
   const candidates = await rankAnyOutputCandidates(files, step, to);
@@ -379,7 +382,15 @@ async function continueFromAny(
     if (sameFormat(group.node.format, to.format)) {
       result = { files: group.files, path: prefix };
     } else {
-      const rest = await searchAndConvert(group.files, group.node, to, abort, depth + 1);
+      const rest = await searchAndConvert(
+        group.files,
+        group.node,
+        to,
+        abort,
+        depth + 1,
+        settings,
+        strict,
+      );
       if (rest) result = { files: rest.files, path: prefix.concat(rest.path.slice(1)) };
     }
     if (!result) {
@@ -415,12 +426,15 @@ async function searchAndConvert(
   to: ConvertPathNode,
   abort: AbortSignal,
   depth: number,
+  settings: ConvertOptions,
+  strict: boolean,
 ): Promise<{ files: FileData[]; path: ConvertPathNode[] } | null> {
   const paths = await window.traversionGraph.searchPathProxied(
     from,
     to,
     Mode.value === ModeEnum.Simple,
     comlink.proxy(() => abort.aborted),
+    strict ? Object.keys(settings) : [],
   );
   while (true) {
     const { value: path, done } = await paths.next();
@@ -431,11 +445,24 @@ async function searchAndConvert(
     if (!openEnded && path.at(-1)?.handler.name === to.handler.name) {
       path[path.length - 1] = to;
     }
-    const attempt = await attemptConvertPath(files, path, abort);
+    if (openEnded) {
+      // The settings are for the real output, which the rest of the path produces.
+      const attempt = await attemptConvertPath(files, path, abort);
+      if (!attempt) continue;
+      const result = await continueFromAny(attempt.files, path, to, abort, depth, settings, strict);
+      if (result) return result;
+      continue;
+    }
+    const distributed = distributeOptions(path, settings);
+    const attempt = await attemptConvertPath(files, distributed.path, abort);
     if (!attempt) continue;
-    if (!openEnded) return attempt;
-    const result = await continueFromAny(attempt.files, path, to, abort, depth);
-    if (result) return result;
+    if (distributed.unsupported.length) {
+      ProgressStore.log(
+        `No step of this conversion supports ${distributed.unsupported.join(", ")}, so ${distributed.unsupported.length === 1 ? "it was" : "they were"} ignored.`,
+        "warn",
+      );
+    }
+    return attempt;
   }
 }
 
@@ -444,11 +471,49 @@ window.tryConvertByTraversing = async function (
   from: ConvertPathNode,
   to: ConvertPathNode,
   abort?: AbortSignal,
+  settings: ConvertOptions = {},
 ) {
   deadEndAttempts = [];
   abort ??= ProgressStore.controller.signal;
   await window.traversionGraph.clearDeadEndPaths();
-  return searchAndConvert(files, from, to, abort, 0);
+  if (!Object.keys(settings).length) return searchAndConvert(files, from, to, abort, 0, {}, false);
+
+  // First only take paths that honour every setting, then settle for whatever converts.
+  try {
+    const result = await searchAndConvert(files, from, to, abort, 0, settings, true);
+    if (result) return result;
+  } catch (e) {
+    if (e instanceof Error && e.name === "AbortError") throw e;
+    abort.throwIfAborted();
+    console.warn(e);
+  }
+  ProgressStore.log(
+    "Could not find a conversion that supports all of the chosen settings, trying without that requirement.",
+    "warn",
+  );
+  // A step may only have failed because of its options.
+  deadEndAttempts = [];
+  await window.traversionGraph.clearDeadEndPaths();
+  return searchAndConvert(files, from, to, abort, 0, settings, false);
+};
+
+/**
+ * Converts along a path the user built themselves, with the options they set on each node.
+ * Nothing is rerouted: if a step fails, the conversion fails.
+ */
+window.tryConvertByPath = async function (
+  files: FileData[],
+  path: ConvertPathNode[],
+  abort?: AbortSignal,
+) {
+  deadEndAttempts = [];
+  abort ??= ProgressStore.controller.signal;
+  try {
+    return await attemptConvertPath(files, path, abort);
+  } finally {
+    // attemptConvertPath marks failures as dead ends, which only matter when searching.
+    await window.traversionGraph.clearDeadEndPaths();
+  }
 };
 
 async function initSupportedFormats() {

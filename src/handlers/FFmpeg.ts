@@ -9,6 +9,23 @@ import normalizeMimeType from "../normalizeMimeType.ts";
 import Formats, { Category, type CategoryType } from "src/Formats.ts";
 import { changeExt, encode } from "src/common/index.ts";
 import { fetchGzip } from "src/common/gzip.ts";
+import type { FormatOptions } from "src/Settings.ts";
+
+/**
+ * Codecs offered as options, per muxer. FFmpeg can't tell which codecs a container accepts,
+ * so this only covers the common ones. Names are FFmpeg codec names, which `-c` resolves to
+ * the default encoder.
+ */
+const CONTAINER_CODECS: Record<string, { video?: string[]; audio?: string[] }> = {
+  mp4: { video: ["h264", "hevc", "av1", "vp9", "mpeg4"], audio: ["aac", "mp3", "opus"] },
+  mov: { video: ["h264", "hevc", "mpeg4"], audio: ["aac", "mp3"] },
+  matroska: {
+    video: ["h264", "hevc", "av1", "vp9", "vp8", "mpeg4"],
+    audio: ["aac", "mp3", "opus", "vorbis", "flac"],
+  },
+  webm: { video: ["vp9", "vp8", "av1"], audio: ["opus", "vorbis"] },
+  ogg: { video: ["theora"], audio: ["vorbis", "opus", "flac"] },
+};
 
 type FFmpegOptions = {
   preRun?: (ffmpeg: FFmpegModule) => void;
@@ -42,6 +59,32 @@ class FFmpegHandler implements FormatHandler {
   public abortable = true;
 
   #module?: Promise<WebAssembly.Module>;
+
+  /** Options honoured when writing `format`. `encodable` holds the codecs this build can encode. */
+  static optionsFor(format: FileFormat, encodable: Set<string>): FormatOptions | undefined {
+    // these are written with a -target preset that fixes everything
+    if (format.internal === "dvd" || format.internal === "vcd") return undefined;
+
+    const categories = Array.isArray(format.category) ? format.category : [format.category];
+    const options: FormatOptions = {};
+    if (categories.includes(Category.VIDEO))
+      Object.assign(options, { width: true, height: true, fps: true, videoBitrate: true });
+    else if (categories.includes(Category.IMAGE))
+      Object.assign(options, { width: true, height: true });
+    if (categories.includes(Category.VIDEO) || categories.includes(Category.AUDIO))
+      Object.assign(options, { sampleRate: true, channels: true, audioBitrate: true });
+
+    // formats like ogg-vorbis already stand for one codec
+    const codecs =
+      format.format === format.internal ? CONTAINER_CODECS[format.internal] : undefined;
+    const video = codecs?.video?.filter((codec) => encodable.has(codec));
+    const audio = codecs?.audio?.filter((codec) => encodable.has(codec));
+    if (video?.length && categories.includes(Category.VIDEO))
+      options.videoCodec = { type: "enum", values: video };
+    if (audio?.length) options.audioCodec = { type: "enum", values: audio };
+
+    return Object.keys(options).length ? options : undefined;
+  }
 
   async execFFmpeg(args: string[], opts?: FFmpegOptions): Promise<string> {
     // cache it smartly
@@ -293,6 +336,16 @@ class FFmpegHandler implements FormatHandler {
 
     this.supportedFormats.push(Formats.OGG_OPUS.builder("ogg").to());
 
+    // " DEV.LS h264   H.264 / AVC ..." - the second flag is set if the codec can be encoded
+    const encodable = new Set(
+      (await this.execFFmpeg(["-codecs", "-hide_banner"]))
+        .split("\n")
+        .flatMap((line) => line.match(/^\s*[D.]E[VA]\S*\s+(\S+)/)?.[1] ?? []),
+    );
+    for (const format of this.supportedFormats) {
+      if (format.to) format.options = FFmpegHandler.optionsFor(format, encodable);
+    }
+
     this.ready = true;
   }
 
@@ -322,6 +375,15 @@ class FFmpegHandler implements FormatHandler {
     }
 
     const direct = inputFiles.length === 1 && !forceFPS;
+
+    const options = ctx?.options ?? {};
+    // -2 keeps the aspect ratio and rounds to an even size, which most encoders need
+    const filters =
+      options.width || options.height
+        ? [`scale=${options.width ?? -2}:${options.height ?? -2}`]
+        : [];
+    /** A later -vf replaces earlier ones, so every filter chain has to include the user's. */
+    const vf = (...extra: string[]) => ["-vf", [...filters, ...extra].join(",")];
 
     const command = [
       "-hide_banner",
@@ -354,6 +416,15 @@ class FFmpegHandler implements FormatHandler {
     } else if (outputFormat.format === "ogg-opus") {
       command.push("-c:a", "libopus");
     }
+    if (filters.length && !command.includes("-vf")) command.push(...vf());
+    if (options.fps) command.push("-r", String(options.fps));
+    if (options.videoCodec) command.push("-c:v", options.videoCodec);
+    if (options.audioCodec) command.push("-c:a", options.audioCodec);
+    if (options.videoBitrate) command.push("-b:v", `${options.videoBitrate}k`);
+    if (options.audioBitrate) command.push("-b:a", `${options.audioBitrate}k`);
+    if (options.sampleRate) command.push("-ar", String(options.sampleRate));
+    if (options.channels) command.push("-ac", String(options.channels));
+    // auto-fix arguments go last so that they win
     if (args) command.push(...args);
     command.push("-threads", threads);
     command.push("output");
@@ -420,8 +491,7 @@ class FFmpegHandler implements FormatHandler {
           outputFormat,
           [
             ...oldArgs,
-            "-vf",
-            `pad=ceil(iw/${division})*${division}:ceil(ih/${division})*${division}`,
+            ...vf(`pad=ceil(iw/${division})*${division}:ceil(ih/${division})*${division}`),
           ],
           ctx,
         );
@@ -437,8 +507,7 @@ class FFmpegHandler implements FormatHandler {
           outputFormat,
           [
             ...oldArgs,
-            "-vf",
-            `pad=ceil(iw/${division})*${division}:ceil(ih/${division})*${division}`,
+            ...vf(`pad=ceil(iw/${division})*${division}:ceil(ih/${division})*${division}`),
           ],
           ctx,
         );

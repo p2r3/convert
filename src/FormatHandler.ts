@@ -1,6 +1,7 @@
 import type { CategoryType } from "./Formats.js";
 import type { HandlerName } from "./handlers/index.js";
 import type { ConvertContext } from "./ui/ProgressStore.js";
+import type { ConvertOptions, FormatOptions } from "./Settings.js";
 
 /**
  * Definition of file format. Contains format defined constants like mime type and names
@@ -30,6 +31,9 @@ export interface FileFormat extends IFormatDefinition {
   internal: string;
   /** (Optional) Whether the format is lossless in this context. Defaults to `false`. */
   lossless?: boolean;
+  /** (Optional) Conversion options honoured when converting **to** this format.
+   * See [src/Settings.ts](src/Settings.ts). The values arrive in `ctx.options`. */
+  options?: FormatOptions;
 }
 
 /** Unique identifier of a format across handlers, e.g. `image/png(png)`. */
@@ -99,6 +103,11 @@ export class FormatBuilder {
   /** Marks the format as lossless in this context. */
   lossless(value: boolean = true) {
     this.#format.lossless = value;
+    return this;
+  }
+  /** Declares the conversion options honoured when converting **to** this format. */
+  options(value: FormatOptions) {
+    this.#format.options = value;
     return this;
   }
   /** Builds a format that only allows conversion **from** it. */
@@ -197,7 +206,8 @@ export interface FormatHandler extends HandlerDefinition {
    * @param inputFiles Array of {@link FileData} entries, one per input file.
    * @param inputFormat Input {@link FileFormat}, the same for all inputs.
    * @param outputFormat Output {@link FileFormat}, the same for all outputs.
-   * @param ctx Optional {@link ConvertContext} for progress reporting.
+   * @param ctx Optional {@link ConvertContext} for progress reporting. `ctx.options` holds the
+   * values of the options declared in `outputFormat.options`, already validated.
    * @returns Array of {@link FileData} entries, one per generated output file.
    */
   doConvert: (
@@ -211,9 +221,13 @@ export interface FormatHandler extends HandlerDefinition {
 export class ConvertPathNode {
   public handler: HandlerDefinition;
   public format: FileFormat;
-  constructor(handler: HandlerDefinition, format: FileFormat) {
+  /** Options for the step that produces this node. Filled in by the user when they build the
+   * path themselves, or by `distributeOptions` when the path is found automatically. */
+  public options?: ConvertOptions;
+  constructor(handler: HandlerDefinition, format: FileFormat, options?: ConvertOptions) {
     this.handler = handler;
     this.format = format;
+    this.options = options;
   }
 }
 

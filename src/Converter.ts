@@ -9,6 +9,7 @@ import {
 import { SpecialFormats } from "./Formats";
 import { createRemoteContext, type IProgressStore } from "./ui/ProgressStore";
 import { getHandler } from "./handlers/index.js";
+import { sanitizeOptions } from "./Settings";
 
 if (!("window" in globalThis)) {
   (globalThis as unknown as { window: typeof globalThis }).window = globalThis;
@@ -74,6 +75,18 @@ export class Converter {
       if (!inputFormat)
         throw new Error(
           `Handler "${def.name}" doesn't support the "${path[0].format.format}" format.`,
+        );
+
+      const outputFormat =
+        def.supportedFormats.find(
+          (c) => c.to && sameFormat(c, path[1].format) && c.internal === path[1].format.internal,
+        ) ?? path[1].format;
+      ctx.options = sanitizeOptions(outputFormat, path[1].options);
+      const dropped = Object.keys(path[1].options ?? {}).filter((key) => !(key in ctx.options));
+      if (dropped.length)
+        ctx.log(
+          `${def.name} can't apply ${dropped.join(", ")} when converting to ${outputFormat.format}, ignoring.`,
+          "warn",
         );
 
       const handler = await getHandler(def.name);

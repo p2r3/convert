@@ -14,9 +14,12 @@ export function createCanvas(
 export async function canvasToBlob(
   bundle: CanvasBundle,
   mime: string,
+  /** Encoder quality from 0 to 1, for lossy formats. */
+  quality?: number,
 ): Promise<Uint8Array<ArrayBuffer>> {
   const blob = await bundle.canvas.convertToBlob({
     type: mime,
+    quality,
   });
   return new Uint8Array(await blob.arrayBuffer());
 }

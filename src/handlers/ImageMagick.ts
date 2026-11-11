@@ -14,6 +14,11 @@ import Formats, { Category, isCategory } from "src/Formats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import type { ConvertContext } from "../ui/ProgressStore.js";
 import { changeExt } from "src/common/index.ts";
+import type { FormatOptions } from "src/Settings.ts";
+
+/** Formats whose encoder takes a quality setting. */
+const QUALITY_FORMATS = ["jpeg", "jpg", "webp", "avif", "heic", "heif", "jxl", "jp2", "j2k"];
+const RESIZE: FormatOptions = { width: true, height: true };
 
 class ImageMagickHandler implements FormatHandler {
   public readonly name = "ImageMagick";
@@ -69,6 +74,11 @@ class ImageMagickHandler implements FormatHandler {
         internal: format.format,
         category,
         lossless: ["png", "bmp", "tiff"].includes(formatName),
+        options: !format.supportsWriting
+          ? undefined
+          : QUALITY_FORMATS.includes(formatName)
+            ? { ...RESIZE, quality: true }
+            : RESIZE,
       });
     });
 
@@ -97,6 +107,8 @@ class ImageMagickHandler implements FormatHandler {
 
     const inputSettings = new MagickReadSettings();
     inputSettings.format = inputMagickFormat;
+
+    const { width, height, quality } = ctx?.options ?? {};
 
     ctx?.log(`Initialising ImageMagick for ${inputFiles.length} files...`);
 
@@ -138,6 +150,17 @@ class ImageMagickHandler implements FormatHandler {
                 const geometry = new MagickGeometry(256, 256);
                 image.resize(geometry);
               }
+
+              if (width || height) {
+                // with one side missing, keep the aspect ratio
+                const geometry = new MagickGeometry(
+                  width ?? Math.max(1, Math.round((image.width * height!) / image.height)),
+                  height ?? Math.max(1, Math.round((image.height * width!) / image.width)),
+                );
+                geometry.ignoreAspectRatio = true;
+                image.resize(geometry);
+              }
+              if (quality) image.quality = quality;
 
               outputCollection.push(image);
               frameIndex++;

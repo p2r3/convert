@@ -4,13 +4,14 @@ import { imageToText, rgbaToGrayscale } from "built/image-to-txt/src/convert.ts"
 import { InitializationError } from "src/errors.ts";
 import { blobToCanvas, canvasToBlob, createCanvas, type CanvasBundle } from "src/common/canvas.ts";
 import { changeExt, decode, encode } from "src/common/index.ts";
+import type { ConvertContext } from "src/ui/ProgressStore.ts";
 
 class canvasToBlobHandler implements FormatHandler {
   public readonly name = "canvasToBlob";
   public supportedFormats = [
     Formats.PNG.builder("png").lossless().fromTo(),
-    Formats.JPEG.builder("jpeg").fromTo(),
-    Formats.WEBP.builder("webp").fromTo(),
+    Formats.JPEG.builder("jpeg").options({ quality: true }).fromTo(),
+    Formats.WEBP.builder("webp").options({ quality: true }).fromTo(),
     Formats.GIF.builder("gif").from(),
     Formats.TEXT.builder("text").fromTo(),
   ];
@@ -27,7 +28,9 @@ class canvasToBlobHandler implements FormatHandler {
     inputFiles: FileData[],
     inputFormat: FileFormat,
     outputFormat: FileFormat,
+    convertCtx?: ConvertContext,
   ): Promise<FileData[]> {
+    const quality = convertCtx?.options.quality;
     if (!this.#bundle) {
       throw new InitializationError("Handler not initialized.");
     }
@@ -93,7 +96,11 @@ class canvasToBlobHandler implements FormatHandler {
           }),
         );
       } else {
-        bytes = await canvasToBlob(this.#bundle, outputFormat.mime);
+        bytes = await canvasToBlob(
+          this.#bundle,
+          outputFormat.mime,
+          quality === undefined ? undefined : quality / 100,
+        );
       }
 
       const name = changeExt(inputFile.name, outputFormat.extension);

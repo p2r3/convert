@@ -1,4 +1,5 @@
 import { signal } from "@preact/signals";
+import type { ConvertOptions } from "../Settings.js";
 
 export type LogLevel = "log" | "error" | "debug" | "warn";
 
@@ -14,6 +15,8 @@ export interface ConvertContext {
   log: (message: string, level?: LogLevel) => void;
   signal: AbortSignal;
   throwIfAborted: () => void;
+  /** Values of the options the output format declares. Empty when nothing was set. */
+  options: ConvertOptions;
 }
 
 export interface IProgressStore {
@@ -75,6 +78,7 @@ export function createRemoteContext(
       console[level](`[${pluginName}] ${msg}`);
     },
     signal: abort,
+    options: {},
     throwIfAborted() {
       if (abort.aborted) throw new DOMException("Conversion cancelled", "AbortError");
     },

@@ -9,6 +9,7 @@ import {
 import { SpecialFormats, type CategoryType } from "./Formats.ts";
 import { PriorityQueue } from "./PriorityQueue.ts";
 import * as comlink from "comlink";
+import { pathSupportsOptions } from "./Settings.ts";
 
 export interface CostEntry {
   reason: string;
@@ -556,6 +557,7 @@ export class TraversionGraph {
     simpleMode: boolean,
     isCancelled?: () => boolean | Promise<boolean>,
     debug?: (costs: (CostEntry & { step: number })[], total: number) => void,
+    requiredOptions: string[] = [],
   ): AsyncGenerator<ConvertPathNode[]> {
     // A*: base edge costs estimate the remaining costs
     const fromIndex = this.nodeIndexByIdentifier.get(formatIdentifier(from.format)) ?? -1;
@@ -606,7 +608,10 @@ export class TraversionGraph {
         // Return the path of handlers and formats to get from the input format to the output format
         const logString = `${iterations} with cost ${current.cost.toFixed(3)}: ${current.path.map((p) => p.handler.name + "(" + p.format.mime + ")").join(" → ")}`;
         const foundPathLast = current.path.at(-1);
-        if (simpleMode || !to.handler || to.handler.name === foundPathLast?.handler.name) {
+        if (
+          (simpleMode || !to.handler || to.handler.name === foundPathLast?.handler.name) &&
+          pathSupportsOptions(current.path, requiredOptions)
+        ) {
           console.log(`Found path at iteration ${logString}`);
           reportCosts(current);
           this.dispatchEvent("found", current.path);
@@ -663,8 +668,11 @@ export class TraversionGraph {
     to: ConvertPathNode,
     simpleMode: boolean,
     isCancelled?: () => boolean | Promise<boolean>,
+    requiredOptions?: string[],
   ) {
-    return comlink.proxy(this.searchPath(from, to, simpleMode, isCancelled));
+    return comlink.proxy(
+      this.searchPath(from, to, simpleMode, isCancelled, undefined, requiredOptions),
+    );
   }
 
   private calculateAdaptiveCosts(path: ConvertPathNode[]): CostEntry[] {

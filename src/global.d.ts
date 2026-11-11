@@ -2,6 +2,7 @@ import type { FileData, ConvertPathNode, HandlerDefinition } from "./FormatHandl
 import type { TraversionGraph } from "./TraversionGraph.js";
 import type { Remote } from "comlink";
 import type { DesktopUpdater } from "./ui/UpdateStore.js";
+import type { ConvertOptions } from "./Settings.js";
 
 declare global {
   interface Window {
@@ -14,6 +15,17 @@ declare global {
       files: FileData[],
       from: ConvertPathNode,
       to: ConvertPathNode,
+      signal?: AbortSignal,
+      /** Settings for the output. The path search decides which steps apply them. */
+      settings?: ConvertOptions,
+    ) => Promise<{
+      files: FileData[];
+      path: ConvertPathNode[];
+    } | null>;
+    /** Runs exactly `path`, giving each step the `options` of the node it produces. */
+    tryConvertByPath: (
+      files: FileData[],
+      path: ConvertPathNode[],
       signal?: AbortSignal,
     ) => Promise<{
       files: FileData[];
