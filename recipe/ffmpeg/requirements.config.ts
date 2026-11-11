@@ -4,8 +4,8 @@ import type { RequirementsConfig } from "scripts/build/types";
 export default [
   {
     name: "zlib",
-    url: "https://github.com/madler/zlib/releases/download/v1.3.2/zlib-1.3.2.tar.gz",
-    hash: ["sha256", "bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16"],
+    url: "https://github.com/madler/zlib/releases/download/v1.4/zlib-1.4.tar.gz",
+    hash: ["sha256", "02dd159783677a749c04adbdd02b55b8a2bcc7e054f51b76b549199a916ad584"],
   },
   {
     name: "lame",
@@ -24,8 +24,8 @@ export default [
   },
   {
     name: "opus",
-    url: "https://downloads.xiph.org/releases/opus/opus-1.5.2.tar.gz",
-    hash: ["sha256", "65c1d2f78b9f2fb20082c38cbe47c951ad5839345876e46941612ee87f9a7ce1"],
+    url: "https://downloads.xiph.org/releases/opus/opus-1.6.1.tar.gz",
+    hash: ["sha256", "6ffcb593207be92584df15b32466ed64bbec99109f007c82205f0194572411a1"],
   },
   {
     name: "theora",
@@ -89,8 +89,8 @@ export default [
   },
   {
     name: "aom",
-    url: "https://storage.googleapis.com/aom-releases/libaom-3.15.2.tar.gz",
-    hash: ["sha256", "67bb54b245f33ed98600e08269e6139986e48114e14042474ddd8885801dfddc"],
+    url: "https://storage.googleapis.com/aom-releases/libaom-3.15.3.tar.gz",
+    hash: ["sha256", "12c01dc731ed7b5a999e28120b45bf58a002ba3435a4ba2cfbc1e084a27c9c04"],
   },
   {
     name: "vvenc",

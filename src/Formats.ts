@@ -86,8 +86,6 @@ const Formats = {
   MP3: new FormatDefinition("MP3 Audio", "mp3", "mp3", "audio/mpeg", Category.AUDIO),
   WAV: new FormatDefinition("Waveform Audio File Format", "wav", "wav", "audio/wav", Category.AUDIO),
   OGG: new FormatDefinition("Ogg Audio", "ogg", "ogg", "audio/ogg", Category.AUDIO),
-  OGG_VORBIS: new FormatDefinition("Ogg Vorbis Audio", "ogg-vorbis", "ogg", "audio/ogg", Category.AUDIO),
-  OGG_OPUS: new FormatDefinition("Ogg Opus Audio", "ogg-opus", "ogg", "audio/ogg", Category.AUDIO),
   FLAC: new FormatDefinition("Free Lossless Audio Codec", "flac", "flac", "audio/flac", Category.AUDIO),
   QTA: new FormatDefinition("QuickTime Audio", "qta", "qta", "video/quicktime", Category.AUDIO),
   QOA: new FormatDefinition("Quite OK Audio", "qoa", "qoa", "audio/x-qoa", Category.AUDIO),

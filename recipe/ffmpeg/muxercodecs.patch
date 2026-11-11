@@ -1,0 +1,60 @@
+diff --git a/fftools/opt_common.c b/fftools/opt_common.c
+index 44744b1..3dbece6 100644
+--- a/fftools/opt_common.c
++++ b/fftools/opt_common.c
+@@ -587,6 +587,46 @@ static void show_help_bsf(const char *name)
+         show_help_children(bsf->priv_class, AV_OPT_FLAG_BSF_PARAM);
+ }
+ 
++static const AVCodec *stable_encoder(enum AVCodecID id)
++{
++    const AVCodec *codec;
++    void *it = NULL;
++    while ((codec = av_codec_iterate(&it)))
++        if (codec->id == id && av_codec_is_encoder(codec) &&
++            !(codec->capabilities & AV_CODEC_CAP_EXPERIMENTAL))
++            return codec;
++    return NULL;
++}
++
++static void show_muxer_codecs(void)
++{
++    const AVCodecDescriptor *desc = NULL;
++    const AVOutputFormat *fmt;
++    void *it = NULL;
++
++    while ((desc = avcodec_descriptor_next(desc))) {
++        const AVCodec *encoder;
++        if (desc->type != AVMEDIA_TYPE_VIDEO && desc->type != AVMEDIA_TYPE_AUDIO)
++            continue;
++        if ((encoder = stable_encoder(desc->id)))
++            printf("Encoder %s %s %s\n", av_get_media_type_string(desc->type),
++                   desc->name, encoder->name);
++    }
++
++    while ((fmt = av_muxer_iterate(&it))) {
++        printf("Muxer %s:", fmt->name);
++        desc = NULL;
++        while ((desc = avcodec_descriptor_next(desc))) {
++            if (desc->type != AVMEDIA_TYPE_VIDEO && desc->type != AVMEDIA_TYPE_AUDIO)
++                continue;
++            if (stable_encoder(desc->id) &&
++                avformat_query_codec(fmt, desc->id, FF_COMPLIANCE_NORMAL) == 1)
++                printf(" %s", desc->name);
++        }
++        printf("\n");
++    }
++}
++
+ int show_help(void *optctx, const char *opt, const char *arg)
+ {
+     char *topic, *par;
+@@ -614,6 +654,8 @@ int show_help(void *optctx, const char *opt, const char *arg)
+         void *it = NULL;
+         while ((fmt = av_muxer_iterate(&it)))
+             show_help_muxer(fmt->name);
++    } else if (!strcmp(topic, "muxercodecs")) {
++        show_muxer_codecs();
+     } else if (!strcmp(topic, "protocol")) {
+         show_help_protocol(par);
+ #if CONFIG_AVFILTER

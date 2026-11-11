@@ -16,8 +16,8 @@ import type { ConvertContext } from "../ui/ProgressStore.js";
 import { changeExt } from "src/common/index.ts";
 import type { FormatOptions } from "src/Settings.ts";
 
-/** Formats whose encoder takes a quality setting. */
-const QUALITY_FORMATS = ["jpeg", "jpg", "webp", "avif", "heic", "heif", "jxl", "jp2", "j2k"];
+// modules that accept quality
+const QUALITY_MODULES: string[] = ["JPEG", "JP2", "WEBP", "JXL", "HEIC"];
 const RESIZE: FormatOptions = { width: true, height: true };
 
 class ImageMagickHandler implements FormatHandler {
@@ -76,7 +76,7 @@ class ImageMagickHandler implements FormatHandler {
         lossless: ["png", "bmp", "tiff"].includes(formatName),
         options: !format.supportsWriting
           ? undefined
-          : QUALITY_FORMATS.includes(formatName)
+          : QUALITY_MODULES.includes(format.moduleFormat)
             ? { ...RESIZE, quality: true }
             : RESIZE,
       });

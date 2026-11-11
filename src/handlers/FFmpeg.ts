@@ -11,20 +11,14 @@ import { changeExt, encode } from "src/common/index.ts";
 import { fetchGzip } from "src/common/gzip.ts";
 import type { FormatOptions } from "src/Settings.ts";
 
-/**
- * Codecs offered as options, per muxer. FFmpeg can't tell which codecs a container accepts,
- * so this only covers the common ones. Names are FFmpeg codec names, which `-c` resolves to
- * the default encoder.
- */
-const CONTAINER_CODECS: Record<string, { video?: string[]; audio?: string[] }> = {
-  mp4: { video: ["h264", "hevc", "av1", "vp9", "mpeg4"], audio: ["aac", "mp3", "opus"] },
-  mov: { video: ["h264", "hevc", "mpeg4"], audio: ["aac", "mp3"] },
-  matroska: {
-    video: ["h264", "hevc", "av1", "vp9", "vp8", "mpeg4"],
-    audio: ["aac", "mp3", "opus", "vorbis", "flac"],
-  },
-  webm: { video: ["vp9", "vp8", "av1"], audio: ["opus", "vorbis"] },
-  ogg: { video: ["theora"], audio: ["vorbis", "opus", "flac"] },
+// ffmpeg sometimes dunno, help it
+const CODEC_PATCHES: Record<string, { add?: string[]; remove?: string[] }> = {
+  ogg: { add: ["vp8", "opus", "flac", "speex"] },
+  mpegts: { add: ["mpeg1video", "h264", "hevc", "av1", "mp3", "aac", "ac3", "eac3", "opus"] },
+  mp4: { remove: ["vorbis"] },
+  flv: { remove: ["h263", "mpeg4"] },
+  mov: { remove: ["av1", "vp8", "vp9", "flac", "opus"] },
+  matroska: { remove: ["rawvideo", "rv10", "rv20"] },
 };
 
 type FFmpegOptions = {
@@ -60,8 +54,15 @@ class FFmpegHandler implements FormatHandler {
 
   #module?: Promise<WebAssembly.Module>;
 
-  /** Options honoured when writing `format`. `encodable` holds the codecs this build can encode. */
-  static optionsFor(format: FileFormat, encodable: Set<string>): FormatOptions | undefined {
+  /** Codec name to the encoder that `-c:v`/`-c:a` should get. Filled in by `init`. */
+  #encoders = new Map<string, string>();
+
+  /** Options honoured when writing `format`, which takes the `video` and `audio` codecs. */
+  static optionsFor(
+    format: FileFormat,
+    video: string[],
+    audio: string[],
+  ): FormatOptions | undefined {
     // these are written with a -target preset that fixes everything
     if (format.internal === "dvd" || format.internal === "vcd") return undefined;
 
@@ -74,14 +75,10 @@ class FFmpegHandler implements FormatHandler {
     if (categories.includes(Category.VIDEO) || categories.includes(Category.AUDIO))
       Object.assign(options, { sampleRate: true, channels: true, audioBitrate: true });
 
-    // formats like ogg-vorbis already stand for one codec
-    const codecs =
-      format.format === format.internal ? CONTAINER_CODECS[format.internal] : undefined;
-    const video = codecs?.video?.filter((codec) => encodable.has(codec));
-    const audio = codecs?.audio?.filter((codec) => encodable.has(codec));
-    if (video?.length && categories.includes(Category.VIDEO))
+    // a single codec is no choice, and FFmpeg picks it by default anyway
+    if (video.length > 1 && categories.includes(Category.VIDEO))
       options.videoCodec = { type: "enum", values: video };
-    if (audio?.length) options.audioCodec = { type: "enum", values: audio };
+    if (audio.length > 1) options.audioCodec = { type: "enum", values: audio };
 
     return Object.keys(options).length ? options : undefined;
   }
@@ -330,20 +327,44 @@ class FFmpegHandler implements FormatHandler {
     // the other way for webp
     this.supportedFormats.push(Formats.WEBP.builder("webp_anim").from());
 
-    // Encoding-specific formats
-    // todo: this should be an option, when we get them
-    this.supportedFormats.push(Formats.OGG_VORBIS.builder("ogg").to());
-
-    this.supportedFormats.push(Formats.OGG_OPUS.builder("ogg").to());
-
-    // " DEV.LS h264   H.264 / AVC ..." - the second flag is set if the codec can be encoded
-    const encodable = new Set(
-      (await this.execFFmpeg(["-codecs", "-hide_banner"]))
-        .split("\n")
-        .flatMap((line) => line.match(/^\s*[D.]E[VA]\S*\s+(\S+)/)?.[1] ?? []),
-    );
+    // "Encoder audio opus libopus"
+    // "Muxer webm: vp8 vp9 av1 vorbis opus"
+    const codecTypes = new Map<string, string>();
+    const muxerCodecs = new Map<string, string[]>();
+    this.#encoders = new Map();
+    for (const line of (await this.execFFmpeg(["-h", "muxercodecs", "-hide_banner"])).split("\n")) {
+      const encoder = line.match(/^Encoder (video|audio) (\S+) (\S+)$/);
+      if (encoder) {
+        codecTypes.set(encoder[2], encoder[1]);
+        this.#encoders.set(encoder[2], encoder[3]);
+      }
+      const muxer = line.match(/^Muxer (\S+):(.*)$/);
+      // the audio-only matroska muxer has the same name as the full one, so merge them
+      if (muxer)
+        muxerCodecs.set(muxer[1], [
+          ...new Set([
+            ...(muxerCodecs.get(muxer[1]) ?? []),
+            ...muxer[2].split(" ").filter(Boolean),
+          ]),
+        ]);
+    }
+    for (const [muxer, { add = [], remove = [] }] of Object.entries(CODEC_PATCHES)) {
+      const codecs = [...(muxerCodecs.get(muxer) ?? []), ...add];
+      muxerCodecs.set(
+        muxer,
+        [...new Set(codecs)].filter((codec) => !remove.includes(codec) && codecTypes.has(codec)),
+      );
+    }
     for (const format of this.supportedFormats) {
-      if (format.to) format.options = FFmpegHandler.optionsFor(format, encodable);
+      if (!format.to) continue;
+      // formats like wmv stand for their own codecs, not whatever the container takes
+      const codecs =
+        format.format === format.internal ? (muxerCodecs.get(format.internal) ?? []) : [];
+      format.options = FFmpegHandler.optionsFor(
+        format,
+        codecs.filter((codec) => codecTypes.get(codec) === "video"),
+        codecs.filter((codec) => codecTypes.get(codec) === "audio"),
+      );
     }
 
     this.ready = true;
@@ -411,15 +432,13 @@ class FFmpegHandler implements FormatHandler {
       command.push("-vf", "scale=352:288,setsar=1", "-target", "pal-vcd", "-pix_fmt", "rgb24");
     } else if (outputFormat.internal === "asf") {
       command.push("-b:v", "15M", "-b:a", "192k");
-    } else if (outputFormat.format === "ogg-vorbis") {
-      command.push("-c:a", "libvorbis");
-    } else if (outputFormat.format === "ogg-opus") {
-      command.push("-c:a", "libopus");
     }
     if (filters.length && !command.includes("-vf")) command.push(...vf());
     if (options.fps) command.push("-r", String(options.fps));
-    if (options.videoCodec) command.push("-c:v", options.videoCodec);
-    if (options.audioCodec) command.push("-c:a", options.audioCodec);
+    if (options.videoCodec)
+      command.push("-c:v", this.#encoders.get(options.videoCodec) ?? options.videoCodec);
+    if (options.audioCodec)
+      command.push("-c:a", this.#encoders.get(options.audioCodec) ?? options.audioCodec);
     if (options.videoBitrate) command.push("-b:v", `${options.videoBitrate}k`);
     if (options.audioBitrate) command.push("-b:a", `${options.audioBitrate}k`);
     if (options.sampleRate) command.push("-ar", String(options.sampleRate));

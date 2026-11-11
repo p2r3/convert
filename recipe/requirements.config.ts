@@ -133,7 +133,7 @@ export default [
     name: "ffmpeg",
     url: "https://github.com/FFmpeg/FFmpeg/archive/refs/tags/n9.0.2.tar.gz",
     hash: ["sha256", "6e374ed621e48faa40639307dff48ba6fe574a509977956d2cce9669b7cc27e9"],
-    patches: ["make.patch", "allmuxers.patch"],
+    patches: ["make.patch", "allmuxers.patch", "muxercodecs.patch"],
     prebuild: "build.sh",
     toolchains: ["emscripten", "meson", "pkgconf"],
   },
