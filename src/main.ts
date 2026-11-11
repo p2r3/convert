@@ -347,6 +347,13 @@ async function rankAnyOutputCandidates(
   return acceptsAnyInto(to.format) ? [passOn, ...ranked] : [...ranked, passOn];
 }
 
+interface SearchContext {
+  abort: AbortSignal;
+  depth: number;
+  settings: ConvertOptions;
+  strict: boolean;
+}
+
 /**
  * Continues a path that ended at SpecialFormats.ANY: detects what the step produced and tries
  * each way to continue, best first, by searching again from there.
@@ -355,10 +362,7 @@ async function continueFromAny(
   files: FileData[],
   path: ConvertPathNode[],
   to: ConvertPathNode,
-  abort: AbortSignal,
-  depth: number,
-  settings: ConvertOptions,
-  strict: boolean,
+  search: SearchContext,
 ) {
   const step = path.at(-1)!;
   const candidates = await rankAnyOutputCandidates(files, step, to);
@@ -382,15 +386,10 @@ async function continueFromAny(
     if (sameFormat(group.node.format, to.format)) {
       result = { files: group.files, path: prefix };
     } else {
-      const rest = await searchAndConvert(
-        group.files,
-        group.node,
-        to,
-        abort,
-        depth + 1,
-        settings,
-        strict,
-      );
+      const rest = await searchAndConvert(group.files, group.node, to, {
+        ...search,
+        depth: search.depth + 1,
+      });
       if (rest) result = { files: rest.files, path: prefix.concat(rest.path.slice(1)) };
     }
     if (!result) {
@@ -424,11 +423,9 @@ async function searchAndConvert(
   files: FileData[],
   from: ConvertPathNode,
   to: ConvertPathNode,
-  abort: AbortSignal,
-  depth: number,
-  settings: ConvertOptions,
-  strict: boolean,
+  search: SearchContext,
 ): Promise<{ files: FileData[]; path: ConvertPathNode[] } | null> {
+  const { abort, depth, settings, strict } = search;
   const paths = await window.traversionGraph.searchPathProxied(
     from,
     to,
@@ -451,7 +448,7 @@ async function searchAndConvert(
       // The settings are for the real output, which the rest of the path produces.
       const attempt = await attemptConvertPath(files, path, abort);
       if (!attempt) continue;
-      const result = await continueFromAny(attempt.files, path, to, abort, depth, settings, strict);
+      const result = await continueFromAny(attempt.files, path, to, search);
       if (result) return result;
       continue;
     }
@@ -472,17 +469,19 @@ window.tryConvertByTraversing = async function (
   files: FileData[],
   from: ConvertPathNode,
   to: ConvertPathNode,
-  abort?: AbortSignal,
-  settings: ConvertOptions = {},
+  {
+    abort = ProgressStore.controller.signal,
+    settings = {},
+  }: { abort?: AbortSignal; settings?: ConvertOptions } = {},
 ) {
   deadEndAttempts = [];
-  abort ??= ProgressStore.controller.signal;
   await window.traversionGraph.clearDeadEndPaths();
-  if (!Object.keys(settings).length) return searchAndConvert(files, from, to, abort, 0, {}, false);
+  const search = { abort, depth: 0, settings, strict: false };
+  if (!Object.keys(settings).length) return searchAndConvert(files, from, to, search);
 
   // First only take paths that honour every setting, then settle for whatever converts.
   try {
-    const result = await searchAndConvert(files, from, to, abort, 0, settings, true);
+    const result = await searchAndConvert(files, from, to, { ...search, strict: true });
     if (result) return result;
   } catch (e) {
     if (e instanceof Error && e.name === "AbortError") throw e;
@@ -496,16 +495,15 @@ window.tryConvertByTraversing = async function (
   // A step may only have failed because of its options.
   deadEndAttempts = [];
   await window.traversionGraph.clearDeadEndPaths();
-  return searchAndConvert(files, from, to, abort, 0, settings, false);
+  return searchAndConvert(files, from, to, search);
 };
 
 window.tryConvertByPath = async function (
   files: FileData[],
   path: ConvertPathNode[],
-  abort?: AbortSignal,
+  { abort = ProgressStore.controller.signal }: { abort?: AbortSignal } = {},
 ) {
   deadEndAttempts = [];
-  abort ??= ProgressStore.controller.signal;
   try {
     return await attemptConvertPath(files, path, abort);
   } finally {

@@ -15,8 +15,7 @@ declare global {
       files: FileData[],
       from: ConvertPathNode,
       to: ConvertPathNode,
-      signal?: AbortSignal,
-      settings?: ConvertOptions,
+      options?: { abort?: AbortSignal; settings?: ConvertOptions },
     ) => Promise<{
       files: FileData[];
       path: ConvertPathNode[];
@@ -24,7 +23,7 @@ declare global {
     tryConvertByPath: (
       files: FileData[],
       path: ConvertPathNode[],
-      signal?: AbortSignal,
+      options?: { abort?: AbortSignal },
     ) => Promise<{
       files: FileData[];
       path: ConvertPathNode[];

@@ -264,13 +264,10 @@ export default function Conversion() {
       const fromNode = { handler: fromOption[1], format: fromOption[0] };
       const toNode = { handler: toOption[1], format: toOption[0] };
 
-      const output = await window.tryConvertByTraversing(
-        inputFileData,
-        fromNode,
-        toNode,
-        abortController.signal,
+      const output = await window.tryConvertByTraversing(inputFileData, fromNode, toNode, {
+        abort: abortController.signal,
         settings,
-      );
+      });
 
       if (!output) {
         setIsConverting(false);
