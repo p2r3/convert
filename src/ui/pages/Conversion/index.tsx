@@ -10,7 +10,7 @@ import {
 import { Mode, ModeEnum } from "src/ui/ModeStore";
 import { getExt } from "src/common/index.ts";
 import { filePath } from "src/common/path.ts";
-import { formatIdentifier, sameFormat } from "src/FormatHandler";
+import { formatIdentifier } from "src/FormatHandler";
 import { detectFormatMatches } from "src/detectFormat";
 
 import ConversionHeader from "src/ui/components/Conversion/ConversionHeader";
@@ -248,10 +248,6 @@ export default function Conversion() {
         const buf = await f.arrayBuffer();
         const bytes = new Uint8Array(buf);
 
-        if (sameFormat(fromOption[0], toOption[0])) {
-          downloadFile(bytes, f.name);
-          continue;
-        }
         inputFileData.push({ name: f.name, bytes });
       }
 

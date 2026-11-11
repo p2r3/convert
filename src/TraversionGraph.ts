@@ -264,7 +264,7 @@ export class TraversionGraph {
       });
       fromIndices.forEach((from) => {
         toIndices.forEach((to) => {
-          if (from.index === to.index) return; // No self-loops
+          if (from.index === to.index && from.index === this.anyIndex) return; // No self-loops for special.ANY
           const costs = this.costFunction(from, to, strictCategories, handler.name, handlerIndex);
           this.edges.push({
             from: from,
@@ -608,7 +608,7 @@ export class TraversionGraph {
         pathsFound++;
         continue;
       }
-      if (current.index === toIndex) {
+      if (current.index === toIndex && current.path.length > 1) {
         // Return the path of handlers and formats to get from the input format to the output format
         const logString = `${iterations} with cost ${current.cost.toFixed(3)}: ${current.path.map((p) => p.handler.name + "(" + p.format.mime + ")").join(" → ")}`;
         const foundPathLast = current.path.at(-1);
@@ -631,7 +631,12 @@ export class TraversionGraph {
       this.nodes[current.index].edges.forEach((edgeIndex) => {
         let edge = this.edges[edgeIndex];
         if (!Number.isFinite(remainingCosts[edge.to.index])) return;
-        if (current.path.some((node) => sameFormat(node.format, edge.to.format))) return;
+        // dont reenter except if its the target
+        if (
+          current.path.some((node) => sameFormat(node.format, edge.to.format)) &&
+          edge.to.index != toIndex
+        )
+          return;
         // No any → any: an ANY input step followed by an ANY output would just undo itself.
         if (edge.to.index === this.anyIndex && current.usedAnyInput) return;
         const handler = this.handlerByName.get(edge.handler);
