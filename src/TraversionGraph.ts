@@ -9,7 +9,7 @@ import {
 import { SpecialFormats, type CategoryType } from "./Formats.ts";
 import { PriorityQueue } from "./PriorityQueue.ts";
 import * as comlink from "comlink";
-import { pathSupportsOptions } from "./Settings.ts";
+import { pathSupportsOptions, type ConvertOptions } from "./Settings.ts";
 
 export interface CostEntry {
   reason: string;
@@ -22,7 +22,7 @@ export interface SearchPathOptions {
   simpleMode?: boolean;
   isCancelled?: () => boolean | Promise<boolean>;
   debug?: (costs: (CostEntry & { step: number })[], total: number) => void;
-  requiredOptions?: string[];
+  requiredSettings?: ConvertOptions;
 }
 
 interface CostTrace {
@@ -561,7 +561,7 @@ export class TraversionGraph {
   public async *searchPath(
     from: ConvertPathNode,
     to: ConvertPathNode,
-    { simpleMode = false, isCancelled, debug, requiredOptions = [] }: SearchPathOptions = {},
+    { simpleMode = false, isCancelled, debug, requiredSettings = {} }: SearchPathOptions = {},
   ): AsyncGenerator<ConvertPathNode[]> {
     // A*: base edge costs estimate the remaining costs
     const fromIndex = this.nodeIndexByIdentifier.get(formatIdentifier(from.format)) ?? -1;
@@ -614,7 +614,7 @@ export class TraversionGraph {
         const foundPathLast = current.path.at(-1);
         if (
           (simpleMode || !to.handler || to.handler.name === foundPathLast?.handler.name) &&
-          pathSupportsOptions(current.path, requiredOptions)
+          pathSupportsOptions(current.path, requiredSettings)
         ) {
           console.log(`Found path at iteration ${logString}`);
           reportCosts(current);

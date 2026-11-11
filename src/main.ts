@@ -431,7 +431,7 @@ async function searchAndConvert(
     to,
     {
       simpleMode: Mode.value === ModeEnum.Simple,
-      requiredOptions: strict ? Object.keys(settings) : [],
+      requiredSettings: strict ? settings : {},
     },
     comlink.proxy(() => abort.aborted),
   );

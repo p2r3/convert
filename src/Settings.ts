@@ -92,17 +92,20 @@ export function sanitizeOptions(format: FileFormat, options: ConvertOptions = {}
   );
 }
 
-const lastStepSupports = (path: ConvertPathNode[], key: string) =>
-  path.length > 1 && specOf(path[path.length - 1].format, key) !== undefined;
+function lastStepSupports(path: ConvertPathNode[], key: string, value: unknown) {
+  if (path.length < 2) return false;
+  const spec = specOf(path[path.length - 1].format, key);
+  return spec !== undefined && isValidOption(spec, value);
+}
 
-export const pathSupportsOptions = (path: ConvertPathNode[], keys: string[]) =>
-  keys.every((key) => lastStepSupports(path, key));
+export const pathSupportsOptions = (path: ConvertPathNode[], settings: ConvertOptions) =>
+  Object.entries(settings).every(([key, value]) => lastStepSupports(path, key, value));
 
 export function distributeOptions(path: ConvertPathNode[], settings: ConvertOptions) {
   const result: ConvertPathNode[] = path.map((node) => ({ ...node, options: undefined }));
   const unsupported: string[] = [];
   for (const [key, value] of Object.entries(settings)) {
-    if (!lastStepSupports(path, key)) unsupported.push(key);
+    if (!lastStepSupports(path, key, value)) unsupported.push(key);
     else (result[result.length - 1].options ??= {})[key] = value;
   }
   return { path: result, unsupported };
