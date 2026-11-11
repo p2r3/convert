@@ -36,4 +36,30 @@
     gap: 0.75rem;
     flex-shrink: 0;
   }
+
+  .conversion-settings-toggle {
+    position: relative;
+
+    &.active {
+      color: var(--primary);
+      background: color-mix(in srgb, var(--primary) 10%, transparent);
+      border-color: color-mix(in srgb, var(--primary) 30%, transparent);
+    }
+  }
+
+  .conversion-settings-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: var(--primary);
+    color: var(--text-on-primary);
+    font-size: 0.65rem;
+    font-weight: 700;
+    line-height: 16px;
+    text-align: center;
+  }
 }

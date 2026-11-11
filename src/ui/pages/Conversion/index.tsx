@@ -24,6 +24,12 @@ import FileInfoBadge from "src/ui/components/FileInfo";
 import { ConversionInProgress, CurrentPage, Pages } from "src/ui/AppState";
 import { ProgressStore } from "src/ui/ProgressStore";
 import StyledButton, { ButtonVariant } from "src/ui/components/StyledButton";
+import SettingsPanel from "src/ui/components/Conversion/SettingsPanel";
+import {
+  SettingsPanelOpen,
+  applicableSettings,
+  availableSettings,
+} from "src/ui/ConversionSettingsStore";
 
 let previousSelection: {
   fileExt: string;
@@ -151,6 +157,17 @@ export default function Conversion() {
   const [toOption, setToOption] = useState<ConversionOption | null>(null);
   const [isConverting, setIsConverting] = useState(false);
 
+  const settingSpecs = useMemo(() => {
+    if (!toOption) return new Map();
+    if (isAdvanced) return availableSettings([toOption[0]]);
+    const id = formatIdentifier(toOption[0]);
+    return availableSettings(
+      [...allOptions.keys()].filter((f) => f.to && formatIdentifier(f) === id),
+      true,
+    );
+  }, [toOption, isAdvanced, allOptions]);
+  const settings = applicableSettings(settingSpecs);
+
   useEffect(() => {
     if (!firstFile || isConverting) return;
 
@@ -252,6 +269,7 @@ export default function Conversion() {
         fromNode,
         toNode,
         abortController.signal,
+        settings,
       );
 
       if (!output) {
@@ -314,7 +332,11 @@ export default function Conversion() {
 
   return (
     <div className="conversion-body">
-      <ConversionHeader logoDisabled={step === "converting"} />
+      <ConversionHeader
+        logoDisabled={step === "converting"}
+        settingsCount={Object.keys(settings).length}
+        settingsDisabled={step === "converting"}
+      />
 
       <main className="conversion-main">
         {step === "converting" ? (
@@ -354,6 +376,9 @@ export default function Conversion() {
             showAll={showAll}
             onShowAll={() => setShowAll(true)}
           />
+        )}
+        {SettingsPanelOpen.value && step !== "converting" && (
+          <SettingsPanel specs={settingSpecs} formatName={toOption?.[0].format.toUpperCase()} />
         )}
       </main>
 

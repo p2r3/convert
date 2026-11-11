@@ -1,46 +1,57 @@
 import type { ConvertPathNode, FileFormat } from "./FormatHandler.js";
 
-/** The values an option accepts. Plain data, so it survives the format cache and workers. */
-export type OptionSpec =
-  | { type: "number"; min?: number; max?: number; integer?: boolean }
-  | { type: "enum"; values: string[] };
+export const SettingCategories = {
+  size: { label: "Size", note: "Streches the image when both are set." },
+  quality: { label: "Quality", note: "1 is the smallest file, 100 the best quality." },
+  video: { label: "Video" },
+  audio: { label: "Audio" },
+  other: { label: "Other" },
+} satisfies Record<string, { label: string; note?: string }>;
 
-/**
- * Settings shared between handlers. Handlers declare the ones they honour per output format
- * in {@link FileFormat.options} and read the values from `ctx.options`. A missing value means
- * "whatever the handler does by default".
- *
- * When the path is found automatically, `content` settings (properties of the media) are applied
- * once, by the first step that supports them. `encoding` settings (properties of the output
- * file) are only applied by the last step.
- */
+export interface OptionDisplay {
+  label?: string;
+  unit?: string;
+  category?: keyof typeof SettingCategories;
+}
+
+export type OptionSpec = OptionDisplay &
+  (
+    | { type: "number"; min?: number; max?: number; integer?: boolean }
+    | { type: "enum"; values: string[] }
+    | { type: "boolean" }
+    | {
+        type: "string";
+        maxLength?: number;
+        pattern?: string;
+      }
+  );
+
+// oxfmt-ignore
 export const Settings = {
-  /** In pixels. With only one of width/height set, the aspect ratio is kept. */
-  width: { scope: "content", type: "number", min: 1, integer: true },
-  height: { scope: "content", type: "number", min: 1, integer: true },
-  fps: { scope: "content", type: "number", min: 1, max: 240 },
-  /** In Hz. */
-  sampleRate: { scope: "content", type: "number", min: 1000, max: 384000, integer: true },
-  channels: { scope: "content", type: "number", min: 1, max: 8, integer: true },
-  /** Lossy encoder quality, 1 (worst) to 100 (best). */
-  quality: { scope: "encoding", type: "number", min: 1, max: 100, integer: true },
-  /** Codec names (e.g. "h264"), not encoder names. Formats list the values they accept. */
-  videoCodec: { scope: "encoding", type: "enum", values: [] },
-  audioCodec: { scope: "encoding", type: "enum", values: [] },
-  /** In kbps. */
-  videoBitrate: { scope: "encoding", type: "number", min: 1, integer: true },
-  audioBitrate: { scope: "encoding", type: "number", min: 1, integer: true },
-} satisfies Record<string, OptionSpec & { scope: "content" | "encoding" }>;
+  // size
+  width: { category: "size", label: "Width", unit: "px", type: "number", min: 1, integer: true },
+  height: { category: "size", label: "Height", unit: "px", type: "number", min: 1, integer: true },
+  // quality
+  quality: { category: "quality", label: "Quality", type: "number", min: 1, max: 100, integer: true },
+  // video
+  videoCodec: { category: "video", label: "Codec", type: "enum", values: [] },
+  fps: { category: "video", label: "Frame rate", unit: "fps", type: "number", min: 1, max: 240 },
+  videoBitrate: { category: "video", label: "Bitrate", unit: "kbps", type: "number", min: 1, integer: true },
+  // audio
+  audioCodec: { category: "audio", label: "Codec", type: "enum", values: [] },
+  audioBitrate: { category: "audio", label: "Bitrate", unit: "kbps", type: "number", min: 1, integer: true },
+  sampleRate: { category: "audio", label: "Sample rate", unit: "Hz", type: "number", min: 1000, max: 384000, integer: true },
+  channels: { category: "audio", label: "Channels", type: "number", min: 1, max: 8, integer: true },
+} satisfies Record<string, OptionSpec>;
 
-/** Option values for one conversion step. Handler-specific keys are allowed next to the shared ones. */
 export type ConvertOptions = {
-  [K in keyof typeof Settings]?: (typeof Settings)[K] extends { type: "number" } ? number : string;
+  [K in keyof typeof Settings]?: (typeof Settings)[K] extends { type: "number" }
+    ? number
+    : (typeof Settings)[K] extends { type: "boolean" }
+      ? boolean
+      : string;
 } & { [key: string]: unknown };
 
-/**
- * Options a format supports, by key. `true` uses the spec from {@link Settings};
- * handler-specific keys and narrowed specs (e.g. the codec list) are spelled out.
- */
 export type FormatOptions = Record<string, OptionSpec | true>;
 
 const own = <T>(object: Record<string, T> | undefined, key: string) =>
@@ -51,8 +62,18 @@ function specOf(format: FileFormat, key: string): OptionSpec | undefined {
   return declared === true ? own<OptionSpec>(Settings, key) : declared;
 }
 
-function isValid(spec: OptionSpec, value: unknown) {
+export function isValidOption(spec: OptionSpec, value: unknown): boolean {
   if (spec.type === "enum") return typeof value === "string" && spec.values.includes(value);
+  if (spec.type === "boolean") return typeof value === "boolean";
+  if (spec.type === "string") {
+    if (typeof value !== "string" || value.length > (spec.maxLength ?? Infinity)) return false;
+    if (spec.pattern === undefined) return true;
+    try {
+      return new RegExp(`^(?:${spec.pattern})$`, "u").test(value);
+    } catch {
+      return false;
+    }
+  }
   return (
     typeof value === "number" &&
     Number.isFinite(value) &&
@@ -62,44 +83,27 @@ function isValid(spec: OptionSpec, value: unknown) {
   );
 }
 
-/**
- * Keeps the options `format` declares and whose values fit the spec.
- * Handlers only ever see the result, so they can trust the values (e.g. put them in a command line).
- */
 export function sanitizeOptions(format: FileFormat, options: ConvertOptions = {}): ConvertOptions {
   return Object.fromEntries(
     Object.entries(options).filter(([key, value]) => {
       const spec = specOf(format, key);
-      return spec && isValid(spec, value);
+      return spec && isValidOption(spec, value);
     }),
   );
 }
 
-/** Index of the step in `path` that should apply `key`, or -1 if no step can. */
-function findStep(path: ConvertPathNode[], key: string) {
-  // path[0] is the input, it isn't produced by any step
-  if (own(Settings, key)?.scope === "content")
-    return path.findIndex((node, i) => i > 0 && specOf(node.format, key));
-  // handler-specific options count as encoding ones
-  const last = path.length - 1;
-  return last > 0 && specOf(path[last].format, key) ? last : -1;
-}
+const lastStepSupports = (path: ConvertPathNode[], key: string) =>
+  path.length > 1 && specOf(path[path.length - 1].format, key) !== undefined;
 
-/** Whether `path` can honour all of `keys`. */
 export const pathSupportsOptions = (path: ConvertPathNode[], keys: string[]) =>
-  keys.every((key) => findStep(path, key) !== -1);
+  keys.every((key) => lastStepSupports(path, key));
 
-/**
- * Hands the settings of an automatic conversion to the steps of `path` that should apply them.
- * @returns A copy of the path with `options` set, and the keys no step could take.
- */
 export function distributeOptions(path: ConvertPathNode[], settings: ConvertOptions) {
   const result: ConvertPathNode[] = path.map((node) => ({ ...node, options: undefined }));
   const unsupported: string[] = [];
   for (const [key, value] of Object.entries(settings)) {
-    const step = findStep(path, key);
-    if (step === -1) unsupported.push(key);
-    else (result[step].options ??= {})[key] = value;
+    if (!lastStepSupports(path, key)) unsupported.push(key);
+    else (result[result.length - 1].options ??= {})[key] = value;
   }
   return { path: result, unsupported };
 }
