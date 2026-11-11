@@ -15,7 +15,6 @@ export interface ConvertContext {
   log: (message: string, level?: LogLevel) => void;
   signal: AbortSignal;
   throwIfAborted: () => void;
-  /** Values of the options the output format declares. Empty when nothing was set. */
   options: ConvertOptions;
 }
 

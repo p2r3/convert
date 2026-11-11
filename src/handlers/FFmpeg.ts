@@ -54,16 +54,14 @@ class FFmpegHandler implements FormatHandler {
 
   #module?: Promise<WebAssembly.Module>;
 
-  /** Codec name to the encoder that `-c:v`/`-c:a` should get. Filled in by `init`. */
+  /** Codec name to encoder */
   #encoders = new Map<string, string>();
 
-  /** Options honoured when writing `format`, which takes the `video` and `audio` codecs. */
   static optionsFor(
     format: FileFormat,
     video: string[],
     audio: string[],
   ): FormatOptions | undefined {
-    // these are written with a -target preset that fixes everything
     if (format.internal === "dvd" || format.internal === "vcd") return undefined;
 
     const categories = Array.isArray(format.category) ? format.category : [format.category];
@@ -339,7 +337,7 @@ class FFmpegHandler implements FormatHandler {
         this.#encoders.set(encoder[2], encoder[3]);
       }
       const muxer = line.match(/^Muxer (\S+):(.*)$/);
-      // the audio-only matroska muxer has the same name as the full one, so merge them
+      // merge same codecs
       if (muxer)
         muxerCodecs.set(muxer[1], [
           ...new Set([

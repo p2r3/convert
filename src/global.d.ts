@@ -16,13 +16,11 @@ declare global {
       from: ConvertPathNode,
       to: ConvertPathNode,
       signal?: AbortSignal,
-      /** Settings for the output. The path search decides which steps apply them. */
       settings?: ConvertOptions,
     ) => Promise<{
       files: FileData[];
       path: ConvertPathNode[];
     } | null>;
-    /** Runs exactly `path`, giving each step the `options` of the node it produces. */
     tryConvertByPath: (
       files: FileData[],
       path: ConvertPathNode[],

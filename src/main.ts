@@ -499,10 +499,6 @@ window.tryConvertByTraversing = async function (
   return searchAndConvert(files, from, to, abort, 0, settings, false);
 };
 
-/**
- * Converts along a path the user built themselves, with the options they set on each node.
- * Nothing is rerouted: if a step fails, the conversion fails.
- */
 window.tryConvertByPath = async function (
   files: FileData[],
   path: ConvertPathNode[],
