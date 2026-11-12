@@ -2,6 +2,16 @@ import { type FileData, type FileFormat, type FormatHandler } from "../FormatHan
 import Formats from "src/Formats.ts";
 import { changeExt, decode, encode } from "src/common/index.ts";
 
+// refuse to load any plugins for security
+class NoPluginLoader {
+  loadPlugin() {
+    return Promise.reject(new Error("LESS plugins are not supported"));
+  }
+  loadPluginSync(): never {
+    throw new Error("LESS plugins are not supported");
+  }
+}
+
 class cssHandler implements FormatHandler {
   public readonly name = "css";
   public supportedFormats = [
@@ -25,20 +35,11 @@ class cssHandler implements FormatHandler {
       const source = decode(file.bytes);
       let css: string;
       if (inputFormat.internal === "less") {
-        const [{ default: createLess }, { default: createFileManager }, { default: PluginLoader }] =
-          await Promise.all([
-            // @ts-ignore
-            import("less/lib/less/index.js"),
-            // @ts-ignore
-            import("less/lib/less-browser/file-manager.js"),
-            // @ts-ignore
-            import("less/lib/less-browser/plugin-loader.js"),
-          ]);
+        // @ts-ignore
+        const { default: createLess } = await import("less/lib/less/index.js");
         const less = createLess();
-        less.PluginLoader = PluginLoader;
-        less.FileManager = createFileManager({}, less.logger);
-        less.environment.addFileManager(new less.FileManager());
-        const { css: compiled } = await less.render(source);
+        less.PluginLoader = NoPluginLoader;
+        const { css: compiled } = await less.render(source, { disablePluginRule: true });
         css = compiled;
       } else if (inputFormat.internal === "scss") {
         const sass = await import("sass");
