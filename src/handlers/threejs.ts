@@ -16,6 +16,9 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { PLYExporter } from "three/addons/exporters/PLYExporter.js";
 import { DOMParser as WorkerDOMParser } from "linkedom/worker";
 import { changeExt } from "src/common/index.ts";
+import { resolveSize } from "src/common/canvas.ts";
+import type { ConvertOptions } from "src/Settings.ts";
+import type { ConvertContext } from "src/ui/ProgressStore.ts";
 
 function loadTextureBitmap(
   this: THREE.TextureLoader,
@@ -82,9 +85,9 @@ class threejsHandler implements FormatHandler {
     Formats.FBX.builder("fbx").from(),
     Formats.DAE.builder("dae").from(),
     Formats.THREEMF.builder("3mf").from(),
-    Formats.PNG.builder("png").to(),
-    Formats.JPEG.builder("jpeg").to(),
-    Formats.WEBP.builder("webp").to(),
+    Formats.PNG.builder("png").options({ width: true, height: true }).to(),
+    Formats.JPEG.builder("jpeg").options({ width: true, height: true, quality: true }).to(),
+    Formats.WEBP.builder("webp").options({ width: true, height: true, quality: true }).to(),
   ];
   public ready = false;
 
@@ -242,15 +245,27 @@ class threejsHandler implements FormatHandler {
     }
   }
 
-  async render(object: THREE.Object3D, mime: string): Promise<Uint8Array> {
+  async render(
+    object: THREE.Object3D,
+    mime: string,
+    options: ConvertOptions = {},
+  ): Promise<Uint8Array> {
     if (!this.canvas || !this.renderer) throw new InitializationError("Handler not initialized.");
+
+    const { width, height } = resolveSize(960, 540, options);
+    this.renderer.setSize(width, height, false);
+    this.camera.aspect = width / height;
 
     this.scene.add(object);
     object.updateMatrixWorld(true);
 
     const sphere = new THREE.Box3().setFromObject(object).getBoundingSphere(new THREE.Sphere());
     const radius = sphere.radius || 1;
-    const distance = radius / Math.sin(THREE.MathUtils.degToRad(this.camera.fov / 2));
+    // fit the narrower of the two fields of view
+    const halfFov = Math.atan(
+      Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)) * Math.min(1, this.camera.aspect),
+    );
+    const distance = radius / Math.sin(halfFov);
     this.camera.position
       .copy(sphere.center)
       .add(new THREE.Vector3(1, 0.8, 1.5).normalize().multiplyScalar(distance));
@@ -262,7 +277,11 @@ class threejsHandler implements FormatHandler {
     this.renderer.render(this.scene, this.camera);
     this.scene.remove(object);
 
-    const rendered = await this.canvas.convertToBlob({ type: mime });
+    const quality = options.quality;
+    const rendered = await this.canvas.convertToBlob({
+      type: mime,
+      quality: quality === undefined ? undefined : quality / 100,
+    });
     return rendered.bytes();
   }
 
@@ -270,6 +289,7 @@ class threejsHandler implements FormatHandler {
     inputFiles: FileData[],
     inputFormat: FileFormat,
     outputFormat: FileFormat,
+    ctx?: ConvertContext,
   ): Promise<FileData[]> {
     if (!this.ready) throw new InitializationError("Handler not initialized.");
 
@@ -279,7 +299,7 @@ class threejsHandler implements FormatHandler {
       const { object, animations } = await this.loadModel(inputFile.bytes, inputFormat.internal);
 
       const bytes = ["png", "jpeg", "webp"].includes(outputFormat.internal)
-        ? await this.render(object, outputFormat.mime)
+        ? await this.render(object, outputFormat.mime, ctx?.options)
         : await this.exportModel(object, animations, outputFormat.internal);
 
       const name = changeExt(inputFile.name, outputFormat.extension);

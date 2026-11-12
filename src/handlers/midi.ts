@@ -16,6 +16,8 @@ import sfontUrl from "built/timgm6mb/TimGM6mb.sf2?url";
 import fluidsynthUrl from "js-synthesizer/externals/libfluidsynth-2.4.6.js?url";
 import { changeExt, decode, encode, stripExt } from "src/common/index.ts";
 import { blobToCanvas, canvasToBlob, createCanvas } from "src/common/canvas.ts";
+import { Settings } from "src/Settings.ts";
+import type { ConvertContext } from "src/ui/ProgressStore.ts";
 
 const SAMPLE_RATE = 44100;
 const BUFFER_FRAMES = 4096;
@@ -170,7 +172,10 @@ export class midiSynthHandler implements FormatHandler {
   public readonly name = "midiSynth";
   public supportedFormats = [
     Formats.MIDI.builder("mid").lossless().from(),
-    Formats.WAV.builder("wav").lossless().to(),
+    Formats.WAV.builder("wav")
+      .lossless()
+      .options({ sampleRate: { ...Settings.sampleRate, min: 8000, max: 96000 } })
+      .to(),
   ];
   public ready = false;
 
@@ -189,15 +194,17 @@ export class midiSynthHandler implements FormatHandler {
     inputFiles: FileData[],
     _inputFormat: FileFormat,
     _outputFormat: FileFormat,
+    ctx?: ConvertContext,
   ): Promise<FileData[]> {
     if (!this.ready || !this.#sfontBin) throw new InitializationError("Handler not initialized.");
+    const sampleRate = ctx?.options.sampleRate ?? SAMPLE_RATE;
 
     const JSSynth = this.#JSSynth;
     const outputFiles: FileData[] = [];
 
     for (const inputFile of inputFiles) {
       const synth = new JSSynth.Synthesizer();
-      synth.init(SAMPLE_RATE);
+      synth.init(sampleRate);
       await synth.loadSFont(this.#sfontBin);
 
       // slice() guarantees a clean ArrayBuffer with no byteOffset
@@ -239,7 +246,7 @@ export class midiSynthHandler implements FormatHandler {
         }
       }
 
-      const wavBytes = buildWav(pcm, SAMPLE_RATE, 2, 16);
+      const wavBytes = buildWav(pcm, sampleRate, 2, 16);
       outputFiles.push({ bytes: wavBytes, name: changeExt(inputFile.name, "wav") });
     }
 

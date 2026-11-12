@@ -9,6 +9,8 @@ import { Vector } from "built/sppd/sppd/Vector.ts";
 import Formats from "src/Formats.ts";
 import { InitializationError } from "src/errors.ts";
 import { changeExt } from "src/common/index.ts";
+import { resolveSize } from "src/common/canvas.ts";
+import type { ConvertContext } from "src/ui/ProgressStore.ts";
 
 function toThreeVector(vec: Vector) {
   return new THREE.Vector3(vec.y, vec.z, vec.x);
@@ -168,8 +170,8 @@ class sppdHandler implements FormatHandler {
   public readonly name = "sppd";
   public supportedFormats = [
     Formats.PORTAL2_DEM.builder("dem").from(),
-    Formats.PNG.builder("png").to(),
-    Formats.JPEG.builder("jpeg").to(),
+    Formats.PNG.builder("png").options({ width: true, height: true }).to(),
+    Formats.JPEG.builder("jpeg").options({ width: true, height: true, quality: true }).to(),
   ];
   public ready = false;
 
@@ -498,12 +500,23 @@ class sppdHandler implements FormatHandler {
     inputFiles: FileData[],
     inputFormat: FileFormat,
     outputFormat: FileFormat,
+    ctx?: ConvertContext,
   ): Promise<FileData[]> {
     const outputFiles: FileData[] = [];
 
-    if (!this.ready) throw new InitializationError("Handler not initialized.");
+    if (!this.ready || !this.renderer) throw new InitializationError("Handler not initialized.");
     if (inputFormat.format !== "dem")
       throw new TypeError(`Unsupported input format: ${inputFormat.internal}`);
+
+    const { width, height } = resolveSize(
+      this.renderBounds.width,
+      this.renderBounds.height,
+      ctx?.options,
+    );
+    this.renderer.setSize(width, height, false);
+    this.camera.aspect = width / height;
+    this.camera.updateProjectionMatrix();
+    const quality = ctx?.options.quality;
 
     let frameIndex = 0;
 
@@ -534,7 +547,10 @@ class sppdHandler implements FormatHandler {
             await this.playbackTickHandler(demo);
             renderer.render(this.scene, this.camera);
 
-            const rendered = await canvas.convertToBlob({ type: outputFormat.mime });
+            const rendered = await canvas.convertToBlob({
+              type: outputFormat.mime,
+              quality: quality === undefined ? undefined : quality / 100,
+            });
             const bytes = await rendered.bytes();
             const name = changeExt(inputFile.name, outputFormat.extension, `_${frameIndex}`);
             outputFiles.push({ bytes, name });

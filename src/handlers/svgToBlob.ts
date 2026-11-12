@@ -2,14 +2,15 @@ import Formats from "src/Formats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import { InitializationError } from "src/errors.ts";
 import { changeExt } from "src/common/index.ts";
-import { canvasToBlob, createCanvas, type CanvasBundle } from "src/common/canvas.ts";
+import { canvasToBlob, createCanvas, resolveSize, type CanvasBundle } from "src/common/canvas.ts";
+import type { ConvertContext } from "src/ui/ProgressStore.ts";
 
 class svgToBlobHandler implements FormatHandler {
   public readonly name = "svgToBlob";
   public supportedFormats = [
-    Formats.PNG.builder("png").to(),
-    Formats.JPEG.builder("jpeg").to(),
-    Formats.WEBP.builder("webp").to(),
+    Formats.PNG.builder("png").options({ width: true, height: true }).to(),
+    Formats.JPEG.builder("jpeg").options({ width: true, height: true, quality: true }).to(),
+    Formats.WEBP.builder("webp").options({ width: true, height: true, quality: true }).to(),
     Formats.SVG.builder("svg").from(),
   ];
   public ready = false;
@@ -26,7 +27,10 @@ class svgToBlobHandler implements FormatHandler {
     inputFiles: FileData[],
     inputFormat: FileFormat,
     outputFormat: FileFormat,
+    convertCtx?: ConvertContext,
   ): Promise<FileData[]> {
+    const options = convertCtx?.options;
+    const quality = options?.quality;
     if (!this.#bundle) {
       throw new InitializationError("Handler not initialized.");
     }
@@ -44,11 +48,16 @@ class svgToBlobHandler implements FormatHandler {
         image.src = url;
       });
 
-      canvas.width = image.naturalWidth;
-      canvas.height = image.naturalHeight;
-      ctx.drawImage(image, 0, 0);
+      const { width, height } = resolveSize(image.naturalWidth, image.naturalHeight, options);
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(image, 0, 0, width, height);
 
-      const bytes = await canvasToBlob(this.#bundle, outputFormat.mime);
+      const bytes = await canvasToBlob(
+        this.#bundle,
+        outputFormat.mime,
+        quality === undefined ? undefined : quality / 100,
+      );
       const name = changeExt(inputFile.name, outputFormat.extension);
 
       outputFiles.push({ bytes, name });

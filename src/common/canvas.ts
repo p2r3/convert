@@ -1,3 +1,5 @@
+import type { ConvertOptions } from "src/Settings.ts";
+
 export type CanvasBundle = { canvas: OffscreenCanvas; ctx: OffscreenCanvasRenderingContext2D };
 
 export function createCanvas(
@@ -33,4 +35,15 @@ export async function blobToCanvas(bundle: CanvasBundle, bytes: Uint8Array, mime
   bundle.canvas.height = image.height;
   bundle.ctx.drawImage(image, 0, 0);
   image.close();
+}
+
+const scaled = (side: number, from: number, to: number) =>
+  from ? Math.max(1, Math.round((side * to) / from)) : side;
+
+/** The size to output a `width`×`height` image at. With one side set, the aspect ratio is kept. */
+export function resolveSize(width: number, height: number, options: ConvertOptions = {}) {
+  return {
+    width: options.width ?? (options.height ? scaled(width, height, options.height) : width),
+    height: options.height ?? (options.width ? scaled(height, width, options.width) : height),
+  };
 }

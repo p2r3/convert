@@ -14,6 +14,7 @@ import Formats, { Category, isCategory } from "src/Formats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import type { ConvertContext } from "../ui/ProgressStore.js";
 import { changeExt } from "src/common/index.ts";
+import { resolveSize } from "src/common/canvas.ts";
 import type { FormatOptions } from "src/Settings.ts";
 
 // modules that accept quality
@@ -152,11 +153,8 @@ class ImageMagickHandler implements FormatHandler {
               }
 
               if (width || height) {
-                // with one side missing, keep the aspect ratio
-                const geometry = new MagickGeometry(
-                  width ?? Math.max(1, Math.round((image.width * height!) / image.height)),
-                  height ?? Math.max(1, Math.round((image.height * width!) / image.width)),
-                );
+                const size = resolveSize(image.width, image.height, { width, height });
+                const geometry = new MagickGeometry(size.width, size.height);
                 geometry.ignoreAspectRatio = true;
                 image.resize(geometry);
               }

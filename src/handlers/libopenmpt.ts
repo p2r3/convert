@@ -5,6 +5,8 @@ import { InitializationError } from "src/errors.ts";
 import wasmUrl from "built/libopenmpt/libopenmpt.wasm?url";
 import runtimeUrl from "built/libopenmpt/libopenmpt.js?url";
 import { changeExt } from "src/common/index.ts";
+import { Settings } from "src/Settings.ts";
+import type { ConvertContext } from "src/ui/ProgressStore.ts";
 
 // the parts of the emscripten module we use, see libopenmpt.h for the C API
 interface LibOpenMPTModule {
@@ -138,7 +140,12 @@ class libopenmptHandler implements FormatHandler {
       });
     }
 
-    this.supportedFormats.push(Formats.WAV.builder("wav").lossless().to());
+    this.supportedFormats.push(
+      Formats.WAV.builder("wav")
+        .lossless()
+        .options({ sampleRate: { ...Settings.sampleRate, min: 8000, max: 192000 } })
+        .to(),
+    );
 
     this.ready = true;
   }
@@ -147,16 +154,18 @@ class libopenmptHandler implements FormatHandler {
     inputFiles: FileData[],
     _inputFormat: FileFormat,
     _outputFormat: FileFormat,
+    ctx?: ConvertContext,
   ): Promise<FileData[]> {
     if (!this.ready || !this.#module) throw new InitializationError("Handler not initialized.");
+    const sampleRate = ctx?.options.sampleRate ?? SAMPLE_RATE;
 
     const mod = this.#module;
     const outputFiles: FileData[] = [];
 
     for (const inputFile of inputFiles) {
       const bytes = new Uint8Array(inputFile.bytes);
-      const pcmData = render(mod, bytes, SAMPLE_RATE);
-      const wavBytes = buildWav(pcmData, SAMPLE_RATE, 2, 16);
+      const pcmData = render(mod, bytes, sampleRate);
+      const wavBytes = buildWav(pcmData, sampleRate, 2, 16);
       const name = changeExt(inputFile.name, "wav");
       outputFiles.push({ bytes: wavBytes, name });
     }

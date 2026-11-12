@@ -4,6 +4,8 @@ import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import { getDocument, GlobalWorkerOptions } from "pdfjs-dist";
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.mjs?url";
 import { changeExt } from "src/common/index.ts";
+import { resolveSize } from "src/common/canvas.ts";
+import type { ConvertContext } from "src/ui/ProgressStore.ts";
 
 type CanvasAndContext = {
   canvas: OffscreenCanvas;
@@ -36,8 +38,8 @@ class pdfjsHandler implements FormatHandler {
   public readonly name = "pdfjs";
   public supportedFormats = [
     Formats.PDF.builder("pdf").from(),
-    Formats.PNG.builder("png").to(),
-    Formats.JPEG.builder("jpeg").to(),
+    Formats.PNG.builder("png").options({ width: true, height: true }).to(),
+    Formats.JPEG.builder("jpeg").options({ width: true, height: true, quality: true }).to(),
   ];
   public ready = false;
 
@@ -50,8 +52,10 @@ class pdfjsHandler implements FormatHandler {
     inputFiles: FileData[],
     inputFormat: FileFormat,
     outputFormat: FileFormat,
+    ctx?: ConvertContext,
   ): Promise<FileData[]> {
     const outputFiles: FileData[] = [];
+    const quality = ctx?.options.quality;
 
     for (const inputFile of inputFiles) {
       const loadingTask = getDocument({
@@ -72,17 +76,20 @@ class pdfjsHandler implements FormatHandler {
         for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
           const page = await pdf.getPage(pageNumber);
           const viewport = page.getViewport({ scale: 1 });
-          const target = factory.create(viewport.width, viewport.height);
+          const { width, height } = resolveSize(viewport.width, viewport.height, ctx?.options);
+          const target = factory.create(width, height);
           try {
             await page.render({
               canvas: null,
               // PDF.js accepts an OffscreenCanvas context, but its types only list DOM contexts.
               canvasContext: target.context as unknown as CanvasRenderingContext2D,
               viewport,
+              transform: [width / viewport.width, 0, 0, height / viewport.height, 0, 0],
               background: "rgb(255,255,255)",
             }).promise;
             const blob = await target.canvas.convertToBlob({
               type: outputFormat.mime,
+              quality: quality === undefined ? undefined : quality / 100,
             });
             outputFiles.push({
               bytes: await blob.bytes(),

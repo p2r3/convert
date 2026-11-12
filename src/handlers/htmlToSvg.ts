@@ -2,6 +2,7 @@ import { elementToSVG, inlineResources } from "dom-to-svg";
 import Formats from "src/Formats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import { decode, encode } from "src/common/index.ts";
+import type { ConvertContext } from "src/ui/ProgressStore.ts";
 
 function nextPaint(): Promise<void> {
   return new Promise((resolve) => {
@@ -67,6 +68,11 @@ async function renderRootToSvgString(
   options: HtmlToSvgOptions,
 ): Promise<string> {
   await waitForRenderableAssets(root);
+  // lay out at the requested width, so the height is measured for it
+  if (options.width) {
+    root.style.width = `${options.width}px`;
+    await nextPaint();
+  }
 
   const { width, height } = measureRenderedElement(root, options);
   const existingStyle = root.getAttribute("style") || "";
@@ -119,7 +125,10 @@ async function htmlContentToSvgString(
 
 class htmlToSvgHandler implements FormatHandler {
   public readonly name = "htmlToSvg";
-  public supportedFormats = [Formats.HTML.builder("html").from(), Formats.SVG.builder("svg").to()];
+  public supportedFormats = [
+    Formats.HTML.builder("html").from(),
+    Formats.SVG.builder("svg").options({ width: true, height: true }).to(),
+  ];
   public ready = false;
   public offload = false; // very dom heavy
 
@@ -131,6 +140,7 @@ class htmlToSvgHandler implements FormatHandler {
     inputFiles: FileData[],
     inputFormat: FileFormat,
     outputFormat: FileFormat,
+    ctx?: ConvertContext,
   ): Promise<FileData[]> {
     if (inputFormat.internal !== "html") throw "Invalid input format.";
     if (outputFormat.internal !== "svg") throw "Invalid output format.";
@@ -140,7 +150,10 @@ class htmlToSvgHandler implements FormatHandler {
     for (const inputFile of inputFiles) {
       const { name, bytes } = inputFile;
       const htmlStr = decode(bytes);
-      const svgStr = await htmlContentToSvgString(htmlStr);
+      const svgStr = await htmlContentToSvgString(htmlStr, {
+        width: ctx?.options.width,
+        height: ctx?.options.height,
+      });
       const newName = (name.endsWith(".html") ? name.slice(0, -5) : name) + ".svg";
       outputFiles.push({
         name: newName,
