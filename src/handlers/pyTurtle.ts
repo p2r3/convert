@@ -1,5 +1,5 @@
 import { DOMParser } from "linkedom/worker";
-import { EllipseCurve } from "three";
+import { Color, EllipseCurve } from "three";
 import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader.js";
 import Formats from "src/Formats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
@@ -13,17 +13,9 @@ const MAX_TOTAL_POINTS = 20000;
 
 function formatColor(col: string) {
   if (!col || col === "none" || col === "transparent") return null;
-  if (col.startsWith("rgb")) {
-    const rgb = col.match(/\d+/g);
-    return (
-      "#" +
-      rgb!
-        .slice(0, 3)
-        .map((x) => parseInt(x).toString(16).padStart(2, "0"))
-        .join("")
-    );
-  }
-  return col;
+  const color = new Color(NaN, NaN, NaN).setStyle(col);
+  if (![color.r, color.g, color.b].every(Number.isFinite)) return null;
+  return "#" + color.getHexString();
 }
 
 // safe min/max, that better scale then Math
