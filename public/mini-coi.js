@@ -21,9 +21,14 @@
         const { body, status, statusText } = r;
         if (!status || status > 399) return r;
         const h = new Headers(r.headers);
+        // keep in sync with src/securityHeaders.cjs
         h.set("Cross-Origin-Opener-Policy", "same-origin");
         h.set("Cross-Origin-Embedder-Policy", "require-corp");
-        h.set("Cross-Origin-Resource-Policy", "cross-origin");
+        if (!h.has("Content-Security-Policy"))
+          h.set(
+            "Content-Security-Policy",
+            "default-src 'none'; script-src 'self' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline' blob: data:; img-src 'self' blob: data:; media-src 'self' blob: data:; font-src 'self' blob: data:; connect-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'self' blob: data:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; webrtc 'block'",
+          );
         return new Response(status == 204 ? null : body, { status, statusText, headers: h });
       });
       e.respondWith(response);

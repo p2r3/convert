@@ -2,12 +2,6 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <script>
-      // we shouldnt be on /convert but some weird servers may allow us there
-      if (!location.pathname.endsWith("/") && !location.pathname.endsWith(".html")) {
-        location.replace(location.pathname + "/" + location.search + location.hash);
-      }
-    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
     <script type="module" src="./src/ui/scripts/theme-detection.ts"></script>
     <script src="./mini-coi.js"></script>

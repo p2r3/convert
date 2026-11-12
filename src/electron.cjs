@@ -12,6 +12,7 @@ const { autoUpdater } = require("electron-updater");
 const { URL, pathToFileURL } = require("node:url");
 const path = require("path");
 const fs = require("fs");
+const securityHeaders = require("./securityHeaders.cjs");
 
 // Not __dirname, which gets hardcoded to the build machine's path when bundled
 const DIST_PATH = path.join(app.getAppPath(), "dist");
@@ -225,10 +226,8 @@ app.whenReady().then(() => {
       const fileUrl = pathToFileURL(resolvedPath).href;
       const response = await net.fetch(fileUrl);
 
-      // Inject COR headers to allow SharedArrayBuffer in WASMs
       const headers = new Headers(response.headers);
-      headers.set("Cross-Origin-Opener-Policy", "same-origin");
-      headers.set("Cross-Origin-Embedder-Policy", "credentialless");
+      for (const [name, value] of Object.entries(securityHeaders)) headers.set(name, value);
 
       return new Response(response.body, {
         status: response.status,
