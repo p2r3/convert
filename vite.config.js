@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig, normalizePath } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 import preact from "@preact/preset-vite";
 import { fileURLToPath } from "node:url";
@@ -14,7 +14,7 @@ const excludedHandlers =
     ? ["clang"]
     : [];
 const excludedHandlerFiles = excludedHandlers.map((name) =>
-  fileURLToPath(new URL(`./src/handlers/${name}.ts`, import.meta.url)),
+  normalizePath(fileURLToPath(new URL(`./src/handlers/${name}.ts`, import.meta.url))),
 );
 
 const excludeHandlers = {
