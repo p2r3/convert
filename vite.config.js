@@ -2,13 +2,17 @@ import { defineConfig } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 import preact from "@preact/preset-vite";
 import { fileURLToPath } from "node:url";
+import { existsSync } from "node:fs";
 
 const isolationHeaders = {
   "Cross-Origin-Opener-Policy": "same-origin",
   "Cross-Origin-Embedder-Policy": "require-corp",
 };
 
-const excludedHandlers = process.env.IS_DESKTOP === "true" ? ["clang"] : [];
+const excludedHandlers =
+  process.env.IS_DESKTOP === "true" || !existsSync(new URL("./built/clang", import.meta.url))
+    ? ["clang"]
+    : [];
 const excludedHandlerFiles = excludedHandlers.map((name) =>
   fileURLToPath(new URL(`./src/handlers/${name}.ts`, import.meta.url)),
 );

@@ -19,7 +19,9 @@ bun run build:add word-parser https://github.com/p2r3/envelope/archive/2d8bc87d9
 bun run build:add bash https://ftp.gnu.org/gnu/bash/bash-5.3.tar.gz
 ```
 
-To assemble the `built` folder, run `bun run build:assemble --all`. However, this is usually done for you when you run `bun run build` or `bun run dev`.
+To assemble the `built` folder, run `bun run build:assemble`. However, this is usually done for you when you run `bun run build` or `bun run dev`.
+
+Requirements marked `optional: true` (like clang, which is ~137 MB) are skipped unless you name them or pass `--all`. `bun run build` passes `--all`; `bun run dev` doesn't, so to work on one, assemble it by name, like `bun run build:assemble clang`.
 
 ## Advanced usage
 

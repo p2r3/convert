@@ -30,17 +30,20 @@ async function quietShellErrors(run: () => Promise<void>) {
 }
 
 const assemble = defineCommand({
-  meta: { name: "assemble", description: "Prepare requirements for use" },
+  meta: {
+    name: "assemble",
+    description: "Prepare requirements for use, all but the optional ones by default",
+  },
   args: { ...selectArgs, ...assembleArgs },
   run: ({ args }) =>
     quietShellErrors(async () => {
       await import("./remove-old");
       const start = performance.now();
-      const requirements = selectRequirements(
-        await loadRequirements(ROOT_SCOPE.recipeDir),
-        args._,
-        args.all,
-      );
+      const config = await loadRequirements(ROOT_SCOPE.recipeDir);
+      const requirements =
+        args._.length || args.all
+          ? selectRequirements(config, args._, args.all)
+          : config.filter((requirement) => !requirement.optional);
       await assembleAll(requirements, ROOT_SCOPE, args);
       const end = performance.now();
       console.log(`Assembled in ${(end - start).toFixed(2)} ms.`);

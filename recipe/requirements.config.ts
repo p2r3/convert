@@ -49,6 +49,7 @@ export default [
     url: "https://github.com/TEdit/terraria-world-file-ts/archive/7292cb8509d2aa869583cf9f8549d6f78f7f9a24.tar.gz",
     hash: ["sha256", "f0fcc7704d32b87f0e980d7298801bddf1c828a0a8a47d4a511c6f88525b0479"],
     patches: ["fixes.patch"],
+    prebuild: "build.sh",
   },
   {
     name: "gimper",
@@ -139,6 +140,7 @@ export default [
   },
   {
     name: "clang",
+    optional: true,
     url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.2/llvm-project-23.1.2.src.tar.xz",
     hash: ["sha256", "c98bbef08a2b4c2613cd50e9aa9ae7b69b1fe6c16b2c40373bc0ab6116fdf78a"],
     patches: ["libcxx-wasi.patch"],

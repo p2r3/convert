@@ -1,3 +1,5 @@
+type Common = { name: string; optional?: boolean };
+
 type Source = {
   url: `https://${string}`;
   hash: [Bun.SupportedCryptoAlgorithms, string];
@@ -8,11 +10,11 @@ type Source = {
 // all of a source or none of it
 type MaybeSource = Source | { [K in keyof Source]?: never };
 
-type Subrecipe<Script> = { name: string } & Script & MaybeSource;
+type Subrecipe<Script> = Common & Script & MaybeSource;
 
 type Toolchains = { toolchains?: string[] };
 
-export type SourceRequirement = { name: string } & Source;
+export type SourceRequirement = Common & Source;
 export type AssembleRequirement = Subrecipe<{ assemble: string }>;
 export type PrebuildRequirement = Subrecipe<
   {

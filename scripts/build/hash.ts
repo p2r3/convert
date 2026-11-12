@@ -36,7 +36,8 @@ export async function hashDir(hash: Bun.CryptoHasher, dir: string) {
 export async function hashInputs(requirement: Requirement, scope: Scope): Promise<string> {
   const hash = new Bun.CryptoHasher("sha256");
 
-  updateHash(hash, String(PREBUILD_VERSION), JSON.stringify(requirement));
+  const { optional: _, ...definition } = requirement;
+  updateHash(hash, String(PREBUILD_VERSION), JSON.stringify(definition));
   await hashDir(hash, join(scope.recipeDir, requirement.name));
 
   for (const toolchain of await resolveToolchains(toolchainsOf(requirement))) {
