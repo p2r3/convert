@@ -7,7 +7,7 @@ import {
   type HandlerDefinition,
 } from "./FormatHandler";
 import { SpecialFormats } from "./Formats";
-import { createRemoteContext, type IProgressStore } from "./ui/ProgressStore";
+import { createPortProgressStore, createRemoteContext } from "./ui/ProgressStore";
 import { getHandler } from "./handlers/index.js";
 import { sanitizeOptions } from "./Settings";
 
@@ -47,16 +47,19 @@ export class Converter {
     path: [ConvertPathNode, ConvertPathNode],
     inputFiles: FileData[],
     { currentStep, totalSteps }: { currentStep: number; totalSteps: number },
-    progressStore: IProgressStore,
-    abortPort: MessagePort,
+    port: MessagePort,
   ): Promise<ConvertResult> {
     const controller = new AbortController();
-    abortPort.addEventListener("message", ({ data }) => {
+    port.addEventListener("message", ({ data }) => {
       if (data === "abort") controller.abort();
     });
-    abortPort.start();
+    port.start();
 
-    const ctx = createRemoteContext(progressStore, handlerDef.name, controller.signal);
+    const ctx = createRemoteContext(
+      createPortProgressStore(port),
+      handlerDef.name,
+      controller.signal,
+    );
 
     try {
       if (!this.defs) throw new Error("Converter not ready.");
@@ -146,7 +149,7 @@ export class Converter {
         [...new Set([...inputFiles].map((file) => file.bytes.buffer))],
       );
     } finally {
-      abortPort.close();
+      port.close();
     }
   }
 }

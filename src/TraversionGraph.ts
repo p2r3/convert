@@ -677,8 +677,15 @@ export class TraversionGraph {
     to: ConvertPathNode,
     // not perfect but works
     options: Omit<SearchPathOptions, "isCancelled" | "debug"> = {},
-    isCancelled?: SearchPathOptions["isCancelled"],
+    cancelPort?: MessagePort,
   ) {
+    let cancelled = false;
+    cancelPort?.addEventListener("message", ({ data }) => {
+      if (data === "abort") cancelled = true;
+    });
+    cancelPort?.start();
+    const isCancelled = () =>
+      new Promise<boolean>((resolve) => setTimeout(() => resolve(cancelled), 0));
     return comlink.proxy(this.searchPath(from, to, { ...options, isCancelled }));
   }
 

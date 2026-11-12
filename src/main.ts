@@ -15,7 +15,7 @@ import ConverterWorker from "./Converter.js?worker";
 import { CurrentPage, LoadingToolsText, Pages } from "./ui/AppState.js";
 import { signal } from "@preact/signals";
 import { Mode, ModeEnum } from "./ui/ModeStore.js";
-import { ProgressStore } from "./ui/ProgressStore.js";
+import { ProgressStore, relayPortProgress } from "./ui/ProgressStore.js";
 import { detectFormats } from "./detectFormat.js";
 import { SpecialFormats } from "./Formats.js";
 import { distributeOptions, type ConvertOptions } from "./Settings.js";
@@ -198,6 +198,7 @@ async function attemptConvertPath(
     const channel = new MessageChannel();
     const sendAbort = () => channel.port1.postMessage("abort");
     abort.addEventListener("abort", sendAbort, { once: true });
+    relayPortProgress(channel.port1, handlerDef.name);
 
     try {
       const converter =
@@ -215,7 +216,6 @@ async function attemptConvertPath(
           [path[i], path[i + 1]],
           comlink.transfer(files, [...new Set([...files].map((file) => file.bytes.buffer))]),
           { currentStep: i + 1, totalSteps },
-          comlink.proxy(ProgressStore),
           comlink.transfer(channel.port2, [channel.port2]),
         );
 
@@ -288,8 +288,6 @@ async function attemptConvertPath(
       return null;
     } finally {
       abort.removeEventListener("abort", sendAbort);
-      channel.port1.close();
-      channel.port2.close();
     }
   }
 
@@ -426,42 +424,51 @@ async function searchAndConvert(
   search: SearchContext,
 ): Promise<{ files: FileData[]; path: ConvertPathNode[] } | null> {
   const { abort, depth, settings, strict } = search;
-  const paths = await window.traversionGraph.searchPathProxied(
-    from,
-    to,
-    {
-      simpleMode: Mode.value === ModeEnum.Simple,
-      requiredSettings: strict ? settings : {},
-    },
-    comlink.proxy(() => abort.aborted),
-  );
-  while (true) {
-    const { value: path, done } = await paths.next();
-    abort.throwIfAborted();
-    if (done) return null;
-    const openEnded = path.at(-1)!.format.mime === SpecialFormats.ANY.mime;
-    if (openEnded && depth >= MAX_ANY_DEPTH) continue;
-    if (!openEnded && path.at(-1)?.handler.name === to.handler.name) {
-      path[path.length - 1] = to;
-    }
-    if (openEnded) {
-      // The settings are for the real output, which the rest of the path produces.
-      const attempt = await attemptConvertPath(files, path, abort);
+  const cancel = new MessageChannel();
+  const sendCancel = () => cancel.port1.postMessage("abort");
+  if (abort.aborted) sendCancel();
+  else abort.addEventListener("abort", sendCancel, { once: true });
+  try {
+    const paths = await window.traversionGraph.searchPathProxied(
+      from,
+      to,
+      {
+        simpleMode: Mode.value === ModeEnum.Simple,
+        requiredSettings: strict ? settings : {},
+      },
+      comlink.transfer(cancel.port2, [cancel.port2]),
+    );
+    while (true) {
+      const { value: path, done } = await paths.next();
+      abort.throwIfAborted();
+      if (done) return null;
+      const openEnded = path.at(-1)!.format.mime === SpecialFormats.ANY.mime;
+      if (openEnded && depth >= MAX_ANY_DEPTH) continue;
+      if (!openEnded && path.at(-1)?.handler.name === to.handler.name) {
+        path[path.length - 1] = to;
+      }
+      if (openEnded) {
+        // The settings are for the real output, which the rest of the path produces.
+        const attempt = await attemptConvertPath(files, path, abort);
+        if (!attempt) continue;
+        const result = await continueFromAny(attempt.files, path, to, search);
+        if (result) return result;
+        continue;
+      }
+      const distributed = distributeOptions(path, settings);
+      const attempt = await attemptConvertPath(files, distributed.path, abort);
       if (!attempt) continue;
-      const result = await continueFromAny(attempt.files, path, to, search);
-      if (result) return result;
-      continue;
+      if (distributed.unsupported.length) {
+        ProgressStore.log(
+          `No step of this conversion supports ${distributed.unsupported.join(", ")}, so ${distributed.unsupported.length === 1 ? "it was" : "they were"} ignored.`,
+          "warn",
+        );
+      }
+      return attempt;
     }
-    const distributed = distributeOptions(path, settings);
-    const attempt = await attemptConvertPath(files, distributed.path, abort);
-    if (!attempt) continue;
-    if (distributed.unsupported.length) {
-      ProgressStore.log(
-        `No step of this conversion supports ${distributed.unsupported.join(", ")}, so ${distributed.unsupported.length === 1 ? "it was" : "they were"} ignored.`,
-        "warn",
-      );
-    }
-    return attempt;
+  } finally {
+    abort.removeEventListener("abort", sendCancel);
+    cancel.port1.close();
   }
 }
 
