@@ -257,7 +257,6 @@ const Formats = {
   MC_MAP_GRID: new FormatDefinition("Minecraft Map File (Grid)", "mcmap_grid", "dat", "application/x-minecraft-map", Category.DATA),
   MC_LANG: new FormatDefinition("Minecraft Language Localization File", "minecraft-lang", "lang", "text/plain", Category.TEXT),
   BRARCHIVE: new FormatDefinition("Minecraft Bedrock Archive", "brarchive", "brarchive", "image/x-brarchive", Category.ARCHIVE),
-  MRPACK: new FormatDefinition("Modrinth Modpack", "mrpack", "mrpack", "application/x-modrinth-modpack+zip", Category.ARCHIVE),
   // games - packages
   SB3: new FormatDefinition("Scratch 3 Project", "sb3", "sb3", "application/x.scratch.sb3", Category.ARCHIVE),
   LOVE: new FormatDefinition("LÖVE Game Package", "love", "love", "application/zip", Category.ARCHIVE),

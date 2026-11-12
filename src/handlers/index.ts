@@ -93,7 +93,6 @@ const HANDLERS = {
   brarchive: [],
   wasiRunner: [],
   clang: [],
-  mcModpack: [],
   azw3: [],
   wavebreak: [],
   gdlvl: [],
