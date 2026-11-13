@@ -36,6 +36,18 @@ const toFFmpegName = (codec: string) =>
 const fromFFmpegName = <T extends string>(codecs: readonly T[], name?: string) =>
   name === undefined ? undefined : codecs.find((codec) => toFFmpegName(codec) === name);
 
+// mediabunny encodes WAV as pcm-s16 by default, so keep the bit depth of FLAC sources
+// from STREAMINFO (bits 103-107 after the 8-byte "fLaC" + block header)
+const flacPcmCodec = async (track: mb.InputAudioTrack) => {
+  const description = (await track.getDecoderConfig())?.description;
+  if ((await track.getCodec()) !== "flac" || !description) return;
+  const bytes = ArrayBuffer.isView(description)
+    ? new Uint8Array(description.buffer, description.byteOffset, description.byteLength)
+    : new Uint8Array(description);
+  const bits = (((bytes[20] & 1) << 4) | (bytes[21] >> 4)) + 1;
+  return bits > 24 ? "pcm-s32" : bits > 16 ? "pcm-s24" : undefined;
+};
+
 class mediabunnyHandler implements FormatHandler {
   public readonly name = "mediabunny";
   public supportedFormats: FileFormat[] = [];
@@ -146,12 +158,14 @@ class mediabunnyHandler implements FormatHandler {
           codec: fromFFmpegName(mbOutputFormat.getSupportedVideoCodecs(), options.videoCodec),
           bitrate: options.videoBitrate && options.videoBitrate * 1000,
         },
-        audio: {
+        audio: async (track) => ({
           sampleRate: options.sampleRate,
           numberOfChannels: options.channels,
-          codec: audioCodec,
+          codec:
+            audioCodec ??
+            (mbOutputFormat instanceof mb.WavOutputFormat ? await flacPcmCodec(track) : undefined),
           bitrate: options.audioBitrate && options.audioBitrate * 1000,
-        },
+        }),
       });
 
       conversion.onProgress = (progress, seconds) => {
