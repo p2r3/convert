@@ -288,3 +288,31 @@ test("should stop at ANY output and only continue from it when searching from AN
   expect(toJpeg(false).has("application/zip(zip)")).toBe(false);
   expect(toJpeg(false).has("image/png(png)")).toBe(true);
 });
+
+test("should not route a lossless conversion through a lossy format\n", async () => {
+  const audioHandlers = [
+    new MockedHandler("mediabunny", [
+      Formats.WAV.builder("wav").lossless().fromTo(),
+      Formats.OGG.builder("ogg").fromTo(),
+      Formats.FLAC.builder("flac").lossless().fromTo(),
+    ]),
+    new MockedHandler("FFmpeg", [
+      ...Array.from({ length: 50 }, (_, i) => Formats.MP3.builder(`filler${i}`).fromTo()),
+      Formats.WAV.builder("wav").lossless().fromTo(),
+      Formats.FLAC.builder("flac").lossless().fromTo(),
+      Formats.FLO.builder("flo").lossless().fromTo(),
+    ]),
+  ];
+  const [mediabunny, ffmpeg] = audioHandlers;
+  const flac = new ConvertPathNode(mediabunny, Formats.FLAC.builder("flac").lossless().fromTo());
+  const wav = new ConvertPathNode(mediabunny, Formats.WAV.builder("wav").lossless().fromTo());
+  const graph = new TraversionGraph();
+  graph.init(audioHandlers);
+  // Both direct conversions failed, so a detour is needed
+  graph.addDeadEndPath([flac, wav]);
+  graph.addDeadEndPath([flac, new ConvertPathNode(ffmpeg, wav.format)]);
+
+  const paths = graph.searchPath(flac, wav, { simpleMode: true });
+  const { value: path } = await paths.next();
+  expect(path!.map((node) => node.format.format)).toEqual(["flac", "flo", "wav"]);
+});

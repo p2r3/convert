@@ -60,6 +60,7 @@ const HANDLER_PRIORITY_COST: number = 0.02; // Cost multiplier for handler prior
 const FORMAT_PRIORITY_COST: number = 0.05; // Cost multiplier for format priority. Higher values will make the algorithm prefer formats with higher priority more strongly.
 const ANY_OUTPUT_COST: number = 3; // Estimated cost from the ANY node to any other format. The real formats are only known after the step runs, so this is an optimistic guess that should lose to known conversion paths.
 const ANY_INPUT_COST: number = 2; // Extra cost for edges into handlers that accept SpecialFormats.ANY. Discourages generic "pack" conversions so the algorithm prefers more specific conversion paths (e.g. rename-then-convert over wrapping a file as-is).
+const LOSSY_DETOUR_COST: number = 5; // Extra cost for a path from a lossless format to a lossless format that passes through a lossy one (e.g. FLAC → AAC → WAV). The output is only as good as the worst step.
 
 const LOG_FREQUENCY = 1000;
 const MAX_QUEUED_PATHS = 15_000_000;
@@ -725,6 +726,14 @@ export class TraversionGraph {
       return false;
     };
     const last = categoriesInPath.length - 1;
+    if (
+      last >= 2 &&
+      path[0].format.lossless &&
+      path[last].format.lossless &&
+      !path[last - 1].format.lossless
+    ) {
+      costs.push({ reason: "Lossy detour", cost: LOSSY_DETOUR_COST });
+    }
     this.categoryAdaptiveCosts.forEach((c) => {
       if (endsWithSequence(c.categories, last) && !endsWithSequence(c.categories, last - 1)) {
         costs.push({ reason: `Adaptive ${c.categories.join(" → ")}`, cost: c.cost });
