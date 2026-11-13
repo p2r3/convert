@@ -86,7 +86,7 @@ class mediabunnyHandler implements FormatHandler {
         to,
         internal: format,
         category,
-        lossless: false,
+        lossless: format === "wav" || format === "flac",
         options: to ? options : undefined,
       });
     }
