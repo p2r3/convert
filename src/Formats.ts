@@ -140,6 +140,7 @@ const Formats = {
   INI: new FormatDefinition("Initialization file", "ini", "ini", "text/plain", Category.DATA),
   CSV: new FormatDefinition("Comma Separated Values", "csv", "csv", "text/csv", Category.DATA),
   PBF: new FormatDefinition("Protobuf Binary Format", "pbf", "pbf", "application/protobuf", Category.DATA),
+  ICS: new FormatDefinition("iCalendar", "ics", "ics", "text/calendar", Category.DATA),
 
   // code
   PYTHON: new FormatDefinition("Python Script", "py", "py", "text/x-python", Category.CODE),
