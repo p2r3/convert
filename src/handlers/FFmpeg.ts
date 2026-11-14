@@ -21,8 +21,23 @@ const CODEC_PATCHES: Record<string, { add?: string[]; remove?: string[] }> = {
   matroska: { remove: ["rawvideo", "rv10", "rv20"] },
 };
 
-// Formats FFmpeg writes with a lossless codec by default
-const LOSSLESS_FORMATS = ["png", "bmp", "tiff", "wav", "w64", "flac", "wv", "tta", "aiff"];
+const LOSSLESS_FORMATS = [
+  "png",
+  "apng",
+  "bmp",
+  "tiff",
+  "fits",
+  "wav",
+  "w64",
+  "flac",
+  "wv",
+  "tta",
+  "aiff",
+  "au",
+  "caf",
+  "ircam",
+  "sox",
+];
 
 type FFmpegOptions = {
   preRun?: (ffmpeg: FFmpegModule) => void;
