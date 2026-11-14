@@ -28,6 +28,8 @@ const supported = async <T>(items: readonly T[], fn: (item: T) => Promise<boolea
 const can = async <T>(items: readonly T[], fn: (item: T) => Promise<boolean>) =>
   !items.length || (await supported(items, fn)).length > 0;
 
+const LOSSLESS_FORMATS = ["wav", "flac"];
+
 const LAZY_ENCODERS = ["flac", "mp3", "aac"];
 
 const FFMPEG_NAMES: Record<string, string> = { avc: "h264", ulaw: "pcm_mulaw", alaw: "pcm_alaw" };
@@ -86,7 +88,7 @@ class mediabunnyHandler implements FormatHandler {
         to,
         internal: format,
         category,
-        lossless: false,
+        lossless: LOSSLESS_FORMATS.includes(format),
         options: to ? options : undefined,
       });
     }

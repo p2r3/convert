@@ -21,6 +21,24 @@ const CODEC_PATCHES: Record<string, { add?: string[]; remove?: string[] }> = {
   matroska: { remove: ["rawvideo", "rv10", "rv20"] },
 };
 
+const LOSSLESS_FORMATS = [
+  "png",
+  "apng",
+  "bmp",
+  "tiff",
+  "fits",
+  "wav",
+  "w64",
+  "flac",
+  "wv",
+  "tta",
+  "aiff",
+  "au",
+  "caf",
+  "ircam",
+  "sox",
+];
+
 type FFmpegOptions = {
   preRun?: (ffmpeg: FFmpegModule) => void;
   postRun?: (ffmpeg: FFmpegModule) => void;
@@ -262,7 +280,7 @@ class FFmpegHandler implements FormatHandler {
           to: flags.includes("E"),
           internal: format,
           category,
-          lossless: ["png", "bmp", "tiff"].includes(format),
+          lossless: LOSSLESS_FORMATS.includes(format),
         });
       }
     }
