@@ -97,6 +97,7 @@ const HANDLERS = {
   wavebreak: [],
   gdlvl: [],
   pbf: [],
+  imageToIcs: [],
 } as const;
 
 // handlers can only be named things listed above
