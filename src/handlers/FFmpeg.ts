@@ -225,6 +225,7 @@ class FFmpegHandler implements FormatHandler {
       if (description.startsWith("piped ")) continue;
       if (description.toLowerCase().includes("subtitle")) continue;
       if (description.toLowerCase().includes("manifest")) continue;
+      if (/\btesting\b/i.test(description)) continue;
 
       for (const format of formats) {
         let primaryFormat = formats[0];
@@ -296,6 +297,8 @@ class FFmpegHandler implements FormatHandler {
       return priorityIndexB - priorityIndexA;
     });
 
+    // TODO: filter remaining waterfalls/non-file muxers (data, ffmetadata, null, tee, fifo,
+    // segment, hls, dash, rtp, sdp, ...), maybe via AVFMT_NOFILE in muxercodecs.patch
     const remove = [
       // RTSP stalls when attempted
       "rtsp",

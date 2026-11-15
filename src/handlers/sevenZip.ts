@@ -47,6 +47,7 @@ class sevenZipHandler implements FormatHandler {
       const [flags, name, extension, ...extra] = formatLine.trim().split(/ +/);
 
       if (name === "Hash") continue;
+      if (["PE", "ELF", "MachO", "COFF", "TE", "UEFIf"].includes(name)) continue;
       let mimeType = normalizeMimeType(mime.getType(extension) || `application/${extension}`);
       if (extension === "exe") mimeType = Formats.EXE.mime;
       let displayName = `${name} archive`;
