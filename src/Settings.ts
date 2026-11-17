@@ -92,8 +92,23 @@ export function sanitizeOptions(format: FileFormat, options: ConvertOptions = {}
   );
 }
 
+export const isShared = (key: string) => Object.hasOwn(Settings, key);
+
+export const qualifyKey = (handler: string, key: string) =>
+  isShared(key) ? key : `${handler}/${key}`;
+
+/** The option name a step's handler sees for `key`, or `undefined` if it isn't that handler's. */
+function localKey(node: ConvertPathNode, key: string) {
+  if (isShared(key)) return key;
+  const slash = key.indexOf("/");
+  if (slash < 0 || key.slice(0, slash) !== node.handler.name) return undefined;
+  const local = key.slice(slash + 1);
+  return isShared(local) ? undefined : local;
+}
+
 function stepSupports(node: ConvertPathNode, key: string, value: unknown) {
-  const spec = specOf(node.format, key);
+  const local = localKey(node, key);
+  const spec = local === undefined ? undefined : specOf(node.format, local);
   return spec !== undefined && isValidOption(spec, value);
 }
 
@@ -110,7 +125,7 @@ export function distributeOptions(path: ConvertPathNode[], settings: ConvertOpti
     const steps = result
       .slice(content ? 1 : Math.max(1, result.length - 1))
       .filter((node) => stepSupports(node, key, value));
-    for (const node of steps) (node.options ??= {})[key] = value;
+    for (const node of steps) (node.options ??= {})[localKey(node, key)!] = value;
     if (!steps.length) unsupported.push(key);
   }
   return { path: result, unsupported };

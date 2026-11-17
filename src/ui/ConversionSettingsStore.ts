@@ -1,7 +1,14 @@
 import { signal } from "@preact/signals";
 
-import type { FileFormat } from "src/FormatHandler";
-import { Settings, isValidOption, type ConvertOptions, type OptionSpec } from "src/Settings";
+import type { FileFormat, HandlerDefinition } from "src/FormatHandler";
+import {
+  Settings,
+  isShared,
+  isValidOption,
+  qualifyKey,
+  type ConvertOptions,
+  type OptionSpec,
+} from "src/Settings";
 
 export const SettingsPanelOpen = signal(false);
 
@@ -20,22 +27,21 @@ export function resetSettings() {
 }
 
 export function availableSettings(
-  formats: FileFormat[],
+  outputs: [FileFormat, HandlerDefinition][],
   sharedOnly = false,
 ): Map<string, OptionSpec> {
   const specs = new Map<string, OptionSpec>();
-  for (const format of formats) {
+  for (const [format, handler] of outputs) {
     for (const [key, declared] of Object.entries(format.options ?? {})) {
-      const shared = Object.hasOwn(Settings, key)
-        ? (Settings as Record<string, OptionSpec>)[key]
-        : undefined;
+      const shared = isShared(key) ? (Settings as Record<string, OptionSpec>)[key] : undefined;
       if (sharedOnly && !shared) continue;
       const spec = declared === true ? shared : ({ ...shared, ...declared } as OptionSpec);
       if (!spec) continue;
-      const existing = specs.get(key);
-      if (!existing) specs.set(key, spec);
+      const name = qualifyKey(handler.name, key);
+      const existing = specs.get(name);
+      if (!existing) specs.set(name, spec);
       else if (existing.type === "enum" && spec.type === "enum")
-        specs.set(key, {
+        specs.set(name, {
           ...existing,
           values: [...new Set([...existing.values, ...spec.values])],
         });

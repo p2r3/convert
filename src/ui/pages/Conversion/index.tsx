@@ -159,10 +159,10 @@ export default function Conversion() {
 
   const settingSpecs = useMemo(() => {
     if (!toOption) return new Map();
-    if (isAdvanced) return availableSettings([toOption[0]]);
+    if (isAdvanced) return availableSettings([toOption]);
     const id = formatIdentifier(toOption[0]);
     return availableSettings(
-      [...allOptions.keys()].filter((f) => f.to && formatIdentifier(f) === id),
+      [...allOptions].filter(([f]) => f.to && formatIdentifier(f) === id),
       true,
     );
   }, [toOption, isAdvanced, allOptions]);

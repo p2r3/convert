@@ -161,10 +161,20 @@ function BooleanField({ id, name, value }: FieldProps) {
   );
 }
 
-function Field({ name, spec }: { name: string; spec: OptionSpec }) {
+// `handler/option` keys show the option name, and the handler too when another field shares it
+const baseLabel = (key: string, spec: OptionSpec) => spec.label ?? key.slice(key.indexOf("/") + 1);
+
+function fieldLabel(name: string, spec: OptionSpec, specs: Map<string, OptionSpec>) {
+  const label = baseLabel(name, spec);
+  const slash = name.indexOf("/");
+  if (slash < 0) return label;
+  const clash = [...specs].some(([key, s]) => key !== name && baseLabel(key, s) === label);
+  return clash ? `${label} (${name.slice(0, slash)})` : label;
+}
+
+function Field({ name, spec, label }: { name: string; spec: OptionSpec; label: string }) {
   const id = `conversion-setting-${name}`;
   const value = ConversionSettings.value[name];
-  const label = spec.label ?? name;
   const props = { id, name, value };
   return (
     <div className={`settings-field settings-field-${spec.type}`}>
@@ -265,7 +275,12 @@ export default function SettingsPanel({ specs, formatName }: SettingsPanelProps)
               {group.note && <p className="settings-panel-note">{group.note}</p>}
               <div className="settings-panel-fields">
                 {group.keys.map((key) => (
-                  <Field key={key} name={key} spec={specs.get(key)!} />
+                  <Field
+                    key={key}
+                    name={key}
+                    spec={specs.get(key)!}
+                    label={fieldLabel(key, specs.get(key)!, specs)}
+                  />
                 ))}
               </div>
             </section>
