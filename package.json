@@ -121,6 +121,7 @@
     "oxc-parser": "^0.157.0",
     "oxfmt": "^0.76.0",
     "oxlint": "^1.91.0",
+    "oxlint-tsgolint": "7.0.2007",
     "puppeteer": "^25.16.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.5"

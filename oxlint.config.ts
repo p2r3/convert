@@ -3,6 +3,7 @@ import { ignorePatterns } from "./oxfmt.config.ts";
 
 export default defineConfig({
   ignorePatterns,
+  options: { typeAware: true },
   categories: {
     correctness: "deny",
     suspicious: "deny",
