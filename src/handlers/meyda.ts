@@ -178,14 +178,8 @@ class meydaHandler implements FormatHandler {
           const start = i * hopSize;
           frameBuffer.fill(0);
           frameBuffer.set(samples.subarray(start, Math.min(start + bufferSize, samples.length)));
-          const spectrum = Meyda.extract("complexSpectrum", frameBuffer);
-          if (
-            !spectrum ||
-            !("real" in spectrum) ||
-            !("imag" in spectrum) ||
-            !(spectrum.real instanceof Float32Array) ||
-            !(spectrum.imag instanceof Float32Array)
-          ) {
+          const spectrum = Meyda.extract(["complexSpectrum"], frameBuffer)?.complexSpectrum;
+          if (!spectrum) {
             throw new Error("Failed to extract audio features!");
           }
           const real = spectrum.real;
