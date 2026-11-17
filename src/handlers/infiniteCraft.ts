@@ -35,7 +35,7 @@ class infiniteCraftHandler implements FormatHandler {
       version: "1.0",
       created: Date.now(),
       updated: 0,
-      instances: [] as any[],
+      instances: [],
       items: words.map((word, index) => ({
         id: index,
         text: word,

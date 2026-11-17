@@ -75,7 +75,7 @@ export function resolveLargestIconSize(maxDimension: number): number {
   return ICON_SIZES.at(-1)!;
 }
 
-export function extractBestPngFromIcns(icnsBytes: Uint8Array): Uint8Array {
+export function extractBestPngFromIcns(icnsBytes: Uint8Array): Uint8Array<ArrayBuffer> {
   if (icnsBytes.length < 8) throw new RangeError("Input is too small for an ICNS file.");
   if (readFourCC(icnsBytes, 0) !== ICNS_MAGIC)
     throw new BadMagicError(`Invalid ICNS signature: ${readFourCC(icnsBytes, 0)}`);
@@ -84,7 +84,7 @@ export function extractBestPngFromIcns(icnsBytes: Uint8Array): Uint8Array {
   const endOffset = Math.min(icnsBytes.length, declaredLength);
   if (declaredLength < 8) throw new RangeError(`Invalid ICNS length: ${declaredLength}`);
 
-  let bestPng: Uint8Array | null = null;
+  let bestPng: Uint8Array<ArrayBuffer> | null = null;
   let bestSize = 0;
   let offset = 8;
 
@@ -134,7 +134,7 @@ class icnsHandler implements FormatHandler {
     this.ready = true;
   }
 
-  async #canvasToPngBytes(size: number, bitmap: ImageBitmap): Promise<Uint8Array> {
+  async #canvasToPngBytes(size: number, bitmap: ImageBitmap): Promise<Uint8Array<ArrayBuffer>> {
     if (!this.#bundle) throw new InitializationError("Handler not initialized.");
     const { canvas, ctx } = this.#bundle;
 
@@ -148,12 +148,12 @@ class icnsHandler implements FormatHandler {
     return bytes;
   }
 
-  async #encodeIcns(pngBytes: Uint8Array): Promise<Uint8Array> {
+  async #encodeIcns(pngBytes: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
     const dimensions = parsePngDimensions(pngBytes);
     const largestSize = resolveLargestIconSize(Math.max(dimensions.width, dimensions.height));
     const targetSizes = ICON_SIZES.filter((size) => size <= largestSize);
 
-    const bitmap = await createImageBitmap(new Blob([pngBytes as BlobPart], { type: "image/png" }));
+    const bitmap = await createImageBitmap(new Blob([pngBytes], { type: "image/png" }));
 
     const chunks: Array<{ type: string; bytes: Uint8Array }> = [];
     try {
@@ -195,7 +195,7 @@ class icnsHandler implements FormatHandler {
     const outputFiles: FileData[] = [];
 
     for (const inputFile of inputFiles) {
-      let bytes: Uint8Array;
+      let bytes: Uint8Array<ArrayBuffer>;
 
       if (inputFormat.internal === "icns" && outputFormat.internal === "png") {
         bytes = extractBestPngFromIcns(inputFile.bytes);

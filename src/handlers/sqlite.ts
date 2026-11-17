@@ -1,6 +1,6 @@
 import Formats from "src/Formats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-import sqlite3InitModule from "@sqlite.org/sqlite-wasm";
+import sqlite3InitModule, { type SqlValue } from "@sqlite.org/sqlite-wasm";
 import { parse } from "papaparse";
 import { decode, encode } from "src/common/index.ts";
 
@@ -62,11 +62,11 @@ class sqliteHandler implements FormatHandler {
 
         for (const table of this.getTables(db)) {
           const stmt = db.prepare(`SELECT * FROM ${table}`);
-          let csvStr = stmt.getColumnNames().join(",") + "\n";
+          let csvStr = stmt.getColumnNames().map(csvField).join(",") + "\n";
           try {
             while (stmt.step()) {
               const row = Array.from({ length: stmt.columnCount }, (_, j) => stmt.get(j));
-              csvStr += row.join(", ") + "\n";
+              csvStr += row.map(csvField).join(",") + "\n";
             }
           } finally {
             stmt.finalize();
@@ -86,21 +86,21 @@ class sqliteHandler implements FormatHandler {
       }
 
       for (const file of inputFiles) {
-        parse(decode(file.bytes), {
+        parse<string[]>(decode(file.bytes), {
           header: false,
           skipEmptyLines: true,
           complete: function (result) {
             const tableName = file.name.replace(".csv", "");
-            const header = result.data[0] as string[];
-            const firstRow = result.data[1] as string[];
+            const header = result.data[0];
+            const firstRow = result.data[1];
 
             const schema = inferSchema(header, firstRow);
             console.log(schema);
             db.exec(`CREATE TABLE ${tableName} (${schema.map((v) => v.join(" ")).join(", ")})`);
 
-            for (const row of result.data.slice(1) as string[][]) {
+            for (const row of result.data.slice(1)) {
               db.exec(
-                `INSERT INTO ${tableName} (${header}) VALUES (${row.map((v, i) => formatValue(v, schema[i][1]))})`,
+                `INSERT INTO ${tableName} (${header.join(",")}) VALUES (${row.map((v, i) => formatValue(v, schema[i][1])).join(",")})`,
               );
             }
           },
@@ -118,6 +118,18 @@ class sqliteHandler implements FormatHandler {
 }
 
 export default sqliteHandler;
+
+/** Formats a value as a CSV field: NULL becomes empty, blobs hex, and fields that need it are quoted. */
+function csvField(value: SqlValue): string {
+  if (value === null) return "";
+  if (typeof value === "object") {
+    return ArrayBuffer.isView(value)
+      ? new Uint8Array(value.buffer, value.byteOffset, value.byteLength).toHex()
+      : new Uint8Array(value).toHex();
+  }
+  const text = String(value);
+  return /[",\r\n]/u.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+}
 
 function formatValue(value: string, type: string) {
   if (value == "") return "NULL";

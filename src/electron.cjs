@@ -44,12 +44,12 @@ function createWindow() {
     },
   });
 
-  mainWindow.loadURL("app://-/index.html");
+  void mainWindow.loadURL("app://-/index.html");
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     const parsedUrl = new URL(url);
     if (parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:") {
-      shell.openExternal(url);
+      void shell.openExternal(url);
     }
     return { action: "deny" };
   });
@@ -135,7 +135,7 @@ function setupUpdater() {
       defaultId: 0,
       cancelId: 1,
     });
-    if (response === 0) shell.openExternal(RELEASE_URL);
+    if (response === 0) void shell.openExternal(RELEASE_URL);
   });
 
   autoUpdater.on("download-progress", (progress) => {
@@ -177,7 +177,7 @@ function setupUpdater() {
   });
 
   ipcMain.handle("updater:open-release", (event) => {
-    if (isAppSender(event)) shell.openExternal(RELEASE_URL);
+    if (isAppSender(event)) void shell.openExternal(RELEASE_URL);
   });
 
   // False in dev builds and in Linux builds that aren't run as an AppImage
@@ -187,7 +187,7 @@ function setupUpdater() {
   if (autoUpdate) checkForUpdates(false);
 }
 
-app.whenReady().then(() => {
+void app.whenReady().then(() => {
   // Handler: Map every app:// request to local file on disk
   protocol.handle("app", async (request) => {
     try {
@@ -254,7 +254,7 @@ app.on("web-contents-created", (event, contents) => {
       event.preventDefault();
       // Open http(s) URLs in default browser
       if (parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:") {
-        shell.openExternal(navigationUrl);
+        void shell.openExternal(navigationUrl);
       }
     }
   });

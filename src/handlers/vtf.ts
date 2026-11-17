@@ -60,6 +60,12 @@ const VTF_IMAGE_FORMAT = {
 
 type VTFImageFormat = (typeof VTF_IMAGE_FORMAT)[keyof typeof VTF_IMAGE_FORMAT];
 
+function toImageFormat(value: number): VTFImageFormat {
+  const format = Object.values(VTF_IMAGE_FORMAT).find((format) => format === value);
+  if (format === undefined) throw new Error(`Unknown VTF image format ${value}.`);
+  return format;
+}
+
 interface VTFHeader {
   versionMajor: number;
   versionMinor: number;
@@ -135,9 +141,9 @@ function parseHeader(bytes: Uint8Array): VTFHeader {
     flags: view.getUint32(20, true),
     frames: Math.max(1, view.getUint16(24, true)),
     firstFrame: view.getUint16(26, true),
-    imageFormat: view.getInt32(52, true) as VTFImageFormat,
+    imageFormat: toImageFormat(view.getInt32(52, true)),
     mipmapCount: Math.max(1, bytes[56]),
-    lowResImageFormat: view.getInt32(57, true) as VTFImageFormat,
+    lowResImageFormat: toImageFormat(view.getInt32(57, true)),
     lowResWidth: bytes[61],
     lowResHeight: bytes[62],
     depth,
@@ -410,7 +416,7 @@ function decodeDxt3(data: Uint8Array, width: number, height: number): Uint8Clamp
   return out;
 }
 
-function decodeDxt5AlphaBlock(block: Uint8Array, blockOffset: number): Uint8Array {
+function decodeDxt5AlphaBlock(block: Uint8Array, blockOffset: number): Uint8Array<ArrayBuffer> {
   const out = new Uint8Array(16);
   const alpha0 = block[blockOffset];
   const alpha1 = block[blockOffset + 1];

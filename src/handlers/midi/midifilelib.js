@@ -1622,7 +1622,7 @@ export function pngToMidi(pixels, imageWidth, imageHeight) {
  * blit onto a canvas and encode as PNG.
  *
  * @param {Array} table - event table from extractEvents() or buildMidi() parsing
- * @returns {{ pixels: Uint8ClampedArray, width: number, height: number }}
+ * @returns {{ pixels: Uint8ClampedArray<ArrayBuffer>, width: number, height: number }}
  */
 export function midiToPng(table) {
   const SAMPLE_RATE = 34000;

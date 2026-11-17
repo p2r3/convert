@@ -67,7 +67,7 @@ class mcSchematicHandler implements FormatHandler {
    * Note: Currently supports single-region Litematica files.
    */
   private litematicToSchem(data: any): NBT.NBTData {
-    const root = data as any;
+    const root = data;
 
     // 1. Validate
     if (!root.Regions) {
@@ -192,7 +192,7 @@ class mcSchematicHandler implements FormatHandler {
    * Converts a Sponge Schematic V2 NBT compound into a Litematica NBT compound.
    */
   private schemToLitematic(data: any): NBT.NBTData {
-    const root = data as any;
+    const root = data;
 
     // 1. Validate
     if (!root.Width || !root.Height || !root.Length || !root.Palette || !root.BlockData) {
@@ -210,11 +210,8 @@ class mcSchematicHandler implements FormatHandler {
 
     // Invert schematic palette to an array indexed by the ID
     const invertedPalette: { [id: number]: string } = {};
-    for (const [key, value] of Object.keys(schemPalette).map((k) => [
-      k,
-      schemPalette[k].valueOf(),
-    ])) {
-      invertedPalette[value as number] = key as string;
+    for (const [key, id] of Object.entries(schemPalette)) {
+      invertedPalette[Number(id)] = key;
     }
 
     const paletteSize = Object.keys(invertedPalette).length;

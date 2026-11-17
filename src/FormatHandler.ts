@@ -160,7 +160,7 @@ export interface FileData {
    * when passed as input. If you're not sure that your handler won't modify
    * this, wrap it in `new Uint8Array()`.
    */
-  readonly bytes: Uint8Array;
+  readonly bytes: Uint8Array<ArrayBuffer>;
 }
 
 export interface HandlerDefinition {

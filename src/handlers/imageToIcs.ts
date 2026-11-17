@@ -285,7 +285,7 @@ class imageToIcsHandler implements FormatHandler {
     for (const [i, file] of frames.entries()) {
       await ctx?.checkpoint();
       ctx?.progress(`Reading image ${i + 1} of ${frames.length}...`, i / frames.length / 2);
-      const blob = new Blob([file.bytes as BlobPart], { type: inputFormat.mime });
+      const blob = new Blob([file.bytes], { type: inputFormat.mime });
       const image = await createImageBitmap(blob, { colorSpaceConversion: "none" });
       canvas.width = image.width;
       canvas.height = image.height;

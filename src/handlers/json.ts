@@ -5,6 +5,7 @@ import * as yaml from "yaml";
 import { parse, unparse } from "papaparse";
 import { changeExt, decode, encode } from "src/common/index.ts";
 import type { ConvertContext } from "src/ui/ProgressStore.ts";
+import { numberOption } from "src/Settings.ts";
 
 const INDENT = { type: "number", label: "Indent", unit: "spaces", max: 8, integer: true } as const;
 
@@ -61,7 +62,7 @@ export class toJsonHandler implements FormatHandler {
       }
       return {
         name: name,
-        bytes: encode(JSON.stringify(object, null, ctx?.options.indent as number | undefined)),
+        bytes: encode(JSON.stringify(object, null, numberOption(ctx?.options, "indent"))),
       };
     });
   }
@@ -126,7 +127,7 @@ export class fromJsonHandler {
               }
               return r;
             });
-          const columns = [...new Set(object.flatMap((r: any) => Object.keys(r)))] as string[];
+          const columns = [...new Set<string>(object.flatMap((r: object) => Object.keys(r)))];
           if (columns.length) text = unparse(object, { columns: columns, header: true });
           else text = "";
           break;
@@ -168,7 +169,7 @@ export class fromJsonHandler {
           break;
         }
         case "application/yaml": {
-          const indent = ctx?.options.indent as number | undefined;
+          const indent = numberOption(ctx?.options, "indent");
           // yaml rejects an explicit `indent: undefined`
           text = yaml.stringify(object, indent === undefined ? undefined : { indent });
           break;

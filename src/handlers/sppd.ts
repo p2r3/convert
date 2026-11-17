@@ -150,6 +150,8 @@ function getModelBuilder(modelName: string) {
       return createLaserEmitter;
     case "models/props/laser_emitter_center.mdl":
       return () => createLaserEmitter(true);
+    default:
+      return undefined;
   }
 }
 

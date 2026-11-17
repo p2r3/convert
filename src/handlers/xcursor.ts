@@ -76,7 +76,7 @@ class xcursorHandler implements FormatHandler {
         canvas.width = width;
         canvas.height = height;
 
-        const imageData = new ImageData(pixels as ImageDataArray, width, height);
+        const imageData = new ImageData(pixels, width, height);
         ctx.putImageData(imageData, 0, 0);
 
         const bytes = await canvasToBlob(this.#bundle, outputFormat.mime);

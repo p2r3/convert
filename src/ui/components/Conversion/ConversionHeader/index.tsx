@@ -1,7 +1,6 @@
-import { useEffect, useRef } from "preact/hooks";
+import { useRef } from "preact/hooks";
 import { SlidersHorizontal } from "lucide-preact";
-import tippy from "tippy.js";
-import "tippy.js/dist/tippy.css";
+import useTooltip from "src/ui/scripts/useTooltip";
 
 import Logo from "src/ui/components/Logo";
 import SettingsButton from "src/ui/components/SettingsButton";
@@ -23,15 +22,7 @@ function ConversionSettingsButton({ count, disabled }: { count: number; disabled
   const btnRef = useRef<HTMLButtonElement>(null);
   const open = SettingsPanelOpen.value && !disabled;
 
-  useEffect(() => {
-    if (!btnRef.current) return;
-    const instance = tippy(btnRef.current, {
-      content: "Conversion settings",
-      placement: "bottom",
-      delay: [300, 0],
-    });
-    return () => instance.destroy();
-  }, []);
+  useTooltip(btnRef, "Conversion settings");
 
   const label = count ? `Conversion settings (${count} set)` : "Conversion settings";
 

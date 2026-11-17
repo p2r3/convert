@@ -3,9 +3,8 @@ import { openPopup } from "src/ui/PopupStore";
 import { Mode, ModeEnum, toggleMode } from "src/ui/ModeStore";
 import { desktopUpdater, Update, type UpdateState } from "src/ui/UpdateStore";
 import { Settings } from "lucide-preact";
-import tippy from "tippy.js";
-import "tippy.js/dist/tippy.css";
-import { useEffect, useRef } from "preact/hooks";
+import useTooltip from "src/ui/scripts/useTooltip";
+import { useRef } from "preact/hooks";
 import StyledButton, { ButtonVariant } from "src/ui/components/StyledButton";
 
 import "./index.css";
@@ -139,15 +138,7 @@ function SettingsMenu() {
 export default function SettingsButton() {
   const btnRef = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => {
-    if (!btnRef.current) return;
-    const instance = tippy(btnRef.current, {
-      content: "App settings",
-      placement: "bottom",
-      delay: [300, 0],
-    });
-    return () => instance.destroy();
-  }, []);
+  useTooltip(btnRef, "App settings");
 
   // oxlint-disable-next-line unicorn/consistent-function-scoping
   const onSettingsClick = () => {

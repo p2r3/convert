@@ -12,7 +12,11 @@ import { getHandler } from "./handlers/index.js";
 import { sanitizeOptions } from "./Settings";
 
 if (!("window" in globalThis)) {
-  (globalThis as unknown as { window: typeof globalThis }).window = globalThis;
+  Object.defineProperty(globalThis, "window", {
+    value: globalThis,
+    writable: true,
+    configurable: true,
+  });
 }
 
 type ConvertResult = { inputFiles: FileData[] } & (

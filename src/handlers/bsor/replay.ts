@@ -4,6 +4,17 @@ import { decode } from "src/common/index.ts";
 // See BSOR specification for more info:
 // https://github.com/BeatLeader/BS-Open-Replay
 
+/** Returns the member of a numeric enum with this value, if there is one. */
+function enumMember<T extends number>(
+  members: Record<string, T | string>,
+  value: number,
+): T | undefined {
+  for (const member of Object.values(members)) {
+    if (typeof member === "number" && member === value) return member;
+  }
+  return undefined;
+}
+
 export interface Frame {
   time: number;
   fps: number;
@@ -201,6 +212,14 @@ export class Replay {
       throw new BSORError(msg);
     }
 
+    function member<T extends number>(
+      members: Record<string, T | string>,
+      value: number,
+      what: string,
+    ): T {
+      return enumMember(members, value) ?? raise(`Unknown ${what} ${value}`);
+    }
+
     function get(n: number): number {
       return data[n] ?? raise("Unexpected EOF");
     }
@@ -225,7 +244,7 @@ export class Replay {
       bufferU8[1] = byte();
       bufferU8[2] = byte();
       bufferU8[3] = byte();
-      return bufferF32[0]!;
+      return bufferF32[0];
     }
 
     function bool(): boolean {
@@ -308,14 +327,15 @@ export class Replay {
     const noteCount = int();
     for (let i = 0; i < noteCount; i++) {
       const id = int();
-      const scoringType = Math.floor(id / 10000);
+      const scoringType = member(ScoringType, Math.floor(id / 10000), "scoring type");
       const lineIndex = Math.floor(id / 1000) % 10;
       const lineLayer = Math.floor(id / 100) % 10;
-      const color = (Math.floor(id / 10) % 10) as NoteColor;
-      const cutDirection = (id % 10) as CutDirection;
+      const color = member(NoteColor, Math.floor(id / 10) % 10, "note color");
+      const cutDirection = member(CutDirection, id % 10, "cut direction");
       const time = float();
       const spawnTime = float();
-      const type = int() as CutType;
+      // unknown cut types are skipped below
+      const type = enumMember(CutType, int());
       switch (type) {
         case CutType.MISS:
         case CutType.BOMB:
@@ -351,7 +371,7 @@ export class Replay {
               saber: {
                 speed: float(),
                 dir: vector(),
-                type: int() as Saber,
+                type: member(Saber, int(), "saber"),
               },
               cut: {
                 timeDeviation: float(),
@@ -375,7 +395,7 @@ export class Replay {
       const id = int();
       this.walls.push({
         lineIndex: Math.floor(id / 100),
-        type: (Math.floor(id / 10) % 10) as ObstacleType,
+        type: member(ObstacleType, Math.floor(id / 10) % 10, "obstacle type"),
         width: id % 10,
         energy: float(),
         time: float(),

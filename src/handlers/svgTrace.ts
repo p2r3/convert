@@ -5,8 +5,10 @@ import Formats from "src/Formats.ts";
 import { changeExt, encode } from "src/common/index.ts";
 import { blobToCanvas, createCanvas } from "src/common/canvas.ts";
 import type { ConvertContext } from "src/ui/ProgressStore.ts";
+import { numberOption, stringOption } from "src/Settings.ts";
 
 type Preset = keyof typeof imageTracer.optionpresets;
+const isPreset = (name: string): name is Preset => Object.hasOwn(imageTracer.optionpresets, name);
 
 class svgTraceHandler implements FormatHandler {
   public readonly name = "svgTrace";
@@ -38,10 +40,11 @@ class svgTraceHandler implements FormatHandler {
       throw new TypeError(`Unsupported output format: ${outputFormat.internal}`);
 
     const outputFiles: FileData[] = [];
-    const { preset, colors } = convertCtx?.options ?? {};
+    const preset = stringOption(convertCtx?.options, "preset");
+    const colors = numberOption(convertCtx?.options, "colors");
     const options = {
-      ...imageTracer.optionpresets[(preset as Preset | undefined) ?? "default"],
-      ...(colors === undefined ? {} : { numberofcolors: colors as number }),
+      ...imageTracer.optionpresets[preset !== undefined && isPreset(preset) ? preset : "default"],
+      ...(colors === undefined ? {} : { numberofcolors: colors }),
     };
 
     for (const inputFile of inputFiles) {

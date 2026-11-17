@@ -6,7 +6,7 @@ import { extractedParent } from "src/common/path.ts";
 
 interface WadLump {
   name: string;
-  data: Uint8Array;
+  data: Uint8Array<ArrayBuffer>;
 }
 
 interface ParsedWAD {
@@ -58,7 +58,7 @@ class wadHandler implements FormatHandler {
     return { type: magic, lumps };
   }
 
-  private buildWAD(lumps: WadLump[], wadType: string = "PWAD"): Uint8Array {
+  private buildWAD(lumps: WadLump[], wadType: string = "PWAD"): Uint8Array<ArrayBuffer> {
     const headerSize = 12;
     let dataSize = 0;
     for (const lump of lumps) dataSize += lump.data.length;

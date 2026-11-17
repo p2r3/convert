@@ -1,7 +1,7 @@
 import type { FileData, FileFormat, FormatHandler } from "src/FormatHandler.ts";
 import * as NBT from "nbtify";
 import Formats from "src/Formats.ts";
-import { changeExt, decode, encode } from "src/common/index.ts";
+import { changeExt, decode, encode, ownedBytes } from "src/common/index.ts";
 import { compressGzip } from "src/common/gzip.ts";
 
 class nbtHandler implements FormatHandler {
@@ -50,7 +50,7 @@ class nbtHandler implements FormatHandler {
         const bd = await NBT.write(obj);
         outputFiles.push({
           name: changeExt(file.name, outputFormat.extension),
-          bytes: bd,
+          bytes: ownedBytes(bd),
         });
       }
     }
@@ -63,7 +63,7 @@ class nbtHandler implements FormatHandler {
         const bd = await NBT.write(nbt);
         outputFiles.push({
           name: changeExt(file.name, outputFormat.extension),
-          bytes: bd,
+          bytes: ownedBytes(bd),
         });
       }
     }

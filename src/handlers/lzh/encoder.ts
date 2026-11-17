@@ -17,7 +17,7 @@ export class LZHEncoder {
   /**
    * Create an LHA archive from multiple files
    */
-  public create(files: LHAFileInput[]): Uint8Array {
+  public create(files: LHAFileInput[]): Uint8Array<ArrayBuffer> {
     this.output = [];
 
     for (const file of files) {

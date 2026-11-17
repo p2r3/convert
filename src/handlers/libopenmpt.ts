@@ -240,7 +240,7 @@ function buildWav(
   sampleRate: number,
   numChannels: number,
   bitsPerSample: number,
-): Uint8Array {
+): Uint8Array<ArrayBuffer> {
   const bytesPerSample = bitsPerSample / 8;
   const dataSize = pcmData.length * bytesPerSample;
   const buffer = new ArrayBuffer(44 + dataSize);

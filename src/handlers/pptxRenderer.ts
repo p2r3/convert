@@ -4,6 +4,7 @@ import Formats from "src/Formats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import { changeExt } from "src/common/index.ts";
 import type { ConvertContext } from "src/ui/ProgressStore.ts";
+import { numberOption } from "src/Settings.ts";
 
 const DEFAULT_SCALE = 2;
 
@@ -40,15 +41,18 @@ async function canvasToPngDataUrl(canvas: HTMLCanvasElement): Promise<string> {
 
   return await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
-    reader.addEventListener("load", () => resolve(String(reader.result)));
+    reader.addEventListener("load", () =>
+      typeof reader.result === "string"
+        ? resolve(reader.result)
+        : reject(new Error("Could not read the slide as a data URL.")),
+    );
     reader.addEventListener("error", () => reject(reader.error));
     reader.readAsDataURL(blob);
   });
 }
 
 function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
-  const sliced = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
-  return sliced as ArrayBuffer;
+  return bytes.slice().buffer;
 }
 
 export default class pptxRendererHandler implements FormatHandler {
@@ -82,7 +86,7 @@ export default class pptxRendererHandler implements FormatHandler {
     }
 
     const outputFiles: FileData[] = [];
-    const scale = (ctx?.options.scale as number | undefined) ?? DEFAULT_SCALE;
+    const scale = numberOption(ctx?.options, "scale") ?? DEFAULT_SCALE;
     const stagingRoot = document.createElement("div");
     stagingRoot.style.position = "fixed";
     stagingRoot.style.left = "-20000px";

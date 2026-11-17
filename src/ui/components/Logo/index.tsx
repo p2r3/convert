@@ -1,10 +1,11 @@
+import type { TargetedMouseEvent } from "preact";
 import { RefreshCcw } from "lucide-preact";
 import "./index.css";
 
 interface LogoProps {
   showName?: boolean;
   size?: number;
-  onClick?: (event: MouseEvent) => void;
+  onClick?: (event: TargetedMouseEvent<HTMLButtonElement>) => void;
   disabled?: boolean;
 }
 

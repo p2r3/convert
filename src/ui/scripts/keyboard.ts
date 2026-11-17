@@ -29,7 +29,7 @@ export function moveFocus(
   const offset = OFFSETS[event.key];
   if (!offset || hasModifier(event)) return false;
   if (columns === undefined && (event.key === "ArrowDown" || event.key === "ArrowUp")) return false;
-  const index = items.indexOf(event.target as HTMLElement);
+  const index = items.findIndex((item) => item === event.target);
   if (index < 0) return false;
 
   const length = items.length;

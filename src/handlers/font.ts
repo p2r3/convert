@@ -4,7 +4,7 @@ import { SVGPathData } from "svg-pathdata";
 import { compress, decompress } from "woff2-encoder";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import Formats from "src/Formats.ts";
-import { changeExt, decode, encode } from "src/common/index.ts";
+import { changeExt, decode, encode, ownedBytes } from "src/common/index.ts";
 
 function escapeHtml(str: string) {
   const map = new Map<string, string>();
@@ -206,15 +206,18 @@ async function sfntToWoff2(inputFile: FileData): Promise<FileData> {
   const font = parse(inputFile.bytes.buffer);
   const sfnt = new Uint8Array(font.toArrayBuffer());
 
-  const bytes = await compress(sfnt);
+  const bytes = ownedBytes(await compress(sfnt));
 
   const name = changeExt(inputFile.name, "woff2");
 
   return { bytes, name };
 }
 
-async function normalizeToSfnt(inputFile: FileData, inputFormat: FileFormat): Promise<Uint8Array> {
-  if (inputFormat.internal === "woff2") return await decompress(inputFile.bytes);
+async function normalizeToSfnt(
+  inputFile: FileData,
+  inputFormat: FileFormat,
+): Promise<Uint8Array<ArrayBuffer>> {
+  if (inputFormat.internal === "woff2") return ownedBytes(await decompress(inputFile.bytes));
   else if (inputFormat.internal === "svg") return svgToOtf(inputFile).bytes;
 
   return inputFile.bytes;

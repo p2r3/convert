@@ -113,7 +113,8 @@ async function htmlContentToSvgString(
     frame.contentDocument!.body.appendChild(host);
     const shadow = host.attachShadow({ mode: "closed" });
 
-    const html = parsed.documentElement.cloneNode(true) as HTMLElement;
+    const html = parsed.documentElement.cloneNode(true);
+    if (!(html instanceof HTMLElement)) throw new Error("The document has no HTML root.");
     shadow.appendChild(html);
     const root = html.querySelector("body")!;
 

@@ -69,12 +69,15 @@ export const ProgressStore = {
 };
 
 export function createPortProgressStore(port: MessagePort): IProgressStore {
+  // Values typed `any` can still get here, and postMessage throws on what it can't clone.
+  /* oxlint-disable typescript/no-unnecessary-type-conversion */
   return {
     progress: (message, percent) =>
       port.postMessage({ type: "progress", message: String(message), percent: Number(percent) }),
     log: (message, level = "log") =>
       port.postMessage({ type: "log", message: String(message), level }),
   };
+  /* oxlint-enable typescript/no-unnecessary-type-conversion */
 }
 
 export function relayPortProgress(port: MessagePort, pluginName: string) {

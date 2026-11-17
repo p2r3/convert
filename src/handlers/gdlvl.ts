@@ -1,4 +1,4 @@
-import { changeExt, decode, encode } from "src/common/index.ts";
+import { changeExt, decode, encode, ownedBytes } from "src/common/index.ts";
 import { compressGzip, decompressGzip } from "src/common/gzip.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import Formats from "src/Formats.ts";
@@ -44,7 +44,7 @@ class gdlvlHandler implements FormatHandler {
         throw new Error(`Cannot convert from ${inputFormat.extension}`);
       }
 
-      let bytes: Uint8Array | null = null;
+      let bytes: Uint8Array<ArrayBuffer> | null = null;
 
       if (outputFormat.internal === "gmd") {
         bytes = encode(data);
@@ -52,7 +52,7 @@ class gdlvlHandler implements FormatHandler {
         const zip = new JSZip();
         zip.file("level.meta", "{}");
         zip.file("level.data", data);
-        bytes = await zip.generateAsync({ type: "uint8array" });
+        bytes = ownedBytes(await zip.generateAsync({ type: "uint8array" }));
       } else if (outputFormat.internal === "gdlvl") {
         const compressed = await compressGzip(encode(data));
         bytes = encode(compressed.toBase64({ alphabet: "base64url" }));

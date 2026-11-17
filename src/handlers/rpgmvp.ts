@@ -29,7 +29,7 @@ class rpgmvpHandler implements FormatHandler {
     }
 
     for (const inputFile of inputFiles) {
-      const as_buffer = inputFile.bytes.buffer as ArrayBuffer;
+      const as_buffer = inputFile.bytes.buffer;
 
       const encryption_key = Decrypter.getKeyFromPNG(16, as_buffer);
       const decrypter = new Decrypter(encryption_key);

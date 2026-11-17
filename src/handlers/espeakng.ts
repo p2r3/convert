@@ -1,10 +1,10 @@
 import Formats from "src/Formats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import { SimpleTTS } from "built/espeakng.js/js/espeakng-simple.js";
-import { WaveFile } from "wavefile";
-import type { TypedWaveFile } from "src/common/wav.ts";
-import { changeExt, decode } from "src/common/index.ts";
+import { changeExt, decode, ownedBytes } from "src/common/index.ts";
 import type { ConvertContext } from "src/ui/ProgressStore.ts";
+import { numberOption, stringOption } from "src/Settings.ts";
+import { typedWaveFile } from "src/common/wav.ts";
 
 // voice files bundled into espeakng.worker.data, minus the mbrola ones
 // oxfmt-ignore
@@ -24,11 +24,15 @@ const PLAYBACK_RATE = 1.4;
 const DEFAULT_RATE = 220;
 
 // the bundled typings leave out speak's options argument
-type Speak = (
-  text: string,
-  options: { voice?: string; rate?: number; pitch?: number },
-  callback: (audio: Float32Array, sampleRate: number) => void,
-) => void;
+declare module "built/espeakng.js/js/espeakng-simple.js" {
+  interface SimpleTTS {
+    speak(
+      text: string,
+      options: { voice?: string; rate?: number; pitch?: number },
+      callback: (audio: Float32Array, sampleRate: number) => void,
+    ): void;
+  }
+}
 
 export class espeakngHandler implements FormatHandler {
   public readonly name = "espeakng";
@@ -90,27 +94,26 @@ export class espeakngHandler implements FormatHandler {
     ctx?: ConvertContext,
   ): Promise<FileData[]> {
     const tts = await this.getTTS();
-    const speak = tts.speak.bind(tts) as unknown as Speak;
-    const { voice, speed, pitch } = ctx?.options ?? {};
+    const speed = numberOption(ctx?.options, "speed");
     const speakOptions = {
-      voice: voice as string | undefined,
-      rate: speed === undefined ? undefined : Math.round((speed as number) / PLAYBACK_RATE),
-      pitch: pitch as number | undefined,
+      voice: stringOption(ctx?.options, "voice"),
+      rate: speed === undefined ? undefined : Math.round(speed / PLAYBACK_RATE),
+      pitch: numberOption(ctx?.options, "pitch"),
     };
     return Promise.all(
       inputFiles.map(async (file) => {
         const [samples, sampleRate] = await new Promise<[Float32Array, number]>((resolve) => {
-          speak(decode(file.bytes), speakOptions, (audio, sampleRate) => {
+          tts.speak(decode(file.bytes), speakOptions, (audio, sampleRate) => {
             resolve([audio, sampleRate]);
           });
         });
-        const wav = new WaveFile() as TypedWaveFile;
+        const wav = typedWaveFile();
         // Increasing pitch doesn't seem to do anything, so instead we
         // decrease playback rate and increase playback sample rate
         wav.fromScratch(1, sampleRate * PLAYBACK_RATE, "32f", samples);
         return {
           name: changeExt(file.name, "wav"),
-          bytes: wav.toBuffer(),
+          bytes: ownedBytes(wav.toBuffer()),
         };
       }),
     );

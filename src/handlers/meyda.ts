@@ -2,13 +2,12 @@ import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 
 import Meyda from "meyda";
 import Formats from "src/Formats.ts";
-import { WaveFile } from "wavefile";
 import { InitializationError } from "src/errors.ts";
-import type { TypedWaveFile } from "src/common/wav.ts";
-import { changeExt } from "src/common/index.ts";
+import { changeExt, ownedBytes } from "src/common/index.ts";
 import { canvasToBlob, createCanvas, type CanvasBundle } from "src/common/canvas.ts";
 import { Settings } from "src/Settings.ts";
 import type { ConvertContext } from "src/ui/ProgressStore.ts";
+import { typedWaveFile } from "src/common/wav.ts";
 
 const SAMPLE_RATE = 34000;
 
@@ -62,7 +61,7 @@ class meydaHandler implements FormatHandler {
     if (inputIsImage) {
       const sampleRate = convertCtx?.options.sampleRate ?? SAMPLE_RATE;
       for (const inputFile of inputFiles) {
-        const blob = new Blob([inputFile.bytes as BlobPart], { type: inputFormat.mime });
+        const blob = new Blob([inputFile.bytes], { type: inputFormat.mime });
 
         const image = await createImageBitmap(blob);
 
@@ -148,16 +147,16 @@ class meydaHandler implements FormatHandler {
           audioData[i] /= max;
         }
 
-        const wav = new WaveFile() as TypedWaveFile;
+        const wav = typedWaveFile();
         wav.fromScratch(1, sampleRate, "32f", audioData);
 
-        const bytes = wav.toBuffer();
+        const bytes = ownedBytes(wav.toBuffer());
         const name = changeExt(inputFile.name, outputFormat.extension);
         outputFiles.push({ bytes, name });
       }
     } else {
       for (const inputFile of inputFiles) {
-        const wav = new WaveFile(inputFile.bytes) as TypedWaveFile;
+        const wav = typedWaveFile(inputFile.bytes);
         wav.toBitDepth("32f");
         wav.toSampleRate(SAMPLE_RATE);
 
@@ -180,11 +179,17 @@ class meydaHandler implements FormatHandler {
           frameBuffer.fill(0);
           frameBuffer.set(samples.subarray(start, Math.min(start + bufferSize, samples.length)));
           const spectrum = Meyda.extract("complexSpectrum", frameBuffer);
-          if (!spectrum || !("real" in spectrum) || !("imag" in spectrum)) {
+          if (
+            !spectrum ||
+            !("real" in spectrum) ||
+            !("imag" in spectrum) ||
+            !(spectrum.real instanceof Float32Array) ||
+            !(spectrum.imag instanceof Float32Array)
+          ) {
             throw new Error("Failed to extract audio features!");
           }
-          const real = spectrum.real as Float32Array;
-          const imaginary = spectrum.imag as Float32Array;
+          const real = spectrum.real;
+          const imaginary = spectrum.imag;
 
           const pixels = new Uint8ClampedArray(imageHeight * 4);
           for (let j = 0; j < imageHeight; j++) {
@@ -202,7 +207,7 @@ class meydaHandler implements FormatHandler {
             pixels[pixelIndex + 2] = phaseNormalized;
             pixels[pixelIndex + 3] = 0xff;
           }
-          const imageData = new ImageData(pixels as ImageDataArray, 1, imageHeight);
+          const imageData = new ImageData(pixels, 1, imageHeight);
           ctx.putImageData(imageData, i, 0);
         }
 

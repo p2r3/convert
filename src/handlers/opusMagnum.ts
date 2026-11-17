@@ -158,7 +158,7 @@ function write_twoComplement(input: number): number {
   return output;
 }
 
-function renderMolecule(molecule: OM_Molecule, format: string): Uint8Array {
+function renderMolecule(molecule: OM_Molecule, format: string): Uint8Array<ArrayBuffer> {
   if (molecule.primes.length === 0) {
     throw "Error, empty molecule.";
   }
@@ -914,7 +914,7 @@ export class opusMagnumITMHandler implements FormatHandler {
       for (const file of inputFiles) {
         // Some code copied from mcmap.ts
         console.log("Creating blob for " + file.name + "...");
-        const blob = new Blob([file.bytes as BlobPart], { type: inputFormat.mime });
+        const blob = new Blob([file.bytes], { type: inputFormat.mime });
         console.log("Blob created for " + file.name);
 
         console.log("Creating image for " + file.name + "...");

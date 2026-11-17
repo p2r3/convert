@@ -502,10 +502,7 @@ export class TraversionGraph {
     if (cached) return cached;
     const costs = this.nodes.map(() => Infinity);
     costs[startIndex] = 0;
-    const queue = new PriorityQueue<{ index: number; cost: number }>(
-      1000,
-      (a, b) => a.cost - b.cost,
-    );
+    const queue = new PriorityQueue<{ index: number; cost: number }>((a, b) => a.cost - b.cost);
     queue.add({ index: startIndex, cost: 0 });
     // The ANY node is assumed to lead to every format at ANY_OUTPUT_COST.
     if (optimistic && reverse && this.anyIndex !== -1 && this.anyIndex !== startIndex) {
@@ -566,11 +563,10 @@ export class TraversionGraph {
     // A*: base edge costs estimate the remaining costs
     const fromIndex = this.nodeIndexByIdentifier.get(formatIdentifier(from.format)) ?? -1;
     const toIndex = this.nodeIndexByIdentifier.get(formatIdentifier(to.format)) ?? -1;
-    if (fromIndex === -1 || toIndex === -1) return []; // If either format is not in the graph, return empty array
+    if (fromIndex === -1 || toIndex === -1) return; // If either format is not in the graph, return empty array
     const remainingCosts = this.calculateEdgeCosts(toIndex, true);
     if (!Number.isFinite(remainingCosts[fromIndex])) return;
     const queue = new PriorityQueue<QueueNode>(
-      1000,
       (a, b) => a.cost + remainingCosts[a.index] - (b.cost + remainingCosts[b.index]),
     );
     queue.add({ index: fromIndex, cost: 0, path: [from] });

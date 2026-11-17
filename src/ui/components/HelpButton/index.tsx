@@ -1,22 +1,14 @@
 import { PopupData } from "src/ui";
 import { popupOpen } from "src/ui/PopupStore";
 import { HelpCircle } from "lucide-preact";
-import tippy from "tippy.js";
-import { useEffect, useRef } from "preact/hooks";
+import useTooltip from "src/ui/scripts/useTooltip";
+import { useRef } from "preact/hooks";
 import StyledButton, { ButtonVariant } from "src/ui/components/StyledButton";
 
 export default function HelpButton() {
   const btnRef = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => {
-    if (!btnRef.current) return;
-    const instance = tippy(btnRef.current, {
-      content: "Help & Info",
-      placement: "bottom",
-      delay: [300, 0],
-    });
-    return () => instance.destroy();
-  }, []);
+  useTooltip(btnRef, "Help & Info");
 
   // oxlint-disable-next-line unicorn/consistent-function-scoping
   const onHelpClick = () => {

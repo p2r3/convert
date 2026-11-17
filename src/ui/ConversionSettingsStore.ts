@@ -35,7 +35,7 @@ export function availableSettings(
     for (const [key, declared] of Object.entries(format.options ?? {})) {
       const shared = isShared(key) ? (Settings as Record<string, OptionSpec>)[key] : undefined;
       if (sharedOnly && !shared) continue;
-      const spec = declared === true ? shared : ({ ...shared, ...declared } as OptionSpec);
+      const spec = declared === true ? shared : { ...shared, ...declared };
       if (!spec) continue;
       const name = qualifyKey(handler.name, key);
       const existing = specs.get(name);

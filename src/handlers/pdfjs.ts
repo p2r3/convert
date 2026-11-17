@@ -83,6 +83,7 @@ class pdfjsHandler implements FormatHandler {
             await page.render({
               canvas: null,
               // PDF.js accepts an OffscreenCanvas context, but its types only list DOM contexts.
+              // oxlint-disable-next-line typescript/no-unsafe-type-assertion
               canvasContext: target.context as unknown as CanvasRenderingContext2D,
               viewport,
               transform: [width / viewport.width, 0, 0, height / viewport.height, 0, 0],

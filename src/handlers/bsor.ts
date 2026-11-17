@@ -31,22 +31,20 @@ class bsorHandler implements FormatHandler {
         inputFiles.map(async (file) => {
           const replay = new Replay(file.bytes);
           let outputs: FileData[] = [];
-          await new Promise<void>((resolve) => {
-            render(
-              replay,
-              width,
-              height,
-              async (canvas) => {
-                const blob = await canvas.convertToBlob({ type: outputFormat.mime });
-                const bytes = await blob.bytes();
-                outputs.push({
-                  name: file.name.split(".")[0] + "_" + frameIndex++ + "." + outputFormat.extension,
-                  bytes: bytes,
-                });
-              },
-              async () => resolve(),
-            );
-          });
+          await render(
+            replay,
+            width,
+            height,
+            async (canvas) => {
+              const blob = await canvas.convertToBlob({ type: outputFormat.mime });
+              const bytes = await blob.bytes();
+              outputs.push({
+                name: file.name.split(".")[0] + "_" + frameIndex++ + "." + outputFormat.extension,
+                bytes: bytes,
+              });
+            },
+            async () => {},
+          );
           return outputs;
         }),
       )

@@ -26,8 +26,12 @@ export async function canvasToBlob(
   return new Uint8Array(await blob.arrayBuffer());
 }
 
-export async function blobToCanvas(bundle: CanvasBundle, bytes: Uint8Array, mime: string) {
-  const blob = new Blob([bytes as BlobPart], { type: mime });
+export async function blobToCanvas(
+  bundle: CanvasBundle,
+  bytes: Uint8Array<ArrayBuffer>,
+  mime: string,
+) {
+  const blob = new Blob([bytes], { type: mime });
 
   const image = await createImageBitmap(blob);
 

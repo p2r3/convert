@@ -134,9 +134,8 @@ class sevenZipHandler implements FormatHandler {
 
         const parent = extractedParent(inputFile, inputFiles.length > 1);
         const walk = (dir: string, rel: string) => {
-          const entries = (sevenZip.FS.readdir(dir) as string[])
-            .filter((entry) => entry !== "." && entry !== "..")
-            .toSorted();
+          const names: string[] = sevenZip.FS.readdir(dir);
+          const entries = names.filter((entry) => entry !== "." && entry !== "..").toSorted();
           for (const entry of entries) {
             const path = `${dir}/${entry}`;
             const relPath = joinPath(rel, entry);

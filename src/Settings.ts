@@ -1,4 +1,4 @@
-import type { ConvertPathNode, FileFormat } from "./FormatHandler.js";
+import { ConvertPathNode, type FileFormat } from "./FormatHandler.js";
 
 export const SettingCategories = {
   size: { label: "Size", note: "Streches the image when both are set." },
@@ -56,6 +56,18 @@ export type ConvertOptions = {
 } & { [key: string]: unknown };
 
 export type FormatOptions = Record<string, OptionSpec | true>;
+
+/** The value of a handler's own number option. */
+export function numberOption(options: ConvertOptions | undefined, key: string) {
+  const value = options?.[key];
+  return typeof value === "number" ? value : undefined;
+}
+
+/** The value of a handler's own string or enum option. */
+export function stringOption(options: ConvertOptions | undefined, key: string) {
+  const value = options?.[key];
+  return typeof value === "string" ? value : undefined;
+}
 
 const own = <T>(object: Record<string, T> | undefined, key: string) =>
   object && Object.hasOwn(object, key) ? object[key] : undefined;
@@ -121,7 +133,9 @@ export const pathSupportsOptions = (path: ConvertPathNode[], settings: ConvertOp
   );
 
 export function distributeOptions(path: ConvertPathNode[], settings: ConvertOptions) {
-  const result: ConvertPathNode[] = path.map((node) => ({ ...node, options: undefined }));
+  const result: ConvertPathNode[] = path.map(
+    (node) => new ConvertPathNode(node.handler, node.format),
+  );
   const unsupported: string[] = [];
   for (const [key, value] of Object.entries(settings)) {
     const content = own<OptionSpec & { content?: true }>(Settings, key)?.content;

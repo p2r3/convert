@@ -79,7 +79,7 @@ class otaHandler implements FormatHandler {
         let writer_array: number[] = [];
 
         // Some code copied from mcmap.ts
-        const blob = new Blob([file.bytes as BlobPart], { type: inputFormat.mime });
+        const blob = new Blob([file.bytes], { type: inputFormat.mime });
 
         const image = await createImageBitmap(blob);
 

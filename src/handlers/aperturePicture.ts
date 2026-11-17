@@ -51,7 +51,7 @@ class aperturePictureHandler implements FormatHandler {
       }
       const { canvas, ctx } = this.#bundle;
       for (const inputFile of inputFiles) {
-        const blob = new Blob([inputFile.bytes as BlobPart], { type: inputFormat.mime });
+        const blob = new Blob([inputFile.bytes], { type: inputFormat.mime });
         const image = await createImageBitmap(blob);
         try {
           ctx.fillStyle = "white";
@@ -89,7 +89,7 @@ function rgbaToGrayscale(r: number, g: number, b: number, a: number): number {
   return 0.299 * (r * a) + 0.587 * (g * a) + 0.114 * (b * a);
 }
 
-function decodeAPF(data: string, SK: number): Uint8Array {
+function decodeAPF(data: string, SK: number): Uint8Array<ArrayBuffer> {
   const w = 320,
     h = 200;
   if (SK <= 0) throw new RangeError(`Malformed APF file (SK is invalid, <= 0): ${SK}`);
@@ -123,7 +123,7 @@ function decodeAPF(data: string, SK: number): Uint8Array {
 }
 
 // split array into 200 arrays that are then reversed, converted into 255s and 0s, and turned back into 1 array
-function APFarray(data: Uint8Array): Uint8Array {
+function APFarray(data: Uint8Array): Uint8Array<ArrayBuffer> {
   let temparray: number[] = [];
   let newarray: number[][] = [];
   let pal: number[] = [];
@@ -155,7 +155,7 @@ function APFarray(data: Uint8Array): Uint8Array {
     }
   }
 
-  let revarray: Uint8Array = new Uint8Array(newarray.toReversed().flat());
+  const revarray = new Uint8Array(newarray.toReversed().flat());
   return revarray;
 }
 
@@ -188,7 +188,7 @@ function bitmapTo1BitBMP(
   bitmap: Uint8Array,
   width: number,
   height: number,
-): Uint8Array {
+): Uint8Array<ArrayBuffer> {
   const rowBytes = Math.ceil(width / 8);
   const paddedRowBytes = (rowBytes + 3) & ~3;
   const pixelArraySize = paddedRowBytes * height;

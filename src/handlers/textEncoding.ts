@@ -148,7 +148,7 @@ export default class textEncodingHandler implements FormatHandler {
 
       // Now encode to output format
       const outf = (outputFormat && outputFormat.internal) || "utf8NB";
-      let outBytes: Uint8Array;
+      let outBytes: Uint8Array<ArrayBuffer>;
       if (outf === "utf8NB") {
         const utf8Bytes = encode(text);
         if (utf8Bytes.length >= 3 && hasPrefix(utf8Bytes, [0xef, 0xbb, 0xbf])) {

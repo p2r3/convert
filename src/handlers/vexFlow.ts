@@ -1,14 +1,15 @@
 import * as vexml from "@stringsync/vexml";
 import VexFlow from "vexflow";
-import { DOMParser as WorkerDOMParser, Document } from "linkedom/worker";
+import { Document } from "linkedom/worker";
+import { WorkerDOMParser } from "src/common/dom.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import Formats from "src/Formats.ts";
 import { buildMidi, addNote } from "./midi/midifilelib.js";
 import bravuraUrl from "@vexflow-fonts/bravura/bravura.woff2?url";
 import academicoUrl from "@vexflow-fonts/academico/academico.woff2?url";
-import { changeExt, decode, encode } from "src/common/index.ts";
+import { changeExt, decode, encode, ownedBytes } from "src/common/index.ts";
 
-const DOMParser = WorkerDOMParser as unknown as typeof globalThis.DOMParser;
+const DOMParser = WorkerDOMParser;
 
 // Note name to MIDI number mapping
 function noteToMidi(step: string, octave: number, alter: number = 0): number {
@@ -23,16 +24,17 @@ function renderCanvases(xml: string): OffscreenCanvas[] {
   const canvases = new Map<Element, OffscreenCanvas>();
 
   const createElement = renderDocument.createElement.bind(renderDocument);
-  renderDocument.createElement = ((tag: string) => {
-    const element = createElement(tag);
-    if (tag === "canvas") {
-      const canvas = new OffscreenCanvas(300, 150);
-      (element as HTMLCanvasElement).getContext = (() =>
-        canvas.getContext("2d")) as HTMLCanvasElement["getContext"];
-      canvases.set(element, canvas);
-    }
-    return element;
-  }) as typeof renderDocument.createElement;
+  Object.assign(renderDocument, {
+    createElement(tag: string) {
+      const element = createElement(tag);
+      if (tag === "canvas") {
+        const canvas = new OffscreenCanvas(300, 150);
+        Object.assign(element, { getContext: () => canvas.getContext("2d") });
+        canvases.set(element, canvas);
+      }
+      return element;
+    },
+  });
   VexFlow.Element.setTextMeasurementCanvas(new OffscreenCanvas(300, 150));
   // VexML's DOM wrapper is synchronous; don't leave these globals in the shared worker.
   Object.assign(globalThis, { document: renderDocument, Document, DOMParser });
@@ -380,7 +382,7 @@ class vexFlowHandler implements FormatHandler {
           }
 
           const name = changeExt(inputFile.name, "mid");
-          outputFiles.push({ bytes: midiBytes, name });
+          outputFiles.push({ bytes: ownedBytes(midiBytes), name });
           continue;
         }
 
@@ -403,7 +405,11 @@ class vexFlowHandler implements FormatHandler {
           const blob = await canvas.convertToBlob({ type: "image/png" });
           return new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
-            reader.addEventListener("load", () => resolve(reader.result as string));
+            reader.addEventListener("load", () =>
+              typeof reader.result === "string"
+                ? resolve(reader.result)
+                : reject(new Error("Could not read the image as a data URL.")),
+            );
             reader.addEventListener("error", () => reject(reader.error));
             reader.readAsDataURL(blob);
           });

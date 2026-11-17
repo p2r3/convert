@@ -35,11 +35,9 @@ export default function LoadingScreen({ fileName, fileSize, from, to }: LoadingS
       <div className="loading-metrics-card">
         <div
           className="loading-conversion-info"
-          style={
-            {
-              "--progress": `${ProgressStore.percent.value * 100}%`,
-            } as any
-          }
+          style={{
+            "--progress": `${ProgressStore.percent.value * 100}%`,
+          }}
         >
           {from && (
             <div className="loading-format-pill" aria-hidden="true">

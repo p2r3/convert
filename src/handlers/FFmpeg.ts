@@ -7,7 +7,7 @@ import wasmUrl from "built/ffmpeg/ffmpeg-core.wasm.gz?url";
 import mime from "mime";
 import normalizeMimeType from "../normalizeMimeType.ts";
 import Formats, { Category, type CategoryType } from "src/Formats.ts";
-import { changeExt, encode } from "src/common/index.ts";
+import { changeExt, encode, ownedBytes } from "src/common/index.ts";
 import { fetchGzip } from "src/common/gzip.ts";
 import type { FormatOptions } from "src/Settings.ts";
 
@@ -122,6 +122,8 @@ class FFmpegHandler implements FormatHandler {
       killIt(new Error(reason));
     };
 
+    // the .d.ts is wrong
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     const ffmpeg = (await Promise.race([
       killer,
       FFmpeg({
@@ -160,7 +162,7 @@ class FFmpegHandler implements FormatHandler {
           fail(reason);
         },
       }),
-    ])) as FFmpegModule & { _emscripten_force_exit(status: number): void }; // the .d.ts is wrong
+    ])) as FFmpegModule & { _emscripten_force_exit(status: number): void };
 
     abort = () => {
       try {
@@ -599,7 +601,7 @@ class FFmpegHandler implements FormatHandler {
       throw stdout;
     }
 
-    let bytes: Uint8Array;
+    let bytes: Uint8Array<ArrayBuffer>;
 
     ctx?.log("Reading output file...");
 
@@ -610,7 +612,7 @@ class FFmpegHandler implements FormatHandler {
     if (!(fileData instanceof Uint8Array)) {
       bytes = encode(fileData);
     } else {
-      bytes = new Uint8Array(fileData?.buffer);
+      bytes = ownedBytes(fileData);
     }
 
     const name = changeExt(inputFiles[0].name, outputFormat.extension);

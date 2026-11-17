@@ -1,5 +1,5 @@
 import { formatIdentifier, sameFormat, type FileFormat } from "src/FormatHandler";
-import type { CategoryType } from "src/Formats";
+import { isCategory, type CategoryType } from "src/Formats";
 import data from "src/ui/popularity.json";
 
 type Counts = Partial<Record<string, number>>;
@@ -103,8 +103,10 @@ function rankScore(
     const otherCats = categoriesOf(other, collected);
     sameCategory = Number(cats.some((c) => otherCats.includes(c)));
   }
-  const webCategory = stats?.webCategory as CategoryType | undefined;
-  const popularity = (webCategory ? (categories[webCategory]?.[side] ?? 0) : 0) * (stats?.web ?? 0);
+  const webCategory = stats?.webCategory;
+  const popularity =
+    (webCategory && isCategory(webCategory) ? (categories[webCategory]?.[side] ?? 0) : 0) *
+    (stats?.web ?? 0);
 
   return (
     WEIGHTS.pair * pair +

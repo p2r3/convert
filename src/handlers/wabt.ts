@@ -1,7 +1,7 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import Formats from "../Formats.ts";
 import wabt from "wabt";
-import { changeExt, encode } from "src/common/index.ts";
+import { changeExt, encode, ownedBytes } from "src/common/index.ts";
 
 // WabtModule is not exported
 type WabtModule = Awaited<ReturnType<typeof wabt>>;
@@ -16,7 +16,7 @@ export default class wabtHandler implements FormatHandler {
 
   private wabtModule?: WabtModule;
 
-  wasm2wat(bytes: Uint8Array): Uint8Array {
+  wasm2wat(bytes: Uint8Array): Uint8Array<ArrayBuffer> {
     const wasmModule = this.wabtModule!.readWasm(bytes, {});
     const str = wasmModule.toText({});
     const encoded = encode(str);
@@ -24,10 +24,10 @@ export default class wabtHandler implements FormatHandler {
     return encoded;
   }
 
-  wat2wasm(filename: string, bytes: Uint8Array): Uint8Array {
+  wat2wasm(filename: string, bytes: Uint8Array): Uint8Array<ArrayBuffer> {
     const wasmModule = this.wabtModule!.parseWat(filename, bytes);
     const outBytes = wasmModule.toBinary({});
-    const buffer = outBytes.buffer;
+    const buffer = ownedBytes(outBytes.buffer);
     wasmModule.destroy();
     return buffer;
   }

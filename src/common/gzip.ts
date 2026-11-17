@@ -1,4 +1,5 @@
 import { Gunzip, gunzipSync, gzipSync } from "fflate";
+import { ownedBytes } from "./index.ts";
 
 export function isGzip(bytes: Uint8Array): boolean {
   return bytes[0] === 0x1f && bytes[1] === 0x8b;
@@ -14,7 +15,7 @@ async function pipeBytes(
   bytes: Uint8Array,
   transform: GzipStream,
 ): Promise<Uint8Array<ArrayBuffer>> {
-  const stream = new Blob([bytes as BlobPart]).stream().pipeThrough(transform);
+  const stream = new Blob([ownedBytes(bytes)]).stream().pipeThrough(transform);
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
@@ -39,7 +40,12 @@ function decompressGzipStream(): GzipStream {
     start(controller) {
       gunzip = new Gunzip((chunk) => controller.enqueue(chunk));
     },
-    transform: (chunk) => gunzip.push(chunk as Uint8Array),
+    transform: (chunk) =>
+      gunzip.push(
+        ArrayBuffer.isView(chunk)
+          ? new Uint8Array(chunk.buffer, chunk.byteOffset, chunk.byteLength)
+          : new Uint8Array(chunk),
+      ),
     flush: () => gunzip.push(new Uint8Array(), true),
   });
 }

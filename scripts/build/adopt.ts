@@ -88,12 +88,19 @@ async function verify(item: Staged): Promise<boolean> {
     if (answer === "r") {
       const { requirement, scope } = item.requirement!;
       // --check rebuilds, fails unless it matches the pointer and caches the verified tarball
-      await prebuild(requirement, scope, { check: true } as PrebuildArgs);
+      const args: PrebuildArgs = {
+        _: [],
+        check: true,
+        verbose: false,
+        force: false,
+        "keep-tmp": false,
+      };
+      await prebuild(requirement, scope, args);
     } else if (answer === "t") {
       await downloadPrebuilt(item.pointer);
     } else return false;
   } catch (error) {
-    console.error(`  ${error instanceof Error ? error.message : error}`);
+    console.error(`  ${error instanceof Error ? error.message : String(error)}`);
     console.log("  Not adopting it.");
     return false;
   }

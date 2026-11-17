@@ -17,6 +17,8 @@ const INLINE_LIMIT = 1024 * 1024;
 
 export type ReleasePointer = Pointer & { url: string };
 
+const isReleasePointer = (pointer: Pointer): pointer is ReleasePointer => Boolean(pointer.url);
+
 export async function writePointer(path: string, pointer: Pointer) {
   await Bun.write(path, JSON.stringify(pointer, null, 2) + "\n");
 }
@@ -39,7 +41,7 @@ async function cacheTarball(path: string, tarball: Uint8Array) {
 
 // for a tarball that was verified against its pointer, so it can be uploaded
 export async function cachePrebuilt(pointer: Pointer, tarball: Uint8Array) {
-  if (pointer.url) await cacheTarball(cachePath(pointer as ReleasePointer), tarball);
+  if (isReleasePointer(pointer)) await cacheTarball(cachePath(pointer), tarball);
 }
 
 // writes the pointer, and the tarball next to it if it's small. otherwise the tarball is cached
@@ -76,7 +78,7 @@ export async function readCached(pointer: ReleasePointer) {
 }
 
 export async function fetchPrebuilt(pointer: Pointer, pointerPath: string) {
-  if (!pointer.url) {
+  if (!isReleasePointer(pointer)) {
     const bytes = await Bun.file(inlinePath(pointerPath)).bytes();
     const sha256 = hashFile("sha256", bytes);
     if (sha256 !== pointer.sha256) {
@@ -86,7 +88,7 @@ export async function fetchPrebuilt(pointer: Pointer, pointerPath: string) {
     }
     return bytes;
   }
-  return await downloadPrebuilt(pointer as ReleasePointer);
+  return await downloadPrebuilt(pointer);
 }
 
 export async function downloadPrebuilt(pointer: ReleasePointer) {
@@ -127,7 +129,7 @@ export async function findReleasePointers() {
   for (const path of paths) {
     const pointer = await readPointer(path);
     const name = relative(ROOT_SCOPE.prebuiltDir, path);
-    if (pointer.url) found.push({ path, name, pointer: pointer as ReleasePointer });
+    if (isReleasePointer(pointer)) found.push({ path, name, pointer });
   }
   return found;
 }
@@ -156,8 +158,16 @@ function listAssets(repo: string, tag: string) {
     assets = (async () => {
       const view = await $`gh release view ${tag} -R ${repo} --json assets`.quiet().nothrow();
       if (view.exitCode !== 0) return undefined;
-      const { assets } = JSON.parse(view.stdout.toString()) as { assets: { name: string }[] };
-      return new Set(assets.map(({ name }) => name));
+      const release: unknown = JSON.parse(view.stdout.toString());
+      if (typeof release !== "object" || !release || !("assets" in release)) return undefined;
+      if (!Array.isArray(release.assets)) return undefined;
+      return new Set(
+        release.assets.flatMap((asset: unknown) =>
+          typeof asset === "object" && asset && "name" in asset && typeof asset.name === "string"
+            ? [asset.name]
+            : [],
+        ),
+      );
     })();
     releases.set(key, assets);
   }

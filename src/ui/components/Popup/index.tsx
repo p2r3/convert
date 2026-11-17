@@ -1,10 +1,10 @@
-import type { TargetedMouseEvent } from "preact";
 import { useSignalEffect } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
 import { popupOpen, closePopup, restorePopupFocus } from "src/ui/PopupStore";
 
 import "./index.css";
 import { PopupData } from "src/ui/AppState";
+import { type TargetedMouseEvent } from "preact";
 
 export default function Popup() {
   const ref = useRef<HTMLDialogElement>(null);
@@ -50,9 +50,9 @@ export default function Popup() {
   };
 
   // oxlint-disable-next-line unicorn/consistent-function-scoping
-  const handleButtonClick = () => {
+  const handleButtonClick = (event: TargetedMouseEvent<HTMLButtonElement>) => {
     if (typeof PopupData.value.buttonOnClick === "function") {
-      PopupData.value.buttonOnClick({} as any);
+      PopupData.value.buttonOnClick(event);
     } else {
       closePopup();
     }

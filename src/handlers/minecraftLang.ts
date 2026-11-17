@@ -35,12 +35,7 @@ class minecraftLangHandler implements FormatHandler {
         }
 
         resultText = Object.entries(obj)
-          .map(([k, v]) => {
-            if (typeof v === "object") {
-              return `${k}=${JSON.stringify(v)}`;
-            }
-            return `${k}=${v}`;
-          })
+          .map(([k, v]) => `${k}=${typeof v === "string" ? v : JSON.stringify(v)}`)
           .join("\n");
       }
 

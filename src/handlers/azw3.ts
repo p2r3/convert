@@ -4,7 +4,7 @@ import JSZip from "jszip";
 import * as pako from "pako";
 import { isMOBI, MOBI } from "built/foliate-mobi/mobi.js";
 import { DOMParser } from "linkedom/worker";
-import { changeExt } from "src/common/index.ts";
+import { changeExt, ownedBytes } from "src/common/index.ts";
 import type { ConvertContext } from "src/ui/ProgressStore.ts";
 
 class azw3Handler implements FormatHandler {
@@ -63,7 +63,7 @@ class azw3Handler implements FormatHandler {
         await ctx?.checkpoint();
 
         try {
-          const doc = (await section.createDocument?.()) as Document | undefined;
+          const doc: Document | undefined = await section.createDocument?.();
           if (!doc) continue;
 
           // Images handling
@@ -75,18 +75,19 @@ class azw3Handler implements FormatHandler {
             if (recindex != null) {
               try {
                 const buf = await book.mobi.loadResource(Number(recindex) - 1);
-                b64 = new Uint8Array(buf as ArrayBuffer).toBase64();
+                b64 = new Uint8Array(buf).toBase64();
               } catch (e) {
                 console.warn(e);
               }
             } else {
               const src = img.getAttribute("src");
-              if (src && src.startsWith("kindle:embed:")) {
+              // only KF8 (AZW3) books embed resources this way
+              if (src && src.startsWith("kindle:embed:") && "loadResourceBlob" in book) {
                 try {
-                  const [b] = await (book as any).loadResourceBlob(src);
-                  if (b) {
+                  const [b] = await book.loadResourceBlob(src);
+                  if (b instanceof Blob) {
                     type = b.type;
-                    b64 = (await (b as Blob).bytes()).toBase64();
+                    b64 = (await b.bytes()).toBase64();
                   }
                 } catch (e) {
                   console.warn(e);
@@ -163,7 +164,7 @@ class azw3Handler implements FormatHandler {
       const outputName = changeExt(inputFile.name, "epub");
       outputFiles.push({
         name: outputName,
-        bytes: epubBlob,
+        bytes: ownedBytes(epubBlob),
       });
     }
     return outputFiles;

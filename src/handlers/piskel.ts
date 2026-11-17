@@ -3,7 +3,7 @@ import Formats from "src/Formats.ts";
 import JSZip from "jszip";
 import { InitializationError } from "src/errors.ts";
 import type { ConvertContext } from "src/ui/ProgressStore.ts";
-import { changeExt, decode } from "src/common/index.ts";
+import { changeExt, decode, ownedBytes } from "src/common/index.ts";
 import { canvasToBlob, createCanvas, type CanvasBundle } from "src/common/canvas.ts";
 
 class piskelHandler implements FormatHandler {
@@ -108,11 +108,13 @@ class piskelHandler implements FormatHandler {
         }
 
         const level = convertCtx?.options.compression;
-        const bytes = await zip.generateAsync({
-          type: "uint8array",
-          compression: level ? "DEFLATE" : "STORE",
-          compressionOptions: level ? { level } : undefined,
-        });
+        const bytes = ownedBytes(
+          await zip.generateAsync({
+            type: "uint8array",
+            compression: level ? "DEFLATE" : "STORE",
+            compressionOptions: level ? { level } : undefined,
+          }),
+        );
         const name = changeExt(inputFile.name, outputFormat.extension);
         outputFiles.push({ bytes, name });
       }

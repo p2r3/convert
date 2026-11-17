@@ -2,8 +2,9 @@ import { type FileData, type FileFormat, type FormatHandler } from "../FormatHan
 import Formats from "../Formats.ts";
 import PDFDocument, { registerStdFonts } from "pdfkit";
 import Courier from "pdfkit/standard-fonts/Courier";
-import { changeExt, decode } from "src/common/index.ts";
+import { changeExt, decode, ownedBytes } from "src/common/index.ts";
 import type { ConvertContext } from "src/ui/ProgressStore.ts";
+import { numberOption, stringOption } from "src/Settings.ts";
 
 const PAGE_SIZES = ["A3", "A4", "A5", "LETTER", "LEGAL"];
 
@@ -34,9 +35,9 @@ class textToPdfHandler implements FormatHandler {
   ): Promise<FileData[]> {
     const outputFiles: FileData[] = [];
     const options = ctx?.options ?? {};
-    const pageSize = (options.pageSize as string | undefined) ?? "A4";
-    const fontSize = (options.fontSize as number | undefined) ?? 11;
-    const margin = (options.margin as number | undefined) ?? 72;
+    const pageSize = stringOption(options, "pageSize") ?? "A4";
+    const fontSize = numberOption(options, "fontSize") ?? 11;
+    const margin = numberOption(options, "margin") ?? 72;
 
     for (const file of inputFiles) {
       const text = decode(file.bytes).replace(/\p{Extended_Pictographic}/gu, ""); // Remove emojis
@@ -47,13 +48,13 @@ class textToPdfHandler implements FormatHandler {
         margins: { top: margin, bottom: margin, left: margin, right: margin },
       });
 
-      const pdfBytes = await new Promise<Uint8Array>((resolve, reject) => {
-        const chunks: Uint8Array[] = [];
+      const pdfBytes = await new Promise<Uint8Array<ArrayBuffer>>((resolve, reject) => {
+        const chunks: Uint8Array<ArrayBuffer>[] = [];
 
-        doc.on("data", (chunk: Uint8Array) => chunks.push(chunk));
+        doc.on("data", (chunk: Uint8Array) => chunks.push(ownedBytes(chunk)));
         doc.on("end", async () => {
           try {
-            const bytes = await new Blob(chunks as BlobPart[], {
+            const bytes = await new Blob(chunks, {
               type: "application/pdf",
             }).bytes();
             resolve(bytes);

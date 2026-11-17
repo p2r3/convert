@@ -1,7 +1,7 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import Formats from "src/Formats.ts";
 import { BSON } from "bson";
-import { changeExt, decode, encode } from "src/common/index.ts";
+import { changeExt, decode, encode, ownedBytes } from "src/common/index.ts";
 
 class bsonHandler implements FormatHandler {
   public readonly name = "bson";
@@ -40,7 +40,7 @@ class bsonHandler implements FormatHandler {
 
           return {
             name,
-            bytes: bsonResult,
+            bytes: ownedBytes(bsonResult),
           };
         });
 

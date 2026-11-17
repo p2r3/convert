@@ -31,7 +31,7 @@ await Promise.all([
 ]);
 
 const cacheJSON = await page.evaluate((minify) => {
-  if (minify === true) {
+  if (minify) {
     return JSON.stringify(JSON.parse(window.printSupportedFormatCache()));
   }
   return window.printSupportedFormatCache();

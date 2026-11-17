@@ -41,7 +41,7 @@ class qoiFuHandler implements FormatHandler {
 
     return argb;
   }
-  static argbToRgba(argb: Int32Array): Uint8ClampedArray {
+  static argbToRgba(argb: Int32Array): Uint8ClampedArray<ArrayBuffer> {
     const rgba = new Uint8ClampedArray(argb.length * 4);
 
     for (let i = 0; i < argb.length; i++) {
@@ -109,7 +109,7 @@ class qoiFuHandler implements FormatHandler {
         const colorSpace = qoiDecoder.isLinearColorspace() ? "display-p3" : "srgb";
         const pixelBuffer = qoiFuHandler.argbToRgba(qoiDecoder.getPixels());
 
-        const imageData = new ImageData(pixelBuffer as ImageDataArray, width, height, {
+        const imageData = new ImageData(pixelBuffer, width, height, {
           colorSpace: colorSpace,
         });
 

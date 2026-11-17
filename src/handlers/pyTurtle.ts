@@ -1,4 +1,4 @@
-import { DOMParser } from "linkedom/worker";
+import { WorkerDOMParser } from "src/common/dom.ts";
 import { Color, EllipseCurve } from "three";
 import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader.js";
 import Formats from "src/Formats.ts";
@@ -30,6 +30,22 @@ function safeMax(arr: number[]) {
   return m;
 }
 
+interface PathStyle {
+  fill: string;
+  stroke: string;
+  strokeWidth: number;
+}
+
+const isPathStyle = (style: unknown): style is PathStyle =>
+  typeof style === "object" &&
+  style !== null &&
+  "fill" in style &&
+  typeof style.fill === "string" &&
+  "stroke" in style &&
+  typeof style.stroke === "string" &&
+  "strokeWidth" in style &&
+  typeof style.strokeWidth === "number";
+
 class pyTurtleHandler implements FormatHandler {
   public readonly name = "pyTurtle";
   public supportedFormats = [Formats.PYTHON.builder("py").to(), Formats.SVG.builder("svg").from()];
@@ -60,7 +76,7 @@ class pyTurtleHandler implements FormatHandler {
   static convert_program(svg: string) {
     // SVGLoader only needs a DOM parser; geometry is calculated without browser APIs.
     const originalParser = globalThis.DOMParser;
-    globalThis.DOMParser = DOMParser as unknown as typeof globalThis.DOMParser;
+    globalThis.DOMParser = WorkerDOMParser;
     let paths;
     try {
       paths = new SVGLoader().parse(svg).paths;
@@ -72,7 +88,8 @@ class pyTurtleHandler implements FormatHandler {
     const allPoints = [];
     const shapeData = [];
     for (const path of paths.slice(0, MAX_ELEMENTS)) {
-      const style = path.userData!.style as { fill: string; stroke: string; strokeWidth: number };
+      const style: unknown = path.userData.style;
+      if (!isPathStyle(style)) continue;
       const fill = formatColor(style.fill);
       const stroke = formatColor(style.stroke);
       const sw = style.strokeWidth;

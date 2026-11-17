@@ -17,7 +17,7 @@ const excludeHandlers = {
   name: "exclude-handlers",
   enforce: "pre",
   load(id) {
-    if (excludedHandlerFiles.includes(id)) return "export {};";
+    return excludedHandlerFiles.includes(id) ? "export {};" : null;
   },
 };
 

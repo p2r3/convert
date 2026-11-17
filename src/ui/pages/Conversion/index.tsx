@@ -77,8 +77,8 @@ function getMatchingFromFormats(options: ConversionOptionsMap, files: File[]) {
   return detectFormatMatches(files[0], fromFormats, { loose: true });
 }
 
-function downloadFile(bytes: Uint8Array, name: string) {
-  const blob = new Blob([bytes as BlobPart], { type: "application/octet-stream" });
+function downloadFile(bytes: Uint8Array<ArrayBuffer>, name: string) {
+  const blob = new Blob([bytes], { type: "application/octet-stream" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -87,7 +87,7 @@ function downloadFile(bytes: Uint8Array, name: string) {
 }
 
 function removeFile(key: string) {
-  const { [key as keyof typeof SelectedFiles.value]: _, ...rest } = SelectedFiles.value;
+  const rest = Object.fromEntries(Object.entries(SelectedFiles.value).filter(([k]) => k !== key));
   SelectedFiles.value = rest;
   if (Object.keys(rest).length === 0) CurrentPage.value = Pages.Upload;
 }
@@ -296,7 +296,7 @@ export default function Conversion() {
       } else {
         PopupData.value = {
           title: "Conversion error",
-          text: `An unexpected error occurred: ${e}`,
+          text: `An unexpected error occurred: ${e instanceof Error ? e.message : String(e)}`,
           dismissible: true,
           buttonText: "OK",
         };

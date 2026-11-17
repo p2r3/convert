@@ -36,7 +36,7 @@ import {
   clearCategories,
   hasActiveFilters,
 } from "src/ui/FormatCategories";
-import { Category, type CategoryType } from "src/Formats";
+import { Category, isCategory, type CategoryType } from "src/Formats";
 import {
   collectFormatCategories,
   sortByPopularity,
@@ -107,6 +107,10 @@ const CATEGORY_CHIPS = {
   [Category.MODEL]: { label: "3D Model", icon: <Box size={14} /> },
   [Category.DATABASE]: { label: "Database", icon: <Database size={14} /> },
 } satisfies Record<CategoryType, { label: string; icon: preact.ComponentChildren }>;
+
+const CATEGORY_CHIP_LIST = Object.entries(CATEGORY_CHIPS).flatMap(([id, chip]) =>
+  isCategory(id) ? [{ id, ...chip }] : [],
+);
 
 function generateSearchIndex(
   optionsMap: ConversionOptionsMap,
@@ -192,7 +196,7 @@ function useFormatCosts(format: FileFormat | null, direction: "from" | "to") {
     costs: ReadonlyMap<string, number>;
   } | null>(null);
   useLayoutEffect(() => {
-    if (!format) return;
+    if (!format) return undefined;
     let active = true;
     Promise.resolve(window.traversionGraph.getFormatCosts(format, direction))
       .then((costs) => {
@@ -437,15 +441,15 @@ export default function FormatExplorer({
               moveFocus(event, [...event.currentTarget.querySelectorAll("button")], { wrap: true })
             }
           >
-            {Object.entries(CATEGORY_CHIPS).map(([id, { label, icon }], index) => (
+            {CATEGORY_CHIP_LIST.map(({ id, label, icon }, index) => (
               <Chip
                 key={id}
                 tabIndex={activeChip === index ? 0 : -1}
                 onFocus={() => setActiveChip(index)}
                 label={label}
                 icon={icon}
-                selected={activeCategories.has(id as CategoryType)}
-                onClick={() => toggleCategory(id as CategoryType)}
+                selected={activeCategories.has(id)}
+                onClick={() => toggleCategory(id)}
               />
             ))}
           </div>
@@ -461,7 +465,7 @@ export default function FormatExplorer({
               ),
             ];
             const cards = buttons.filter((button) => button.classList.contains("format-card"));
-            const onCard = cards.includes(event.target as HTMLButtonElement);
+            const onCard = cards.some((card) => card === event.target);
             // Count cards on the first rendered row, so this works for any layout.
             const columns = onCard
               ? Math.max(1, cards.filter((card) => card.offsetTop === cards[0].offsetTop).length)

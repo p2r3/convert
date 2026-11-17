@@ -78,7 +78,7 @@ export default class exeToBatHandler implements FormatHandler {
     }
 
     // Create buffer safely with error handling
-    let batBytes: Uint8Array;
+    let batBytes: Uint8Array<ArrayBuffer>;
     try {
       batBytes = encode(batContent);
       if (DEBUG_EXE_TO_BAT) {

@@ -4,7 +4,7 @@ import { parseTar } from "nanotar";
 import createLLVM, { type MainModule as LLVMModule } from "built/clang/llvm.js";
 import wasmUrl from "built/clang/llvm.wasm.gz?url";
 import resourcesUrl from "built/clang/resources.tar.gz?url";
-import { changeExt } from "src/common/index.ts";
+import { changeExt, ownedBytes } from "src/common/index.ts";
 import type { ConvertContext } from "src/ui/ProgressStore.ts";
 import { fetchGzip } from "src/common/gzip.ts";
 
@@ -159,18 +159,23 @@ class clangHandler implements FormatHandler {
     const [mod, resources] = await Promise.all([this.#module, this.#resources]);
 
     let output = "";
-    const llvm = await createLLVM({
-      thisProgram: `${BIN_DIR}/llvm`,
-      instantiateWasm(
-        imports: WebAssembly.Imports,
-        ok: (instance: WebAssembly.Instance, mod: WebAssembly.Module) => void,
-      ) {
-        WebAssembly.instantiate(mod, imports).then((instance) => ok(instance, mod));
-        return {};
-      },
-      print: (line: string) => (output += line + "\n"),
-      printErr: (line: string) => (output += line + "\n"),
-    });
+    // emscripten never settles if instantiation fails, so fail through this instead
+    const { promise: failed, reject: fail } = Promise.withResolvers<never>();
+    const llvm = await Promise.race([
+      failed,
+      createLLVM({
+        thisProgram: `${BIN_DIR}/llvm`,
+        instantiateWasm(
+          imports: WebAssembly.Imports,
+          ok: (instance: WebAssembly.Instance, mod: WebAssembly.Module) => void,
+        ) {
+          WebAssembly.instantiate(mod, imports).then((instance) => ok(instance, mod), fail);
+          return {};
+        },
+        print: (line: string) => (output += line + "\n"),
+        printErr: (line: string) => (output += line + "\n"),
+      }),
+    ]);
 
     // clang only picks a linker it could execute, these are never actually run
     llvm.FS.mkdirTree(BIN_DIR, 0o777);
@@ -191,12 +196,15 @@ class clangHandler implements FormatHandler {
       status = llvm.callMain(args);
     } catch (error) {
       // exit() and aborts end up here
-      status = (error as { status?: number }).status ?? 1;
+      status =
+        typeof error === "object" && error && "status" in error && typeof error.status === "number"
+          ? error.status
+          : 1;
       if (status === 0) status = 1;
       output += String(error);
     }
 
-    const read = (path: string) => llvm.FS.readFile(`/work/${path}`) as Uint8Array;
+    const read = (path: string) => ownedBytes(llvm.FS.readFile(`/work/${path}`));
     return { status, output, read };
   }
 

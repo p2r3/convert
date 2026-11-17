@@ -14,7 +14,7 @@ import Formats from "src/Formats.ts";
 import { InitializationError } from "src/errors.ts";
 import sfontUrl from "built/timgm6mb/TimGM6mb.sf2?url";
 import fluidsynthUrl from "js-synthesizer/externals/libfluidsynth-2.4.6.js?url";
-import { changeExt, decode, encode, stripExt } from "src/common/index.ts";
+import { changeExt, decode, encode, ownedBytes, stripExt } from "src/common/index.ts";
 import { blobToCanvas, canvasToBlob, createCanvas } from "src/common/canvas.ts";
 import { Settings } from "src/Settings.ts";
 import type { ConvertContext } from "src/ui/ProgressStore.ts";
@@ -41,11 +41,13 @@ function loadFluidSynth(): Promise<{ JSSynth: any; sfontBin: ArrayBuffer }> {
       const fluidModuleReady = new Promise<unknown>((r) => {
         fluidModuleResolve = r;
       });
-      (globalThis as any).Module = {
-        onRuntimeInitialized(this: unknown) {
-          fluidModuleResolve(this);
+      Object.assign(globalThis, {
+        Module: {
+          onRuntimeInitialized(this: unknown) {
+            fluidModuleResolve(this);
+          },
         },
-      };
+      });
 
       let fluidSrc = await fetch(fluidsynthUrl).then((r) => r.text());
       // In an ES module, "var Module" is hoisted to "undefined", shadowing globalThis.Module.
@@ -145,13 +147,13 @@ export class midiCodecHandler implements FormatHandler {
           name: changeExt(inputFile.name, outputFormat.extension),
         });
       } else if (outputFormat.internal === "mid") {
-        const bytes = buildMidi(table);
+        const bytes = ownedBytes(buildMidi(table));
         outputFiles.push({ bytes, name: changeExt(inputFile.name, outputFormat.extension) });
       } else if (outputFormat.internal === "png") {
         // Render piano roll onto a PNG using the same frequency->row mapping as pngToMidi
         const { pixels, width, height } = midiToPng(table);
         const bundle = createCanvas(width, height);
-        bundle.ctx.putImageData(new ImageData(pixels as ImageDataArray, width, height), 0, 0);
+        bundle.ctx.putImageData(new ImageData(pixels, width, height), 0, 0);
         const bytes = await canvasToBlob(bundle, outputFormat.mime);
         outputFiles.push({ bytes, name: changeExt(inputFile.name, outputFormat.extension) });
       } else {
@@ -264,7 +266,7 @@ function buildWav(
   sampleRate: number,
   numChannels: number,
   bitsPerSample: number,
-): Uint8Array {
+): Uint8Array<ArrayBuffer> {
   const bytesPerSample = bitsPerSample / 8;
   const dataSize = pcmData.length * bytesPerSample;
   const buffer = new ArrayBuffer(44 + dataSize);

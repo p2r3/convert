@@ -38,7 +38,7 @@ if (desktopUpdater) {
     Update.value = state;
   });
   // Don't overwrite a newer state pushed while this was in flight
-  desktopUpdater.getState().then((state) => {
+  void desktopUpdater.getState().then((state) => {
     if (state && !Update.value) Update.value = state;
   });
 }

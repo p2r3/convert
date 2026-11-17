@@ -31,10 +31,14 @@ class wasiRunnerHandler implements FormatHandler {
       let wasi = new WASI([inputFile.name], [], fds);
 
       let wasm = await WebAssembly.compile(new Uint8Array(inputFile.bytes));
-      let inst = (await WebAssembly.instantiate(wasm, {
+      const { exports } = await WebAssembly.instantiate(wasm, {
         wasi_snapshot_preview1: wasi.wasiImport,
-      })) as any;
-      wasi.start(inst);
+      });
+      const { memory, _start: start } = exports;
+      if (!(memory instanceof WebAssembly.Memory) || typeof start !== "function") {
+        throw new Error("Not a WASI command module: it needs to export memory and _start.");
+      }
+      wasi.start({ exports: { memory, _start: () => start() } });
 
       outputFiles.push({
         name: changeExt(inputFile.name, "txt"),

@@ -3,7 +3,7 @@ import { useEffect, useRef } from "preact/hooks";
 import { CurrentPage, LoadingToolsText, Pages } from "src/ui/AppState";
 import { goToUploadHome, SelectedFiles } from "src/main";
 import { Files, Upload } from "lucide-preact";
-import tippy from "tippy.js";
+import useTooltip from "src/ui/scripts/useTooltip";
 import { PopupData } from "src/ui/AppState";
 import { openPopup } from "src/ui/PopupStore";
 
@@ -14,6 +14,7 @@ import Footer from "src/ui/components/Footer";
 import StyledButton, { ButtonVariant } from "src/ui/components/StyledButton";
 
 import "./index.css";
+import { type TargetedMouseEvent } from "preact";
 
 export default function UploadPage() {
   const uploadRef = useRef<HTMLDivElement>(null);
@@ -21,15 +22,7 @@ export default function UploadPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const formatsRef = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => {
-    if (!formatsRef.current) return;
-    const instance = tippy(formatsRef.current, {
-      content: "View supported formats",
-      placement: "bottom",
-      delay: [300, 0],
-    });
-    return () => instance.destroy();
-  }, []);
+  useTooltip(formatsRef, "View supported formats");
 
   const handleClick = (ev: MouseEvent) => {
     ev.preventDefault();
@@ -71,8 +64,8 @@ export default function UploadPage() {
     processFiles(event.clipboardData?.files);
   };
 
-  const handleLogoClick = (event: MouseEvent) => {
-    (event.currentTarget as HTMLButtonElement)
+  const handleLogoClick = (event: TargetedMouseEvent<HTMLButtonElement>) => {
+    event.currentTarget
       .querySelector(".logo-icon svg")
       ?.animate([{ transform: "rotate(0deg)" }, { transform: "rotate(-720deg)" }], {
         duration: 1000,

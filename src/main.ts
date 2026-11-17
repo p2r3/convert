@@ -258,7 +258,7 @@ async function attemptConvertPath(
 
         if (result === "aborted") {
           // if its on a worker, kill it. otherwise, rekt
-          tryKillConversionWorker(handlerDef.name);
+          void tryKillConversionWorker(handlerDef.name);
 
           throw new DOMException("This operation was aborted", "AbortError");
         }
@@ -337,7 +337,7 @@ async function rankAnyOutputCandidates(
     .map(([id, group]) => {
       const options = [...ConversionOptions].filter(([format]) => formatIdentifier(format) === id);
       const [format, handler] = options.find(([format]) => format.from) ?? options[0];
-      return { node: { handler, format } as ConvertPathNode, files: group, passOn: false };
+      return { node: { handler, format }, files: group, passOn: false };
     });
 
   if (!knownCosts.has(formatIdentifier(SpecialFormats.ANY))) return ranked;

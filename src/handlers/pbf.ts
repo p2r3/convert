@@ -1,7 +1,7 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import Formats from "src/Formats.ts";
 import { PbfReader, PbfWriter } from "pbf";
-import { changeExt, decode, encode } from "src/common/index.ts";
+import { changeExt, decode, encode, ownedBytes } from "src/common/index.ts";
 
 function readBigVarint(pbf: PbfReader) {
   let result = 0n,
@@ -16,7 +16,7 @@ function readBigVarint(pbf: PbfReader) {
 }
 
 function writeBigVarintField(pbf: PbfWriter, tag: number, v: bigint) {
-  v = BigInt.asUintN(64, BigInt(v));
+  v = BigInt.asUintN(64, v);
   pbf.writeTag(tag, 0);
   pbf.realloc(10);
   while (v >= 0x80n) {
@@ -147,14 +147,14 @@ class pbfHandler implements FormatHandler {
         throw new Error(`Cannot convert from ${inputFormat.extension}`);
       }
 
-      let bytes: Uint8Array;
+      let bytes: Uint8Array<ArrayBuffer>;
 
       if (outputFormat.internal === "pbf") {
         const pbf = new PbfWriter();
 
         writeObject(data, pbf);
 
-        bytes = pbf.finish();
+        bytes = ownedBytes(pbf.finish());
       } else if (outputFormat.internal === "json") {
         bytes = encode(JSON.stringify(data));
       } else {

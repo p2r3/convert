@@ -287,7 +287,7 @@ class pandocHandler implements FormatHandler {
         ? encode(preprocessHtmlForTypst(decode(inputFile.bytes)))
         : inputFile.bytes;
       const files: Record<string, any> = {
-        [vfsInputName]: new Blob([sourceBytes as BlobPart]),
+        [vfsInputName]: new Blob([sourceBytes]),
       };
 
       const progressMsg = `Converting ${inputFile.name}...`;

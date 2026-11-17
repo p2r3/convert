@@ -11,7 +11,7 @@ import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import { Buffer } from "buffer";
 import { changeExt, encode } from "src/common/index.ts";
 
-(globalThis as any).Buffer = Buffer;
+Object.assign(globalThis, { Buffer });
 
 class celariaMapHandler implements FormatHandler {
   public readonly name = "celariaMap";

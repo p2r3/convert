@@ -5,7 +5,7 @@ import { InitializationError } from "src/errors.ts";
 
 import * as NBT from "nbtify";
 import JSZip from "jszip";
-import { changeExt, stripExt } from "src/common/index.ts";
+import { changeExt, ownedBytes, stripExt } from "src/common/index.ts";
 import { compressGzip, decompressGzip } from "src/common/gzip.ts";
 import { canvasToBlob, createCanvas, type CanvasBundle } from "src/common/canvas.ts";
 
@@ -124,7 +124,7 @@ class mcMapHandler implements FormatHandler {
           startDigit = parseInt(fileName);
         }
 
-        const blob = new Blob([file.bytes as BlobPart], { type: inputFormat.mime });
+        const blob = new Blob([file.bytes], { type: inputFormat.mime });
 
         const image = await createImageBitmap(blob);
 
@@ -164,7 +164,7 @@ class mcMapHandler implements FormatHandler {
 
           const output = await zip.generateAsync({ type: "uint8array" });
 
-          outputFiles.push({ bytes: output, name: "output.zip" });
+          outputFiles.push({ bytes: ownedBytes(output), name: "output.zip" });
         } else if (outputFormat.internal === "mcmap") {
           canvas.width = 128;
           canvas.height = 128;
@@ -291,8 +291,8 @@ function map2rgba(colors: Uint8Array, width: number, height: number): number[] {
   return out;
 }
 
-function mapRGBA2ColourIDs(data: Uint8ClampedArray): Uint8Array {
-  let colourIDs: Uint8Array = new Uint8Array(data.length / 4);
+function mapRGBA2ColourIDs(data: Uint8ClampedArray): Uint8Array<ArrayBuffer> {
+  const colourIDs = new Uint8Array(data.length / 4);
 
   let shades = getShades();
 

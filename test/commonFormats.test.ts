@@ -63,6 +63,8 @@ await Promise.all([
 console.log("Setup finished.");
 
 const dummyHandler: FormatHandler = {
+  // a handler that is never registered
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   name: "dummy" as HandlerName,
   ready: true,
   async init() {},

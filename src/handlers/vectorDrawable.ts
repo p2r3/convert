@@ -1,4 +1,4 @@
-import { DOMParser } from "@xmldom/xmldom";
+import { DOMParser, Element } from "@xmldom/xmldom";
 
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import Formats from "src/Formats.ts";
@@ -162,7 +162,7 @@ function childElements(el: XmlElement): XmlElement[] {
   const out: XmlElement[] = [];
   for (let i = 0; i < el.childNodes.length; i++) {
     const node = el.childNodes.item(i);
-    if (node !== null && node.nodeType === 1) out.push(node as unknown as XmlElement);
+    if (node instanceof Element) out.push(node);
   }
   return out;
 }

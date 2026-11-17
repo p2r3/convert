@@ -35,7 +35,7 @@ class cybergrindHandler implements FormatHandler {
 
     for (const file of inputFiles) {
       // take img and load
-      const blob = new Blob([file.bytes as BlobPart], { type: inputFormat.mime });
+      const blob = new Blob([file.bytes], { type: inputFormat.mime });
       const image = await createImageBitmap(blob);
 
       // make canvas with 16x16
@@ -86,7 +86,7 @@ class cybergrindHandler implements FormatHandler {
         }
 
         const height = heights[index];
-        cyberHeights += `${height >= 10 ? `(${height})` : `${height}`}`;
+        cyberHeights += height >= 10 ? `(${height})` : `${height}`;
         // H is Hideous mass, n is melee, p is ranged
         // H is last so it will be less likely to exist
         enemyThing += blues.some((x) => x.index === index)

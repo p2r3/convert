@@ -57,13 +57,23 @@ function isNodeVisible(node: BBModelNodeBase) {
 }
 
 function isCubeElement(element: BBModelElement): element is BBModelCube {
-  return Array.isArray((element as BBModelCube).from) && Array.isArray((element as BBModelCube).to);
+  return (
+    "from" in element && Array.isArray(element.from) && "to" in element && Array.isArray(element.to)
+  );
 }
 
 function isMeshElement(element: BBModelElement): element is BBModelMesh {
+  return "vertices" in element && typeof element.vertices === "object" && element.vertices !== null;
+}
+
+const isOptionalArray = (value: object, key: string) =>
+  !(key in value) || Array.isArray(Reflect.get(value, key));
+
+function isBBModel(value: unknown): value is BBModel {
   return (
-    typeof (element as BBModelMesh).vertices === "object" &&
-    (element as BBModelMesh).vertices !== null
+    typeof value === "object" &&
+    value !== null &&
+    ["elements", "groups", "outliner"].every((key) => isOptionalArray(value, key))
   );
 }
 
@@ -292,7 +302,8 @@ export function bbmodelToObject(model: BBModel) {
 }
 
 export function bbmodelToObj(input: string | BBModel) {
-  const model = typeof input === "string" ? (JSON.parse(input) as BBModel) : input;
+  const model: unknown = typeof input === "string" ? JSON.parse(input) : input;
+  if (!isBBModel(model)) throw new Error("Not a Blockbench model.");
   const exporter = new OBJExporter();
   return exporter.parse(bbmodelToObject(model));
 }

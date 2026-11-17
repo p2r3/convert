@@ -7,6 +7,12 @@ import {
   MagickGeometry,
 } from "@imagemagick/magick-wasm";
 
+function toMagickFormat(name: string): MagickFormat {
+  const format = Object.values(MagickFormat).find((format) => format === name);
+  if (!format) throw new Error(`ImageMagick doesn't know the format "${name}".`);
+  return format;
+}
+
 import mime from "mime";
 import magickWasmUrl from "@imagemagick/magick-wasm/magick.wasm?url";
 import normalizeMimeType from "../normalizeMimeType.ts";
@@ -103,8 +109,8 @@ class ImageMagickHandler implements FormatHandler {
     outputFormat: FileFormat,
     ctx?: ConvertContext,
   ): Promise<FileData[]> {
-    const inputMagickFormat = inputFormat.internal as MagickFormat;
-    const outputMagickFormat = outputFormat.internal as MagickFormat;
+    const inputMagickFormat = toMagickFormat(inputFormat.internal);
+    const outputMagickFormat = toMagickFormat(outputFormat.internal);
 
     const inputSettings = new MagickReadSettings();
     inputSettings.format = inputMagickFormat;
@@ -114,7 +120,7 @@ class ImageMagickHandler implements FormatHandler {
     ctx?.log(`Initialising ImageMagick for ${inputFiles.length} files...`);
 
     await ctx?.checkpoint();
-    const bytes: Uint8Array = await new Promise((resolve) => {
+    const bytes = await new Promise<Uint8Array<ArrayBuffer>>((resolve) => {
       MagickImageCollection.use((outputCollection) => {
         let processedCount = 0;
         for (const inputFile of inputFiles) {

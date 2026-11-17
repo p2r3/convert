@@ -1,9 +1,8 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import Formats from "src/Formats.ts";
 import { QOAEncoder, QOADecoder, QOABase } from "qoa-fu";
-import { WaveFile } from "wavefile";
-import type { TypedWaveFile } from "src/common/wav.ts";
-import { changeExt } from "src/common/index.ts";
+import { changeExt, ownedBytes } from "src/common/index.ts";
+import { typedWaveFile } from "src/common/wav.ts";
 
 class uint8ArrayQOADecoder extends QOADecoder {
   private data: Uint8Array;
@@ -27,7 +26,7 @@ class uint8ArrayQOADecoder extends QOADecoder {
 }
 
 class uint8ArrayQOAEncoder extends QOAEncoder {
-  private buffer: Uint8Array;
+  private buffer: Uint8Array<ArrayBuffer>;
   private pos = 0;
 
   constructor(estimatedSize: number) {
@@ -42,7 +41,7 @@ class uint8ArrayQOAEncoder extends QOAEncoder {
     return true;
   }
 
-  public getData(): Uint8Array {
+  public getData(): Uint8Array<ArrayBuffer> {
     return this.buffer.subarray(0, this.pos);
   }
 }
@@ -88,17 +87,17 @@ class qoaFuHandler implements FormatHandler {
             ) * decoder.getChannels();
         }
 
-        const wav = new WaveFile() as TypedWaveFile;
+        const wav = typedWaveFile();
         wav.fromScratch(decoder.getChannels(), decoder.getSampleRate(), "16", audioData);
 
-        const wavBytes = wav.toBuffer();
+        const wavBytes = ownedBytes(wav.toBuffer());
         const name = changeExt(inputFile.name, "wav");
         outputFiles.push({ bytes: wavBytes, name });
       }
     } else if (inputFormat.internal === "wav" && outputFormat.internal === "qoa") {
       // WAV => QOA
       for (const inputFile of inputFiles) {
-        const wav = new WaveFile(inputFile.bytes) as TypedWaveFile;
+        const wav = typedWaveFile(inputFile.bytes);
         wav.toBitDepth("32f");
         const length = wav.data.samples.length / wav.fmt.blockAlign;
 

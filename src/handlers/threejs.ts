@@ -51,20 +51,20 @@ function loadTextureBitmap(
 }
 
 class WorkerXMLParser {
-  parseFromString(text: string, type: string) {
+  parseFromString(text: string, type: Parameters<WorkerDOMParser["parseFromString"]>[1]) {
     // "<m:tex2coord" -> "<tex2coord", linkedom has no namespaces
-    return new WorkerDOMParser().parseFromString(
-      text.replace(/<(\/?)[\w.-]+:/g, "<$1"),
-      type as "text/xml",
-    );
+    return new WorkerDOMParser().parseFromString(text.replace(/<(\/?)[\w.-]+:/g, "<$1"), type);
   }
 }
 
 function withWorkerDom<T>(parse: () => T): T {
   if (typeof document !== "undefined") return parse();
 
+  // only kept to put back on the prototype, never called unbound
+  // oxlint-disable-next-line typescript/unbound-method
   const load = THREE.TextureLoader.prototype.load;
-  THREE.TextureLoader.prototype.load = loadTextureBitmap as typeof load;
+  // loads into an ImageBitmap texture, which the typings don't allow for
+  Object.assign(THREE.TextureLoader.prototype, { load: loadTextureBitmap });
   Object.assign(globalThis, { DOMParser: WorkerXMLParser });
   try {
     return parse();
@@ -127,9 +127,10 @@ class threejsHandler implements FormatHandler {
     // remove bad textures
     model.object.traverse((child) => {
       if (!(child instanceof THREE.Mesh || child instanceof THREE.Points)) return;
-      for (const material of [child.material].flat() as Record<string, unknown>[]) {
+      for (const material of [child.material].flat()) {
         for (const [key, value] of Object.entries(material)) {
-          if (value instanceof THREE.Texture && !value.image?.width) material[key] = null;
+          if (value instanceof THREE.Texture && !value.image?.width)
+            Reflect.set(material, key, null);
         }
       }
     });
@@ -214,13 +215,14 @@ class threejsHandler implements FormatHandler {
     object: THREE.Object3D,
     animations: THREE.AnimationClip[],
     format: string,
-  ): Promise<Uint8Array> {
+  ): Promise<Uint8Array<ArrayBuffer>> {
     object.updateMatrixWorld(true);
 
     switch (format) {
       case "glb": {
         const result = await new GLTFExporter().parseAsync(object, { binary: true, animations });
-        return new Uint8Array(result as ArrayBuffer);
+        if (!(result instanceof ArrayBuffer)) throw new Error("GLTFExporter didn't produce a GLB.");
+        return new Uint8Array(result);
       }
       case "obj":
         return new TextEncoder().encode(new OBJExporter().parse(object));
@@ -236,7 +238,7 @@ class threejsHandler implements FormatHandler {
       }
       case "ply": {
         const result = await new Promise<ArrayBuffer>((resolve) => {
-          new PLYExporter().parse(object, (data) => resolve(data as ArrayBuffer), { binary: true });
+          new PLYExporter().parse(object, (data) => resolve(data), { binary: true });
         });
         return new Uint8Array(result);
       }
@@ -249,7 +251,7 @@ class threejsHandler implements FormatHandler {
     object: THREE.Object3D,
     mime: string,
     options: ConvertOptions = {},
-  ): Promise<Uint8Array> {
+  ): Promise<Uint8Array<ArrayBuffer>> {
     if (!this.canvas || !this.renderer) throw new InitializationError("Handler not initialized.");
 
     const { width, height } = resolveSize(960, 540, options);

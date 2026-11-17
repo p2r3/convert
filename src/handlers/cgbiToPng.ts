@@ -3,7 +3,7 @@ import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import Formats from "src/Formats.ts";
 import { changeExt } from "src/common/index.ts";
 
-async function revertCgBIBuffer(input: Uint8Array | ArrayBuffer): Promise<Uint8Array> {
+async function revertCgBIBuffer(input: Uint8Array | ArrayBuffer): Promise<Uint8Array<ArrayBuffer>> {
   const buffer = input instanceof Uint8Array ? input : new Uint8Array(input);
 
   const PNG_SIGNATURE = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
@@ -182,9 +182,12 @@ class cgbiToPngHandler implements FormatHandler {
           name: outputName,
         });
       } catch (error) {
-        throw new Error(`Failed to convert ${inputFile.name}: ${(error as Error).message}`, {
-          cause: error,
-        });
+        throw new Error(
+          `Failed to convert ${inputFile.name}: ${error instanceof Error ? error.message : String(error)}`,
+          {
+            cause: error,
+          },
+        );
       }
     }
 

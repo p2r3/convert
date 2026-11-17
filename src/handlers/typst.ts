@@ -5,7 +5,7 @@ import type { TypstSnippet } from "@myriaddreamin/typst.ts/dist/esm/contrib/snip
 import typstCompilerWasmUrl from "@myriaddreamin/typst-ts-web-compiler/wasm?url";
 import typstRendererWasmUrl from "@myriaddreamin/typst-ts-renderer/wasm?url";
 import { InitializationError } from "src/errors.ts";
-import { changeExt, decode, encode } from "src/common/index.ts";
+import { changeExt, decode, encode, isStringRecord } from "src/common/index.ts";
 
 export const TYPST_PAGEBREAK_MARKER = "CONVERTTYPSTPAGEBREAKTOKEN";
 export const TYPST_ASSET_MANIFEST_START = "// convert-assets-start";
@@ -277,7 +277,8 @@ export function unpackTypstAssets(mainContent: string): {
     return { mainContent: strippedContent, shadowFiles: {} };
   }
 
-  const parsedManifest = JSON.parse(manifestRaw) as Record<string, string>;
+  const parsedManifest: unknown = JSON.parse(manifestRaw);
+  if (!isStringRecord(parsedManifest)) throw new Error("Invalid Typst asset manifest.");
   const shadowFiles = Object.fromEntries(
     Object.entries(parsedManifest).map(([path, base64]) => [path, Uint8Array.fromBase64(base64)]),
   );

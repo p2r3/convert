@@ -13,6 +13,7 @@ import {
 import type { FormatOptions } from "src/Settings.ts";
 import { changeExt, decode, encode } from "src/common/index.ts";
 import type { ConvertContext } from "src/ui/ProgressStore.ts";
+import { numberOption } from "src/Settings.ts";
 
 const DEFAULT_FONT_SIZE = 48;
 
@@ -67,7 +68,7 @@ class canvasToBlobHandler implements FormatHandler {
     const outputFiles: FileData[] = [];
     for (const inputFile of inputFiles) {
       if (inputFormat.mime === "text/plain") {
-        const fontSize = (options.fontSize as number | undefined) ?? DEFAULT_FONT_SIZE;
+        const fontSize = numberOption(options, "fontSize") ?? DEFAULT_FONT_SIZE;
         const font = `${fontSize}px sans-serif`;
         const footerPadding = fontSize * 0.5;
         const string = decode(inputFile.bytes);
@@ -101,7 +102,7 @@ class canvasToBlobHandler implements FormatHandler {
         await blobToCanvas(this.#bundle, inputFile.bytes, inputFormat.mime);
       }
 
-      let bytes: Uint8Array;
+      let bytes: Uint8Array<ArrayBuffer>;
       if (outputFormat.mime === "text/plain") {
         const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
         bytes = encode(

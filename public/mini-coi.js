@@ -6,7 +6,7 @@
     if (!s || !("crossOriginIsolated" in self)) return;
     if (self.crossOriginIsolated && !s.controller) return;
     const { currentScript: c } = d;
-    s.register(c.src, { scope: c.getAttribute("scope") || "." }).then((r) => {
+    void s.register(c.src, { scope: c.getAttribute("scope") || "." }).then((r) => {
       s.addEventListener("controllerchange", () => location.reload());
       if (r.active && !s.controller) location.reload();
     });

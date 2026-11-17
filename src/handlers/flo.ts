@@ -1,10 +1,9 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import Formats from "src/Formats.ts";
 import initReflo, { decode, encode, get_flo_file_info } from "@flo-audio/reflo";
-import { WaveFile } from "wavefile";
 import refloWasmUrl from "@flo-audio/reflo/reflo_bg.wasm?url";
-import type { TypedWaveFile } from "src/common/wav.ts";
-import { changeExt } from "src/common/index.ts";
+import { changeExt, ownedBytes } from "src/common/index.ts";
+import { typedWaveFile } from "src/common/wav.ts";
 
 class floHandler implements FormatHandler {
   public readonly name = "flo";
@@ -39,7 +38,7 @@ class floHandler implements FormatHandler {
         channels = info.channels;
         info.free();
       } else if (inputFormat.internal === "wav") {
-        const wav = new WaveFile(file.bytes) as TypedWaveFile;
+        const wav = typedWaveFile(file.bytes);
         wav.toBitDepth("32f");
         samples = wav.getSamples(true, Float32Array);
         sampleRate = wav.fmt.sampleRate;
@@ -61,14 +60,14 @@ class floHandler implements FormatHandler {
 
       if (outputFormat.internal === "flo") {
         return {
-          bytes: encode(samples, sampleRate, channels, 32, null),
+          bytes: ownedBytes(encode(samples, sampleRate, channels, 32, null)),
           name: changeExt(file.name, "flo"),
         };
       } else if (outputFormat.internal === "wav") {
-        const wav = new WaveFile() as TypedWaveFile;
+        const wav = typedWaveFile();
         wav.fromScratch(channels, sampleRate, "32f", samples);
         wav.toBitDepth("16");
-        return { bytes: wav.toBuffer(), name: changeExt(file.name, "wav") };
+        return { bytes: ownedBytes(wav.toBuffer()), name: changeExt(file.name, "wav") };
       } else if (outputFormat.internal === "f32le") {
         const bytes = new Uint8Array(samples.length * 4);
         const view = new DataView(bytes.buffer);

@@ -3,6 +3,7 @@ import iconsUrl from "built/material-icons/icons.json?url";
 import type { CategoryType } from "src/Formats";
 import { getDefaultIconForCategory } from "./categoryDefaultIcons";
 import "./index.css";
+import { isStringRecord } from "src/common/index.ts";
 
 interface FileIconProps {
   extension?: string;
@@ -17,6 +18,14 @@ interface IconBundle {
   icons: Record<string, string>;
 }
 
+const isIconBundle = (value: unknown): value is IconBundle =>
+  typeof value === "object" &&
+  value !== null &&
+  "extensions" in value &&
+  "icons" in value &&
+  isStringRecord(value.extensions) &&
+  isStringRecord(value.icons);
+
 let bundleCache: IconBundle | null = null;
 let loadPromise: Promise<IconBundle> | null = null;
 
@@ -26,9 +35,10 @@ function loadIconBundle(): Promise<IconBundle> {
     loadPromise = fetch(iconsUrl)
       .then((r) => {
         if (!r.ok) throw new Error("icon bundle load failed");
-        return r.json() as Promise<IconBundle>;
+        return r.json();
       })
-      .then((bundle) => {
+      .then((bundle: unknown) => {
+        if (!isIconBundle(bundle)) throw new Error("icon bundle is malformed");
         bundleCache = bundle;
         return bundle;
       });
@@ -95,7 +105,7 @@ export default function FileIcon({
   const [bundle, setBundle] = useState<IconBundle | null>(bundleCache);
 
   useEffect(() => {
-    loadIconBundle().then(setBundle);
+    loadIconBundle().then(setBundle, console.error);
   }, []);
 
   const logical = resolveLogical(extension, mimeType, bundle?.extensions ?? null, category);
