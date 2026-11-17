@@ -42,6 +42,7 @@ class pdfjsHandler implements FormatHandler {
     Formats.JPEG.builder("jpeg").options({ width: true, height: true }).to(),
   ];
   public ready = false;
+  public abortable = true;
 
   async init() {
     GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
@@ -73,6 +74,7 @@ class pdfjsHandler implements FormatHandler {
         const factory = new WorkerCanvasFactory();
 
         for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+          await ctx?.checkpoint();
           const page = await pdf.getPage(pageNumber);
           const viewport = page.getViewport({ scale: 1 });
           const { width, height } = resolveSize(viewport.width, viewport.height, ctx?.options);

@@ -133,48 +133,55 @@ class mediabunnyHandler implements FormatHandler {
         formats: [mbInputFormat],
         source,
       });
-      const output = new mb.Output({
-        format: mbOutputFormat,
-        target: new mb.BufferTarget(),
-      });
-      const conversion = await mb.Conversion.init({
-        input,
-        output,
-        video: {
-          width: options.width,
-          height: options.height,
-          fit: options.width && options.height ? "fill" : undefined,
-          frameRate: options.fps,
-          codec: fromFFmpegName(mbOutputFormat.getSupportedVideoCodecs(), options.videoCodec),
-          bitrate: options.videoBitrate && options.videoBitrate * 1000,
-        },
-        audio: {
-          sampleRate: options.sampleRate,
-          numberOfChannels: options.channels,
-          codec: audioCodec,
-          bitrate: options.audioBitrate && options.audioBitrate * 1000,
-        },
-      });
+      try {
+        const output = new mb.Output({
+          format: mbOutputFormat,
+          target: new mb.BufferTarget(),
+        });
+        const conversion = await mb.Conversion.init({
+          input,
+          output,
+          video: {
+            width: options.width,
+            height: options.height,
+            fit: options.width && options.height ? "fill" : undefined,
+            frameRate: options.fps,
+            codec: fromFFmpegName(mbOutputFormat.getSupportedVideoCodecs(), options.videoCodec),
+            bitrate: options.videoBitrate && options.videoBitrate * 1000,
+          },
+          audio: {
+            sampleRate: options.sampleRate,
+            numberOfChannels: options.channels,
+            codec: audioCodec,
+            bitrate: options.audioBitrate && options.audioBitrate * 1000,
+          },
+        });
 
-      conversion.onProgress = (progress, seconds) => {
-        ctx?.progress(
-          `Transcoding... (${seconds.toFixed(1)}s processed)`,
-          (i + progress) / inputFiles.length,
-        );
-      };
+        conversion.onProgress = (progress, seconds) => {
+          ctx?.progress(
+            `Transcoding... (${seconds.toFixed(1)}s processed)`,
+            (i + progress) / inputFiles.length,
+          );
+        };
 
-      await conversion.execute({
-        pauseSignal: ctx?.signal,
-      });
+        // pausing keeps the abort an AbortError, cancelling then closes the codecs and the output
+        await conversion.execute({
+          pauseSignal: ctx?.signal,
+        });
+        if (conversion.state !== "done") {
+          await conversion.cancel();
+          await ctx?.checkpoint();
+        }
 
-      ctx?.throwIfAborted();
+        if (conversion.state !== "done" || !output.target.buffer)
+          throw new Error("conversion isnt done after completing");
 
-      if (conversion.state !== "done" || !output.target.buffer)
-        throw new Error("conversion isnt done after completing");
+        const name = changeExt(inputFile.name, outputFormat.extension);
 
-      const name = changeExt(inputFile.name, outputFormat.extension);
-
-      outputFiles.push({ name, bytes: new Uint8Array(output.target.buffer) });
+        outputFiles.push({ name, bytes: new Uint8Array(output.target.buffer) });
+      } finally {
+        input.dispose();
+      }
     }
 
     return outputFiles;

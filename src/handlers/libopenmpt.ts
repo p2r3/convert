@@ -116,6 +116,7 @@ class libopenmptHandler implements FormatHandler {
   public readonly name = "libopenmpt";
   public supportedFormats: FileFormat[] = [];
   public ready = false;
+  public abortable = true;
 
   #module?: LibOpenMPTModule;
 
@@ -163,8 +164,9 @@ class libopenmptHandler implements FormatHandler {
     const outputFiles: FileData[] = [];
 
     for (const inputFile of inputFiles) {
+      await ctx?.checkpoint();
       const bytes = new Uint8Array(inputFile.bytes);
-      const pcmData = render(mod, bytes, sampleRate);
+      const pcmData = await render(mod, bytes, sampleRate, ctx);
       const wavBytes = buildWav(pcmData, sampleRate, 2, 16);
       const name = changeExt(inputFile.name, "wav");
       outputFiles.push({ bytes: wavBytes, name });
@@ -177,7 +179,12 @@ class libopenmptHandler implements FormatHandler {
 const RENDER_FRAMES = 4096;
 
 /** Renders a whole module to interleaved stereo 16-bit PCM. */
-function render(mod: LibOpenMPTModule, fileData: Uint8Array, sampleRate: number): Int16Array {
+async function render(
+  mod: LibOpenMPTModule,
+  fileData: Uint8Array,
+  sampleRate: number,
+  ctx?: ConvertContext,
+): Promise<Int16Array> {
   const input = mod._malloc(fileData.length);
   mod.HEAPU8.set(fileData, input);
   const handle = mod._openmpt_module_create_from_memory2(
@@ -211,6 +218,8 @@ function render(mod: LibOpenMPTModule, fileData: Uint8Array, sampleRate: number)
       const start = buffer >> 1;
       chunks.push(mod.HEAP16.slice(start, start + frames * 2));
       total += frames;
+      // the finally below frees the module, so stopping here is safe
+      await ctx?.checkpoint();
     } while (frames > 0);
   } finally {
     mod._free(buffer);

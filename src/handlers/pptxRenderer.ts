@@ -61,6 +61,7 @@ export default class pptxRendererHandler implements FormatHandler {
   ];
   public ready = false;
   public offload = false; // dom heavy
+  public abortable = true;
 
   private html2canvas?: any;
 
@@ -93,6 +94,7 @@ export default class pptxRendererHandler implements FormatHandler {
 
     try {
       for (const inputFile of inputFiles) {
+        await ctx?.checkpoint();
         const files = await parseZip(toArrayBuffer(inputFile.bytes));
         const presentation = buildPresentation(files);
 
@@ -111,6 +113,7 @@ export default class pptxRendererHandler implements FormatHandler {
         const mediaUrlCache = new Map<string, string>();
 
         for (const [slideIndex, slide] of presentation.slides.entries()) {
+          await ctx?.checkpoint();
           const handle = renderSlide(presentation, slide, { mediaUrlCache });
           try {
             stagingRoot.replaceChildren();
@@ -119,6 +122,7 @@ export default class pptxRendererHandler implements FormatHandler {
             stagingRoot.appendChild(handle.element);
 
             await waitForSlideToSettle(handle.element);
+            await ctx?.checkpoint();
 
             const canvas = await this.html2canvas(handle.element, {
               backgroundColor: "#ffffff",

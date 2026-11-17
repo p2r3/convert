@@ -119,6 +119,7 @@ export default class epubHandler implements FormatHandler {
     Formats.HTML.builder("html").to(),
   ];
   public ready = false;
+  public abortable = true;
 
   async init() {
     this.ready = true;
@@ -136,6 +137,7 @@ export default class epubHandler implements FormatHandler {
     const blobUrlCache = new Map<string, Promise<string>>();
 
     for (const file of inputFiles) {
+      await ctx?.checkpoint();
       const baseName = stripExt(file.name);
 
       if (outputFormat.internal === "html") {
@@ -216,6 +218,7 @@ export default class epubHandler implements FormatHandler {
 
         const processWorker = async () => {
           while (true) {
+            if (await ctx?.aborted()) break;
             const index = currentIndex++;
             if (index >= totalSpineItems) break;
 
@@ -248,6 +251,10 @@ export default class epubHandler implements FormatHandler {
           processWorker(),
         );
         await Promise.all(workers);
+        if (await ctx?.aborted()) {
+          currentBook.destroy();
+          await ctx?.checkpoint();
+        }
 
         for (let i = 0; i < totalSpineItems; i++) {
           const res = results[i];

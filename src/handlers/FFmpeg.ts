@@ -405,7 +405,7 @@ class FFmpegHandler implements FormatHandler {
     args?: string[],
     ctx?: ConvertContext,
   ): Promise<FileData[]> {
-    ctx?.throwIfAborted();
+    await ctx?.checkpoint();
 
     const threads = String(Math.min(8, navigator.hardwareConcurrency));
 
@@ -472,7 +472,6 @@ class FFmpegHandler implements FormatHandler {
       let listString = "";
       ctx?.log(`Preparing ${inputFiles.length} input files...`);
       for (const file of inputFiles) {
-        ctx?.throwIfAborted();
         const entryName = `file_${fileIndex++}.${inputFormat.extension}`;
         ffmpeg.FS.writeFile(entryName, new Uint8Array(file.bytes));
         listString += `file '${entryName}'\n`;
@@ -516,7 +515,7 @@ class FFmpegHandler implements FormatHandler {
 
     const stdout = await this.execFFmpeg(command, { preRun, postRun, log, abort: ctx?.signal });
 
-    ctx?.throwIfAborted();
+    await ctx?.checkpoint();
 
     if (stdout.includes("Conversion failed!\n")) {
       ctx?.log("Conversion failed, attempting auto-fix...", "error");

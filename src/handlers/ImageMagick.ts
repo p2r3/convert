@@ -113,11 +113,11 @@ class ImageMagickHandler implements FormatHandler {
 
     ctx?.log(`Initialising ImageMagick for ${inputFiles.length} files...`);
 
+    await ctx?.checkpoint();
     const bytes: Uint8Array = await new Promise((resolve) => {
       MagickImageCollection.use((outputCollection) => {
         let processedCount = 0;
         for (const inputFile of inputFiles) {
-          ctx?.throwIfAborted();
           const progressMsg = `Reading ${inputFile.name}...`;
           ctx?.progress(progressMsg, processedCount / inputFiles.length);
           ctx?.log(progressMsg);

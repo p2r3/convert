@@ -179,7 +179,7 @@ export interface HandlerDefinition {
   readonly offload?: boolean;
 
   /** Whether the handler supports graceful aborting.
-   * Usually you should either listen to the "abort" event of ctx.signal, or poll ctx.throwIfAborted() in long loops.
+   * Usually you should either listen to the "abort" event of ctx.signal, or `await ctx.checkpoint()` in long loops.
    * The handler is responsible for making sure that internal state is not corrupted if any abort happens.
    * Defaults to `false`.
    */

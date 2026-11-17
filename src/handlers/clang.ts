@@ -5,6 +5,7 @@ import createLLVM, { type MainModule as LLVMModule } from "built/clang/llvm.js";
 import wasmUrl from "built/clang/llvm.wasm.gz?url";
 import resourcesUrl from "built/clang/resources.tar.gz?url";
 import { changeExt } from "src/common/index.ts";
+import type { ConvertContext } from "src/ui/ProgressStore.ts";
 import { fetchGzip } from "src/common/gzip.ts";
 
 const sysrootUrls = import.meta.glob<string>("/built/clang/sysroots/*.tar.gz", {
@@ -121,6 +122,7 @@ class clangHandler implements FormatHandler {
     ]),
   ];
   public ready = false;
+  public abortable = true;
 
   #module?: Promise<WebAssembly.Module>;
   #resources?: Promise<Files>;
@@ -146,7 +148,7 @@ class clangHandler implements FormatHandler {
     return sysroot;
   }
 
-  async #run(args: string[], files: Files, sysroot?: Files) {
+  async #run(args: string[], files: Files, sysroot?: Files, ctx?: ConvertContext) {
     this.#module ??= this.#cached(
       WebAssembly.compileStreaming(fetchGzip(wasmUrl, "application/wasm")),
       () => (this.#module = undefined),
@@ -182,6 +184,7 @@ class clangHandler implements FormatHandler {
     llvm.FS.mkdirTree("/work", 0o777);
     llvm.FS.chdir("/work");
     writeFiles(llvm, "/work", files);
+    await ctx?.checkpoint();
 
     let status: number;
     try {
@@ -201,6 +204,7 @@ class clangHandler implements FormatHandler {
     inputFiles: FileData[],
     inputFormat: FileFormat,
     outputFormat: FileFormat,
+    ctx?: ConvertContext,
   ): Promise<FileData[]> {
     const [key, kind] = outputFormat.internal.split(":");
     const target = TARGETS[key];
@@ -241,6 +245,7 @@ class clangHandler implements FormatHandler {
           [clang, "-x", language, inputFile.name, "-S", "-o", outputName, ...args],
           files,
           sysroot,
+          ctx,
         );
         if (status !== 0) throw new Error(`clang failed:\n${output}`);
         outputFiles.push({
@@ -255,6 +260,7 @@ class clangHandler implements FormatHandler {
         [clang, "-x", language, inputFile.name, "-c", "-o", "out.o", ...args],
         files,
         sysroot,
+        ctx,
       );
       if (compile.status !== 0) throw new Error(`clang failed:\n${compile.output}`);
 
@@ -263,13 +269,14 @@ class clangHandler implements FormatHandler {
         [clang, "-###", "out.o", "-o", outputName, ...args],
         objects,
         sysroot,
+        ctx,
       );
       if (plan.status !== 0) throw new Error(`clang failed:\n${plan.output}`);
       const jobs = parseJobs(plan.output);
       if (jobs.length !== 1) throw new Error(`Expected a single link job:\n${plan.output}`);
       const [linker, ...linkArgs] = jobs[0];
 
-      const link = await this.#run([linker, ...linkArgs], objects, sysroot);
+      const link = await this.#run([linker, ...linkArgs], objects, sysroot, ctx);
       if (link.status !== 0) throw new Error(`Linking failed:\n${link.output}`);
       outputFiles.push({
         name: changeExt(inputFile.name, outputDefinition.extension),

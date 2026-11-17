@@ -14,8 +14,13 @@ export interface LogEntry {
 export interface ConvertContext {
   progress: (message: string, value: number | ((prev: number) => number)) => void;
   log: (message: string, level?: LogLevel) => void;
+  /** For abort listeners only. Its `aborted` flag can lag behind, read it with {@link aborted}. */
   signal: AbortSignal;
-  throwIfAborted: () => void;
+  /** Whether the conversion was cancelled. Every so often it waits briefly so a pending abort can
+   * arrive, so it also works in long synchronous loops. */
+  aborted: () => Promise<boolean>;
+  /** Rejects with an AbortError if the conversion was cancelled, see {@link aborted}. */
+  checkpoint: () => Promise<void>;
   options: ConvertOptions;
 }
 
@@ -80,12 +85,25 @@ export function relayPortProgress(port: MessagePort, pluginName: string) {
   port.start();
 }
 
+/** How often (ms) {@link ConvertContext.aborted} lets pending events run. */
+const YIELD_INTERVAL = 50;
+
 export function createRemoteContext(
   store: IProgressStore,
   pluginName: string,
   abort: AbortSignal,
 ): ConvertContext {
   let prevVal = 0;
+  let lastYield = performance.now();
+
+  // The abort arrives as an event, which can't run while the handler keeps the thread busy.
+  const aborted = async () => {
+    if (performance.now() - lastYield >= YIELD_INTERVAL) {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      lastYield = performance.now();
+    }
+    return abort.aborted;
+  };
 
   return {
     progress: (msg, val) => {
@@ -99,8 +117,9 @@ export function createRemoteContext(
     },
     signal: abort,
     options: {},
-    throwIfAborted() {
-      if (abort.aborted) throw new DOMException("Conversion cancelled", "AbortError");
+    aborted,
+    async checkpoint() {
+      if (await aborted()) throw new DOMException("Conversion cancelled", "AbortError");
     },
   };
 }

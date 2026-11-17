@@ -131,6 +131,7 @@ class htmlToSvgHandler implements FormatHandler {
   ];
   public ready = false;
   public offload = false; // very dom heavy
+  public abortable = true;
 
   async init() {
     this.ready = true;
@@ -148,6 +149,7 @@ class htmlToSvgHandler implements FormatHandler {
     const outputFiles: FileData[] = [];
 
     for (const inputFile of inputFiles) {
+      await ctx?.checkpoint();
       const { name, bytes } = inputFile;
       const htmlStr = decode(bytes);
       const svgStr = await htmlContentToSvgString(htmlStr, {

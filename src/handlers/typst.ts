@@ -1,5 +1,6 @@
 import Formats from "src/Formats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
+import type { ConvertContext } from "src/ui/ProgressStore.ts";
 import type { TypstSnippet } from "@myriaddreamin/typst.ts/dist/esm/contrib/snippet.mjs";
 import typstCompilerWasmUrl from "@myriaddreamin/typst-ts-web-compiler/wasm?url";
 import typstRendererWasmUrl from "@myriaddreamin/typst-ts-renderer/wasm?url";
@@ -315,6 +316,7 @@ class typstHandler implements FormatHandler {
     Formats.SVG.builder("svg").fromTo(),
   ];
   public ready = false;
+  public abortable = true;
 
   private $typst?: TypstSnippet;
 
@@ -339,7 +341,10 @@ class typstHandler implements FormatHandler {
     this.ready = true;
   }
 
-  private async svgFilesToSinglePdf(inputFiles: FileData[]): Promise<FileData[]> {
+  private async svgFilesToSinglePdf(
+    inputFiles: FileData[],
+    ctx?: ConvertContext,
+  ): Promise<FileData[]> {
     const $typst = this.$typst!;
     const dimensions = inputFiles.map((file) => parseSvgPageDimensions(file.bytes));
 
@@ -366,6 +371,7 @@ class typstHandler implements FormatHandler {
     const mainContent = body;
 
     try {
+      await ctx?.checkpoint();
       const pdfData = await $typst.pdf({ mainContent });
       if (!pdfData) throw new Error("Typst compilation to PDF failed.");
       return [
@@ -386,6 +392,7 @@ class typstHandler implements FormatHandler {
     inputFiles: FileData[],
     inputFormat: FileFormat,
     outputFormat: FileFormat,
+    ctx?: ConvertContext,
   ): Promise<FileData[]> {
     if (!this.ready || !this.$typst) throw new InitializationError("Handler not initialized.");
 
@@ -397,12 +404,13 @@ class typstHandler implements FormatHandler {
     }
 
     if (inputFormat.internal === "svg" && outputFormat.internal === "pdf") {
-      return this.svgFilesToSinglePdf(inputFiles);
+      return this.svgFilesToSinglePdf(inputFiles, ctx);
     }
 
     const outputFiles: FileData[] = [];
 
     for (const file of inputFiles) {
+      await ctx?.checkpoint();
       const { mainContent, shadowFiles } = unpackTypstAssets(decode(file.bytes));
       await this.$typst.resetShadow();
 
@@ -412,6 +420,7 @@ class typstHandler implements FormatHandler {
       }
 
       await this.$typst.mapShadow("/main.typ", encode(mainContent));
+      await ctx?.checkpoint();
 
       if (outputFormat.internal === "pdf") {
         const pdfData = await this.$typst.pdf({

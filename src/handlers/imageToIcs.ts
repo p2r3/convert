@@ -283,7 +283,7 @@ class imageToIcsHandler implements FormatHandler {
     const frames = inputFiles.toSorted((a, b) => collator.compare(filePath(a), filePath(b)));
     const lightness: Float64Array[] = [];
     for (const [i, file] of frames.entries()) {
-      ctx?.throwIfAborted();
+      await ctx?.checkpoint();
       ctx?.progress(`Reading image ${i + 1} of ${frames.length}...`, i / frames.length / 2);
       const blob = new Blob([file.bytes as BlobPart], { type: inputFormat.mime });
       const image = await createImageBitmap(blob, { colorSpaceConversion: "none" });

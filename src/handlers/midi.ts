@@ -178,6 +178,7 @@ export class midiSynthHandler implements FormatHandler {
       .to(),
   ];
   public ready = false;
+  public abortable = true;
 
   #sfontBin?: ArrayBuffer;
   #JSSynth?: any;
@@ -203,37 +204,41 @@ export class midiSynthHandler implements FormatHandler {
     const outputFiles: FileData[] = [];
 
     for (const inputFile of inputFiles) {
-      const synth = new JSSynth.Synthesizer();
-      synth.init(sampleRate);
-      await synth.loadSFont(this.#sfontBin);
-
-      // slice() guarantees a clean ArrayBuffer with no byteOffset
-      const midiBin: ArrayBuffer = inputFile.bytes.slice().buffer;
-      await synth.addSMFDataToPlayer(midiBin);
-      await synth.playPlayer();
-
+      await ctx?.checkpoint();
       const left: Float32Array[] = [];
       const right: Float32Array[] = [];
 
-      // Render while player is active
-      while (synth.isPlayerPlaying()) {
-        const l = new Float32Array(BUFFER_FRAMES);
-        const r = new Float32Array(BUFFER_FRAMES);
-        synth.render([l, r]);
-        left.push(l);
-        right.push(r);
-      }
+      const synth = new JSSynth.Synthesizer();
+      try {
+        synth.init(sampleRate);
+        await synth.loadSFont(this.#sfontBin);
 
-      // Render reverb/chorus tail until voices stop (or max chunks)
-      for (let i = 0; i < TAIL_CHUNKS_MAX && synth.isPlaying(); i++) {
-        const l = new Float32Array(BUFFER_FRAMES);
-        const r = new Float32Array(BUFFER_FRAMES);
-        synth.render([l, r]);
-        left.push(l);
-        right.push(r);
-      }
+        // slice() guarantees a clean ArrayBuffer with no byteOffset
+        const midiBin: ArrayBuffer = inputFile.bytes.slice().buffer;
+        await synth.addSMFDataToPlayer(midiBin);
+        await synth.playPlayer();
 
-      synth.close();
+        // Render while player is active
+        while (synth.isPlayerPlaying()) {
+          const l = new Float32Array(BUFFER_FRAMES);
+          const r = new Float32Array(BUFFER_FRAMES);
+          synth.render([l, r]);
+          left.push(l);
+          right.push(r);
+          await ctx?.checkpoint();
+        }
+
+        // Render reverb/chorus tail until voices stop (or max chunks)
+        for (let i = 0; i < TAIL_CHUNKS_MAX && synth.isPlaying(); i++) {
+          const l = new Float32Array(BUFFER_FRAMES);
+          const r = new Float32Array(BUFFER_FRAMES);
+          synth.render([l, r]);
+          left.push(l);
+          right.push(r);
+        }
+      } finally {
+        synth.close();
+      }
 
       // Interleave channels and clamp float32 -> int16
       const totalFrames = left.length * BUFFER_FRAMES;

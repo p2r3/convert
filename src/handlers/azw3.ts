@@ -5,6 +5,7 @@ import * as pako from "pako";
 import { isMOBI, MOBI } from "built/foliate-mobi/mobi.js";
 import { DOMParser } from "linkedom/worker";
 import { changeExt } from "src/common/index.ts";
+import type { ConvertContext } from "src/ui/ProgressStore.ts";
 
 class azw3Handler implements FormatHandler {
   public readonly name = "azw3";
@@ -14,6 +15,7 @@ class azw3Handler implements FormatHandler {
     Formats.EPUB.builder("epub").to(),
   ];
   public ready = false;
+  public abortable = true;
 
   async init() {
     this.ready = true;
@@ -23,9 +25,11 @@ class azw3Handler implements FormatHandler {
     inputFiles: FileData[],
     inputFormat: FileFormat,
     outputFormat: FileFormat,
+    ctx?: ConvertContext,
   ): Promise<FileData[]> {
     const outputFiles: FileData[] = [];
     for (const inputFile of inputFiles) {
+      await ctx?.checkpoint();
       const blob = new Blob([new Uint8Array(inputFile.bytes)]);
       const valid = await isMOBI(blob);
       if (!valid) throw new Error("Invalid MOBI/AZW3 file.");
@@ -56,6 +60,7 @@ class azw3Handler implements FormatHandler {
       for (let i = 0; i < book.sections.length; i++) {
         const section = book.sections[i];
         const isLinear = section.linear !== "no";
+        await ctx?.checkpoint();
 
         try {
           const doc = (await section.createDocument?.()) as Document | undefined;

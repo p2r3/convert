@@ -99,6 +99,7 @@ export class Converter {
         await handler.init();
         if (!handler.ready) throw new Error(`Handler "${def.name}" not ready after init.`);
       }
+      await ctx.checkpoint();
 
       ctx.log(
         `Converting ${path[0].format.format} → ${path[1].format.format} using ${this.name} converter`,

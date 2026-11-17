@@ -15,6 +15,7 @@ class svgToBlobHandler implements FormatHandler {
   ];
   public ready = false;
   public offload = false; // svg does not like createImageBitmap
+  public abortable = true;
 
   #bundle?: CanvasBundle;
 
@@ -37,6 +38,7 @@ class svgToBlobHandler implements FormatHandler {
 
     const outputFiles: FileData[] = [];
     for (const inputFile of inputFiles) {
+      await convertCtx?.checkpoint();
       // avoid the "Tainted canvases may not be exported" error
       const url = `data:${inputFormat.mime};base64,${inputFile.bytes.toBase64()}`;
 
