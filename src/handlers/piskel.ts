@@ -2,6 +2,7 @@ import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import Formats from "src/Formats.ts";
 import JSZip from "jszip";
 import { InitializationError } from "src/errors.ts";
+import type { ConvertContext } from "src/ui/ProgressStore.ts";
 import { changeExt, decode } from "src/common/index.ts";
 import { canvasToBlob, createCanvas, type CanvasBundle } from "src/common/canvas.ts";
 
@@ -9,7 +10,7 @@ class piskelHandler implements FormatHandler {
   public readonly name = "piskel";
   public supportedFormats = [
     Formats.PNG.builder("png").lossless().to(),
-    Formats.ZIP.builder("zip").lossless().to(),
+    Formats.ZIP.builder("zip").lossless().options({ compression: true }).to(),
     Formats.PISKEL.builder("piskel").lossless().from(),
   ];
   public ready = false;
@@ -26,6 +27,7 @@ class piskelHandler implements FormatHandler {
     inputFiles: FileData[],
     inputFormat: FileFormat,
     outputFormat: FileFormat,
+    convertCtx?: ConvertContext,
   ): Promise<FileData[]> {
     if (!this.ready || !this.#bundle) {
       throw new InitializationError("Handler not initialized.");
@@ -105,7 +107,12 @@ class piskelHandler implements FormatHandler {
           zip.file(name, bytes);
         }
 
-        const bytes = await zip.generateAsync({ type: "uint8array" });
+        const level = convertCtx?.options.compression;
+        const bytes = await zip.generateAsync({
+          type: "uint8array",
+          compression: level ? "DEFLATE" : "STORE",
+          compressionOptions: level ? { level } : undefined,
+        });
         const name = changeExt(inputFile.name, outputFormat.extension);
         outputFiles.push({ bytes, name });
       }

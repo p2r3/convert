@@ -7,6 +7,8 @@ import { InitializationError } from "src/errors.ts";
 import type { TypedWaveFile } from "src/common/wav.ts";
 import { changeExt } from "src/common/index.ts";
 import { canvasToBlob, createCanvas, type CanvasBundle } from "src/common/canvas.ts";
+import { Settings } from "src/Settings.ts";
+import type { ConvertContext } from "src/ui/ProgressStore.ts";
 
 const SAMPLE_RATE = 34000;
 
@@ -17,7 +19,11 @@ class meydaHandler implements FormatHandler {
     Formats.PNG.builder("image").fromTo(),
     Formats.JPEG.builder("image").fromTo(),
     Formats.WEBP.builder("image").fromTo(),
-    Formats.WAV.builder("audio").fromTo(),
+    // Other rates change the frequency range the image covers, but don't survive a round trip,
+    // since audio is read back at SAMPLE_RATE
+    Formats.WAV.builder("audio")
+      .options({ sampleRate: { ...Settings.sampleRate, min: 8000, max: 96000 } })
+      .fromTo(),
   ];
   public ready = false;
 
@@ -33,6 +39,7 @@ class meydaHandler implements FormatHandler {
     inputFiles: FileData[],
     inputFormat: FileFormat,
     outputFormat: FileFormat,
+    convertCtx?: ConvertContext,
   ): Promise<FileData[]> {
     if (!this.ready || !this.#bundle) {
       throw new InitializationError("Handler not initialized.");
@@ -53,6 +60,7 @@ class meydaHandler implements FormatHandler {
     }
 
     if (inputIsImage) {
+      const sampleRate = convertCtx?.options.sampleRate ?? SAMPLE_RATE;
       for (const inputFile of inputFiles) {
         const blob = new Blob([inputFile.bytes as BlobPart], { type: inputFormat.mime });
 
@@ -80,9 +88,9 @@ class meydaHandler implements FormatHandler {
         const sineWaves = new Float32Array(imageHeight * bufferSize);
         const cosineWaves = new Float32Array(imageHeight * bufferSize);
         for (let y = 0; y < imageHeight; y++) {
-          const frequency = (y / imageHeight) * (SAMPLE_RATE / 2);
+          const frequency = (y / imageHeight) * (sampleRate / 2);
           for (let s = 0; s < bufferSize; s++) {
-            const timeInSeconds = s / SAMPLE_RATE;
+            const timeInSeconds = s / sampleRate;
             const angle = 2 * Math.PI * frequency * timeInSeconds;
             sineWaves[y * bufferSize + s] = Math.sin(angle);
             cosineWaves[y * bufferSize + s] = Math.cos(angle);
@@ -141,7 +149,7 @@ class meydaHandler implements FormatHandler {
         }
 
         const wav = new WaveFile() as TypedWaveFile;
-        wav.fromScratch(1, SAMPLE_RATE, "32f", audioData);
+        wav.fromScratch(1, sampleRate, "32f", audioData);
 
         const bytes = wav.toBuffer();
         const name = changeExt(inputFile.name, outputFormat.extension);

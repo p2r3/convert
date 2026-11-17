@@ -8,6 +8,9 @@ import type { ConvertContext } from "src/ui/ProgressStore.js";
 import { changeExt, stripExt } from "src/common/index.ts";
 import { extractedParent, filePath, joinPath, splitPath } from "src/common/path.ts";
 
+// formats where -mx changes anything; tar and wim only store
+const COMPRESSED_FORMATS = ["7z", "zip", "gzip", "bzip2", "xz"];
+
 const defaultSevenZipOptions = {
   locateFile: () => sevenZipWasmUrl,
 };
@@ -70,6 +73,10 @@ class sevenZipHandler implements FormatHandler {
         internal: name,
         category: Category.ARCHIVE,
         lossless: false, // archive metadata is too complicated
+        options:
+          flags.includes("C") && COMPRESSED_FORMATS.includes(name)
+            ? { compression: true }
+            : undefined,
       });
     }
 
@@ -97,6 +104,8 @@ class sevenZipHandler implements FormatHandler {
     ctx?: ConvertContext,
   ): Promise<FileData[]> {
     const outputFiles: FileData[] = [];
+    const level = ctx?.options.compression;
+    const levelArgs = level === undefined ? [] : [`-mx${level}`];
 
     if (inputFormat.internal === "brarchive") {
       throw new Error(`sevenZipHandler cannot convert from ${inputFormat.mime}`);
@@ -188,7 +197,7 @@ class sevenZipHandler implements FormatHandler {
           sevenZip.FS.writeFile(inputFile.name, inputFile.bytes);
 
           const name = inputFile.name + `.${outputFormat.extension}`;
-          sevenZip.callMain(["a", name, inputFile.name]);
+          sevenZip.callMain(["a", name, inputFile.name, ...levelArgs]);
 
           const bytes = sevenZip.FS.readFile(name);
           outputFiles.push({ bytes, name });
@@ -218,7 +227,7 @@ class sevenZipHandler implements FormatHandler {
         sevenZip.FS.chdir("data"); // we need to preserve the structure of the input archive
 
         ctx?.log(`Re-archiving contents as ${outputFormat.internal}...`, "debug");
-        sevenZip.callMain(["a", "../" + name]);
+        sevenZip.callMain(["a", "../" + name, ...levelArgs]);
         sevenZip.FS.chdir("..");
 
         const bytes = sevenZip.FS.readFile(name);
@@ -261,7 +270,7 @@ class sevenZipHandler implements FormatHandler {
           : `archive.${outputFormat.extension}`;
 
       ctx?.log(`Compiling archive ${name}...`);
-      sevenZip.callMain(["a", "../" + name]);
+      sevenZip.callMain(["a", "../" + name, ...levelArgs]);
       sevenZip.FS.chdir("..");
 
       const bytes = sevenZip.FS.readFile(name);

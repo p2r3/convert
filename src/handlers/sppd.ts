@@ -171,7 +171,7 @@ class sppdHandler implements FormatHandler {
   public supportedFormats = [
     Formats.PORTAL2_DEM.builder("dem").from(),
     Formats.PNG.builder("png").options({ width: true, height: true }).to(),
-    Formats.JPEG.builder("jpeg").options({ width: true, height: true, quality: true }).to(),
+    Formats.JPEG.builder("jpeg").options({ width: true, height: true }).to(),
   ];
   public ready = false;
 
@@ -516,7 +516,6 @@ class sppdHandler implements FormatHandler {
     this.renderer.setSize(width, height, false);
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
-    const quality = ctx?.options.quality;
 
     let frameIndex = 0;
 
@@ -547,10 +546,7 @@ class sppdHandler implements FormatHandler {
             await this.playbackTickHandler(demo);
             renderer.render(this.scene, this.camera);
 
-            const rendered = await canvas.convertToBlob({
-              type: outputFormat.mime,
-              quality: quality === undefined ? undefined : quality / 100,
-            });
+            const rendered = await canvas.convertToBlob({ type: outputFormat.mime });
             const bytes = await rendered.bytes();
             const name = changeExt(inputFile.name, outputFormat.extension, `_${frameIndex}`);
             outputFiles.push({ bytes, name });

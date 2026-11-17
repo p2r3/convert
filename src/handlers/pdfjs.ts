@@ -39,7 +39,7 @@ class pdfjsHandler implements FormatHandler {
   public supportedFormats = [
     Formats.PDF.builder("pdf").from(),
     Formats.PNG.builder("png").options({ width: true, height: true }).to(),
-    Formats.JPEG.builder("jpeg").options({ width: true, height: true, quality: true }).to(),
+    Formats.JPEG.builder("jpeg").options({ width: true, height: true }).to(),
   ];
   public ready = false;
 
@@ -55,7 +55,6 @@ class pdfjsHandler implements FormatHandler {
     ctx?: ConvertContext,
   ): Promise<FileData[]> {
     const outputFiles: FileData[] = [];
-    const quality = ctx?.options.quality;
 
     for (const inputFile of inputFiles) {
       const loadingTask = getDocument({
@@ -87,10 +86,7 @@ class pdfjsHandler implements FormatHandler {
               transform: [width / viewport.width, 0, 0, height / viewport.height, 0, 0],
               background: "rgb(255,255,255)",
             }).promise;
-            const blob = await target.canvas.convertToBlob({
-              type: outputFormat.mime,
-              quality: quality === undefined ? undefined : quality / 100,
-            });
+            const blob = await target.canvas.convertToBlob({ type: outputFormat.mime });
             outputFiles.push({
               bytes: await blob.bytes(),
               name: changeExt(inputFile.name, outputFormat.extension, `_${pageNumber - 1}`),

@@ -3,10 +3,22 @@ import Formats from "../Formats.ts";
 import PDFDocument, { registerStdFonts } from "pdfkit";
 import Courier from "pdfkit/standard-fonts/Courier";
 import { changeExt, decode } from "src/common/index.ts";
+import type { ConvertContext } from "src/ui/ProgressStore.ts";
+
+const PAGE_SIZES = ["A3", "A4", "A5", "LETTER", "LEGAL"];
 
 class textToPdfHandler implements FormatHandler {
   public readonly name = "textToPdf";
-  public supportedFormats = [Formats.TEXT.builder("text").from(), Formats.PDF.builder("pdf").to()];
+  public supportedFormats = [
+    Formats.TEXT.builder("text").from(),
+    Formats.PDF.builder("pdf")
+      .options({
+        pageSize: { type: "enum", label: "Page size", values: PAGE_SIZES },
+        fontSize: { type: "number", label: "Font size", unit: "pt", min: 1, max: 200 },
+        margin: { type: "number", label: "Margin", unit: "pt", min: 0, max: 144 },
+      })
+      .to(),
+  ];
   public ready = false;
 
   async init() {
@@ -18,16 +30,21 @@ class textToPdfHandler implements FormatHandler {
     inputFiles: FileData[],
     inputFormat: FileFormat,
     outputFormat: FileFormat,
+    ctx?: ConvertContext,
   ): Promise<FileData[]> {
     const outputFiles: FileData[] = [];
+    const options = ctx?.options ?? {};
+    const pageSize = (options.pageSize as string | undefined) ?? "A4";
+    const fontSize = (options.fontSize as number | undefined) ?? 11;
+    const margin = (options.margin as number | undefined) ?? 72;
 
     for (const file of inputFiles) {
       const text = decode(file.bytes).replace(/\p{Extended_Pictographic}/gu, ""); // Remove emojis
 
       const doc = new PDFDocument({
-        size: "A4",
+        size: pageSize,
         font: "Courier",
-        margins: { top: 72, bottom: 72, left: 72, right: 72 },
+        margins: { top: margin, bottom: margin, left: margin, right: margin },
       });
 
       const pdfBytes = await new Promise<Uint8Array>((resolve, reject) => {
@@ -47,9 +64,9 @@ class textToPdfHandler implements FormatHandler {
 
         doc.on("error", reject);
 
-        doc.font("Courier").fontSize(11).fillColor("#000000");
+        doc.font("Courier").fontSize(fontSize).fillColor("#000000");
         doc.text(text.replace(/\r\n|\r/g, "\n"), {
-          width: 595.28 - 72 - 72,
+          width: doc.page.width - margin * 2,
           align: "left",
         });
 

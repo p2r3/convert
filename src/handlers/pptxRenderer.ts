@@ -3,6 +3,9 @@ import { jsPDF } from "jspdf";
 import Formats from "src/Formats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import { changeExt } from "src/common/index.ts";
+import type { ConvertContext } from "src/ui/ProgressStore.ts";
+
+const DEFAULT_SCALE = 2;
 
 async function waitForSlideToSettle(element: HTMLElement): Promise<void> {
   const imagePromises = Array.from(element.querySelectorAll("img"))
@@ -50,7 +53,12 @@ function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
 
 export default class pptxRendererHandler implements FormatHandler {
   public readonly name = "pptxRenderer";
-  public supportedFormats = [Formats.PPTX.builder("pptx").from(), Formats.PDF.builder("pdf").to()];
+  public supportedFormats = [
+    Formats.PPTX.builder("pptx").from(),
+    Formats.PDF.builder("pdf")
+      .options({ scale: { type: "number", label: "Render scale", unit: "×", min: 0.5, max: 4 } })
+      .to(),
+  ];
   public ready = false;
   public offload = false; // dom heavy
 
@@ -65,6 +73,7 @@ export default class pptxRendererHandler implements FormatHandler {
     inputFiles: FileData[],
     inputFormat: FileFormat,
     outputFormat: FileFormat,
+    ctx?: ConvertContext,
   ): Promise<FileData[]> {
     if (!this.ready) throw new Error("Handler not initialized.");
     if (inputFormat.internal !== "pptx" || outputFormat.internal !== "pdf") {
@@ -72,6 +81,7 @@ export default class pptxRendererHandler implements FormatHandler {
     }
 
     const outputFiles: FileData[] = [];
+    const scale = (ctx?.options.scale as number | undefined) ?? DEFAULT_SCALE;
     const stagingRoot = document.createElement("div");
     stagingRoot.style.position = "fixed";
     stagingRoot.style.left = "-20000px";
@@ -112,7 +122,7 @@ export default class pptxRendererHandler implements FormatHandler {
 
             const canvas = await this.html2canvas(handle.element, {
               backgroundColor: "#ffffff",
-              scale: 2,
+              scale,
               useCORS: true,
               logging: false,
               width: presentation.width,

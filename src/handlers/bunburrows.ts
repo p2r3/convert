@@ -3,7 +3,14 @@ import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import Formats from "src/Formats.ts";
 import { InitializationError } from "src/errors.ts";
 import { changeExt, decode } from "src/common/index.ts";
-import { canvasToBlob, createCanvas, type CanvasBundle } from "src/common/canvas.ts";
+import {
+  canvasToBlob,
+  createCanvas,
+  resizeCanvas,
+  resolveSize,
+  type CanvasBundle,
+} from "src/common/canvas.ts";
+import type { ConvertContext } from "src/ui/ProgressStore.ts";
 
 const COLOR_WALKABLE = [0, 0, 0];
 const COLOR_BREAKABLE = [98, 135, 64];
@@ -13,7 +20,7 @@ const COLOR_BUNNY = [255, 255, 255];
 class bunburrowsHandler implements FormatHandler {
   public readonly name = "bunburrows";
   public supportedFormats = [
-    Formats.PNG.builder("png").fromTo(),
+    Formats.PNG.builder("png").options({ width: true, height: true }).fromTo(),
     Formats.BUNLEVEL.builder("bunlevel").from(),
   ];
   public ready = false;
@@ -30,6 +37,7 @@ class bunburrowsHandler implements FormatHandler {
     inputFiles: FileData[],
     inputFormat: FileFormat,
     outputFormat: FileFormat,
+    convertCtx?: ConvertContext,
   ): Promise<FileData[]> {
     const outputFiles: FileData[] = [];
 
@@ -307,6 +315,8 @@ class bunburrowsHandler implements FormatHandler {
         const image_data = new ImageData(new Uint8ClampedArray(rgba), canvas.width, canvas.height);
 
         ctx.putImageData(image_data, 0, 0);
+        const size = resolveSize(canvas.width, canvas.height, convertCtx?.options);
+        resizeCanvas(this.#bundle, size, false); // keep the tiles sharp
 
         new_file_bytes = await canvasToBlob(this.#bundle, outputFormat.mime);
       } else {

@@ -14,6 +14,14 @@ import {
 } from "./typst.ts";
 import { changeExt, decode, encode } from "src/common/index.ts";
 
+// outputs whose pandoc template can include a table of contents
+// oxfmt-ignore
+const TOC_FORMATS = new Set([
+  "html", "html4", "html5", "docx", "odt", "opendocument", "epub", "epub2", "epub3", "latex",
+  "context", "markdown", "gfm", "rst", "asciidoc", "org", "typst", "ms", "texinfo",
+]);
+const TOC_OPTION = { type: "boolean", label: "Table of contents" } as const;
+
 class pandocHandler implements FormatHandler {
   static formatNames: Map<string, string> = new Map([
     ["ansi", "ANSI terminal"],
@@ -228,6 +236,7 @@ class pandocHandler implements FormatHandler {
         internal,
         category: categories.length === 1 ? categories[0] : categories,
         lossless: !isOfficeDocument,
+        options: TOC_FORMATS.has(internal) ? { toc: TOC_OPTION } : undefined,
       });
     }
 
@@ -297,6 +306,12 @@ class pandocHandler implements FormatHandler {
       if (outputFormat.internal === "mathml") {
         options.to = "html";
         options["html-math-method"] = "mathml";
+      }
+
+      if (ctx?.options.toc) {
+        options["table-of-contents"] = true;
+        // the toc is part of the document template, so it needs a full document
+        options.standalone = true;
       }
 
       if (outputFormat.internal === "typst") {

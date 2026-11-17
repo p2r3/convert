@@ -2,16 +2,43 @@ import Formats from "src/Formats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import { imageToText, rgbaToGrayscale } from "built/image-to-txt/src/convert.ts";
 import { InitializationError } from "src/errors.ts";
-import { blobToCanvas, canvasToBlob, createCanvas, type CanvasBundle } from "src/common/canvas.ts";
+import {
+  blobToCanvas,
+  canvasToBlob,
+  createCanvas,
+  resizeCanvas,
+  resolveSize,
+  type CanvasBundle,
+} from "src/common/canvas.ts";
+import type { FormatOptions } from "src/Settings.ts";
 import { changeExt, decode, encode } from "src/common/index.ts";
 import type { ConvertContext } from "src/ui/ProgressStore.ts";
+
+const DEFAULT_FONT_SIZE = 48;
+
+const IMAGE_OPTIONS = {
+  width: true,
+  height: true,
+  fontSize: {
+    type: "number",
+    label: "Font size for text",
+    unit: "px",
+    min: 1,
+    max: 1000,
+    integer: true,
+  },
+} satisfies FormatOptions;
 
 class canvasToBlobHandler implements FormatHandler {
   public readonly name = "canvasToBlob";
   public supportedFormats = [
-    Formats.PNG.builder("png").lossless().fromTo(),
-    Formats.JPEG.builder("jpeg").options({ quality: true }).fromTo(),
-    Formats.WEBP.builder("webp").options({ quality: true }).fromTo(),
+    Formats.PNG.builder("png").lossless().options(IMAGE_OPTIONS).fromTo(),
+    Formats.JPEG.builder("jpeg")
+      .options({ ...IMAGE_OPTIONS, quality: true })
+      .fromTo(),
+    Formats.WEBP.builder("webp")
+      .options({ ...IMAGE_OPTIONS, quality: true })
+      .fromTo(),
     Formats.GIF.builder("gif").from(),
     Formats.TEXT.builder("text").fromTo(),
   ];
@@ -30,7 +57,8 @@ class canvasToBlobHandler implements FormatHandler {
     outputFormat: FileFormat,
     convertCtx?: ConvertContext,
   ): Promise<FileData[]> {
-    const quality = convertCtx?.options.quality;
+    const options = convertCtx?.options ?? {};
+    const quality = options.quality;
     if (!this.#bundle) {
       throw new InitializationError("Handler not initialized.");
     }
@@ -39,8 +67,8 @@ class canvasToBlobHandler implements FormatHandler {
     const outputFiles: FileData[] = [];
     for (const inputFile of inputFiles) {
       if (inputFormat.mime === "text/plain") {
-        const font = "48px sans-serif";
-        const fontSize = parseInt(font);
+        const fontSize = (options.fontSize as number | undefined) ?? DEFAULT_FONT_SIZE;
+        const font = `${fontSize}px sans-serif`;
         const footerPadding = fontSize * 0.5;
         const string = decode(inputFile.bytes);
         const lines = string.split("\n");
@@ -96,6 +124,7 @@ class canvasToBlobHandler implements FormatHandler {
           }),
         );
       } else {
+        resizeCanvas(this.#bundle, resolveSize(canvas.width, canvas.height, options));
         bytes = await canvasToBlob(
           this.#bundle,
           outputFormat.mime,

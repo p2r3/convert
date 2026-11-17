@@ -9,8 +9,8 @@ class svgToBlobHandler implements FormatHandler {
   public readonly name = "svgToBlob";
   public supportedFormats = [
     Formats.PNG.builder("png").options({ width: true, height: true }).to(),
-    Formats.JPEG.builder("jpeg").options({ width: true, height: true, quality: true }).to(),
-    Formats.WEBP.builder("webp").options({ width: true, height: true, quality: true }).to(),
+    Formats.JPEG.builder("jpeg").options({ width: true, height: true }).to(),
+    Formats.WEBP.builder("webp").options({ width: true, height: true }).to(),
     Formats.SVG.builder("svg").from(),
   ];
   public ready = false;
@@ -30,7 +30,6 @@ class svgToBlobHandler implements FormatHandler {
     convertCtx?: ConvertContext,
   ): Promise<FileData[]> {
     const options = convertCtx?.options;
-    const quality = options?.quality;
     if (!this.#bundle) {
       throw new InitializationError("Handler not initialized.");
     }
@@ -53,11 +52,7 @@ class svgToBlobHandler implements FormatHandler {
       canvas.height = height;
       ctx.drawImage(image, 0, 0, width, height);
 
-      const bytes = await canvasToBlob(
-        this.#bundle,
-        outputFormat.mime,
-        quality === undefined ? undefined : quality / 100,
-      );
+      const bytes = await canvasToBlob(this.#bundle, outputFormat.mime);
       const name = changeExt(inputFile.name, outputFormat.extension);
 
       outputFiles.push({ bytes, name });

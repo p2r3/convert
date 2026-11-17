@@ -2,6 +2,9 @@ import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import Formats from "src/Formats.ts";
 import { DocumentWriter, Document, Buffer, Matrix } from "mupdf";
 import { changeExt } from "src/common/index.ts";
+import type { ConvertContext } from "src/ui/ProgressStore.ts";
+
+const SIZE = { width: true, height: true } as const;
 
 class mupdfHandler implements FormatHandler {
   public readonly name = "mupdf";
@@ -21,14 +24,14 @@ class mupdfHandler implements FormatHandler {
     // most images should go through imagemagick but it doesnt have some
     Formats.JXR.builder("jxr").from(),
     Formats.JBIG2.builder("jbig2").from(),
-    Formats.PNG.builder("png").to(),
-    Formats.JPEG.builder("jpeg").to(),
-    Formats.PNM.builder("pnm").to(),
-    Formats.PGM.builder("pgm").to(),
-    Formats.PPM.builder("ppm").to(),
-    Formats.PAM.builder("pam").to(),
-    Formats.PBM.builder("pbm").to(),
-    Formats.PKM.builder("pkm").fromTo(),
+    Formats.PNG.builder("png").options(SIZE).to(),
+    Formats.JPEG.builder("jpeg").options(SIZE).to(),
+    Formats.PNM.builder("pnm").options(SIZE).to(),
+    Formats.PGM.builder("pgm").options(SIZE).to(),
+    Formats.PPM.builder("ppm").options(SIZE).to(),
+    Formats.PAM.builder("pam").options(SIZE).to(),
+    Formats.PBM.builder("pbm").options(SIZE).to(),
+    Formats.PKM.builder("pkm").options(SIZE).fromTo(),
     Formats.PCL.builder("pcl").to(),
     Formats.PCLM.builder("pclm").fromTo(),
     Formats.PS.builder("ps").to(),
@@ -49,8 +52,10 @@ class mupdfHandler implements FormatHandler {
     inputFiles: FileData[],
     inputFormat: FileFormat,
     outputFormat: FileFormat,
+    ctx?: ConvertContext,
   ): Promise<FileData[]> {
     const outputFiles: FileData[] = [];
+    const { width, height } = ctx?.options ?? {};
 
     for (const inputFile of inputFiles) {
       const document = Document.openDocument(inputFile.bytes, inputFormat.mime);
@@ -62,6 +67,11 @@ class mupdfHandler implements FormatHandler {
       if (outputFormat.internal === "svg") options = "text=text";
       if (outputFormat.internal === "html")
         options = "preserve-whitespace,preserve-spans,preserve-images";
+      // the raster writers fit the page into these, keeping the aspect ratio if one is missing
+      if (!multipage && outputFormat.internal !== "svg")
+        options = [width && `width=${width}`, height && `height=${height}`]
+          .filter(Boolean)
+          .join(",");
 
       if (multipage) {
         const buffer = new Buffer();

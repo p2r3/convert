@@ -4,6 +4,9 @@ import parseXML from "built/envelope/parseXML.js";
 import * as yaml from "yaml";
 import { parse, unparse } from "papaparse";
 import { changeExt, decode, encode } from "src/common/index.ts";
+import type { ConvertContext } from "src/ui/ProgressStore.ts";
+
+const INDENT = { type: "number", label: "Indent", unit: "spaces", max: 8, integer: true } as const;
 
 /// Converts things to JSON
 export class toJsonHandler implements FormatHandler {
@@ -13,7 +16,10 @@ export class toJsonHandler implements FormatHandler {
     Formats.XML.builder("xml").from(),
     Formats.YML.builder("yaml").from(),
     Formats.JSONL.builder("jsonl").from(),
-    Formats.JSON.builder("json").lossless().to(),
+    Formats.JSON.builder("json")
+      .lossless()
+      .options({ indent: { ...INDENT, min: 0 } })
+      .to(),
   ];
   public ready = false;
 
@@ -25,6 +31,7 @@ export class toJsonHandler implements FormatHandler {
     inputFiles: FileData[],
     inputFormat: FileFormat,
     outputFormat: FileFormat,
+    ctx?: ConvertContext,
   ): Promise<FileData[]> {
     return inputFiles.map((file) => {
       const name = changeExt(file.name, "json");
@@ -54,7 +61,7 @@ export class toJsonHandler implements FormatHandler {
       }
       return {
         name: name,
-        bytes: encode(JSON.stringify(object)),
+        bytes: encode(JSON.stringify(object, null, ctx?.options.indent as number | undefined)),
       };
     });
   }
@@ -76,7 +83,9 @@ export class fromJsonHandler {
   public supportedFormats = [
     Formats.CSV.builder("csv").to(),
     Formats.XML.builder("xml").to(),
-    Formats.YML.builder("yaml").to(),
+    Formats.YML.builder("yaml")
+      .options({ indent: { ...INDENT, min: 1 } })
+      .to(),
     Formats.JSONL.builder("jsonl").to(),
     Formats.JSON.builder("json").from(),
   ];
@@ -89,6 +98,7 @@ export class fromJsonHandler {
     inputFiles: FileData[],
     inputFormat: FileFormat,
     outputFormat: FileFormat,
+    ctx?: ConvertContext,
   ): Promise<FileData[]> {
     return inputFiles.map((file) => {
       const name = changeExt(file.name, outputFormat.extension);
@@ -157,9 +167,12 @@ export class fromJsonHandler {
           write(object);
           break;
         }
-        case "application/yaml":
-          text = yaml.stringify(object);
+        case "application/yaml": {
+          const indent = ctx?.options.indent as number | undefined;
+          // yaml rejects an explicit `indent: undefined`
+          text = yaml.stringify(object, indent === undefined ? undefined : { indent });
           break;
+        }
         case "application/jsonl":
           if (Array.isArray(object))
             text = object.map((r: any) => JSON.stringify(r)).join("\n") + "\n";

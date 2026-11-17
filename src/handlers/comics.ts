@@ -49,7 +49,11 @@ export class comicsPackerHandler implements FormatHandler {
       Formats.GIF.builder("gif").from(),
     ];
     for (const [comic, archive] of Object.values(COMIC_FORMATS)) {
-      if (contains(archive)) this.supportedFormats.push(comic.builder(comic.extension).to());
+      if (!contains(archive)) continue;
+      const builder = comic.builder(comic.extension);
+      // passed through to sevenZip; tar doesn't compress
+      if (comic !== Formats.CBT) builder.options({ compression: true });
+      this.supportedFormats.push(builder.to());
     }
     this.ready = this.#sevenzip.ready;
   }

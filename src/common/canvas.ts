@@ -47,3 +47,18 @@ export function resolveSize(width: number, height: number, options: ConvertOptio
     height: options.height ?? (options.width ? scaled(height, width, options.width) : height),
   };
 }
+
+export function resizeCanvas(
+  bundle: CanvasBundle,
+  { width, height }: { width: number; height: number },
+  smooth = true,
+) {
+  const { canvas, ctx } = bundle;
+  if (width === canvas.width && height === canvas.height) return;
+  const copy = new OffscreenCanvas(canvas.width, canvas.height);
+  copy.getContext("2d")!.drawImage(canvas, 0, 0);
+  canvas.width = width;
+  canvas.height = height;
+  ctx.imageSmoothingEnabled = smooth;
+  ctx.drawImage(copy, 0, 0, width, height);
+}

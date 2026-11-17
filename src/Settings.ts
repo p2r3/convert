@@ -5,6 +5,7 @@ export const SettingCategories = {
   quality: { label: "Quality", note: "1 is the smallest file, 100 the best quality." },
   video: { label: "Video" },
   audio: { label: "Audio" },
+  archive: { label: "Archive", note: "0 stores files uncompressed, 9 is the smallest." },
   other: { label: "Other" },
 } satisfies Record<string, { label: string; note?: string }>;
 
@@ -42,6 +43,8 @@ export const Settings = {
   audioBitrate: { category: "audio", label: "Bitrate", unit: "kbps", type: "number", min: 1, integer: true },
   sampleRate: { content: true, category: "audio", label: "Sample rate", unit: "Hz", type: "number", min: 1000, max: 384000, integer: true },
   channels: { content: true, category: "audio", label: "Channels", type: "number", min: 1, max: 8, integer: true },
+  // archive
+  compression: { category: "archive", label: "Compression level", type: "number", min: 0, max: 9, integer: true },
 } satisfies Record<string, OptionSpec & { content?: true }>; // content settings are applied at each step
 
 export type ConvertOptions = {

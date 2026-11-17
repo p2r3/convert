@@ -86,8 +86,8 @@ class threejsHandler implements FormatHandler {
     Formats.DAE.builder("dae").from(),
     Formats.THREEMF.builder("3mf").from(),
     Formats.PNG.builder("png").options({ width: true, height: true }).to(),
-    Formats.JPEG.builder("jpeg").options({ width: true, height: true, quality: true }).to(),
-    Formats.WEBP.builder("webp").options({ width: true, height: true, quality: true }).to(),
+    Formats.JPEG.builder("jpeg").options({ width: true, height: true }).to(),
+    Formats.WEBP.builder("webp").options({ width: true, height: true }).to(),
   ];
   public ready = false;
 
@@ -277,11 +277,7 @@ class threejsHandler implements FormatHandler {
     this.renderer.render(this.scene, this.camera);
     this.scene.remove(object);
 
-    const quality = options.quality;
-    const rendered = await this.canvas.convertToBlob({
-      type: mime,
-      quality: quality === undefined ? undefined : quality / 100,
-    });
+    const rendered = await this.canvas.convertToBlob({ type: mime });
     return rendered.bytes();
   }
 
