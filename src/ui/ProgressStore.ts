@@ -14,7 +14,10 @@ export interface LogEntry {
 export interface ConvertContext {
   progress: (message: string, value: number | ((prev: number) => number)) => void;
   log: (message: string, level?: LogLevel) => void;
-  /** For abort listeners only. Its `aborted` flag can lag behind, read it with {@link aborted}. */
+  /** For abort listeners only. Special consideration must be taken when using this signal:
+   * Make sure that the event loop is not blocked and keeps running, otherwise the signal will
+   * become out of sync with the actual state of aborting. If this may be an issue, use {@link aborted}.
+   */
   signal: AbortSignal;
   /** Whether the conversion was cancelled. Every so often it waits briefly so a pending abort can
    * arrive, so it also works in long synchronous loops. */
