@@ -72,7 +72,7 @@ class floHandler implements FormatHandler {
         const bytes = new Uint8Array(samples.length * 4);
         const view = new DataView(bytes.buffer);
         for (let i = 0; i < samples.length; i++) view.setFloat32(i * 4, samples[i], true);
-        return { bytes, name: changeExt(file.name, "pcm") };
+        return { bytes, name: changeExt(file.name, outputFormat.extension) };
       } else {
         throw new TypeError(
           `floHandler: unsupported conversion ${inputFormat.format} -> ${outputFormat.format}`,

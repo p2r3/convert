@@ -61,7 +61,7 @@ class envelopeHandler implements FormatHandler {
     const outputFiles: FileData[] = [];
 
     for (const inputFile of inputFiles) {
-      const html = `<div style="background: #fff">
+      const html = `<meta charset="utf-8"><div style="background: #fff">
         ${await parser(inputFile.bytes)}
       </div>`;
       const bytes = encode(html);

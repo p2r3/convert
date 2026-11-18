@@ -1,7 +1,7 @@
 import { elementToSVG, inlineResources } from "dom-to-svg";
 import Formats from "src/Formats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-import { decode, encode } from "src/common/index.ts";
+import { changeExt, decode, encode } from "src/common/index.ts";
 import type { ConvertContext } from "src/ui/ProgressStore.ts";
 
 function nextPaint(): Promise<void> {
@@ -157,7 +157,7 @@ class htmlToSvgHandler implements FormatHandler {
         width: ctx?.options.width,
         height: ctx?.options.height,
       });
-      const newName = (name.endsWith(".html") ? name.slice(0, -5) : name) + ".svg";
+      const newName = changeExt(name, outputFormat.extension);
       outputFiles.push({
         name: newName,
         bytes: encode(svgStr),

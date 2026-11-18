@@ -41,6 +41,9 @@ export enum ScoringType {
   SLIDER_TAIL,
   BURST_SLIDER_HEAD,
   BURST_SLIDER_ELEMENT,
+  ARC_HEAD_ARC_TAIL,
+  CHAIN_HEAD_ARC_TAIL,
+  CHAIN_LINK_ARC_HEAD,
 }
 
 export enum Saber {
@@ -56,6 +59,8 @@ export enum CutType {
 }
 
 export enum NoteColor {
+  /** Bombs */
+  NONE = -1,
   LEFT = 0,
   RIGHT = 1,
 }
@@ -254,7 +259,8 @@ export class Replay {
     function string(): string {
       const length = int();
       pos += length;
-      return decode(new Uint8Array(data.buffer, pos - length, length));
+      if (length < 0 || pos > data.length) raise("Unexpected EOF");
+      return decode(data.subarray(pos - length, pos));
     }
     function vector(): Vector3 {
       return new Vector3(float(), float(), float());
@@ -326,12 +332,17 @@ export class Replay {
     this.notes = [];
     const noteCount = int();
     for (let i = 0; i < noteCount; i++) {
-      const id = int();
-      const scoringType = member(ScoringType, Math.floor(id / 10000), "scoring type");
+      let id = int();
+      let colorDigit = Math.floor(id / 10) % 10;
+      if (colorDigit === 9) {
+        id += 10;
+        colorDigit = -1;
+      }
+      const scoringType = enumMember(ScoringType, Math.floor(id / 10000)) ?? ScoringType.NORMAL;
       const lineIndex = Math.floor(id / 1000) % 10;
       const lineLayer = Math.floor(id / 100) % 10;
-      const color = member(NoteColor, Math.floor(id / 10) % 10, "note color");
-      const cutDirection = member(CutDirection, id % 10, "cut direction");
+      const color = enumMember(NoteColor, colorDigit) ?? NoteColor.NONE;
+      const cutDirection = enumMember(CutDirection, id % 10) ?? CutDirection.NONE;
       const time = float();
       const spawnTime = float();
       // unknown cut types are skipped below
@@ -395,7 +406,7 @@ export class Replay {
       const id = int();
       this.walls.push({
         lineIndex: Math.floor(id / 100),
-        type: member(ObstacleType, Math.floor(id / 10) % 10, "obstacle type"),
+        type: enumMember(ObstacleType, Math.floor(id / 10) % 10) ?? ObstacleType.FullHeight,
         width: id % 10,
         energy: float(),
         time: float(),

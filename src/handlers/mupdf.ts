@@ -101,7 +101,7 @@ class mupdfHandler implements FormatHandler {
           page.destroy();
           writer.close();
           outputFiles.push({
-            name: changeExt(inputFile.name, outputFormat.extension, `_${i + 1}`),
+            name: changeExt(inputFile.name, outputFormat.extension, `_${i}`),
             bytes: new Uint8Array(buffer.asUint8Array()),
           });
           writer.destroy();

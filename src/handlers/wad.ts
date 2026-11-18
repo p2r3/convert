@@ -92,8 +92,8 @@ class wadHandler implements FormatHandler {
       view.setInt32(dirPos, lumpOffsets[i], true);
       view.setInt32(dirPos + 4, lumps[i].data.length, true);
       // Lump name: 8 bytes, null-padded (preserve original casing)
-      const nameBytes = encode(lumps[i].name.substring(0, 8));
-      buffer.set(nameBytes, dirPos + 8);
+      const name = lumps[i].name.substring(0, 8);
+      for (let j = 0; j < name.length; j++) buffer[dirPos + 8 + j] = name.charCodeAt(j) & 0xff;
       dirPos += 16;
     }
 

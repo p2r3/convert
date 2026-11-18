@@ -7,6 +7,15 @@ import { DOMParser } from "linkedom/worker";
 import { changeExt, ownedBytes } from "src/common/index.ts";
 import type { ConvertContext } from "src/ui/ProgressStore.ts";
 
+const XML_ESCAPES: Record<string, string> = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&apos;",
+};
+const escapeXml = (value: unknown) => String(value).replace(/[&<>"']/g, (c) => XML_ESCAPES[c]);
+
 class azw3Handler implements FormatHandler {
   public readonly name = "azw3";
   public supportedFormats = [
@@ -119,21 +128,23 @@ class azw3Handler implements FormatHandler {
         }
       }
 
+      const uid = metadata?.identifier || Date.now();
+
       // Create content.opf
       const opf = `<?xml version="1.0" encoding="UTF-8"?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="uid">
     <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
-        <dc:title>${metadata?.title || "Unknown Book"}</dc:title>
-        <dc:language>${metadata?.language || "en"}</dc:language>
-        <dc:identifier id="uid">${metadata?.identifier || Date.now()}</dc:identifier>
-        ${metadata?.author ? metadata.author.map((a: string) => `<dc:creator>${a}</dc:creator>`).join("") : ""}
+        <dc:title>${escapeXml(metadata?.title || "Unknown Book")}</dc:title>
+        <dc:language>${escapeXml(metadata?.language || "en")}</dc:language>
+        <dc:identifier id="uid">${escapeXml(uid)}</dc:identifier>
+        ${metadata?.author ? metadata.author.map((a: string) => `<dc:creator>${escapeXml(a)}</dc:creator>`).join("") : ""}
     </metadata>
     <manifest>
-        ${manifest.join("\\n        ")}
+        ${manifest.join("\n        ")}
         <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
     </manifest>
     <spine toc="ncx">
-        ${spine.join("\\n        ")}
+        ${spine.join("\n        ")}
     </spine>
 </package>`;
 
@@ -143,18 +154,18 @@ class azw3Handler implements FormatHandler {
       const ncx = `<?xml version="1.0" encoding="UTF-8"?>
 <ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
     <head>
-        <meta name="dtb:uid" content="${metadata?.identifier || Date.now()}"/>
+        <meta name="dtb:uid" content="${escapeXml(uid)}"/>
         <meta name="dtb:depth" content="1"/>
         <meta name="dtb:totalPageCount" content="0"/>
         <meta name="dtb:maxPageNumber" content="0"/>
     </head>
     <docTitle>
-        <text>${metadata?.title || "Unknown Book"}</text>
+        <text>${escapeXml(metadata?.title || "Unknown Book")}</text>
     </docTitle>
     <navMap>
         <navPoint id="navPoint-1" playOrder="1">
             <navLabel><text>Start</text></navLabel>
-            <content src="part0.html"/>
+            <content src="part0.xhtml"/>
         </navPoint>
     </navMap>
 </ncx>`;

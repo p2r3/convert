@@ -32,7 +32,7 @@ function safeMax(arr: number[]) {
 
 interface PathStyle {
   fill: string;
-  stroke: string;
+  stroke?: string;
   strokeWidth: number;
 }
 
@@ -41,8 +41,7 @@ const isPathStyle = (style: unknown): style is PathStyle =>
   style !== null &&
   "fill" in style &&
   typeof style.fill === "string" &&
-  "stroke" in style &&
-  typeof style.stroke === "string" &&
+  (!("stroke" in style) || style.stroke === undefined || typeof style.stroke === "string") &&
   "strokeWidth" in style &&
   typeof style.strokeWidth === "number";
 
@@ -91,8 +90,9 @@ class pyTurtleHandler implements FormatHandler {
       const style: unknown = path.userData.style;
       if (!isPathStyle(style)) continue;
       const fill = formatColor(style.fill);
-      const stroke = formatColor(style.stroke);
+      const stroke = style.stroke === undefined ? null : formatColor(style.stroke);
       const sw = style.strokeWidth;
+      if (!fill && !stroke) continue;
 
       for (const subPath of path.subPaths) {
         if (allPoints.length >= MAX_TOTAL_POINTS) break;
@@ -140,20 +140,21 @@ class pyTurtleHandler implements FormatHandler {
     for (const shape of shapeData) {
       if (!shape) continue;
 
-      py += `t.penup()\nt.pensize(${shape.sw})\nt.pencolor("${shape.stroke || "black"}")\n`;
+      py += "t.penup()\n";
+      if (shape.stroke) py += `t.pensize(${shape.sw})\nt.pencolor("${shape.stroke}")\n`;
       if (shape.fill) py += `t.fillcolor("${shape.fill}")\n`;
+      const penDown = shape.stroke ? "t.pendown()\n" : "";
 
       if (shape.type === "circle" && shape.x !== undefined) {
-        py += `t.goto(${shape.x.toFixed(2)}, ${shape.y.toFixed(2)})\nt.setheading(0)\n`;
+        py += `t.goto(${shape.x.toFixed(2)}, ${shape.y.toFixed(2)})\nt.setheading(0)\n${penDown}`;
         if (shape.fill) py += "t.begin_fill()\n";
         py += `t.circle(${shape.r.toFixed(2)})\n`;
         if (shape.fill) py += "t.end_fill()\n";
       } else {
         if (shape.points == null) continue; //no such case, just for TS
 
+        py += `t.goto(${shape.points[0].x.toFixed(2)}, ${shape.points[0].y.toFixed(2)})\n${penDown}`;
         if (shape.fill) py += "t.begin_fill()\n";
-
-        py += `t.goto(${shape.points[0].x.toFixed(2)}, ${shape.points[0].y.toFixed(2)})\nt.pendown()\n`;
         for (let i = 1; i < shape.points.length; i++) {
           py += `t.goto(${shape.points[i].x.toFixed(2)}, ${shape.points[i].y.toFixed(2)})\n`;
         }

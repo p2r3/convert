@@ -90,18 +90,44 @@ async function revertCgBIBuffer(input: Uint8Array | ArrayBuffer): Promise<Uint8A
     if (type === "IEND" && isIphoneCompressed) {
       const uncompressed = pako.inflateRaw(idatCgbiData);
 
-      const newData = new Uint8Array(uncompressed.length);
-      let i = 0;
+      const stride = width * 4;
+      const newData = new Uint8Array((stride + 1) * height);
+      const prev = new Uint8Array(stride);
+      const row = new Uint8Array(stride);
       for (let y = 0; y < height; y++) {
-        newData[i] = uncompressed[i]; // filter byte
-        i++;
-        for (let x = 0; x < width; x++) {
-          newData[i] = uncompressed[i + 2]; // B → R
-          newData[i + 1] = uncompressed[i + 1]; // G
-          newData[i + 2] = uncompressed[i]; // R → B
-          newData[i + 3] = uncompressed[i + 3]; // A
-          i += 4;
+        const inStart = y * (stride + 1);
+        const filter = uncompressed[inStart];
+        for (let x = 0; x < stride; x++) {
+          const raw = uncompressed[inStart + 1 + x] ?? 0;
+          const left = x >= 4 ? row[x - 4] : 0;
+          const up = prev[x];
+          const upLeft = x >= 4 ? prev[x - 4] : 0;
+          let predictor = 0;
+          if (filter === 1) predictor = left;
+          else if (filter === 2) predictor = up;
+          else if (filter === 3) predictor = (left + up) >> 1;
+          else if (filter === 4) {
+            const p = left + up - upLeft;
+            const pa = Math.abs(p - left);
+            const pb = Math.abs(p - up);
+            const pc = Math.abs(p - upLeft);
+            predictor = pa <= pb && pa <= pc ? left : pb <= pc ? up : upLeft;
+          }
+          row[x] = (raw + predictor) & 0xff;
         }
+
+        const outStart = y * (stride + 1);
+        newData[outStart] = 0; // filter: none
+        for (let x = 0; x < stride; x += 4) {
+          const a = row[x + 3];
+          const unpremultiply = (c: number) =>
+            a === 0 ? 0 : Math.min(255, Math.round((c * 255) / a));
+          newData[outStart + 1 + x] = unpremultiply(row[x + 2]); // B → R
+          newData[outStart + 2 + x] = unpremultiply(row[x + 1]); // G
+          newData[outStart + 3 + x] = unpremultiply(row[x]); // R → B
+          newData[outStart + 4 + x] = a;
+        }
+        prev.set(row);
       }
 
       const compressedIdat = pako.deflate(newData);

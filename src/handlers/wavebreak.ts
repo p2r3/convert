@@ -64,7 +64,7 @@ class wavebreakHandler implements FormatHandler {
       const sz = g * Math.ceil(file.bytes.byteLength / g); // this actually can't change at all because of the whole umm.
       const head1 = new Uint8Array([82, 73, 70, 70, ...n32(sz + 36), 87, 65, 86, 69]);
       // oxfmt-ignore
-      const head2 = new Uint8Array([102, 109, 116, 32, 16, 0, 0, 0, (1+2*fn), 0, 1, 0, ...n32(is8?22500:44100), ...n32(is8?22500:44100*w), w, 0, bd, 0]);
+      const head2 = new Uint8Array([102, 109, 116, 32, 16, 0, 0, 0, (1+2*fn), 0, 1, 0, ...n32(is8?22050:44100), ...n32(is8?22050:44100*w), w, 0, bd, 0]);
       const head3 = new Uint8Array([100, 97, 116, 97, ...n32(sz)]);
       const r = new Uint8Array(sz + 44).fill(0); // explicitly filling with 0
       r.set(head1, 0);

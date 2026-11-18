@@ -70,11 +70,19 @@ export class toJsonHandler implements FormatHandler {
 
 function xmlEscape(str: string): string {
   return str
+    .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
-    .replaceAll("'", "&apos;")
-    .replaceAll("&", "&amp;");
+    .replaceAll("'", "&apos;");
+}
+
+const XML_NAME = /^[\p{L}_][\p{L}\p{N}_.-]*$/u;
+
+/** Open and close tags for `name`, falling back to `<Item key="name">` when it is no valid XML name. */
+function xmlTags(name: string): [string, string] {
+  if (XML_NAME.test(name)) return [`<${name}>`, `</${name}>`];
+  return [`<Item key="${xmlEscape(name)}">`, "</Item>"];
 }
 
 /// Converts to things from JSON
@@ -134,26 +142,27 @@ export class fromJsonHandler {
         }
         case "application/xml": {
           function write(value: any, tagName: string | null = null) {
-            if (tagName != null) tagName = xmlEscape(tagName);
-            if (typeof value !== "object") {
+            if (value === null || typeof value !== "object") {
               const str = xmlEscape(typeof value === "string" ? value : JSON.stringify(value));
-              if (tagName != null) text += `<${tagName}>${str}</${tagName}>`;
-              else text += str;
+              if (tagName != null) {
+                const [open, close] = xmlTags(tagName);
+                text += `${open}${str}${close}`;
+              } else text += str;
               return;
             }
             if (Array.isArray(value)) {
-              tagName ??= "Array";
-              text += `<${tagName}>`;
+              const [open, close] = xmlTags(tagName ?? "Array");
+              text += open;
               for (const item of value) {
                 write(item, "Item");
               }
-              text += `</${tagName}>`;
+              text += close;
               return;
             }
             const isXMLTag = typeof value._tag === "string" && Array.isArray(value._children); // is serialized XML tag
             if (isXMLTag) tagName ??= value._tag;
-            tagName ??= "Object";
-            text += `<${tagName}>`;
+            const [open, close] = xmlTags(tagName ?? "Object");
+            text += open;
             for (const [k, v] of Object.entries(value)) {
               if (isXMLTag && (k === "_tag" || k === "_children")) continue;
               write(v, k);
@@ -163,7 +172,7 @@ export class fromJsonHandler {
                 write(child);
               }
             }
-            text += `</${tagName}>`;
+            text += close;
           }
           write(object);
           break;

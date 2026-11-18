@@ -10,8 +10,22 @@ function javascript(text: string): string {
   return `console.log(${JSON.stringify(text)});`;
 }
 
+/** C string literal with octal escapes for control characters. */
+function cString(text: string): string {
+  let out = "";
+  for (const ch of text) {
+    const code = ch.codePointAt(0)!;
+    if (ch === "\\" || ch === '"' || ch === "?") out += `\\${ch}`;
+    else if (ch === "\n") out += "\\n";
+    else if (ch === "\t") out += "\\t";
+    else if (code < 0x20 || code === 0x7f) out += `\\${code.toString(8).padStart(3, "0")}`;
+    else out += ch;
+  }
+  return `"${out}"`;
+}
+
 function c(text: string): string {
-  return `#include <stdio.h>\n\nint main() { printf("%s\\n", ${JSON.stringify(text)}); }`;
+  return `#include <stdio.h>\n\nint main() { printf("%s\\n", ${cString(text)}); }`;
 }
 
 function cpp(text: string): string {
@@ -24,16 +38,10 @@ function go(text: string): string {
 }
 
 function batch(text: string): string {
-  text = text
-    .replaceAll("^", "^^")
-    .replaceAll("%", "%%")
-    .replaceAll("&", "^&")
-    .replaceAll("|", "^|")
-    .replaceAll("<", "^<")
-    .replaceAll(">", "^>");
+  text = text.replaceAll("%", "%%").replaceAll(/[\^&|<>"]/g, "^$&");
   const lines = text.split(/\r?\n/);
-  const echos = lines.map((line) => (line.trim() === "" ? "echo.\r\n" : `echo ${line}\r\n`));
-  return `@echo off\r\n${echos.join("")}pause\r\n`;
+  const echos = lines.map((line) => `echo(${line}\r\n`);
+  return `@echo off\r\nchcp 65001 >nul\r\n${echos.join("")}pause\r\n`;
 }
 
 function shell(text: string): string {
@@ -50,6 +58,15 @@ function csharp(text: string): string {
 }
 
 function rust(text: string): string {
+  if (text.includes("\r")) {
+    const escaped = Array.from(text, (ch) => {
+      const code = ch.codePointAt(0)!;
+      if (ch === "\\" || ch === '"') return `\\${ch}`;
+      if (code < 0x20 || code === 0x7f) return `\\u{${code.toString(16)}}`;
+      return ch;
+    }).join("");
+    return `fn main() { println!("{}", "${escaped}"); }`;
+  }
   let count = 0;
   while (text.includes(`"${"#".repeat(count)}`)) {
     count++;

@@ -94,7 +94,7 @@ class cybergrindHandler implements FormatHandler {
           : greens.some((x) => x.index === index)
             ? "n"
             : reds.some((x) => x.index === index)
-              ? "H"
+              ? "p"
               : "0";
       }
 

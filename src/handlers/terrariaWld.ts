@@ -908,7 +908,11 @@ class terrariaWldHandler implements FormatHandler {
     const reader = new FileReader();
 
     for (const inputFile of inputFiles) {
-      const as_buffer = inputFile.bytes.buffer;
+      const { bytes: fileBytes } = inputFile;
+      const as_buffer =
+        fileBytes.byteOffset === 0 && fileBytes.byteLength === fileBytes.buffer.byteLength
+          ? fileBytes.buffer
+          : fileBytes.slice().buffer;
 
       const parser = await reader.loadBuffer(as_buffer);
       const world = parser.parse({ sections: ["header", "worldTiles"] });

@@ -43,7 +43,11 @@ class xcursorHandler implements FormatHandler {
     const outputFiles: FileData[] = [];
 
     for (const inputFile of inputFiles) {
-      const view = new DataView(inputFile.bytes.buffer);
+      const view = new DataView(
+        inputFile.bytes.buffer,
+        inputFile.bytes.byteOffset,
+        inputFile.bytes.byteLength,
+      );
 
       const magic = Array.from(inputFile.bytes.slice(0, 4))
         .map((c) => String.fromCharCode(c))
@@ -69,9 +73,16 @@ class xcursorHandler implements FormatHandler {
         const _xHot = view.getUint32(offset + 24, true);
         const _yHot = view.getUint32(offset + 28, true);
 
-        const pixels = new Uint8ClampedArray(
-          inputFile.bytes.slice(offset + 36, offset + 36 + width * height * 4),
-        );
+        const source = inputFile.bytes.subarray(offset + 36, offset + 36 + width * height * 4);
+        const pixels = new Uint8ClampedArray(width * height * 4);
+        for (let p = 0; p + 3 < source.length; p += 4) {
+          const a = source[p + 3];
+          const unpremultiply = (c: number) => (a === 0 ? 0 : Math.round((c * 255) / a));
+          pixels[p] = unpremultiply(source[p + 2]);
+          pixels[p + 1] = unpremultiply(source[p + 1]);
+          pixels[p + 2] = unpremultiply(source[p]);
+          pixels[p + 3] = a;
+        }
 
         canvas.width = width;
         canvas.height = height;

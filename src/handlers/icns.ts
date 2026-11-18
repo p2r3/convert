@@ -18,9 +18,14 @@ const ICON_TYPE_BY_SIZE = new Map<number, string>([
   [1024, "ic10"],
 ]);
 
-const ICON_SIZE_BY_TYPE = new Map<string, number>(
-  ICON_TYPE_BY_SIZE.entries().map(([size, type]) => [type, size]),
-);
+const ICON_SIZE_BY_TYPE = new Map<string, number>([
+  ...ICON_TYPE_BY_SIZE.entries().map(([size, type]) => [type, size] as const),
+  // Retina (@2x) variants, by pixel size
+  ["ic11", 32],
+  ["ic12", 64],
+  ["ic13", 256],
+  ["ic14", 512],
+]);
 
 function isPng(bytes: Uint8Array): boolean {
   if (bytes.length < PNG_SIGNATURE.length) return false;

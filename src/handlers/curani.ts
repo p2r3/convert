@@ -6,6 +6,74 @@ function read_lendian(x: number, y: number): number {
   return x + y * 16 * 16;
 }
 
+function fourCC(bytes: Uint8Array, offset: number): string {
+  return String.fromCharCode(
+    bytes[offset],
+    bytes[offset + 1],
+    bytes[offset + 2],
+    bytes[offset + 3],
+  );
+}
+
+/** Walks the RIFF chunks of an .ani and returns the data of the first `icon` chunk. */
+function findFirstAniIcon(bytes: Uint8Array<ArrayBuffer>): Uint8Array<ArrayBuffer> {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  if (bytes.length < 12 || fourCC(bytes, 0) !== "RIFF" || fourCC(bytes, 8) !== "ACON") {
+    throw new Error("Not a RIFF ACON (.ani) file.");
+  }
+  const walk = (start: number, end: number): Uint8Array<ArrayBuffer> | null => {
+    let offset = start;
+    while (offset + 8 <= end) {
+      const id = fourCC(bytes, offset);
+      const size = view.getUint32(offset + 4, true);
+      const dataStart = offset + 8;
+      const dataEnd = Math.min(dataStart + size, end);
+      if (id === "icon") return bytes.slice(dataStart, dataEnd);
+      if (id === "LIST" && dataEnd - dataStart >= 4) {
+        const found = walk(dataStart + 4, dataEnd);
+        if (found) return found;
+      }
+      offset = dataStart + size + (size & 1);
+    }
+    return null;
+  };
+  const icon = walk(12, bytes.length);
+  if (!icon) throw new Error("Couldn't find an icon frame in the .ani file.");
+  return icon;
+}
+
+/** Wraps a .cur file into a single-frame .ani. */
+function buildSingleFrameAni(cur: Uint8Array): Uint8Array<ArrayBuffer> {
+  const pad = cur.length & 1;
+  const anihSize = 36;
+  const listSize = 4 + 8 + cur.length + pad; // "fram" + icon chunk
+  const riffSize = 4 + (8 + anihSize) + (8 + listSize); // "ACON" + anih + LIST
+  const out = new Uint8Array(8 + riffSize);
+  const view = new DataView(out.buffer);
+  const writeId = (offset: number, id: string) => {
+    for (let i = 0; i < 4; i++) out[offset + i] = id.charCodeAt(i);
+  };
+
+  writeId(0, "RIFF");
+  view.setUint32(4, riffSize, true);
+  writeId(8, "ACON");
+  writeId(12, "anih");
+  view.setUint32(16, anihSize, true);
+  view.setUint32(20, anihSize, true); // cbSize
+  view.setUint32(24, 1, true); // nFrames
+  view.setUint32(28, 1, true); // nSteps
+  // iWidth, iHeight, iBitCount, iPlanes stay 0
+  view.setUint32(48, 11, true); // iDispRate (jiffies)
+  view.setUint32(52, 1, true); // flags: AF_ICON
+  writeId(56, "LIST");
+  view.setUint32(60, listSize, true);
+  writeId(64, "fram");
+  writeId(68, "icon");
+  view.setUint32(72, cur.length, true);
+  out.set(cur, 76);
+  return out;
+}
+
 class curaniHandler implements FormatHandler {
   public readonly name = "curani";
   public supportedFormats = [
@@ -25,7 +93,6 @@ class curaniHandler implements FormatHandler {
     outputFormat: FileFormat,
   ): Promise<FileData[]> {
     const outputFiles: FileData[] = [];
-    const ani_separator_bytes = new Uint8Array([0x69, 0x63, 0x6f, 0x6e, 0xbe, 0x10, 0x00, 0x00]);
 
     for (const file of inputFiles) {
       let new_file_bytes = new Uint8Array(file.bytes);
@@ -33,65 +100,7 @@ class curaniHandler implements FormatHandler {
       if (inputFormat.internal === "ani") {
         // Extract the first frame of the .ani
         if (outputFormat.internal === "cur") {
-          let header_hook = 0;
-          let i = 0;
-
-          // Finds where the first ICO header is
-          while (true) {
-            if (
-              new_file_bytes[i] === 0x69 &&
-              new_file_bytes[i + 1] === 0x63 &&
-              new_file_bytes[i + 2] === 0x6f &&
-              new_file_bytes[i + 3] === 0x6e &&
-              new_file_bytes[i + 4] === 0xbe
-            ) {
-              header_hook = i;
-              break;
-            }
-
-            if (i > new_file_bytes.length) {
-              throw new Error("Couldn't find ICO header, code gives up.");
-            }
-            i += 1;
-          }
-
-          // Gets the real start of the ICO
-          const ico_start_offset = ani_separator_bytes.length;
-          let ico_start = i + ico_start_offset;
-
-          // Finds the NEXT ICO header to determine file size
-          let ico_distance = 0x00;
-          let header_hook_2 = 0;
-          i = header_hook + 1;
-
-          while (true) {
-            if (
-              new_file_bytes[i] === 0x69 &&
-              new_file_bytes[i + 1] === 0x63 &&
-              new_file_bytes[i + 2] === 0x6f &&
-              new_file_bytes[i + 3] === 0x6e &&
-              new_file_bytes[i + 4] === 0xbe
-            ) {
-              header_hook_2 = i;
-              ico_distance = header_hook_2 - header_hook - ico_start_offset;
-              break;
-            }
-
-            // Failsafe to prevent going OOB. If this happens, the source .ani probably only has one frame to begin with.
-            if (i + 5 > new_file_bytes.length) {
-              break;
-            }
-            i += 1;
-          }
-
-          // The code could not find another header. Simply read until the end of the file.
-          if (ico_distance === 0x00) {
-            new_file_bytes = new_file_bytes.subarray(ico_start, -1);
-          }
-          // The code could find another header, use the distance.
-          else {
-            new_file_bytes = new_file_bytes.subarray(ico_start, ico_start + ico_distance);
-          }
+          new_file_bytes = findFirstAniIcon(new_file_bytes);
         } else if (outputFormat.internal === "apng") {
           // To be added!
           throw new TypeError(`Unsupported output format: ${outputFormat.internal}`);
@@ -105,20 +114,7 @@ class curaniHandler implements FormatHandler {
       } else if (inputFormat.internal === "cur") {
         // Turn a static cur into a single-frame .ani
         if (outputFormat.internal === "ani") {
-          const ani_header = new Uint8Array([
-            0x52, 0x49, 0x46, 0x46, 0xc8, 0x21, 0x00, 0x00, 0x41, 0x43, 0x4f, 0x4e, 0x61, 0x6e,
-            0x69, 0x68, 0x24, 0x00, 0x00, 0x00, 0x24, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
-            0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0b, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
-            0x4c, 0x49, 0x00, 0x54, 0x90, 0x21, 0x00, 0x00, 0x66, 0x72, 0x61, 0x6d, 0x69, 0x63,
-            0x6f, 0x6e, 0xbe, 0x10, 0x00, 0x00,
-          ]);
-
-          let mergedArray = new Uint8Array(ani_header.length + new_file_bytes.length);
-          mergedArray.set(ani_header);
-          mergedArray.set(new_file_bytes, ani_header.length);
-
-          new_file_bytes = mergedArray;
+          new_file_bytes = buildSingleFrameAni(new_file_bytes);
         }
         // Convert a .cur into a .ico by removing hotspot and changing format header
         else if (outputFormat.internal === "ico") {

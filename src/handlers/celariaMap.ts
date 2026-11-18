@@ -125,7 +125,7 @@ class ModelBuilder {
           this.objString += `v ${result.map((vertexComponent, componentIndex) => vertexComponent + instance.position[componentIndex]).join(" ")}\n`;
         });
         // add face definition
-        this.objString += `f ${this.vertexCount}/${this.vertexCount} ${this.vertexCount + 1}/${this.vertexCount + 1} ${this.vertexCount + 2}/${this.vertexCount + 2}\n`;
+        this.objString += `f ${this.vertexCount} ${this.vertexCount + 1} ${this.vertexCount + 2}\n`;
         this.vertexCount += 3;
       }
     });

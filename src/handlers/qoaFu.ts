@@ -75,16 +75,19 @@ class qoaFuHandler implements FormatHandler {
         const audioData = new Int16Array(decoder.getTotalSamples() * decoder.getChannels());
         let pos = 0;
         while (!decoder.isEnd()) {
-          pos +=
-            decoder.readFrame(
-              audioData.subarray(
-                pos,
-                Math.min(
-                  QOABase.MAX_FRAME_SAMPLES * decoder.getChannels() + pos,
-                  decoder.getTotalSamples() * decoder.getChannels(),
-                ),
+          const frameSamples = decoder.readFrame(
+            audioData.subarray(
+              pos,
+              Math.min(
+                QOABase.MAX_FRAME_SAMPLES * decoder.getChannels() + pos,
+                decoder.getTotalSamples() * decoder.getChannels(),
               ),
-            ) * decoder.getChannels();
+            ),
+          );
+          if (frameSamples <= 0) {
+            throw new Error(`Invalid or truncated QOA frame in "${inputFile.name}".`);
+          }
+          pos += frameSamples * decoder.getChannels();
         }
 
         const wav = typedWaveFile();

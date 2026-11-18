@@ -1,6 +1,6 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import Formats, { SpecialFormats } from "src/Formats.ts";
-import { decode, encode } from "src/common/index.ts";
+import { decode, encode, getExt, stripExt } from "src/common/index.ts";
 import { extractedParent, splitPath } from "src/common/path.ts";
 
 class harHandler implements FormatHandler {
@@ -28,6 +28,17 @@ class harHandler implements FormatHandler {
       if (entry.response.content.mimeType?.includes("text/html") && !fileName.endsWith(".html")) {
         if (pathName[pathName.length - 1] !== "/") pathName += "/";
         pathName += "index.html";
+      }
+      if (url.search) {
+        const slash = pathName.lastIndexOf("/");
+        const dir = pathName.slice(0, slash + 1);
+        const file = pathName.slice(slash + 1) || "index";
+        const query = url.search
+          .slice(1)
+          .replaceAll(/[\\/:*?"<>|]/g, "_")
+          .slice(0, 100);
+        const ext = getExt(file);
+        pathName = `${dir}${stripExt(file)}_${query}${ext ? `.${ext}` : ""}`;
       }
 
       const content = entry.response.content;

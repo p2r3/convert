@@ -52,6 +52,10 @@ class svgToBlobHandler implements FormatHandler {
       const { width, height } = resolveSize(image.naturalWidth, image.naturalHeight, options);
       canvas.width = width;
       canvas.height = height;
+      if (outputFormat.mime === "image/jpeg") {
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, width, height);
+      }
       ctx.drawImage(image, 0, 0, width, height);
 
       const bytes = await canvasToBlob(this.#bundle, outputFormat.mime);

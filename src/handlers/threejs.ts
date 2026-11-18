@@ -237,8 +237,9 @@ class threejsHandler implements FormatHandler {
         return new Uint8Array(result.buffer, result.byteOffset, result.byteLength);
       }
       case "ply": {
-        const result = await new Promise<ArrayBuffer>((resolve) => {
-          new PLYExporter().parse(object, (data) => resolve(data), { binary: true });
+        const result = await new Promise<ArrayBuffer>((resolve, reject) => {
+          const sync = new PLYExporter().parse(object, (data) => resolve(data), { binary: true });
+          if (sync === null) reject(new Error("PLYExporter couldn't export this model."));
         });
         return new Uint8Array(result);
       }

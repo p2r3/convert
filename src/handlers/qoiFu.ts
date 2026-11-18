@@ -106,7 +106,7 @@ class qoiFuHandler implements FormatHandler {
 
         const width = qoiDecoder.getWidth();
         const height = qoiDecoder.getHeight();
-        const colorSpace = qoiDecoder.isLinearColorspace() ? "display-p3" : "srgb";
+        const colorSpace = "srgb";
         const pixelBuffer = qoiFuHandler.argbToRgba(qoiDecoder.getPixels());
 
         const imageData = new ImageData(pixelBuffer, width, height, {

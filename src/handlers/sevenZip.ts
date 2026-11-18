@@ -180,10 +180,17 @@ class sevenZipHandler implements FormatHandler {
           const sevenZip = await createSevenZip();
 
           sevenZip.FS.writeFile(inputFile.name, inputFile.bytes);
-          sevenZip.callMain(["x", inputFile.name]);
+          sevenZip.callMain(["x", inputFile.name, "-odata"]);
 
-          const name = stripExt(inputFile.name);
-          const bytes = sevenZip.FS.readFile(name);
+          const entries: unknown = sevenZip.FS.readdir("data");
+          const extracted = (Array.isArray(entries) ? entries : []).find(
+            (entry): entry is string =>
+              typeof entry === "string" &&
+              !sevenZip.FS.isDir(sevenZip.FS.stat(`data/${entry}`, false).mode),
+          );
+          if (!extracted) throw new Error(`7z didn't extract anything from ${inputFile.name}.`);
+          const bytes = sevenZip.FS.readFile(`data/${extracted}`);
+          const name = /\.tar$/i.test(extracted) ? extracted : `${extracted}.tar`;
           outputFiles.push({ bytes, name });
           i++;
         }

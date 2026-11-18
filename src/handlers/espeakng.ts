@@ -62,29 +62,35 @@ export class espeakngHandler implements FormatHandler {
       .to(),
   ];
   public ready = false;
-  #tts: SimpleTTS | undefined = undefined;
+  #tts: Promise<SimpleTTS> | undefined = undefined;
 
   async init() {
     this.ready = true;
   }
 
   // here so we lazy load the TTS instead of waiting for it in `init`
-  async getTTS(): Promise<SimpleTTS> {
-    if (this.#tts == undefined) {
-      await new Promise<void>((resolve) => {
-        this.#tts = new SimpleTTS({
-          workerPath: new URL("external/espeakng.js/espeakng.worker.js", globalThis.baseUrl).href,
-          defaultVoice: "en",
-          defaultRate: DEFAULT_RATE,
-          defaultPitch: 200,
-          enhanceAudio: true,
-        });
-        this.#tts.onReady(() => {
-          resolve();
-        });
+  getTTS(): Promise<SimpleTTS> {
+    if (this.#tts) return this.#tts;
+    this.#tts = new Promise<SimpleTTS>((resolve, reject) => {
+      const tts = new SimpleTTS({
+        workerPath: new URL("external/espeakng.js/espeakng.worker.js", globalThis.baseUrl).href,
+        defaultVoice: "en",
+        defaultRate: DEFAULT_RATE,
+        defaultPitch: 200,
+        enhanceAudio: true,
       });
-    }
-    return this.#tts!;
+      tts.onReady((error?: unknown) => {
+        if (error)
+          reject(
+            error instanceof Error
+              ? error
+              : new Error("eSpeak NG failed to start", { cause: error }),
+          );
+        else resolve(tts);
+      });
+    });
+    this.#tts.catch(() => (this.#tts = undefined));
+    return this.#tts;
   }
 
   async doConvert(

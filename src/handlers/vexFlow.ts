@@ -52,6 +52,12 @@ function renderCanvases(xml: string): OffscreenCanvas[] {
   }
 }
 
+function durationTicksOf(el: Element, ticksPerDivision: number) {
+  const durationEl = el.querySelector("duration");
+  const duration = durationEl ? parseInt(durationEl.textContent || "0") : 0;
+  return Math.round((Number.isFinite(duration) ? duration : 0) * ticksPerDivision);
+}
+
 class vexFlowHandler implements FormatHandler {
   public readonly name = "vexFlow";
   public supportedFormats = [
@@ -164,21 +170,31 @@ class vexFlowHandler implements FormatHandler {
       const measures = part.querySelectorAll("measure");
       console.log(`Part ${partIndex}: ${measures.length} measure(s)`);
 
-      measures.forEach((measure, _measureIndex) => {
-        const notes = measure.querySelectorAll("note");
+      let lastNoteStartTick = 0;
 
-        notes.forEach((note) => {
+      measures.forEach((measure, _measureIndex) => {
+        Array.from(measure.children).forEach((note) => {
+          const tag = note.localName;
+          if (tag === "backup") {
+            partTick = Math.max(0, partTick - durationTicksOf(note, ticksPerDivision));
+            return;
+          }
+          if (tag === "forward") {
+            partTick += durationTicksOf(note, ticksPerDivision);
+            return;
+          }
+          if (tag !== "note") return;
+
           const isRest = note.querySelector("rest") !== null;
           const isChord = note.querySelector("chord") !== null;
 
-          // Get duration
-          const durationEl = note.querySelector("duration");
-          const duration = durationEl ? parseInt(durationEl.textContent || "0") : 0;
-          const durationTicks = Math.round(duration * ticksPerDivision);
+          const durationTicks = durationTicksOf(note, ticksPerDivision);
 
-          // For non-chord notes, this is where the note starts
-          // For chord notes, we need to use the previous note's start time
-          let noteStartTick = partTick;
+          const noteStartTick = isChord ? lastNoteStartTick : partTick;
+          if (!isChord) {
+            lastNoteStartTick = partTick;
+            partTick += durationTicks;
+          }
 
           if (!isRest) {
             const pitchEl = note.querySelector("pitch");
@@ -225,11 +241,6 @@ class vexFlowHandler implements FormatHandler {
                 addNote(events, track, channel, noteStartTick, midiNote, durationTicks, velocity);
               }
             }
-          }
-
-          // Only advance time if this is not a chord note
-          if (!isChord) {
-            partTick += durationTicks;
           }
         });
       });

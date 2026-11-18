@@ -69,6 +69,7 @@ function loadFluidSynth(): Promise<{ JSSynth: any; sfontBin: ArrayBuffer }> {
       const sfontBin = await fetch(sfontUrl).then((r) => r.arrayBuffer());
       return { JSSynth, sfontBin };
     })();
+    midiInitPromise.catch(() => (midiInitPromise = null));
   }
   return midiInitPromise;
 }

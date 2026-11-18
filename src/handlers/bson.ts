@@ -3,6 +3,8 @@ import Formats from "src/Formats.ts";
 import { BSON } from "bson";
 import { changeExt, decode, encode, ownedBytes } from "src/common/index.ts";
 
+const ARRAY_ROOT_KEY = "$convertArrayRoot";
+
 class bsonHandler implements FormatHandler {
   public readonly name = "bson";
   public supportedFormats = [
@@ -32,7 +34,7 @@ class bsonHandler implements FormatHandler {
 
           // BSON required the root to be an object.
           if (Array.isArray(jsonData)) {
-            jsonData = { root: jsonData };
+            jsonData = { [ARRAY_ROOT_KEY]: jsonData };
           }
 
           const bsonResult = BSON.serialize(jsonData);
@@ -51,7 +53,12 @@ class bsonHandler implements FormatHandler {
 
         return inputFiles.map((file) => {
           const bsonData = BSON.deserialize(file.bytes);
-          const text = JSON.stringify(bsonData);
+          const keys = Object.keys(bsonData);
+          const isWrappedArray =
+            keys.length === 1 &&
+            keys[0] === ARRAY_ROOT_KEY &&
+            Array.isArray(bsonData[ARRAY_ROOT_KEY]);
+          const text = JSON.stringify(isWrappedArray ? bsonData[ARRAY_ROOT_KEY] : bsonData);
 
           const name = changeExt(file.name, "json");
 

@@ -126,6 +126,13 @@ class canvasToBlobHandler implements FormatHandler {
         );
       } else {
         resizeCanvas(this.#bundle, resolveSize(canvas.width, canvas.height, options));
+        if (outputFormat.mime === "image/jpeg") {
+          ctx.save();
+          ctx.globalCompositeOperation = "destination-over";
+          ctx.fillStyle = "white";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.restore();
+        }
         bytes = await canvasToBlob(
           this.#bundle,
           outputFormat.mime,

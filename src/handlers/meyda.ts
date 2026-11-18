@@ -143,8 +143,10 @@ class meydaHandler implements FormatHandler {
           const magnitude = Math.abs(audioData[i]);
           if (magnitude > max) max = magnitude;
         }
-        for (let i = 0; i < audioData.length; i++) {
-          audioData[i] /= max;
+        if (max > 0) {
+          for (let i = 0; i < audioData.length; i++) {
+            audioData[i] /= max;
+          }
         }
 
         const wav = typedWaveFile();

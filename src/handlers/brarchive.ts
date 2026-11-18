@@ -94,10 +94,6 @@ class brarchiveHandler implements FormatHandler {
             file.bytes[byte_cursor + 3],
           ).toString();
 
-          if (data_size === "0") {
-            throw new Error("Error, file has no data. Can't meaningfully convert.");
-          }
-
           // Finally, store that information in the array
           FileEntries_info.push([file_name, absolute_offset, data_size]);
 
@@ -121,6 +117,7 @@ class brarchiveHandler implements FormatHandler {
         // Extract everything; the converter detects what the files are.
         const parent = extractedParent(file, inputFiles.length > 1);
         for (const ar_file of archiveFiles) {
+          if (ar_file.bytes.length === 0) continue;
           outputFiles.push({ ...splitPath(ar_file.name, parent), bytes: ar_file.bytes });
         }
       }
@@ -175,13 +172,18 @@ class brarchiveHandler implements FormatHandler {
         }
 
         // FileEntry's are done. Write raw data.
-        for (let i = 0; i < working_files[key].length; i++) {
-          working_bytes.push(...working_files[key][i].bytes);
+        const data_length = working_files[key].reduce((sum, f) => sum + f.bytes.length, 0);
+        const archive_bytes = new Uint8Array(working_bytes.length + data_length);
+        archive_bytes.set(working_bytes);
+        let data_cursor = working_bytes.length;
+        for (const working_file of working_files[key]) {
+          archive_bytes.set(working_file.bytes, data_cursor);
+          data_cursor += working_file.bytes.length;
         }
 
         // Finally, push our file.
         outputFiles.push({
-          bytes: new Uint8Array(working_bytes),
+          bytes: archive_bytes,
           name: changeExt(key, outputFormat.extension),
         });
       }

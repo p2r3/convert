@@ -48,8 +48,13 @@ export class LZHEncoder {
     const crc = this.calculateCRC16(file.data);
 
     // Prepare filename (ensure it's not too long)
-    const filenameBytes = encode(file.filename);
-    const filenameLength = Math.min(filenameBytes.length, 255);
+    let filename = file.filename;
+    let filenameBytes = encode(filename);
+    while (filenameBytes.length > 233) {
+      filename = Array.from(filename).slice(0, -1).join("");
+      filenameBytes = encode(filename);
+    }
+    const filenameLength = filenameBytes.length;
 
     // Calculate header size (level 0)
     // 2 (header size + checksum) + 5 (method) + 4 (comp size) + 4 (orig size) +
@@ -152,17 +157,14 @@ export class LZHEncoder {
     return sum & 0xff;
   }
 
+  /** CRC-16/ARC (reflected polynomial 0xA001, init 0), as used by LHA. */
   private calculateCRC16(data: Uint8Array): number {
     let crc = 0;
 
     for (let i = 0; i < data.length; i++) {
-      crc ^= data[i] << 8;
+      crc ^= data[i];
       for (let j = 0; j < 8; j++) {
-        if (crc & 0x8000) {
-          crc = (crc << 1) ^ 0x1021;
-        } else {
-          crc = crc << 1;
-        }
+        crc = crc & 1 ? (crc >>> 1) ^ 0xa001 : crc >>> 1;
       }
     }
 

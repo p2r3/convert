@@ -61,7 +61,7 @@ class sqliteHandler implements FormatHandler {
         db.checkRc(rc);
 
         for (const table of this.getTables(db)) {
-          const stmt = db.prepare(`SELECT * FROM ${table}`);
+          const stmt = db.prepare(`SELECT * FROM ${quoteIdent(table)}`);
           let csvStr = stmt.getColumnNames().map(csvField).join(",") + "\n";
           try {
             while (stmt.step()) {
@@ -90,18 +90,29 @@ class sqliteHandler implements FormatHandler {
           header: false,
           skipEmptyLines: true,
           complete: function (result) {
-            const tableName = file.name.replace(".csv", "");
+            const tableName = quoteIdent(file.name.replace(/\.csv$/i, ""));
             const header = result.data[0];
-            const firstRow = result.data[1];
+            if (!header?.length) throw new Error(`${file.name} has no header row.`);
+            const firstRow = result.data.at(1);
 
             const schema = inferSchema(header, firstRow);
-            console.log(schema);
-            db.exec(`CREATE TABLE ${tableName} (${schema.map((v) => v.join(" ")).join(", ")})`);
+            const columns = schema.map(([name]) => quoteIdent(name));
+            db.exec(
+              `CREATE TABLE ${tableName} (${schema.map(([name, type]) => `${quoteIdent(name)} ${type}`).join(", ")})`,
+            );
 
-            for (const row of result.data.slice(1)) {
-              db.exec(
-                `INSERT INTO ${tableName} (${header.join(",")}) VALUES (${row.map((v, i) => formatValue(v, schema[i][1])).join(",")})`,
-              );
+            const insert = db.prepare(
+              `INSERT INTO ${tableName} (${columns.join(",")}) VALUES (${columns.map(() => "?").join(",")})`,
+            );
+            try {
+              db.transaction(() => {
+                for (const row of result.data.slice(1)) {
+                  insert.bind(schema.map(([, type], i) => toSqlValue(row[i], type)));
+                  insert.stepReset();
+                }
+              });
+            } finally {
+              insert.finalize();
             }
           },
         });
@@ -131,12 +142,23 @@ function csvField(value: SqlValue): string {
   return /[",\r\n]/u.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
 }
 
-function formatValue(value: string, type: string) {
-  if (value == "") return "NULL";
-  if (type === "TEXT") return `'${value.replace(/'/g, "''")}'`;
+/** Quotes an SQL identifier. */
+function quoteIdent(name: string): string {
+  return `"${name.replaceAll('"', '""')}"`;
+}
+
+/** A CSV cell as a value to bind. */
+function toSqlValue(value: string | undefined, type: string): SqlValue {
+  if (value === undefined || value === "") return null;
+  if (type !== "TEXT") {
+    const number = Number(value);
+    if (!Number.isNaN(number)) return number;
+  }
   return value;
 }
-function inferType(value: string): string {
+
+function inferType(value: string | undefined): string {
+  if (value === undefined) return "TEXT";
   if (!isNaN(Number(value))) {
     if (Number.isInteger(Number(value))) return "INTEGER";
     return "REAL";
@@ -144,9 +166,9 @@ function inferType(value: string): string {
   return "TEXT";
 }
 
-function inferSchema(header: string[], row: string[]): string[][] {
+function inferSchema(header: string[], row?: string[]): [string, string][] {
   return header.map((h, i) => {
-    const type = inferType(row[i]);
+    const type = inferType(row?.[i]);
     return [h, type];
   });
 }

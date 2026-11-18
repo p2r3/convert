@@ -40,7 +40,7 @@ function sfntToSvg(inputFile: FileData) {
     });
     const d = path.toPathData(5);
     glyphElements.push(
-      `<glyph unicode="${escapeHtml(String.fromCharCode(glyph.unicode))}" glyph-name="${glyph.name || ""}" horiz-adv-x="${glyph.advanceWidth}" d="${d}"/>`,
+      `<glyph unicode="${escapeHtml(String.fromCodePoint(glyph.unicode))}" glyph-name="${glyph.name || ""}" horiz-adv-x="${glyph.advanceWidth}" d="${d}"/>`,
     );
 
     // alphabetStringWidth = width of "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz"

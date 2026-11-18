@@ -112,11 +112,15 @@ class mcSchematicHandler implements FormatHandler {
     const bitsPerBlock = Math.max(2, Math.ceil(Math.log2(litePalette.length)));
     const blockStates = region.BlockStates; // nbtify LongArray
 
-    const blockData = new Uint8Array(totalBlocks);
+    const blockData = new Uint32Array(totalBlocks);
 
     if (blockStates && blockStates.length > 0) {
       // Unpack bit logic payload into Uint8Array
-      const longs = new BigInt64Array(blockStates.buffer);
+      const longs = new BigUint64Array(
+        blockStates.buffer,
+        blockStates.byteOffset,
+        blockStates.length,
+      );
 
       let blockIndex = 0;
       const mask = (1n << BigInt(bitsPerBlock)) - 1n;

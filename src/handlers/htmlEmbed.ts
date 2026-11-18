@@ -29,7 +29,7 @@ class htmlEmbedHandler implements FormatHandler {
     if (outputFormat.internal !== "html")
       throw new TypeError(`Unsupported output format: ${outputFormat.internal}`);
 
-    let html = "";
+    let html = '<meta charset="utf-8">';
 
     for (const inputFile of inputFiles) {
       if (inputFormat.internal === "text") {

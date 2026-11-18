@@ -9,6 +9,15 @@ import type Section from "epubjs/types/section";
 
 const DOMParser = WorkerDOMParser;
 
+const HTML_ESCAPES: Record<string, string> = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;",
+};
+const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (c) => HTML_ESCAPES[c]);
+
 function blobUrlRegex() {
   return /url\(\s*(['"]?)(blob:[^'")\s]+)\1\s*\)/gu;
 }
@@ -163,7 +172,7 @@ export default class epubHandler implements FormatHandler {
           <html>
             <head>
               <meta charset="utf-8">
-              <title>${currentBook.packaging?.metadata?.title || baseName}</title>
+              <title>${escapeHtml(currentBook.packaging?.metadata?.title || baseName)}</title>
               <style>
                 body {
                   font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, serif;

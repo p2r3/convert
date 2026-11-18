@@ -178,7 +178,7 @@ function decodeAseprite(bytes: Uint8Array): ParsedAseprite {
           palette[p] = r;
           palette[p + 1] = g;
           palette[p + 2] = b;
-          palette[p + 3] = a;
+          palette[p + 3] = colorIndex === transparentPaletteIndex ? 0 : a;
           entryOffset += 6;
           if ((flags & 1) !== 0) {
             const parsed = readStringLE(bytes, entryOffset);

@@ -20,7 +20,10 @@ class infiniteCraftHandler implements FormatHandler {
     inputFormat: FileFormat,
     outputFormat: FileFormat,
   ): Promise<FileData[]> {
-    const inputFile = inputFiles[0];
+    return Promise.all(inputFiles.map((inputFile) => this.convertFile(inputFile)));
+  }
+
+  private async convertFile(inputFile: FileData): Promise<FileData> {
     const text = decode(inputFile.bytes);
     const words = text.split(/[^a-zA-Z0-9']+/).filter(Boolean);
 
@@ -51,13 +54,7 @@ class infiniteCraftHandler implements FormatHandler {
 
     const outputFileName = changeExt(inputFileName, "ic");
 
-    const outputFiles: FileData[] = [
-      {
-        name: outputFileName,
-        bytes: compressedBytes,
-      },
-    ];
-    return outputFiles;
+    return { name: outputFileName, bytes: compressedBytes };
   }
 }
 

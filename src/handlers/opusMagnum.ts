@@ -817,6 +817,11 @@ export class opusMagnumMainHandler implements FormatHandler {
             break;
           }
 
+          if (puzzle_name.length >= inputFiles[0].name.length) {
+            puzzle_name = stripExt(puzzle_name);
+            break;
+          }
+
           puzzle_name = inputFiles[0].name.substring(0, puzzle_name.length + 1);
         }
 
@@ -1173,7 +1178,7 @@ const text_replace_multi: Dictionary<string[]> = {
   "℅": ["c", "/", "o"],
   "⅐": ["1", "/", "7"],
   "⅑": ["1", "/", "9"],
-  "⅒": ["1", "/", "10"],
+  "⅒": ["1", "/", "1", "0"],
   "⅓": ["1", "/", "3"],
   "⅔": ["2", "/", "3"],
   "⅕": ["1", "/", "5"],

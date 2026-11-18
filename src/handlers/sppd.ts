@@ -456,6 +456,10 @@ class sppdHandler implements FormatHandler {
 
       // Mesh being drawn does not correspond to this entity
       if (object.entity !== entity) {
+        if (object.renderable) {
+          this.scene.remove(object.renderable);
+          object.renderable = null;
+        }
         const modelBuilder = getModelBuilder(model);
         if (modelBuilder) {
           if (classname === "phys_bone_follower") {
@@ -473,10 +477,6 @@ class sppdHandler implements FormatHandler {
           const offset = toThreeVector(center.Sub(pos));
           geometry.translate(offset.x, offset.y, offset.z);
           object.renderable = new THREE.Mesh(geometry, isBrush ? brushMaterial : propMaterial);
-
-          if (object.renderable) {
-            this.scene.remove(object.renderable);
-          }
           this.scene.add(object.renderable);
         }
       }

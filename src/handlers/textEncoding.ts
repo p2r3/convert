@@ -24,8 +24,8 @@ function decodeUTF16(bytes: Uint8Array, littleEndian: boolean) {
   for (let i = 0; i + 2 <= dv.byteLength;) {
     const w1 = dv.getUint16(i, littleEndian);
     i += 2;
-    if (w1 >= 0xd800 && w1 <= 0xdbff && i + 2 <= dv.byteLength) {
-      const w2 = dv.getUint16(i, littleEndian);
+    const w2 = i + 2 <= dv.byteLength ? dv.getUint16(i, littleEndian) : -1;
+    if (w1 >= 0xd800 && w1 <= 0xdbff && w2 >= 0xdc00 && w2 <= 0xdfff) {
       i += 2;
       const cp = (((w1 - 0xd800) << 10) | (w2 - 0xdc00)) + 0x10000;
       out += String.fromCodePoint(cp);
@@ -116,7 +116,7 @@ export default class textEncodingHandler implements FormatHandler {
 
       // Determine input encoding: prefer inputFormat.internal when present
       const inf = inputFormat.internal;
-      if (inf === "txt" || inf === "utf8NB") {
+      if (inf === "utf8NB") {
         text = decodeUsingTextDecoder(inBytes, "utf-8");
       } else if (inf === "utf8WB") {
         text = decodeUsingTextDecoder(inBytes.subarray(3), "utf-8");
@@ -145,6 +145,8 @@ export default class textEncodingHandler implements FormatHandler {
           text = decodeUsingTextDecoder(inBytes, "utf-8");
         }
       }
+
+      if (text.startsWith("\uFEFF")) text = text.slice(1);
 
       // Now encode to output format
       const outf = (outputFormat && outputFormat.internal) || "utf8NB";

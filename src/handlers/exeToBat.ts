@@ -102,8 +102,9 @@ setlocal
 :: Auto-generated EXE-embedded batch
 :: Reconstructs and runs ${exeName}
 
-set "outExe=%TEMP%\\${exeName}.exe"
+set "outExe=%TEMP%\\${exeName.replaceAll("%", "%%")}.exe"
 set "b64file=%TEMP%\\payload.b64"
+set "selfBat=%~f0"
 
 echo Extracting payload to %b64file%...
 
@@ -112,7 +113,8 @@ if exist "%b64file%" del "%b64file%"
 if exist "%outExe%" del "%outExe%"
 
 :: Fast extraction using PowerShell
-powershell -NoProfile -Command "$lines = Get-Content '%~f0'; $start = $lines.IndexOf('-----BEGIN PAYLOAD-----') + 1; $end = $lines.IndexOf('-----END PAYLOAD-----'); $payload = $lines[$start..($end-1)]; Set-Content -LiteralPath '%b64file%' -Value $payload -Encoding ASCII"
+:: Paths go through the environment, so quotes in them cannot break the PowerShell command
+powershell -NoProfile -Command "$lines = Get-Content -LiteralPath $env:selfBat; $start = $lines.IndexOf('-----BEGIN PAYLOAD-----') + 1; $end = $lines.IndexOf('-----END PAYLOAD-----'); $payload = $lines[$start..($end-1)]; Set-Content -LiteralPath $env:b64file -Value $payload -Encoding ASCII"
 
 :: Debug: Check if payload was extracted
 if exist "%b64file%" (

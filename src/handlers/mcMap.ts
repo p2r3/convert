@@ -147,7 +147,7 @@ class mcMapHandler implements FormatHandler {
               const tile = new Uint8Array(128 * 128);
 
               for (let t = 0; t < 128; t++) {
-                const tileOffset = 128 * (canvas.width * column + row);
+                const tileOffset = 128 * (canvas.width * row + column);
                 const start = canvas.width * t + tileOffset;
                 const end = start + 128;
 
@@ -267,7 +267,7 @@ function map2rgb(colors: Uint8Array, width: number, height: number): number[] {
       color = ERROR_COLOR;
     }
 
-    out.push(...color);
+    out.push(color[0], color[1], color[2]);
   }
 
   return out;
@@ -285,7 +285,7 @@ function map2rgba(colors: Uint8Array, width: number, height: number): number[] {
       color = ERROR_COLOR;
     }
 
-    out.push(...color, 255);
+    out.push(color[0], color[1], color[2], color_id < 4 ? 0 : 255);
   }
 
   return out;
@@ -295,8 +295,13 @@ function mapRGBA2ColourIDs(data: Uint8ClampedArray): Uint8Array<ArrayBuffer> {
   const colourIDs = new Uint8Array(data.length / 4);
 
   let shades = getShades();
+  const opaqueShades = shades.slice(4);
 
   for (let cursor = 0; cursor < data.length / 4; cursor++) {
+    if (data[cursor * 4 + 3] < 128) {
+      colourIDs[cursor] = 0;
+      continue;
+    }
     const closest_colour_match = getClosestColor(
       {
         R: data[cursor * 4],
@@ -304,7 +309,7 @@ function mapRGBA2ColourIDs(data: Uint8ClampedArray): Uint8Array<ArrayBuffer> {
         B: data[cursor * 4 + 2],
         A: data[cursor * 4 + 3],
       },
-      shades,
+      opaqueShades,
     );
 
     colourIDs[cursor] = shades.indexOf(closest_colour_match);

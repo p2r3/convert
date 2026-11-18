@@ -269,6 +269,10 @@ function unpack565(value: number): [number, number, number] {
   return [r, g, b];
 }
 
+function scaleBits(value: number, max: number): number {
+  return Math.round((value * 255) / max);
+}
+
 function writePixel(
   out: Uint8ClampedArray,
   width: number,
@@ -315,15 +319,14 @@ function decodeDxt1(
         [0, 0, 0, 255],
       ];
 
-      const useTransparent = oneBitAlpha && color0 <= color1;
-      if (useTransparent) {
+      if (color0 <= color1) {
         palette[2] = [
           Math.round((c0[0] + c1[0]) / 2),
           Math.round((c0[1] + c1[1]) / 2),
           Math.round((c0[2] + c1[2]) / 2),
           255,
         ];
-        palette[3] = [0, 0, 0, 0];
+        palette[3] = [0, 0, 0, oneBitAlpha ? 0 : 255];
       } else {
         palette[2] = [
           Math.round((2 * c0[0] + c1[0]) / 3),
@@ -618,57 +621,36 @@ function decodeUncompressed(
       }
       case VTF_IMAGE_FORMAT.RGB565: {
         const packed = view.getUint16(inOffset2, true);
-        const [r, g, b] = unpack565(packed);
-        out[outOffset] = r;
-        out[outOffset + 1] = g;
-        out[outOffset + 2] = b;
+        out[outOffset] = scaleBits(packed & 0x1f, 31);
+        out[outOffset + 1] = scaleBits((packed >> 5) & 0x3f, 63);
+        out[outOffset + 2] = scaleBits((packed >> 11) & 0x1f, 31);
         out[outOffset + 3] = 255;
         break;
       }
       case VTF_IMAGE_FORMAT.BGR565: {
         const packed = view.getUint16(inOffset2, true);
-        const b = Math.round((((packed >> 11) & 0x1f) * 255) / 31);
-        const g = Math.round((((packed >> 5) & 0x3f) * 255) / 63);
-        const r = Math.round(((packed & 0x1f) * 255) / 31);
-        out[outOffset] = r;
-        out[outOffset + 1] = g;
-        out[outOffset + 2] = b;
+        out[outOffset] = scaleBits((packed >> 11) & 0x1f, 31);
+        out[outOffset + 1] = scaleBits((packed >> 5) & 0x3f, 63);
+        out[outOffset + 2] = scaleBits(packed & 0x1f, 31);
         out[outOffset + 3] = 255;
         break;
       }
-      case VTF_IMAGE_FORMAT.BGRX5551: {
-        const packed = view.getUint16(inOffset2, true);
-        const b = Math.round((((packed >> 11) & 0x1f) * 255) / 31);
-        const g = Math.round((((packed >> 6) & 0x1f) * 255) / 31);
-        const r = Math.round((((packed >> 1) & 0x1f) * 255) / 31);
-        out[outOffset] = r;
-        out[outOffset + 1] = g;
-        out[outOffset + 2] = b;
-        out[outOffset + 3] = 255;
-        break;
-      }
+      case VTF_IMAGE_FORMAT.BGRX5551:
       case VTF_IMAGE_FORMAT.BGRA5551: {
         const packed = view.getUint16(inOffset2, true);
-        const b = Math.round((((packed >> 11) & 0x1f) * 255) / 31);
-        const g = Math.round((((packed >> 6) & 0x1f) * 255) / 31);
-        const r = Math.round((((packed >> 1) & 0x1f) * 255) / 31);
-        const a = packed & 0x1 ? 255 : 0;
-        out[outOffset] = r;
-        out[outOffset + 1] = g;
-        out[outOffset + 2] = b;
-        out[outOffset + 3] = a;
+        out[outOffset] = scaleBits((packed >> 10) & 0x1f, 31);
+        out[outOffset + 1] = scaleBits((packed >> 5) & 0x1f, 31);
+        out[outOffset + 2] = scaleBits(packed & 0x1f, 31);
+        out[outOffset + 3] =
+          format === VTF_IMAGE_FORMAT.BGRA5551 ? (packed & 0x8000 ? 255 : 0) : 255;
         break;
       }
       case VTF_IMAGE_FORMAT.BGRA4444: {
         const packed = view.getUint16(inOffset2, true);
-        const b = ((packed >> 12) & 0x0f) * 17;
-        const g = ((packed >> 8) & 0x0f) * 17;
-        const r = ((packed >> 4) & 0x0f) * 17;
-        const a = (packed & 0x0f) * 17;
-        out[outOffset] = r;
-        out[outOffset + 1] = g;
-        out[outOffset + 2] = b;
-        out[outOffset + 3] = a;
+        out[outOffset] = ((packed >> 8) & 0x0f) * 17;
+        out[outOffset + 1] = ((packed >> 4) & 0x0f) * 17;
+        out[outOffset + 2] = (packed & 0x0f) * 17;
+        out[outOffset + 3] = ((packed >> 12) & 0x0f) * 17;
         break;
       }
       case VTF_IMAGE_FORMAT.I8: {

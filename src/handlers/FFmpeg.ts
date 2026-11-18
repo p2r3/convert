@@ -535,11 +535,9 @@ class FFmpegHandler implements FormatHandler {
           ctx,
         );
       }
-      if (stdout.includes("width and height must be a multiple of") && !oldArgs.includes("-vf")) {
-        const division = stdout
-          .split("width and height must be a multiple of ")[1]
-          .split(" ")[0]
-          .split("")[0];
+      const multipleOf = stdout.match(/width and height must be a multiple of (\d+)/);
+      if (multipleOf && !oldArgs.includes("-vf")) {
+        const division = multipleOf[1];
         return this.doConvertWithArgs(
           inputFiles,
           inputFormat,
@@ -551,9 +549,12 @@ class FFmpegHandler implements FormatHandler {
           ctx,
         );
       }
-      if (stdout.includes("Valid sizes are") && !oldArgs.includes("-s")) {
-        const newSize = stdout.split("Valid sizes are ")[1].split(".")[0].split(" ").pop();
-        if (typeof newSize !== "string") throw stdout;
+      const validSize = stdout
+        .match(/Valid sizes are ([^\n]*)/)?.[1]
+        .match(/\d+x\d+/g)
+        ?.pop();
+      if (validSize && !oldArgs.includes("-s")) {
+        const newSize = validSize;
         return this.doConvertWithArgs(
           inputFiles,
           inputFormat,
