@@ -19,18 +19,6 @@ if (!("window" in globalThis)) {
   });
 }
 
-type ConvertResult = { inputFiles: FileData[] } & (
-  | {
-      ok: false;
-      error: {
-        name: string;
-        stack?: string;
-        message: string;
-      };
-    }
-  | { ok: true; outputFiles: FileData[] }
-);
-
 export class Converter {
   public name: string;
   private defs?: HandlerDefinition[];
@@ -52,7 +40,7 @@ export class Converter {
     inputFiles: FileData[],
     { currentStep, totalSteps }: { currentStep: number; totalSteps: number },
     port: MessagePort,
-  ): Promise<ConvertResult> {
+  ): Promise<FileData[]> {
     const controller = new AbortController();
     port.addEventListener("message", ({ data }) => {
       if (data === "abort") controller.abort();
@@ -136,23 +124,9 @@ export class Converter {
       if (inputFiles.length !== 0 && outputFiles.length === 0)
         throw new Error("No files produced.");
 
-      return comlink.transfer({ ok: true, inputFiles, outputFiles }, [
-        ...new Set([...inputFiles, ...outputFiles].map((file) => file.bytes.buffer)),
+      return comlink.transfer(outputFiles, [
+        ...new Set([...outputFiles].map((file) => file.bytes.buffer)),
       ]);
-    } catch (e) {
-      const error = e instanceof Error ? e : new Error(String(e));
-      return comlink.transfer(
-        {
-          ok: false,
-          inputFiles,
-          error: {
-            name: error.name,
-            message: error.message,
-            stack: error.stack,
-          },
-        },
-        [...new Set([...inputFiles].map((file) => file.bytes.buffer))],
-      );
     } finally {
       port.close();
     }

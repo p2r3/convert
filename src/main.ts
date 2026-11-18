@@ -200,6 +200,13 @@ async function attemptConvertPath(
     abort.addEventListener("abort", sendAbort, { once: true });
     relayPortProgress(channel.port1, handlerDef.name);
 
+    const { promise: aborter, resolve: resolveAborter } = Promise.withResolvers<"killed">();
+
+    // if its abortable, give it a few seconds
+    const kill = () =>
+      setTimeout(() => resolveAborter("killed"), handlerDef.abortable ? 5000 : 100);
+    abort.addEventListener("abort", kill, { once: true });
+
     try {
       const converter =
         handlerDef.offload !== false && useWorkers && nativeWorkerCanvas
@@ -210,65 +217,28 @@ async function attemptConvertPath(
 
       abort.throwIfAborted();
 
-      const convert = (files: FileData[]) =>
+      if (files.some((f) => originalFiles.some((o) => o.bytes.buffer === f.bytes.buffer)))
+        files = structuredClone(files);
+
+      const result = await Promise.race([
         converter.doConvert(
           handlerDef,
           [path[i], path[i + 1]],
           comlink.transfer(files, [...new Set([...files].map((file) => file.bytes.buffer))]),
           { currentStep: i + 1, totalSteps },
           comlink.transfer(channel.port2, [channel.port2]),
-        );
+        ),
+        aborter,
+      ]);
 
-      let result;
-      if (handlerDef.abortable) {
-        // lend
-        // this is annoying
-        const restore = originalFiles.map((original) => ({
-          original,
-          inputIndex: files.findIndex((file) => file.bytes.buffer === original.bytes.buffer),
-          offset: original.bytes.byteOffset,
-          length: original.bytes.byteLength,
-        }));
+      if (result === "killed") {
+        // if its on a worker, kill it. otherwise, rekt
+        void tryKillConversionWorker(handlerDef.name);
 
-        result = await convert(files);
-
-        for (const { original, inputIndex, offset, length } of restore) {
-          if (inputIndex !== -1) {
-            // we dont want handlers messing with it but we need to mess with it
-            (original as { bytes: Uint8Array }).bytes = new Uint8Array(
-              result.inputFiles[inputIndex].bytes.buffer,
-              offset,
-              length,
-            );
-          }
-        }
-      } else {
-        // copy
-        if (files.some((f) => originalFiles.some((o) => o.bytes.buffer === f.bytes.buffer)))
-          files = structuredClone(files);
-
-        const { promise: aborter, resolve } = Promise.withResolvers<"aborted">();
-
-        const abortAborter = () => resolve("aborted");
-        abort.addEventListener("abort", abortAborter, { once: true });
-
-        result = await Promise.race([convert(files), aborter]);
-
-        abort.removeEventListener("abort", abortAborter);
-
-        if (result === "aborted") {
-          // if its on a worker, kill it. otherwise, rekt
-          void tryKillConversionWorker(handlerDef.name);
-
-          throw new DOMException("This operation was aborted", "AbortError");
-        }
+        throw new DOMException("This operation was aborted", "AbortError");
       }
 
-      if (result.ok) {
-        files = result.outputFiles;
-      } else {
-        throw Object.assign(new Error(result.error.message), result.error);
-      }
+      files = result;
     } catch (e) {
       if (e instanceof Error && e.name === "AbortError") {
         throw e;
@@ -288,6 +258,7 @@ async function attemptConvertPath(
       return null;
     } finally {
       abort.removeEventListener("abort", sendAbort);
+      abort.removeEventListener("abort", kill);
     }
   }
 
