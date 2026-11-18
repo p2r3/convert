@@ -503,7 +503,7 @@ async function initSupportedFormats() {
     await buildOptionList();
     console.log("Built initial format list.");
   } catch (e) {
-    console.error(e);
+    console.error("Failed to build initial format list.", e);
     LoadingToolsText.value = "Could not load formats.";
   }
 }

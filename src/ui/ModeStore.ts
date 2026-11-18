@@ -13,14 +13,20 @@ export const enum ModeText {
 }
 
 function getInitialMode(): ModeEnum {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  return stored === String(ModeEnum.Advanced) ? ModeEnum.Advanced : ModeEnum.Simple;
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored === String(ModeEnum.Advanced) ? ModeEnum.Advanced : ModeEnum.Simple;
+  } catch {
+    return ModeEnum.Simple;
+  }
 }
 
 export const Mode = signal<ModeEnum>(getInitialMode());
 
 Mode.subscribe((value) => {
-  localStorage.setItem(STORAGE_KEY, value.toString());
+  try {
+    localStorage.setItem(STORAGE_KEY, value.toString());
+  } catch {}
 });
 
 export function toggleMode() {

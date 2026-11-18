@@ -84,6 +84,8 @@ function downloadFile(bytes: Uint8Array<ArrayBuffer>, name: string) {
   link.href = url;
   link.download = name;
   link.click();
+  // we have to revoke it but not before the browser starts downloading (60s is conservative)
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
 function removeFile(key: string) {
@@ -245,7 +247,16 @@ export default function Conversion() {
     try {
       const inputFileData = [];
       for (const f of files) {
-        const buf = await f.arrayBuffer();
+        let buf;
+        try {
+          buf = await f.arrayBuffer();
+        } catch (e) {
+          if (f.size >= 2 ** 31)
+            throw new Error(`${f.name} is too large.`, {
+              cause: e,
+            });
+          throw e;
+        }
         const bytes = new Uint8Array(buf);
 
         inputFileData.push({ name: f.name, bytes });
@@ -318,6 +329,7 @@ export default function Conversion() {
 
   const handleAddChange = () => {
     addFiles(addFileRef.current?.files);
+    if (addFileRef.current) addFileRef.current.value = "";
   };
 
   const canProceed =

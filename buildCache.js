@@ -19,27 +19,30 @@ const browser = await puppeteer.launch({
 
 const page = await browser.newPage();
 
-await Promise.all([
-  new Promise((resolve) => {
-    page.on("console", (msg) => {
-      const text = msg.text();
-      if (msg.type() === "error") console.error(text);
-      if (text === "Built initial format list.") resolve();
-    });
-  }),
-  page.goto(server.resolvedUrls.local[0]),
-]);
+try {
+  await Promise.all([
+    new Promise((resolve, reject) => {
+      page.on("console", (msg) => {
+        const text = msg.text();
+        if (msg.type() === "error") console.error(text);
+        if (text === "Built initial format list.") resolve();
+        if (text.startsWith("Failed to build initial format list.")) reject(new Error(text));
+      });
+    }),
+    page.goto(server.resolvedUrls.local[0]),
+  ]);
 
-const cacheJSON = await page.evaluate((minify) => {
-  if (minify) {
-    return JSON.stringify(JSON.parse(window.printSupportedFormatCache()));
-  }
-  return window.printSupportedFormatCache();
-}, minify);
+  const cacheJSON = await page.evaluate((minify) => {
+    if (minify) {
+      return JSON.stringify(JSON.parse(window.printSupportedFormatCache()));
+    }
+    return window.printSupportedFormatCache();
+  }, minify);
 
-await Bun.write(outputPath, cacheJSON);
-
-await browser.close();
-await server.close();
+  await Bun.write(outputPath, cacheJSON);
+} finally {
+  await browser.close();
+  await server.close();
+}
 
 console.log("All done.");

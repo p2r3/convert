@@ -264,7 +264,8 @@ export class TraversionGraph {
       });
       fromIndices.forEach((from) => {
         toIndices.forEach((to) => {
-          if (from.index === to.index && from.index === this.anyIndex) return; // No self-loops for special.ANY
+          // No self-loops for special.ANY
+          if (from.index === to.index && formatIdentifier(from.format) === ANY_IDENTIFIER) return;
           const costs = this.costFunction(from, to, strictCategories, handler.name, handlerIndex);
           this.edges.push({
             from: from,
