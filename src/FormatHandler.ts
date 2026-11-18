@@ -128,38 +128,17 @@ export class FormatBuilder {
   }
 }
 
-/** Describes a file.
- *
- * **Please note:** _handlers_ are responsible for ensuring the lifetime
- * and consistency of the buffer and the immutability of the object as a whole
- * when passed as input.
- */
+/** Describes a file. Preferrably do not mutate. */
 export interface FileData {
-  /** File name with extension.
-   *
-   * **Please note:** _handlers_ are responsible for ensuring the lifetime
-   * and consistency of the buffer and the immutability of the object as a whole
-   * when passed as input.
-   */
+  /** File name with extension. */
   readonly name: string;
   /**
    * Folder the file sits in in an imaginary folder. Relative, `/`-separated,
    * without leading or trailing slashes. Missing for loose files.
    * ex. "assets/img" for a file that came from the path "assets/img/a.png"
-   *
-   * **Please note:** _handlers_ are responsible for ensuring the lifetime
-   * and consistency of the buffer and the immutability of the object as a whole
-   * when passed as input.
    */
   readonly path?: string;
-  /**
-   * File contents in bytes.
-   *
-   * **Please note:** _handlers_ are responsible for ensuring the lifetime
-   * and consistency of the buffer and the immutability of the object as a whole
-   * when passed as input. If you're not sure that your handler won't modify
-   * this, wrap it in `new Uint8Array()`.
-   */
+  /** File contents in bytes. Make sure it is transferrable and detachable. */
   readonly bytes: Uint8Array<ArrayBuffer>;
 }
 
