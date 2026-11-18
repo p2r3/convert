@@ -306,8 +306,8 @@ class mcSchematicHandler implements FormatHandler {
       Name: root.Metadata?.Name || "Converted Schematic",
       Description: "",
       RegionCount: new NBT.Int32(1),
-      TimeCreated: new NBT.Float32(Date.now()),
-      TimeModified: new NBT.Float32(Date.now()),
+      TimeCreated: BigInt(Date.now()),
+      TimeModified: BigInt(Date.now()),
       TotalBlocks: new NBT.Int32(totalBlocks),
       TotalVolume: new NBT.Int32(totalBlocks),
     };

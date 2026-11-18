@@ -124,39 +124,12 @@ function decodeAPF(data: string, SK: number): Uint8Array<ArrayBuffer> {
 
 // split array into 200 arrays that are then reversed, converted into 255s and 0s, and turned back into 1 array
 function APFarray(data: Uint8Array): Uint8Array<ArrayBuffer> {
-  let temparray: number[] = [];
-  let newarray: number[][] = [];
-  let pal: number[] = [];
-  let ispalflipped: boolean = false;
-
-  for (const b of data) {
-    if (!pal.includes(b)) {
-      // get used colors
-      pal.push(b);
-    }
-    if (pal.length === 2) {
-      break;
-    }
+  const rows = Math.floor(data.length / 320);
+  const out = new Uint8Array(rows * 320);
+  for (let row = 0; row < rows; row++) {
+    out.set(data.subarray(row * 320, (row + 1) * 320), (rows - 1 - row) * 320);
   }
-  if (pal[0] > pal[1]) {
-    ispalflipped = true;
-  }
-  for (const b of data) {
-    let uh = 0;
-    if (ispalflipped) {
-      uh = (1 - pal.indexOf(b)) * 255;
-    } else {
-      uh = pal.indexOf(b) * 255;
-    }
-    temparray.push(uh);
-    if (temparray.length === 320) {
-      newarray.push(temparray);
-      temparray = []; // clear temp array and add it to the new array
-    }
-  }
-
-  const revarray = new Uint8Array(newarray.toReversed().flat());
-  return revarray;
+  return out;
 }
 
 function encodeAPF(data: Uint8Array): string {

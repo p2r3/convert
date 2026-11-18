@@ -86,18 +86,22 @@ const converterWorkers: Map<HandlerName, Promise<ConverterWorkerEntry>> = new Ma
 async function getOrCreateConversionWorker(handler: HandlerName) {
   let promise = converterWorkers.get(handler);
   if (promise) return promise;
+  let worker: Worker | undefined;
   promise = (async () => {
     if (!window.baseUrl) throw new Error("must have baseurl on window!");
     if (!window.handlerDefs.length) throw new Error("handler defs must be initialized!");
 
-    const worker = new ConverterWorker();
+    worker = new ConverterWorker();
     const RemoteConverter = comlink.wrap<typeof Converter>(worker);
     const name = `web_worker_${handler}`;
     const converter = await new RemoteConverter(name, window.baseUrl);
     await converter.init(window.handlerDefs);
     return { converter, worker, name };
   })();
-  promise.catch(() => converterWorkers.delete(handler));
+  promise.catch(() => {
+    worker?.terminate();
+    converterWorkers.delete(handler);
+  });
   converterWorkers.set(handler, promise);
   return promise;
 }
@@ -215,6 +219,8 @@ async function attemptConvertPath(
 
       console.log(`Chose converter ${await converter.name} for ${handlerDef.name}`);
 
+      if (converter === converterMain) await new Promise((resolve) => setTimeout(resolve, 0));
+
       abort.throwIfAborted();
 
       if (files.some((f) => originalFiles.some((o) => o.bytes.buffer === f.bytes.buffer)))
@@ -253,12 +259,12 @@ async function attemptConvertPath(
       );
 
       await markDeadEnd(path.slice(0, i + 2));
-      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
       return null;
     } finally {
       abort.removeEventListener("abort", sendAbort);
       abort.removeEventListener("abort", kill);
+      if (abort.aborted) channel.port1.close();
     }
   }
 

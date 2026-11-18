@@ -93,6 +93,8 @@ class otaHandler implements FormatHandler {
         } else {
           canvas.height = image.height;
         }
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
 
         const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);

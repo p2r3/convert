@@ -19,9 +19,17 @@ const browser = await puppeteer.launch({
 
 const page = await browser.newPage();
 
+const TIMEOUT_MS = 10 * 60 * 1000;
+let timeout;
+
 try {
   await Promise.all([
     new Promise((resolve, reject) => {
+      timeout = setTimeout(
+        () => reject(new Error("Timed out waiting for the format list.")),
+        TIMEOUT_MS,
+      );
+      page.on("pageerror", (error) => console.error(error));
       page.on("console", (msg) => {
         const text = msg.text();
         if (msg.type() === "error") console.error(text);
@@ -41,6 +49,7 @@ try {
 
   await Bun.write(outputPath, cacheJSON);
 } finally {
+  clearTimeout(timeout);
   await browser.close();
   await server.close();
 }

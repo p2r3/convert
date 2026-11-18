@@ -101,12 +101,7 @@ export class Converter {
         (currentStep - 1) / totalSteps,
       );
 
-      let outputFiles = (
-        await Promise.all([
-          handler.doConvert(inputFiles, inputFormat, path[1].format, ctx),
-          new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
-        ])
-      )[0];
+      let outputFiles = await handler.doConvert(inputFiles, inputFormat, path[1].format, ctx);
 
       // guess the folders
       if (

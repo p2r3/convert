@@ -33,8 +33,7 @@ function cpp(text: string): string {
 }
 
 function go(text: string): string {
-  text = text.replaceAll("`", '` + "`" + `');
-  return `package main\n\nimport "fmt"\n\nfunc main() {\n\tfmt.Println(\`${text}\`)\n}\n`;
+  return `package main\n\nimport "fmt"\n\nfunc main() {\n\tfmt.Println(${JSON.stringify(text)})\n}\n`;
 }
 
 function batch(text: string): string {
@@ -58,21 +57,16 @@ function csharp(text: string): string {
 }
 
 function rust(text: string): string {
-  if (text.includes("\r")) {
-    const escaped = Array.from(text, (ch) => {
-      const code = ch.codePointAt(0)!;
-      if (ch === "\\" || ch === '"') return `\\${ch}`;
-      if (code < 0x20 || code === 0x7f) return `\\u{${code.toString(16)}}`;
-      return ch;
-    }).join("");
-    return `fn main() { println!("{}", "${escaped}"); }`;
-  }
-  let count = 0;
-  while (text.includes(`"${"#".repeat(count)}`)) {
-    count++;
-  }
-  const hashtags = "#".repeat(count);
-  return `fn main() { println!("{}", r${hashtags}"${text}"${hashtags}); }`;
+  const escaped = Array.from(text, (ch) => {
+    const code = ch.codePointAt(0)!;
+    if (ch === "\\" || ch === '"') return `\\${ch}`;
+    if (ch === "\n") return "\\n";
+    if (ch === "\r") return "\\r";
+    if (ch === "\t") return "\\t";
+    if (code < 0x20 || code === 0x7f) return `\\u{${code.toString(16)}}`;
+    return ch;
+  }).join("");
+  return `fn main() { println!("{}", "${escaped}"); }`;
 }
 
 class textToSourceHandler implements FormatHandler {
