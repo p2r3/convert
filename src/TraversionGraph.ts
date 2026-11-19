@@ -520,7 +520,6 @@ export class TraversionGraph {
           costs[next] = cost;
           queue.add({ index: next, cost });
         });
-        continue;
       }
       const edgeIndices = reverse
         ? this.incomingEdges[current.index]
