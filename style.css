@@ -5,6 +5,8 @@
   --selection-color: color-mix(in srgb, var(--primary) 14%, transparent);
   --danger: #ef4444;
   --danger-transparent: color-mix(in srgb, var(--danger) 10%, transparent);
+  --success: #16a34a;
+  --success-transparent: color-mix(in srgb, var(--success) 30%, transparent);
   --warning: #b45309;
   --log-plugin: #9333ea;
 

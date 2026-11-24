@@ -8,14 +8,13 @@ import {
   type ConversionOptionsMap,
 } from "src/main";
 import { Mode, ModeEnum } from "src/ui/ModeStore";
-import { getExt } from "src/common/index.ts";
-import { filePath } from "src/common/path.ts";
-import { formatIdentifier } from "src/FormatHandler";
+import { getExt, stripExt } from "src/common/index.ts";
+import { formatIdentifier, type FileData } from "src/FormatHandler";
 import { detectFormatMatches } from "src/detectFormat";
 
 import ConversionHeader from "src/ui/components/Conversion/ConversionHeader";
 import FormatExplorer from "src/ui/components/Conversion/FormatExplorer";
-import LoadingScreen from "src/ui/components/LoadingScreen";
+import LoadingScreen, { type ConversionRunState } from "src/ui/components/LoadingScreen";
 import Footer from "src/ui/components/Footer";
 import { ArrowLeft, ArrowRight, Plus } from "lucide-preact";
 import { PopupData } from "src/ui/AppState";
@@ -75,17 +74,6 @@ function getMatchingFromFormats(options: ConversionOptionsMap, files: File[]) {
   if (files.length === 0) return [];
   const fromFormats = [...options.keys()].filter((format) => format.from);
   return detectFormatMatches(files[0], fromFormats, { loose: true });
-}
-
-function downloadFile(bytes: Uint8Array<ArrayBuffer>, name: string) {
-  const blob = new Blob([bytes], { type: "application/octet-stream" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = name;
-  link.click();
-  // we have to revoke it but not before the browser starts downloading (60s is conservative)
-  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
 function removeFile(key: string) {
@@ -158,6 +146,10 @@ export default function Conversion() {
 
   const [toOption, setToOption] = useState<ConversionOption | null>(null);
   const [isConverting, setIsConverting] = useState(false);
+  const [runState, setRunState] = useState<ConversionRunState>("running");
+  const [runDetail, setRunDetail] = useState<string>();
+  const [outputFiles, setOutputFiles] = useState<FileData[]>([]);
+  const runId = useRef(0);
 
   const settingSpecs = useMemo(() => {
     if (!toOption) return new Map();
@@ -238,9 +230,14 @@ export default function Conversion() {
   const handleConvert = async () => {
     if (!fromOption || !toOption || !firstFile) return;
 
+    const id = ++runId.current;
+    const isCurrent = () => runId.current === id;
     setIsConverting(true);
     ConversionInProgress.value = true;
     setStep("converting");
+    setRunState("running");
+    setRunDetail(undefined);
+    setOutputFiles([]);
     ProgressStore.reset();
     const abortController = ProgressStore.controller;
 
@@ -263,8 +260,7 @@ export default function Conversion() {
       }
 
       if (inputFileData.length === 0) {
-        setIsConverting(false);
-        setStep("select-to");
+        if (isCurrent()) setStep("select-to");
         return;
       }
 
@@ -275,49 +271,43 @@ export default function Conversion() {
         abort: abortController.signal,
         settings,
       });
+      if (!isCurrent()) return;
 
       if (!output) {
-        setIsConverting(false);
-        setStep("select-to");
-        PopupData.value = {
-          title: "Conversion failed",
-          text: "Could not find a valid conversion route between these formats.",
-          dismissible: true,
-          buttonText: "OK",
-        };
-        openPopup(() => actionRef.current);
+        setRunState("error");
+        setRunDetail("Could not find a valid conversion route between these formats.");
         return;
       }
 
-      for (const file of output.files) {
-        downloadFile(file.bytes, filePath(file).replaceAll("/", "_"));
-      }
-
-      PopupData.value = {
-        title: "Conversion complete!",
-        text: `Converted ${fromOption[0].format.toUpperCase()} → ${toOption[0].format.toUpperCase()} via ${output.path.map((c) => c.format.format).join(" → ")}`,
-        dismissible: true,
-        buttonText: "OK",
-      };
-      openPopup(() => actionRef.current);
+      setOutputFiles(output.files);
+      setRunDetail(
+        `${fromOption[0].format.toUpperCase()} → ${toOption[0].format.toUpperCase()} via ${output.path.map((c) => c.format.format).join(" → ")}`,
+      );
+      setRunState("done");
     } catch (e) {
       console.error(e);
+      if (!isCurrent()) return;
       if (e instanceof Error && e.name === "AbortError") {
-        // Don't show an error popup for manual cancellation
+        setRunState("paused");
       } else {
-        PopupData.value = {
-          title: "Conversion error",
-          text: `An unexpected error occurred: ${e instanceof Error ? e.message : String(e)}`,
-          dismissible: true,
-          buttonText: "OK",
-        };
-        openPopup(() => actionRef.current);
+        setRunState("error");
+        setRunDetail(`An unexpected error occurred: ${e instanceof Error ? e.message : String(e)}`);
       }
     } finally {
-      setIsConverting(false);
-      ConversionInProgress.value = false;
-      setStep("select-to");
+      if (isCurrent()) {
+        setIsConverting(false);
+        ConversionInProgress.value = false;
+      }
     }
+  };
+
+  const handleDiscard = () => {
+    runId.current++;
+    ProgressStore.abort();
+    setIsConverting(false);
+    ConversionInProgress.value = false;
+    setOutputFiles([]);
+    setStep("select-to");
   };
 
   const addFileRef = useRef<HTMLInputElement>(null);
@@ -338,7 +328,7 @@ export default function Conversion() {
   return (
     <div className="conversion-body">
       <ConversionHeader
-        logoDisabled={step === "converting"}
+        logoDisabled={isConverting}
         settingsCount={Object.keys(settings).length}
         settingsDisabled={step === "converting"}
       />
@@ -350,6 +340,13 @@ export default function Conversion() {
             fileSize={firstFile?.size}
             from={fromOption?.[0]}
             to={toOption?.[0]}
+            state={runState}
+            detail={runDetail}
+            outputFiles={outputFiles}
+            archiveName={firstFile ? stripExt(firstFile.name) || "converted" : "converted"}
+            onPause={() => ProgressStore.abort()}
+            onResume={handleConvert}
+            onDiscard={handleDiscard}
           />
         ) : (
           <FormatExplorer
