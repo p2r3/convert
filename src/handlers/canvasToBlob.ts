@@ -41,6 +41,9 @@ class canvasToBlobHandler implements FormatHandler {
       .options({ ...IMAGE_OPTIONS, quality: true })
       .fromTo(),
     Formats.GIF.builder("gif").from(),
+    // decoded natively by every browser, so these skip loading ImageMagick
+    Formats.AVIF.builder("avif").from(),
+    Formats.ICO.builder("ico").from(),
     Formats.TEXT.builder("text").fromTo(),
   ];
   public ready = false;

@@ -35,6 +35,7 @@ const Formats = {
   APNG: new FormatDefinition("Animated Portable Network Graphics", "apng", "apng", "image/png", Category.IMAGE),
   JPEG: new FormatDefinition("Joint Photographic Experts Group JFIF", "jpeg", "jpg", "image/jpeg", Category.IMAGE),
   WEBP: new FormatDefinition("WebP", "webp", "webp", "image/webp", Category.IMAGE),
+  AVIF: new FormatDefinition("AV1 Image File Format", "avif", "avif", "image/avif", Category.IMAGE),
   GIF: new FormatDefinition("CompuServe Graphics Interchange Format (GIF)", "gif", "gif", "image/gif", [Category.IMAGE, Category.VIDEO]),
   BMP: new FormatDefinition("Microsoft Windows bitmap image", "bmp", "bmp", "image/bmp", Category.IMAGE),
   TIFF: new FormatDefinition("Tagged Image File Format", "tiff", "tiff", "image/tiff", Category.IMAGE),
