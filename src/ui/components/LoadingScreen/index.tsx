@@ -26,9 +26,9 @@ interface LoadingScreenProps {
 }
 
 const MODE_LABELS: Record<DownloadMode, string> = {
-  separate: "Download separately",
-  zip: "Download as .zip",
-  tar: "Download as .tar",
+  separate: "Save separately",
+  zip: "Save as .zip",
+  tar: "Save as .tar",
 };
 
 const plural = (n: number) => `${n} file${n === 1 ? "" : "s"}`;
@@ -126,8 +126,8 @@ export default function LoadingScreen({
           <Download size={18} />
           <span>
             {defaultMode === "separate"
-              ? `Download ${plural(count)}`
-              : `Download ${plural(count)} as .${defaultMode}`}
+              ? `Save ${plural(count)}`
+              : `Save ${plural(count)} as .${defaultMode}`}
           </span>
         </button>
         {count > 1 && (
@@ -135,10 +135,10 @@ export default function LoadingScreen({
             className="loading-action-btn success loading-download-more"
             onClick={() => setMenuOpen((open) => !open)}
             disabled={downloading}
-            aria-label="More download options"
+            aria-label="Save options"
             aria-haspopup="menu"
             aria-expanded={menuOpen}
-            title="More download options"
+            title="Save options"
           >
             <ChevronDown size={18} />
           </button>
