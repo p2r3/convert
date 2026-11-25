@@ -189,6 +189,10 @@ function filterByTerm(options: SearchIndex, term: string): SearchIndex {
   return filtered;
 }
 
+function normalizeSearchTerm(term: string): string {
+  return term.trim().replace(/^\./, "");
+}
+
 function useFormatCosts(format: FileFormat | null, direction: "from" | "to") {
   const [result, setResult] = useState<{
     format: FileFormat;
@@ -292,7 +296,7 @@ export default function FormatExplorer({
     : null;
 
   const handleDebounceSearch = useDebouncedCallback((term: string) => {
-    setSearchTerm(term);
+    setSearchTerm(normalizeSearchTerm(term));
   }, debounceWaitMs);
 
   const resultKeys = [...searchResultsIndex.keys()];
@@ -395,7 +399,7 @@ export default function FormatExplorer({
                   if (event.key === "Enter" || event.key === "ArrowDown") {
                     event.preventDefault();
                     handleDebounceSearch.cancel();
-                    setSearchTerm(searchInputValue);
+                    setSearchTerm(normalizeSearchTerm(searchInputValue));
                     setFocusGrid(true);
                   }
                 }}
